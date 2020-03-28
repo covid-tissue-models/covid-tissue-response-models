@@ -7,3 +7,8 @@ well-understood , quantitative manner to achieve best clinical outcomes
 
 We invite scientific community to contribute models that can be shared and disseminated in an open fashion so that
 they can reach target audience ias fast as possible.
+
+Shared and reproducible models
+===============================
+
+All models contributed to this repository are freely shareable and reproducible
