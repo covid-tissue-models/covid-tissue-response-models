@@ -30,9 +30,9 @@ exp_virus_dc = 10.0 / 100.0  # um^2/s
 cell_diameter = exp_cell_diameter * 1.0 / um_to_lat_width
 cell_volume = cell_diameter ** 2
 
-virus_dc = exp_virus_dc * s_to_mcs / (um_to_lat_width ** 2)
-virus_dl = cell_diameter * 3.0
-virus_decay = virus_dc / (virus_dl ** 2)
+virus_dc = exp_virus_dc * s_to_mcs / (um_to_lat_width ** 2) # virus diffusion constant
+virus_dl = cell_diameter * 3.0 # virus diffusion length
+virus_decay = virus_dc / (virus_dl ** 2) # virus decay rate
 
 unpacking_rate = exp_unpacking_rate * s_to_mcs
 replicating_rate = exp_replicating_rate * s_to_mcs
