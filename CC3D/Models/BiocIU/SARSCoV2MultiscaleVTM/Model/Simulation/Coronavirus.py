@@ -1,3 +1,11 @@
+###############################################################################################################
+# To cite this model please use the following:
+#
+# Josua Aponte-Serrano, T.J. Sego, James A. Glazier,
+# "Model of Viral Tissue Infection"
+# https://github.com/covid-tissue-models/covid-tissue-response-models/tree/master/tellurium/simple_virus_model
+###############################################################################################################
+
 from cc3d import CompuCellSetup
 
 from CoronavirusSteppables import CellsInitializerSteppable

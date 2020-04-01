@@ -1,5 +1,10 @@
-Model Description
+Model of Viral Tissue Infection
 ======================================================
+
+Josua Aponte-Serrano, T.J. Sego, James A. Glazier
+------------------------------------------------------
+
+**Model Description**
 
 This simulation implements a model of viral infection that accounts for
 intracellular and intercellular interactions between generalized
