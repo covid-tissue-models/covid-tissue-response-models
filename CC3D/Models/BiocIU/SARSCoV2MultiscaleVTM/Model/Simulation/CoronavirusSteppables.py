@@ -26,6 +26,23 @@ exp_secretion_rate = exp_replicating_rate
 
 exp_virus_dc = 10.0 / 100.0  # um^2/s
 
+# cytokines:
+# data from https://www.sciencedirect.com/science/article/pii/S1074761317300924 supplemental materials (A)
+# and
+# from https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3433682/ (B)
+cytoplasm_density = 6 # unit = [density of water](B)
+
+exp_cytokine_dc_w = 100 # um^2/s; diffusion constant in water (A,B)
+exp_cytokine_dc_cyto = 16 # um^2/s; estimated diffusion constant in cytoplasm (B)
+exp_max_cytokine_consumption = 1 # molecule / (cell second); maximum consumption of cytokine; actually a range [0.3,1] molecule / (cell second) (A)
+exp_max_cytokine_immune_secretion = 10 # molecule / (cell second) (B)
+
+exp_max_cytokine_consumption_mol = 3.5e-4 # pM/s
+exp_max_cytokine_immune_secretion_mol = 3.5e-3 # pM/s
+
+
+
+##=============================
 # CompuCell Parameters
 cell_diameter = exp_cell_diameter * 1.0 / um_to_lat_width
 cell_volume = cell_diameter ** 2
