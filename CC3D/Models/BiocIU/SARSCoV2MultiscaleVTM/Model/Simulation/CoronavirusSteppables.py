@@ -207,8 +207,10 @@ class CellsInitializerSteppable(SteppableBasePy):
         SteppableBasePy.__init__(self, frequency)
 
     def start(self):
+        # initialize virus diff params
         self.get_xml_element('virus_dc').cdata = virus_dc
         self.get_xml_element('virus_decay').cdata = virus_decay
+        # creating epithelial layer
         for x in range(0, self.dim.x, int(cell_diameter)):
             for y in range(0, self.dim.y, int(cell_diameter)):
                 cell = self.new_cell(self.UNINFECTED)
