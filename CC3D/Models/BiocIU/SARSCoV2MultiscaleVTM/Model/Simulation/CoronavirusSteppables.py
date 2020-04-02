@@ -67,9 +67,9 @@ cytokine_dc = exp_cytokine_dc_cyto * s_to_mcs / (um_to_lat_width ** 2) # CK diff
 
 # pM = pmol/L = pmol/(10^15 um^3) = 10^-15 pmol/(um^3) = 10^-15 * um_to_lat_width^3 pmol/pixel
 # pM/s = pM * s_to_mcs / MCS
-max_ck_consume = exp_max_cytokine_consumption_mol * um_to_lat_width**3 * s_to_mcs * 1e-15 #  * pmol/(pixel seconds)
-max_ck_secrete_im = exp_max_cytokine_immune_secretion_mol * um_to_lat_width**3 * s_to_mcs * 1e-15 #  * pmol/(pixel seconds)
-EC50_ck_immune = exp_EC50_cytokine_immune * um_to_lat_width**3  * 1e-15 #  * pmol/pixel
+max_ck_consume = exp_max_cytokine_consumption_mol * um_to_lat_width**3 * s_to_mcs  # * 1e-15 * pmol/(pixel seconds)
+max_ck_secrete_im = exp_max_cytokine_immune_secretion_mol * um_to_lat_width**3 * s_to_mcs  # * 1e-15 * pmol/(pixel seconds)
+EC50_ck_immune = exp_EC50_cytokine_immune * um_to_lat_width**3   #* 1e-15  * pmol/pixel
 
 # Threshold at which cell infection is evaluated
 cell_infection_threshold = 1.0
