@@ -36,6 +36,8 @@
 
     <Plugin Name="NeighborTracker"/>
 
+    <Plugin Name="PixelTracker"/>
+
     <Plugin Name="Contact">
         <!-- Specification of adhesion energies -->
         <Energy Type1="Medium" Type2="Medium">10.0</Energy>

@@ -7,6 +7,7 @@
 ###############################################################################################################
 
 from cc3d.core.PySteppables import *
+from cc3d.cpp import CompuCell
 import numpy as np
 
 vrl_key = 'viral_replication_loaded'  # Internal use; do not remove
@@ -19,10 +20,10 @@ um_to_lat_width = 4.0  # um/lattice_length
 exp_cell_diameter = 12.0  # um
 
 exp_replicating_rate = 1.0 / 20.0 * 1.0 / 60.0  # 1.0/20.0min * 1.0min/60.0s = 1.0/1200.0s
-exp_translating_rate = exp_replicating_rate / 2.0  #
-exp_unpacking_rate = exp_replicating_rate * 5.0
-exp_packing_rate = exp_replicating_rate * 5.0 / 5.0
-exp_secretion_rate = exp_replicating_rate
+exp_translating_rate = exp_replicating_rate * 2.0  #
+exp_unpacking_rate = exp_replicating_rate * 20.0
+exp_packing_rate = exp_replicating_rate * 4.0
+exp_secretion_rate = exp_replicating_rate * 4.0
 
 exp_virus_dc = 10.0 / 100.0  # um^2/s
 
@@ -47,9 +48,9 @@ exp_max_cytokine_immune_secretion_mol = 3.5e-3 # pM/s
 cell_diameter = exp_cell_diameter * 1.0 / um_to_lat_width
 cell_volume = cell_diameter ** 2
 
-virus_dc = exp_virus_dc * s_to_mcs / (um_to_lat_width ** 2)
-virus_dl = cell_diameter * 3.0
-virus_decay = virus_dc / (virus_dl ** 2)
+virus_dc = exp_virus_dc * s_to_mcs / (um_to_lat_width ** 2)   # virus diffusion constant
+virus_dl = cell_diameter * 3.0   # virus diffusion length
+virus_decay = virus_dc / (virus_dl ** 2)   # virus decay rate
 
 unpacking_rate = exp_unpacking_rate * s_to_mcs
 replicating_rate = exp_replicating_rate * s_to_mcs
@@ -65,6 +66,13 @@ cell_death_threshold = 6.0
 survival_probability = 0.95
 # Probability of recovery of infected cell below cell_death_threshold is reached
 recovery_probability = 0.001
+
+# Hill equation coefficients for probability of viral particle uptake from the environment
+# Measurements are taken w.r.t. the total amount of viral particles in a cell's simulation subdomain
+# dissociationt constant
+diss_coeff_uptake_pr = 0.5
+# Hill coefficient
+hill_coeff_uptake_pr = 3.0
 
 # Number of immune cells to seed at the beginning of the simulation
 initial_immune_seeding = 10.0
@@ -139,6 +147,22 @@ def load_viral_replication_model(_steppable, _cell):
                                     step_size=vr_step_size)
     _cell.dict[vrl_key] = True
     enable_viral_secretion(_cell, _cell.type == _steppable.INFECTED)
+
+
+# Calculates the probability of viral uptake from the environment as a function of local viral particle amount
+# Returns true if cell uptakes virus
+def cell_uptakes_virus(_steppable, viral_field, _cell):
+    # Calculate total viral amount in cell's domain
+    cell_env_viral_val = 0.0
+    for ptd in _steppable.get_cell_pixel_list(_cell):
+        cell_env_viral_val += viral_field[ptd.pixel.x, ptd.pixel.y, ptd.pixel.z]
+
+    # Evaluate probability of uptake
+    if cell_env_viral_val != 0:
+        max_uptake_pr = 1 / (1 + (diss_coeff_uptake_pr / cell_env_viral_val) ** hill_coeff_uptake_pr)
+        return np.random.random() < max_uptake_pr
+    else:
+        return False
 
 
 # These are prototypes of specialized utility functions for this project; do not modify
@@ -235,7 +259,6 @@ class Viral_ReplicationSteppable(SteppableBasePy):
         SteppableBasePy.__init__(self, frequency)
 
         self.plot_win = None
-        self.model_initialized = False
 
     def start(self):
         self.plot_win = self.add_new_plot_window(title='VRM',
@@ -248,6 +271,8 @@ class Viral_ReplicationSteppable(SteppableBasePy):
         self.plot_win.add_plot("R", style='Dots', color='orange', size=5)
         self.plot_win.add_plot("P", style='Dots', color='green', size=5)
         self.plot_win.add_plot("A", style='Dots', color='red', size=5)
+        self.plot_win.add_plot("Uptake", style='Dots', color='yellow', size=5)
+        self.plot_win.add_plot("Secretion", style='Dots', color='white', size=5)
 
         # Load model
         options = {'relative': 1e-10, 'absolute': 1e-12}
@@ -266,11 +291,14 @@ class Viral_ReplicationSteppable(SteppableBasePy):
 
         # Sample state of cell at center of domain (first infected cell)
         cell = self.cellField[self.dim.x / 2, self.dim.y / 2, 0]
-        # cell = self.cellField[30, 30, 0]
+        # Or sample state of cell near the first infected cell
+        # cell = self.cellField[40, 45, 0]
         self.plot_win.add_data_point("U", mcs, cell.dict['Unpacking'])
         self.plot_win.add_data_point("R", mcs, cell.dict['Replicating'])
         self.plot_win.add_data_point("P", mcs, cell.dict['Packing'])
         self.plot_win.add_data_point("A", mcs, cell.dict['Assembled'])
+        self.plot_win.add_data_point("Uptake", mcs, cell.dict['Uptake'])
+        self.plot_win.add_data_point("Secretion", mcs, cell.dict['Secretion'])
 
         # Do viral model
         for cell in self.cell_list_by_type(self.UNINFECTED, self.INFECTED):
@@ -306,16 +334,21 @@ class Viral_SecretionSteppable(SteppableBasePy):
         self.track_cell_level_scalar_attribute(field_name='Assembled', attribute_name='Assembled')
         self.track_cell_level_scalar_attribute(field_name='Unpacking', attribute_name='Unpacking')
         self.track_cell_level_scalar_attribute(field_name='Replicating', attribute_name='Replicating')
+        self.track_cell_level_scalar_attribute(field_name='Uptake', attribute_name='Uptake')
+        self.track_cell_level_scalar_attribute(field_name='Secretion', attribute_name='Secretion')
 
     def step(self, mcs):
         secretor = self.get_field_secretor("Virus")
         for cell in self.cell_list_by_type(self.INFECTED, self.UNINFECTED):
             relative_viral_uptake = 0.1
-            uptake = secretor.uptakeInsideCellTotalCount(cell,
-                                                         cell_infection_threshold / cell.volume,
-                                                         relative_viral_uptake)
-            cell.dict['Uptake'] = abs(uptake.tot_amount)
-            set_viral_replication_cell_uptake(cell, cell.dict['Uptake'])
+
+            # Evaluate probability of cell uptake of viral particles from environment
+            if cell_uptakes_virus(self, self.field.Virus, cell):
+                uptake = secretor.uptakeInsideCellTotalCount(cell,
+                                                             cell_infection_threshold / cell.volume,
+                                                             relative_viral_uptake)
+                cell.dict['Uptake'] = abs(uptake.tot_amount)
+                set_viral_replication_cell_uptake(cell, cell.dict['Uptake'])
 
         for cell in self.cell_list_by_type(self.INFECTED):
             sec_amount = get_viral_replication_cell_secretion(cell)
