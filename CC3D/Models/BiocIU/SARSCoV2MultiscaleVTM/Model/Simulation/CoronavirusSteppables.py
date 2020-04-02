@@ -512,7 +512,7 @@ class CytokineProductionAbsorptionSteppable(SteppableBasePy):
         
         
         for cell in self.cell_list_by_type(self.IMMUNECELL):
-            print(EC50_ck_immune)
+            
             up_res = self.ck_secretor.uptakeInsideCellTotalCount(cell, 
                     max_ck_consume/cell.volume, 0.1)
             
