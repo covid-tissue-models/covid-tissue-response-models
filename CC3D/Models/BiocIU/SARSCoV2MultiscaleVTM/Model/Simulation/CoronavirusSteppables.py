@@ -34,12 +34,14 @@ cytoplasm_density = 6 # unit = [density of water](B)
 
 exp_cytokine_dc_w = 100 # um^2/s; diffusion constant in water (A,B)
 exp_cytokine_dc_cyto = 16 # um^2/s; estimated diffusion constant in cytoplasm (B)
+
 exp_max_cytokine_consumption = 1 # molecule / (cell second); maximum consumption of cytokine; actually a range [0.3,1] molecule / (cell second) (A)
 exp_max_cytokine_immune_secretion = 10 # molecule / (cell second) (B)
 
 exp_max_cytokine_consumption_mol = 3.5e-4 # pM/s
 exp_max_cytokine_immune_secretion_mol = 3.5e-3 # pM/s
 
+exp_EC50_cytokine_immune = 50 # pM from (B)
 
 
 ##=============================
