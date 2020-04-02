@@ -455,6 +455,7 @@ class ImmuneCellSeedingSteppable(SteppableBasePy):
                         y_seed = yi
             if open_space:
                 cell = self.new_cell(self.IMMUNECELL)
+                cell.dict['activated'] = False # flag for immune cell being naive or activated
                 self.cellField[x_seed:x_seed + int(cell_diameter), y_seed:y_seed + int(cell_diameter), 1] = cell
                 cd = self.chemotaxisPlugin.addChemotaxisData(cell, "Virus")
                 cd.setLambda(50.0)
