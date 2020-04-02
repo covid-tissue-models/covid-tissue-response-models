@@ -69,7 +69,7 @@ cytokine_dc = exp_cytokine_dc_cyto * s_to_mcs / (um_to_lat_width ** 2) # CK diff
 # pM/s = pM * s_to_mcs / MCS
 max_ck_consume = exp_max_cytokine_consumption_mol * um_to_lat_width**3 * s_to_mcs # 1e-15 * pmol/(pixel seconds)
 max_ck_secrete_im = exp_max_cytokine_immune_secretion_mol * um_to_lat_width**3 * s_to_mcs # 1e-15 * pmol/(pixel seconds)
-EC50_ck_immune = EC50_cytokine_immune * um_to_lat_width**3 # 1e-15 * pmol/pixel
+EC50_ck_immune = exp_EC50_cytokine_immune * um_to_lat_width**3 # 1e-15 * pmol/pixel
 
 # Threshold at which cell infection is evaluated
 cell_infection_threshold = 1.0
@@ -239,10 +239,6 @@ class CellsInitializerSteppable(SteppableBasePy):
         self.get_xml_element('virus_dc').cdata = virus_dc
         self.get_xml_element('virus_decay').cdata = virus_decay
         
-        # cytokine diff parameters        
-        self.get_xml_element('cytokine_dc').cdata = cytokine_dc
-        self.get_xml_element('cytokine_decay').cdata = 0 # no "natural" decay, only consumption
-        
         
         for x in range(0, self.dim.x, int(cell_diameter)):
             for y in range(0, self.dim.y, int(cell_diameter)):
@@ -271,10 +267,7 @@ class CellsInitializerSteppable(SteppableBasePy):
             self.cellField[x:x + int(cell_diameter), y:y + int(cell_diameter), 1] = cell
             cell.targetVolume = cell_volume
             cell.lambdaVolume = cell_volume
-            # cytokine production/uptake parameters for immune cells
-            cell.dict['immune_production'] = max_ck_secrete_im ##TODO: replace secretion by hill
-            cell.dict['immune_consumption'] = max_ck_consume ##TODO: replace by hill
-
+            
 
 class Viral_ReplicationSteppable(SteppableBasePy):
     def __init__(self, frequency=1):
@@ -468,3 +461,44 @@ class ImmuneCellSeedingSteppable(SteppableBasePy):
                 cd.assignChemotactTowardsVectorTypes([self.MEDIUM])
                 cell.targetVolume = cell_volume
                 cell.lambdaVolume = cell_volume
+#
+        
+class CytokineProductionAbsorptionSteppable(SteppableBasePy):
+    def __init__(self, frequency=1):
+        SteppableBasePy.__init__(self, frequency)
+        
+
+    def start(self):
+        # cytokine diff parameters        
+        self.get_xml_element('cytokine_dc').cdata = cytokine_dc
+        self.get_xml_element('cytokine_decay').cdata = 0 # no "natural" decay, only consumption
+        
+        for cell in self.cell_list_by_type(self.IMMUNECELL, self.INFECTED):
+            ## TODO: differentiate this rates between the cell types
+            # cytokine production/uptake parameters for immune cells
+            cell.dict['ck_production'] = max_ck_secrete_im ##TODO: replace secretion by hill
+            cell.dict['ck_consumption'] = max_ck_consume ##TODO: replace by hill
+        
+        
+        # Make sure Secretion plugin is loaded
+        # make sure this field is defined in one of the PDE solvers
+        # you may reuse secretor for many cells. Simply define it outside the loop
+        self.ck_secretor = self.get_field_secretor("cytokine")
+        
+
+
+    def step(self, mcs):
+        print("CytokineProductionAbsorptionSteppable: This function is called every 1 MCS")
+
+        for cell in self.cell_list_by_type(self.IMMUNECELL, self.INFECTED):
+            # ck secretion
+            cell.dict['ck_production'] = max_ck_secrete_im ##TODO: replace secretion by hill
+            cell.dict['ck_consumption'] = max_ck_consume ##TODO: replace by hill
+            res = self.ck_secretor.secreteInsideCellTotalCount(cell, 
+                                max_ck_secrete_im/cell.volume)
+
+
+    def finish(self):
+        # this function may be called at the end of simulation - used very infrequently though
+        return
+

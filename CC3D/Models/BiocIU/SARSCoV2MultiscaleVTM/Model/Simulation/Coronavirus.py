@@ -29,4 +29,9 @@ CompuCellSetup.register_steppable(steppable=RecoverySteppable(frequency=1))
 from CoronavirusSteppables import ImmuneCellSeedingSteppable
 CompuCellSetup.register_steppable(steppable=ImmuneCellSeedingSteppable(frequency=1))
 
+
+        
+from CoronavirusSteppables import CytokineProductionAbsorptionSteppable
+CompuCellSetup.register_steppable(steppable=CytokineProductionAbsorptionSteppable(frequency=1))
+
 CompuCellSetup.run()
