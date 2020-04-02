@@ -267,6 +267,11 @@ class CellsInitializerSteppable(SteppableBasePy):
             self.cellField[x:x + int(cell_diameter), y:y + int(cell_diameter), 1] = cell
             cell.targetVolume = cell_volume
             cell.lambdaVolume = cell_volume
+            cell.dict['activated'] = False # flag for immune cell being naive or activated
+            #cyttokine params
+            cell.dict['ck_production'] = max_ck_secrete_im ##TODO: replace secretion by hill
+            cell.dict['ck_consumption'] = max_ck_consume ##TODO: replace by hill
+            
             
 
 class Viral_ReplicationSteppable(SteppableBasePy):
@@ -326,6 +331,11 @@ class Viral_ReplicationSteppable(SteppableBasePy):
             if cell.dict['Assembled'] > cell_infection_threshold:
                 cell.type = self.INFECTED
                 enable_viral_secretion(cell)
+                
+                #cyttokine params
+                cell.dict['ck_production'] = max_ck_secrete_im ##TODO: replace secretion by hill
+                cell.dict['ck_consumption'] = max_ck_consume ##TODO: replace by hill
+                
 
             # Test for cell death
             if cell.dict['Assembled'] > cell_death_threshold:
@@ -456,6 +466,10 @@ class ImmuneCellSeedingSteppable(SteppableBasePy):
             if open_space:
                 cell = self.new_cell(self.IMMUNECELL)
                 cell.dict['activated'] = False # flag for immune cell being naive or activated
+                #cyttokine params
+                cell.dict['ck_production'] = max_ck_secrete_im ##TODO: replace secretion by hill
+                cell.dict['ck_consumption'] = max_ck_consume ##TODO: replace by hill
+                
                 self.cellField[x_seed:x_seed + int(cell_diameter), y_seed:y_seed + int(cell_diameter), 1] = cell
                 cd = self.chemotaxisPlugin.addChemotaxisData(cell, "Virus")
                 cd.setLambda(50.0)
@@ -490,14 +504,31 @@ class CytokineProductionAbsorptionSteppable(SteppableBasePy):
 
     def step(self, mcs):
 
-        for cell in self.cell_list_by_type(self.IMMUNECELL, self.INFECTED):
-            print(cell.volume)
-            # ck secretion
-            cell.dict['ck_production'] = max_ck_secrete_im ##TODO: replace secretion by hill
-            cell.dict['ck_consumption'] = max_ck_consume ##TODO: replace by hill
+        for cell in self.cell_list_by_type(self.INFECTED):
+            
             res = self.ck_secretor.secreteInsideCellTotalCount(cell, 
                                 max_ck_secrete_im/cell.volume)
-
+        
+        
+        
+        for cell in self.cell_list_by_type(self.IMMUNECELL):
+            print(EC50_ck_immune)
+            up_res = self.ck_secretor.uptakeInsideCellTotalCount(cell, 
+                    max_ck_consume/cell.volume, 0.1)
+            
+            
+            if cell.dict['activated']:
+                sec_res = self.ck_secretor.secreteInsideCellTotalCount(cell, 
+                                max_ck_secrete_im/cell.volume)
+            
+            
+            
+            
+    
+    
+    
+    
+    
 
     def finish(self):
         # this function may be called at the end of simulation - used very infrequently though
