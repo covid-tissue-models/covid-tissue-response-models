@@ -238,6 +238,12 @@ class CellsInitializerSteppable(SteppableBasePy):
     def start(self):
         self.get_xml_element('virus_dc').cdata = virus_dc
         self.get_xml_element('virus_decay').cdata = virus_decay
+        
+        # cytokine diff parameters        
+        self.get_xml_element('cytokine_dc').cdata = cytokine_dc
+        self.get_xml_element('cytokine_decay').cdata = 0 # no "natural" decay, only consumption
+        
+        
         for x in range(0, self.dim.x, int(cell_diameter)):
             for y in range(0, self.dim.y, int(cell_diameter)):
                 cell = self.new_cell(self.UNINFECTED)
@@ -265,6 +271,9 @@ class CellsInitializerSteppable(SteppableBasePy):
             self.cellField[x:x + int(cell_diameter), y:y + int(cell_diameter), 1] = cell
             cell.targetVolume = cell_volume
             cell.lambdaVolume = cell_volume
+            # cytokine production/uptake parameters for immune cells
+            cell.dict['immune_production'] = max_ck_secrete_im ##TODO: replace secretion by hill
+            cell.dict['immune_consumption'] = max_ck_consume ##TODO: replace by hill
 
 
 class Viral_ReplicationSteppable(SteppableBasePy):
