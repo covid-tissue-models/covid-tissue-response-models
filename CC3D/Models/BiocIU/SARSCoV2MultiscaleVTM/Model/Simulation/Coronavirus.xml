@@ -61,6 +61,8 @@
    <Plugin Name="Chemotaxis">
         <ChemicalField Name="Virus">
         </ChemicalField>
+        <ChemicalField Name="cytokine">
+        </ChemicalField>
    </Plugin>
    
    <Plugin Name="Secretion">

@@ -400,18 +400,26 @@ class ChemotaxisSteppable(SteppableBasePy):
 
     def start(self):
         for cell in self.cell_list_by_type(self.IMMUNECELL):
-            cd = self.chemotaxisPlugin.addChemotaxisData(cell, "Virus")
-            cd.setLambda(50.0)
+            
+            cd = self.chemotaxisPlugin.addChemotaxisData(cell, "cytokine")
+            if cell.dict['activated']:
+                cd.setLambda(50.0)
+            else:
+                cd.setLambda(0.0)
             cd.assignChemotactTowardsVectorTypes([self.MEDIUM])
 
     def step(self, mcs):
         field = self.field.Virus
         for cell in self.cell_list_by_type(self.IMMUNECELL):
-            cd = self.chemotaxisPlugin.getChemotaxisData(cell, "Virus")
+            
+            cd = self.chemotaxisPlugin.getChemotaxisData(cell, "cytokine")
             concentration = field[cell.xCOM, cell.yCOM, 0]
             constant = 50.0
             l = constant / (1.0 + concentration)
-            cd.setLambda(l)
+            if cell.dict['activated']:
+                cd.setLambda(l)
+            else:
+                cd.setLambda(0)
 
 
 class RecoverySteppable(SteppableBasePy):
@@ -474,8 +482,11 @@ class ImmuneCellSeedingSteppable(SteppableBasePy):
                 cell.dict['tot_ck_upt'] = 0
                 
                 self.cellField[x_seed:x_seed + int(cell_diameter), y_seed:y_seed + int(cell_diameter), 1] = cell
-                cd = self.chemotaxisPlugin.addChemotaxisData(cell, "Virus")
-                cd.setLambda(50.0)
+                cd = self.chemotaxisPlugin.addChemotaxisData(cell, "cytokine")
+                if cell.dict['activated']:
+                    cd.setLambda(50.0)
+                else:
+                    cd.setLambda(0.0)
                 cd.assignChemotactTowardsVectorTypes([self.MEDIUM])
                 cell.targetVolume = cell_volume
                 cell.lambdaVolume = cell_volume
