@@ -39,7 +39,7 @@ exp_cytokine_dc_cyto = 16 # um^2/s; estimated diffusion constant in cytoplasm (B
 exp_max_cytokine_consumption = 1 # molecule / (cell second); maximum consumption of cytokine; actually a range [0.3,1] molecule / (cell second) (A)
 exp_max_cytokine_immune_secretion = 10 # molecule / (cell second) (B)
 
-exp_max_cytokine_consumption_mol = 3.5e-4 # pM/s
+exp_max_cytokine_consumption_mol = 3.5e-4 # pM/s 
 exp_max_cytokine_immune_secretion_mol = 3.5e-3 # pM/s
 
 exp_EC50_cytokine_immune = 50 # pM from (B)
@@ -59,6 +59,16 @@ replicating_rate = exp_replicating_rate * s_to_mcs
 translating_rate = exp_translating_rate * s_to_mcs
 packing_rate = exp_packing_rate * s_to_mcs
 secretion_rate = exp_secretion_rate * s_to_mcs
+
+## cytokine
+
+cytokine_dc = exp_cytokine_dc_cyto * s_to_mcs / (um_to_lat_width ** 2) # CK diff cst
+
+# pM = pmol/L = pmol/(10^15 um^3) = 10^-15 pmol/(um^3) = 10^-15 * um_to_lat_width^3 pmol/pixel
+# pM/s = pM * s_to_mcs / MCS
+max_ck_consume = exp_max_cytokine_consumption_mol * um_to_lat_width**3 * s_to_mcs # 1e-15 * pmol/(pixel seconds)
+max_ck_secrete_im = exp_max_cytokine_immune_secretion_mol * um_to_lat_width**3 * s_to_mcs # 1e-15 * pmol/(pixel seconds)
+EC50_ck_immune = EC50_cytokine_immune * um_to_lat_width**3 # 1e-15 * pmol/pixel
 
 # Threshold at which cell infection is evaluated
 cell_infection_threshold = 1.0
