@@ -271,7 +271,7 @@ class CellsInitializerSteppable(SteppableBasePy):
             #cyttokine params
             cell.dict['ck_production'] = max_ck_secrete_im ##TODO: replace secretion by hill
             cell.dict['ck_consumption'] = max_ck_consume ##TODO: replace by hill
-            
+            cell.dict['tot_ck_upt'] = 0
             
 
 class Viral_ReplicationSteppable(SteppableBasePy):
@@ -334,7 +334,6 @@ class Viral_ReplicationSteppable(SteppableBasePy):
                 
                 #cyttokine params
                 cell.dict['ck_production'] = max_ck_secrete_im ##TODO: replace secretion by hill
-                cell.dict['ck_consumption'] = max_ck_consume ##TODO: replace by hill
                 
 
             # Test for cell death
@@ -469,6 +468,7 @@ class ImmuneCellSeedingSteppable(SteppableBasePy):
                 #cyttokine params
                 cell.dict['ck_production'] = max_ck_secrete_im ##TODO: replace secretion by hill
                 cell.dict['ck_consumption'] = max_ck_consume ##TODO: replace by hill
+                cell.dict['tot_ck_upt'] = 0
                 
                 self.cellField[x_seed:x_seed + int(cell_diameter), y_seed:y_seed + int(cell_diameter), 1] = cell
                 cd = self.chemotaxisPlugin.addChemotaxisData(cell, "Virus")
