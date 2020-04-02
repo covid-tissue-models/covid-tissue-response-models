@@ -516,6 +516,10 @@ class CytokineProductionAbsorptionSteppable(SteppableBasePy):
             up_res = self.ck_secretor.uptakeInsideCellTotalCount(cell, 
                     max_ck_consume/cell.volume, 0.1)
             
+            cell.dict['tot_ck_upt'] -= up_res.total_count #from POV of secretion uptake is negative
+            
+            if cell.dict['tot_ck_upt'] >= EC50_ck_immune:
+                cell.dict['activated'] = True
             
             if cell.dict['activated']:
                 sec_res = self.ck_secretor.secreteInsideCellTotalCount(cell, 
