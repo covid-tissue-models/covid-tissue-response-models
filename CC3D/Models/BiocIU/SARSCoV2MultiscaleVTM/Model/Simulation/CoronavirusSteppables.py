@@ -42,7 +42,7 @@ exp_max_cytokine_immune_secretion = 10 # molecule / (cell second) (B)
 exp_max_cytokine_consumption_mol = 3.5e-4 # pM/s 
 exp_max_cytokine_immune_secretion_mol = 3.5e-3 # pM/s
 
-exp_EC50_cytokine_immune = 50 # pM from (B)
+exp_EC50_cytokine_immune = 1 # pM from (B), it's a range from [1,50]pM
 
 
 ##=============================
@@ -512,16 +512,17 @@ class CytokineProductionAbsorptionSteppable(SteppableBasePy):
         
         
         for cell in self.cell_list_by_type(self.IMMUNECELL):
-            
+            #print(EC50_ck_immune)
             up_res = self.ck_secretor.uptakeInsideCellTotalCount(cell, 
                     max_ck_consume/cell.volume, 0.1)
             
-            cell.dict['tot_ck_upt'] -= up_res.total_count #from POV of secretion uptake is negative
-            
+            cell.dict['tot_ck_upt'] -= up_res.tot_amount #from POV of secretion uptake is negative
+            #print('tot_upt',cell.dict['tot_ck_upt'],'upt_now',up_res.tot_amount)
             if cell.dict['tot_ck_upt'] >= EC50_ck_immune:
                 cell.dict['activated'] = True
             
             if cell.dict['activated']:
+                #print('activated', cell.id)
                 sec_res = self.ck_secretor.secreteInsideCellTotalCount(cell, 
                                 max_ck_secrete_im/cell.volume)
             
