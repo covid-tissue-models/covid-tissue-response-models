@@ -85,6 +85,24 @@
             </Plane>
          </BoundaryConditions>
       </DiffusionField>
+      <DiffusionField Name="cytokine">
+         <DiffusionData>
+            <FieldName>cytokine</FieldName>
+            <GlobalDiffusionConstant id = "cytokine_dc">10.0</GlobalDiffusionConstant>
+            <GlobalDecayConstant id = "cytokine_decay">0</GlobalDecayConstant>
+         </DiffusionData>
+         <BoundaryConditions>
+            <Plane Axis="X">
+               <Periodic/>
+            </Plane>
+            <Plane Axis="Y">
+               <Periodic/>
+            </Plane>
+            <Plane Axis="Z">
+               <Periodic/>
+            </Plane>
+         </BoundaryConditions>
+      </DiffusionField>
    </Steppable>
 
 </CompuCell3D>
