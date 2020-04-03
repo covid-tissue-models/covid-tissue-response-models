@@ -81,8 +81,6 @@ cell_infection_threshold = 1.0
 cell_death_threshold = 6.0
 # Probability of survival of infected cell once cell_death_threshold is reached
 survival_probability = 0.95
-# Probability of recovery of infected cell below cell_death_threshold is reached
-recovery_probability = 0.001
 
 # Hill equation coefficients for probability of viral particle uptake from the environment
 # Measurements are taken w.r.t. the total amount of viral particles in a cell's simulation subdomain
@@ -251,7 +249,6 @@ class CellsInitializerSteppable(SteppableBasePy):
                 cell.dict[vrl_key] = False
                 reset_viral_replication_variables(cell)
                 cell.dict['Survived'] = False
-                cell.dict['Recovered'] = False
                 if x == int(self.dim.x / 2):
                     if y == int(self.dim.x / 2):
                         # Start infection of an uninfected cell:
@@ -421,22 +418,6 @@ class ChemotaxisSteppable(SteppableBasePy):
                 cd.setLambda(l)
             else:
                 cd.setLambda(0)
-
-
-class RecoverySteppable(SteppableBasePy):
-    def __init__(self, frequency=1):
-        SteppableBasePy.__init__(self, frequency)
-
-    def step(self, mcs):
-        for cell in self.cell_list_by_type(self.INFECTED):
-            if not cell.dict['Recovered'] and not cell.dict['Survived']:
-                p_recovery = np.random.random()
-                if p_recovery < recovery_probability:
-                    cell.type = self.UNINFECTED
-                    reset_viral_replication_variables(cell)
-                    cell.dict['Recovered'] = True
-                    # Update state model
-                    load_viral_replication_model(self, cell)
 
 
 class ImmuneCellSeedingSteppable(SteppableBasePy):
