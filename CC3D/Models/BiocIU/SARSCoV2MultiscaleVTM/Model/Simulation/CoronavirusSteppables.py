@@ -404,7 +404,7 @@ class ChemotaxisSteppable(SteppableBasePy):
             
             cd = self.chemotaxisPlugin.addChemotaxisData(cell, "cytokine")
             if cell.dict['activated']:
-                cd.setLambda(50.0)
+                cd.setLambda(50.0/10)
             else:
                 cd.setLambda(0.0)
             cd.assignChemotactTowardsVectorTypes([self.MEDIUM])
@@ -415,7 +415,7 @@ class ChemotaxisSteppable(SteppableBasePy):
             
             cd = self.chemotaxisPlugin.getChemotaxisData(cell, "cytokine")
             concentration = field[cell.xCOM, cell.yCOM, 0]
-            constant = 50.0
+            constant = 50.0/10
             l = constant / (1.0 + concentration)
             if cell.dict['activated']:
                 cd.setLambda(l)
