@@ -20,7 +20,7 @@ pmol_to_cc3d_au = 1e15
 
 
 # Experimental Parameters
-exp_cell_diameter = 12.0  # um
+exp_cell_diameter = 12.0  # um 
 
 exp_replicating_rate = 1.0 / 20.0 * 1.0 / 60.0  # 1.0/20.0min * 1.0min/60.0s = 1.0/1200.0s
 exp_translating_rate = exp_replicating_rate * 2.0  #
@@ -37,7 +37,8 @@ exp_virus_dc = 10.0 / 100.0  # um^2/s
 cytoplasm_density = 6 # unit = [density of water](B)
 
 exp_cytokine_dc_w = 100 # um^2/s; diffusion constant in water (A,B)
-exp_cytokine_dc_cyto = 16 # um^2/s; estimated diffusion constant in cytoplasm (B)
+#the division by 10 is due to the small lattice size, as fiscussed with josh. we all should discuss this matter
+exp_cytokine_dc_cyto = 16/10 # um^2/s; estimated diffusion constant in cytoplasm (B)
 
 exp_max_cytokine_consumption = 1 # molecule / (cell second); maximum consumption of cytokine; actually a range [0.3,1] molecule / (cell second) (A)
 exp_max_cytokine_immune_secretion = 10 # molecule / (cell second) (B)
