@@ -249,10 +249,14 @@ class CellsInitializerSteppable(SteppableBasePy):
                 cell.dict[vrl_key] = False
                 reset_viral_replication_variables(cell)
                 cell.dict['Survived'] = False
-                if x == int(self.dim.x / 2):
-                    if y == int(self.dim.x / 2):
-                        # Start infection of an uninfected cell:
-                        cell.dict['Unpacking'] = 1.0
+#                 if x == int(self.dim.x / 2):
+#                     if y == int(self.dim.x / 2):
+#                         # Start infection of an uninfected cell:
+#                         cell.dict['Unpacking'] = 1.0
+
+        cell = self.cell_field[self.dim.x // 2, self.dim.y // 2, 0]
+        cell.dict['Unpacking'] = 1.0
+
 
         for iteration in range(int(initial_immune_seeding)):
             cell = True
