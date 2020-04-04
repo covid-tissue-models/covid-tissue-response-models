@@ -3,7 +3,7 @@
 #
 # Josua Aponte-Serrano, T.J. Sego, James A. Glazier,
 # "Model of Viral Tissue Infection"
-# https://github.com/covid-tissue-models/covid-tissue-response-models/tree/master/tellurium/simple_virus_model
+# https://github.com/covid-tissue-models/covid-tissue-response-models/tree/master/CC3D/Models/BiocIU/SARSCoV2MultiscaleVTM
 ###############################################################################################################
 
 from cc3d import CompuCellSetup
