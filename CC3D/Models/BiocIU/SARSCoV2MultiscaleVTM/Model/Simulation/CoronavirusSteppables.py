@@ -12,9 +12,11 @@ import numpy as np
 
 vrl_key = 'viral_replication_loaded'  # Internal use; do not remove
 
-# Population data control options
+# Data control options
 plot_pop_data_freq = 1  # Plot population data frequency (disable with 0)
 write_pop_data_freq = 0  # Write population data to simulation directory frequency (disable with 0)
+plot_med_viral_data_freq = 0  # Plot total diffusive viral amount frequency (disable with 0)
+write_med_viral_data_freq = 0  # Write total diffusive viral amount frequency (disable with 0)
 
 # Conversion Factors
 s_to_mcs = 120.0  # s/mcs
@@ -434,9 +436,16 @@ class SimDataSteppable(SteppableBasePy):
 
         self.pop_data_win = None
         self.pop_data_path = None
+
+        self.med_viral_data_win = None
+        self.med_viral_data_path = None
         
         self.plot_pop_data = plot_pop_data_freq > 0
         self.write_pop_data = write_pop_data_freq > 0
+
+        self.plot_med_viral_data = plot_pop_data_freq > 0
+        self.write_med_viral_data = write_med_viral_data_freq > 0
+        self.med_viral_key = "MedViral"
 
     def start(self):
 
@@ -456,17 +465,39 @@ class SimDataSteppable(SteppableBasePy):
             self.pop_data_win.add_plot("Dying", style='Dots', color='yellow', size=5)
             self.pop_data_win.add_plot("ImmuneCell", style='Dots', color='white', size=5)
 
+        if self.plot_med_viral_data:
+            self.med_viral_data_win = self.add_new_plot_window(title='Total diffusive virus',
+                                                               x_axis_title='MCS',
+                                                               y_axis_title='Number of diffusive viral particles',
+                                                               x_scale_type='linear',
+                                                               y_scale_type='log',
+                                                               grid=True)
+
+            self.med_viral_data_win.add_plot(self.med_viral_key, style='Dots', color='red', size=5)
+
         # Check that output directory is available
-        if self.write_pop_data and self.output_dir is not None:
+        if self.output_dir is not None:
             from pathlib import Path
-            self.pop_data_path = Path(self.output_dir).joinpath('pop_data.dat')
-            with open(self.pop_data_path, 'w') as fout:
-                pass
+            if self.write_pop_data:
+                self.pop_data_path = Path(self.output_dir).joinpath('pop_data.dat')
+                with open(self.pop_data_path, 'w'):
+                    pass
+
+            if self.write_med_viral_data:
+                self.med_viral_data_path = Path(self.output_dir).joinpath('med_viral_data.dat')
+                with open(self.med_viral_data_path, 'w'):
+                    pass
 
     def step(self, mcs):
 
         plot_pop_data = self.plot_pop_data and mcs % plot_pop_data_freq == 0
-        write_pop_data = self.write_pop_data and mcs % write_pop_data_freq == 0 and self.output_dir is not None
+        plot_med_viral_data = self.plot_med_viral_data and mcs % plot_med_viral_data_freq == 0
+        if self.output_dir is not None:
+            write_pop_data = self.write_pop_data and mcs % write_pop_data_freq == 0
+            write_med_viral_data = self.write_med_viral_data and mcs % write_med_viral_data_freq == 0
+        else:
+            write_pop_data = False
+            write_med_viral_data = False
 
         if plot_pop_data or write_pop_data:
 
@@ -499,6 +530,22 @@ class SimDataSteppable(SteppableBasePy):
                                                                  num_cells_infectedsecreting,
                                                                  num_cells_dying,
                                                                  num_cells_immune))
+
+        if plot_med_viral_data or write_med_viral_data:
+
+            # Gather total diffusive viral amount
+            med_viral_total = 0.0
+            for x, y, z in self.every_pixel():
+                med_viral_total += self.field.Virus[x, y, z]
+
+            # Plot total diffusive viral amount if requested
+            if plot_med_viral_data and med_viral_total > 0:
+                self.med_viral_data_win.add_data_point(self.med_viral_key, mcs, med_viral_total)
+
+            # Write total diffusive viral amount if requested
+            if write_med_viral_data:
+                with open(self.med_viral_data_path, 'a') as fout:
+                    fout.write('{}, {}\n'.format(mcs, med_viral_total))
 
     def finish(self):
         pass
