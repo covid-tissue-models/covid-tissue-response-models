@@ -12,6 +12,10 @@ import numpy as np
 
 vrl_key = 'viral_replication_loaded'  # Internal use; do not remove
 
+# Population data control options
+plot_pop_data_freq = 1  # Plot population data frequency (disable with 0)
+write_pop_data_freq = 0  # Write population data to simulation directory frequency (disable with 0)
+
 # Conversion Factors
 s_to_mcs = 120.0  # s/mcs
 um_to_lat_width = 4.0  # um/lattice_length
@@ -20,7 +24,7 @@ um_to_lat_width = 4.0  # um/lattice_length
 exp_cell_diameter = 12.0  # um
 
 exp_replicating_rate = 1.0 / 20.0 * 1.0 / 60.0  # 1.0/20.0min * 1.0min/60.0s = 1.0/1200.0s
-exp_translating_rate = exp_replicating_rate * 2.0  #
+exp_translating_rate = exp_replicating_rate * 2.0
 exp_unpacking_rate = exp_replicating_rate * 20.0
 exp_packing_rate = exp_replicating_rate * 4.0
 exp_secretion_rate = exp_replicating_rate * 4.0
@@ -147,8 +151,11 @@ def enable_viral_secretion(_cell, _enable: bool = True):
 def cell_uptakes_virus(_steppable, viral_field, _cell):
     # Calculate total viral amount in cell's domain
     cell_env_viral_val = 0.0
-    for ptd in _steppable.get_cell_pixel_list(_cell):
-        cell_env_viral_val += viral_field[ptd.pixel.x, ptd.pixel.y, ptd.pixel.z]
+    if False:  # Accurate measurement
+        for ptd in _steppable.get_cell_pixel_list(_cell):
+            cell_env_viral_val += viral_field[ptd.pixel.x, ptd.pixel.y, ptd.pixel.z]
+    else:  # Fast measurement
+        cell_env_viral_val = viral_field[_cell.xCOM, _cell.yCOM, _cell.zCOM] * _cell.volume
 
     # Evaluate probability of uptake
     if cell_env_viral_val != 0:
@@ -419,3 +426,79 @@ class ImmuneCellSeedingSteppable(SteppableBasePy):
                 cd.assignChemotactTowardsVectorTypes([self.MEDIUM])
                 cell.targetVolume = cell_volume
                 cell.lambdaVolume = cell_volume
+
+
+class SimDataSteppable(SteppableBasePy):
+    def __init__(self, frequency=1):
+        SteppableBasePy.__init__(self, frequency)
+
+        self.pop_data_win = None
+        self.pop_data_path = None
+        
+        self.plot_pop_data = plot_pop_data_freq > 0
+        self.write_pop_data = write_pop_data_freq > 0
+
+    def start(self):
+
+        # Initialize population data plot if requested
+        if self.plot_pop_data:
+            self.pop_data_win = self.add_new_plot_window(title='Population data',
+                                                         x_axis_title='MCS',
+                                                         y_axis_title='Numer of cells',
+                                                         x_scale_type='linear',
+                                                         y_scale_type='log',
+                                                         grid=True,
+                                                         config_options={'legend': True})
+
+            self.pop_data_win.add_plot("Uninfected", style='Dots', color='blue', size=5)
+            self.pop_data_win.add_plot("Infected", style='Dots', color='red', size=5)
+            self.pop_data_win.add_plot("InfectedSecreting", style='Dots', color='green', size=5)
+            self.pop_data_win.add_plot("Dying", style='Dots', color='yellow', size=5)
+            self.pop_data_win.add_plot("ImmuneCell", style='Dots', color='white', size=5)
+
+        # Check that output directory is available
+        if self.write_pop_data and self.output_dir is not None:
+            from pathlib import Path
+            self.pop_data_path = Path(self.output_dir).joinpath('pop_data.dat')
+            with open(self.pop_data_path, 'w') as fout:
+                pass
+
+    def step(self, mcs):
+
+        plot_pop_data = self.plot_pop_data and mcs % plot_pop_data_freq == 0
+        write_pop_data = self.write_pop_data and mcs % write_pop_data_freq == 0 and self.output_dir is not None
+
+        if plot_pop_data or write_pop_data:
+
+            # Gather population data
+            num_cells_uninfected = len(self.cell_list_by_type(self.UNINFECTED))
+            num_cells_infected = len(self.cell_list_by_type(self.INFECTED))
+            num_cells_infectedsecreting = len(self.cell_list_by_type(self.INFECTEDSECRETING))
+            num_cells_dying = len(self.cell_list_by_type(self.DYING))
+            num_cells_immune = len(self.cell_list_by_type(self.IMMUNECELL))
+
+            # Plot population data plot if requested
+            if plot_pop_data:
+                if num_cells_uninfected > 0:
+                    self.pop_data_win.add_data_point('Uninfected', mcs, num_cells_uninfected)
+                if num_cells_infected > 0:
+                    self.pop_data_win.add_data_point('Infected', mcs, num_cells_infected)
+                if num_cells_infectedsecreting > 0:
+                    self.pop_data_win.add_data_point('InfectedSecreting', mcs, num_cells_infectedsecreting)
+                if num_cells_dying > 0:
+                    self.pop_data_win.add_data_point('Dying', mcs, num_cells_dying)
+                if num_cells_immune > 0:
+                    self.pop_data_win.add_data_point('ImmuneCell', mcs, num_cells_immune)
+
+            # Write population data to file if requested
+            if write_pop_data:
+                with open(self.pop_data_path, 'a') as fout:
+                    fout.write('{}, {}, {}, {}, {}, {}\n'.format(mcs,
+                                                                 num_cells_uninfected,
+                                                                 num_cells_infected,
+                                                                 num_cells_infectedsecreting,
+                                                                 num_cells_dying,
+                                                                 num_cells_immune))
+
+    def finish(self):
+        pass
