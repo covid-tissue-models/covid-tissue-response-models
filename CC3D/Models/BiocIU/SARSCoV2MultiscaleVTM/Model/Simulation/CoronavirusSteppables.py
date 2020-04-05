@@ -56,6 +56,9 @@ diss_coeff_uptake_pr = 0.5
 # Hill coefficient
 hill_coeff_uptake_pr = 3.0
 
+# Efficiency of viral uptake
+relative_viral_uptake = 0.1
+
 # Number of immune cells to seed at the beginning of the simulation
 initial_immune_seeding = 10.0
 # Rate for seeding of immune cells (constant)
@@ -131,6 +134,14 @@ def load_viral_replication_model(_steppable, _cell):
     enable_viral_secretion(_cell, _cell.type == _steppable.INFECTEDSECRETING)
 
 
+# Enable/disable secretion in intracellular model
+def enable_viral_secretion(_cell, _enable: bool = True):
+    if _enable:
+        getattr(_cell.sbml, vr_model_name)['secretion_rate'] = secretion_rate
+    else:
+        getattr(_cell.sbml, vr_model_name)['secretion_rate'] = 0.0
+
+
 # Calculates the probability of viral uptake from the environment as a function of local viral particle amount
 # Returns true if cell uptakes virus
 def cell_uptakes_virus(_steppable, viral_field, _cell):
@@ -145,6 +156,14 @@ def cell_uptakes_virus(_steppable, viral_field, _cell):
         return np.random.random() < max_uptake_pr
     else:
         return False
+
+
+# Model-specific cell death routines
+def kill_cell(_steppable, _cell):
+    _cell.type = _steppable.DYING
+    reset_viral_replication_variables(_cell)
+    # Remove state model: no model for dead cell type
+    remove_viral_replication_model(_steppable, _cell)
 
 
 # These are prototypes of specialized utility functions for this project; do not modify
@@ -168,14 +187,6 @@ def get_viral_replication_cell_secretion(_cell):
     secr = getattr(_cell.sbml, vr_model_name)['Secretion']
     getattr(_cell.sbml, vr_model_name)['Secretion'] = 0.0
     return secr
-
-
-# Enable/disable secretion in intracellular model
-def enable_viral_secretion(_cell, _enable: bool = True):
-    if _enable:
-        getattr(_cell.sbml, vr_model_name)['secretion_rate'] = secretion_rate
-    else:
-        getattr(_cell.sbml, vr_model_name)['secretion_rate'] = 0.0
 
 
 # Loads state variables from SBML into cell dictionary
@@ -300,10 +311,7 @@ class Viral_ReplicationSteppable(SteppableBasePy):
                     if p_survival < survival_probability:
                         cell.dict['Survived'] = True
                     else:
-                        cell.type = self.DYING
-                        reset_viral_replication_variables(cell)
-                        # Remove state model: no model for dead cell type
-                        remove_viral_replication_model(self, cell)
+                        kill_cell(self, cell)
 
 
 class Viral_SecretionSteppable(SteppableBasePy):
@@ -321,7 +329,6 @@ class Viral_SecretionSteppable(SteppableBasePy):
     def step(self, mcs):
         secretor = self.get_field_secretor("Virus")
         for cell in self.cell_list_by_type(self.UNINFECTED, self.INFECTED, self.INFECTEDSECRETING):
-            relative_viral_uptake = 0.1
 
             # Evaluate probability of cell uptake of viral particles from environment
             # If cell isn't infected, it changes type to infected here if uptake occurs
@@ -346,10 +353,7 @@ class ImmuneCellKillingSteppable(SteppableBasePy):
             for neighbor, common_surface_area in self.get_cell_neighbor_data_list(cell):
                 if neighbor:
                     if neighbor.type == self.IMMUNECELL:
-                        cell.type = self.DYING
-                        reset_viral_replication_variables(cell)
-                        # Remove state model
-                        remove_viral_replication_model(self, cell)
+                        kill_cell(self, cell)
 
 
 class ChemotaxisSteppable(SteppableBasePy):
