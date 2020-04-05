@@ -28,14 +28,14 @@ exp_secretion_rate = exp_replicating_rate * 4.0
 exp_virus_dc = 10.0 / 100.0  # um^2/s
 
 # CompuCell Parameters
-## cell
+# cell
 cell_diameter = exp_cell_diameter * 1.0 / um_to_lat_width
 cell_volume = cell_diameter ** 2
-## virus diffusion
+# virus diffusion
 virus_dc = exp_virus_dc * s_to_mcs / (um_to_lat_width ** 2)   # virus diffusion constant
 virus_dl = cell_diameter * 3.0   # virus diffusion length
 virus_decay = virus_dc / (virus_dl ** 2)   # virus decay rate
-## virus intra-cellular
+# virus intra-cellular
 unpacking_rate = exp_unpacking_rate * s_to_mcs
 replicating_rate = exp_replicating_rate * s_to_mcs
 translating_rate = exp_translating_rate * s_to_mcs
@@ -128,7 +128,7 @@ def load_viral_replication_model(_steppable, _cell):
                                     cell=_cell,
                                     step_size=vr_step_size)
     _cell.dict[vrl_key] = True
-    enable_viral_secretion(_cell, _cell.type == _steppable.INFECTED)
+    enable_viral_secretion(_cell, _cell.type == _steppable.INFECTEDSECRETING)
 
 
 # Calculates the probability of viral uptake from the environment as a function of local viral particle amount
@@ -214,14 +214,12 @@ class CellsInitializerSteppable(SteppableBasePy):
                 cell.dict[vrl_key] = False
                 reset_viral_replication_variables(cell)
                 cell.dict['Survived'] = False
-#                 if x == int(self.dim.x / 2):
-#                     if y == int(self.dim.x / 2):
-#                         # Start infection of an uninfected cell:
-#                         cell.dict['Unpacking'] = 1.0
 
+        # Infect a cell
         cell = self.cell_field[self.dim.x // 2, self.dim.y // 2, 0]
         cell.dict['Unpacking'] = 1.0
-
+        cell.type = self.INFECTED
+        load_viral_replication_model(self, cell)
 
         for iteration in range(int(initial_immune_seeding)):
             cell = True
@@ -262,8 +260,6 @@ class Viral_ReplicationSteppable(SteppableBasePy):
         # Load model
         options = {'relative': 1e-10, 'absolute': 1e-12}
         self.set_sbml_global_options(options)
-        for cell in self.cell_list_by_type(self.UNINFECTED, self.INFECTED):
-            load_viral_replication_model(self, cell)
 
     def step(self, mcs):
 
@@ -286,15 +282,15 @@ class Viral_ReplicationSteppable(SteppableBasePy):
         self.plot_win.add_data_point("Secretion", mcs, cell.dict['Secretion'])
 
         # Do viral model
-        for cell in self.cell_list_by_type(self.UNINFECTED, self.INFECTED):
+        for cell in self.cell_list_by_type(self.INFECTED, self.INFECTEDSECRETING):
             # Step the model for this cell
             step_viral_replication_cell(cell)
             # Pack state variables into cell dictionary
             pack_viral_replication_variables(cell)
 
-            # Test for infection
+            # Test for infection secretion
             if cell.dict['Assembled'] > cell_infection_threshold:
-                cell.type = self.INFECTED
+                cell.type = self.INFECTEDSECRETING
                 enable_viral_secretion(cell)
 
             # Test for cell death
@@ -324,25 +320,29 @@ class Viral_SecretionSteppable(SteppableBasePy):
 
     def step(self, mcs):
         secretor = self.get_field_secretor("Virus")
-        for cell in self.cell_list_by_type(self.INFECTED, self.UNINFECTED):
+        for cell in self.cell_list_by_type(self.UNINFECTED, self.INFECTED, self.INFECTEDSECRETING):
             relative_viral_uptake = 0.1
 
             # Evaluate probability of cell uptake of viral particles from environment
+            # If cell isn't infected, it changes type to infected here if uptake occurs
             if cell_uptakes_virus(self, self.field.Virus, cell):
                 uptake = secretor.uptakeInsideCellTotalCount(cell,
                                                              cell_infection_threshold / cell.volume,
                                                              relative_viral_uptake)
                 cell.dict['Uptake'] = abs(uptake.tot_amount)
+                if cell.type == self.UNINFECTED:
+                    cell.type = self.INFECTED
+                    load_viral_replication_model(self, cell)
                 set_viral_replication_cell_uptake(cell, cell.dict['Uptake'])
 
-        for cell in self.cell_list_by_type(self.INFECTED):
-            sec_amount = get_viral_replication_cell_secretion(cell)
-            secretor.secreteInsideCellTotalCount(cell, sec_amount / cell.volume)
+            if cell.type == self.INFECTEDSECRETING:
+                sec_amount = get_viral_replication_cell_secretion(cell)
+                secretor.secreteInsideCellTotalCount(cell, sec_amount / cell.volume)
 
 
 class ImmuneCellKillingSteppable(SteppableBasePy):
     def step(self, mcs):
-        for cell in self.cell_list_by_type(self.INFECTED):
+        for cell in self.cell_list_by_type(self.INFECTED, self.INFECTEDSECRETING):
             for neighbor, common_surface_area in self.get_cell_neighbor_data_list(cell):
                 if neighbor:
                     if neighbor.type == self.IMMUNECELL:
@@ -377,8 +377,8 @@ class ImmuneCellSeedingSteppable(SteppableBasePy):
         SteppableBasePy.__init__(self, frequency)
 
     def step(self, mcs):
-        num_cells = len(self.cell_list_by_type(self.UNINFECTED, self.INFECTED))
-        num_infected = len(self.cell_list_by_type(self.INFECTED))
+        num_cells = len(self.cell_list_by_type(self.UNINFECTED, self.INFECTED, self.INFECTEDSECRETING))
+        num_infected = len(self.cell_list_by_type(self.INFECTED, self.INFECTEDSECRETING))
         fraction_infected = 1.0 / num_cells
         if num_cells:
             fraction_infected = num_infected / num_cells
