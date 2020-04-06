@@ -150,6 +150,7 @@ def enable_viral_secretion(_cell, _enable: bool = True):
 
 # Calculates the probability of viral uptake from the environment as a function of local viral particle amount
 # Returns true if cell uptakes virus
+# Model development note: ACE2, TMPRSS2 effects may be well-implemented here in future work
 def cell_uptakes_virus(_steppable, viral_field, _cell):
     # Calculate total viral amount in cell's domain
     cell_env_viral_val = 0.0
