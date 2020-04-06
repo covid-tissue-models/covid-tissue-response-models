@@ -12,4 +12,4 @@ open fashion so that they can reach target audience as fast as possible.
 Shared and reproducible models
 ===============================
 
-All models contributed to this repository are sahred freely.
+All models contributed to this repository are shared freely.
