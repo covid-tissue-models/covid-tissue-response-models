@@ -481,6 +481,8 @@ class ImmuneCellSeedingSteppable(SteppableBasePy):
 class CytokineProductionAbsorptionSteppable(SteppableBasePy):
     def __init__(self, frequency=1):
         SteppableBasePy.__init__(self, frequency)
+        self.track_cell_level_scalar_attribute(field_name='activated', attribute_name='activated')
+        
         
 
     def start(self):
@@ -488,12 +490,13 @@ class CytokineProductionAbsorptionSteppable(SteppableBasePy):
         self.get_xml_element('cytokine_dc').cdata = cytokine_dc
         self.get_xml_element('cytokine_decay').cdata = 0 # no "natural" decay, only consumption
         
-        for cell in self.cell_list_by_type(self.IMMUNECELL, self.INFECTED):
+        for cell in self.cell_list_by_type(self.IMMUNECELL):
             ## TODO: differentiate this rates between the cell types
             # cytokine production/uptake parameters for immune cells
             cell.dict['ck_production'] = max_ck_secrete_im ##TODO: replace secretion by hill
             cell.dict['ck_consumption'] = max_ck_consume ##TODO: replace by hill
-        
+        for cell in self.cell_list_by_type(self.INFECTED):
+            cell.dict['ck_production'] = max_ck_secrete_im ##TODO: replace secretion by hill
         
         # Make sure Secretion plugin is loaded
         # make sure this field is defined in one of the PDE solvers
