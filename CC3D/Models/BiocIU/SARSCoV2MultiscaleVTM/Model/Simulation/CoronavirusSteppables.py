@@ -650,7 +650,3 @@ class CytokineProductionAbsorptionSteppable(SteppableBasePy):
                 # print('activated', cell.id)
                 sec_res = self.ck_secretor.secreteInsideCellTotalCount(cell,
                                                                        max_ck_secrete_im / cell.volume)
-
-    def finish(self):
-        # this function may be called at the end of simulation - used very infrequently though
-        return
