@@ -632,7 +632,7 @@ class CytokineProductionAbsorptionSteppable(SteppableBasePy):
             # cytokine production/uptake parameters for immune cells
             cell.dict['ck_production'] = max_ck_secrete_im ##TODO: replace secretion by hill
             cell.dict['ck_consumption'] = max_ck_consume ##TODO: replace by hill
-        for cell in self.cell_list_by_type(self.INFECTED):
+        for cell in self.cell_list_by_type(self.INFECTED, self.INFECTEDSECRETING):
             cell.dict['ck_production'] = max_ck_secrete_im ##TODO: replace secretion by hill
         
         # Make sure Secretion plugin is loaded
@@ -644,7 +644,7 @@ class CytokineProductionAbsorptionSteppable(SteppableBasePy):
 
     def step(self, mcs):
 
-        for cell in self.cell_list_by_type(self.INFECTED):
+        for cell in self.cell_list_by_type(self.INFECTED, self.INFECTEDSECRETING):
             
             res = self.ck_secretor.secreteInsideCellTotalCount(cell, 
                                 max_ck_secrete_im/cell.volume)
