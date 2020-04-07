@@ -24,9 +24,8 @@ um_to_lat_width = 4.0  # um/lattice_length
 
 pmol_to_cc3d_au = 1e15
 
-
 # Experimental Parameters
-exp_cell_diameter = 12.0  # um 
+exp_cell_diameter = 12.0  # um
 
 exp_replicating_rate = 1.0 / 20.0 * 1.0 / 60.0  # 1.0/20.0min * 1.0min/60.0s = 1.0/1200.0s
 exp_translating_rate = exp_replicating_rate * 2.0
@@ -40,30 +39,29 @@ exp_virus_dc = 10.0 / 100.0  # um^2/s
 # data from https://www.sciencedirect.com/science/article/pii/S1074761317300924 supplemental materials (A)
 # and
 # from https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3433682/ (B)
-cytoplasm_density = 6 # unit = [density of water](B)
+cytoplasm_density = 6  # unit = [density of water](B)
 
-exp_cytokine_dc_w = 100 # um^2/s; diffusion constant in water (A,B)
-#the division by 10 is due to the small lattice size, as fiscussed with josh. we all should discuss this matter
-exp_cytokine_dc_cyto = 16/10 # um^2/s; estimated diffusion constant in cytoplasm (B)
+exp_cytokine_dc_w = 100  # um^2/s; diffusion constant in water (A,B)
+# the division by 10 is due to the small lattice size, as fiscussed with josh. we all should discuss this matter
+exp_cytokine_dc_cyto = 16 / 10  # um^2/s; estimated diffusion constant in cytoplasm (B)
 
-exp_max_cytokine_consumption = 1 # molecule / (cell second); maximum consumption of cytokine; actually a range [0.3,1] molecule / (cell second) (A)
-exp_max_cytokine_immune_secretion = 10 # molecule / (cell second) (B)
+exp_max_cytokine_consumption = 1  # molecule / (cell second); maximum consumption of cytokine; actually a range [0.3,1] molecule / (cell second) (A)
+exp_max_cytokine_immune_secretion = 10  # molecule / (cell second) (B)
 
-exp_max_cytokine_consumption_mol = 3.5e-4 # pM/s 
-exp_max_cytokine_immune_secretion_mol = 3.5e-3 # pM/s
+exp_max_cytokine_consumption_mol = 3.5e-4  # pM/s
+exp_max_cytokine_immune_secretion_mol = 3.5e-3  # pM/s
 
-exp_EC50_cytokine_immune = 1 # pM from (B), it's a range from [1,50]pM
+exp_EC50_cytokine_immune = 1  # pM from (B), it's a range from [1,50]pM
 
-
-##=============================
+# =============================
 # CompuCell Parameters
 # cell
 cell_diameter = exp_cell_diameter * 1.0 / um_to_lat_width
 cell_volume = cell_diameter ** 2
 # virus diffusion
-virus_dc = exp_virus_dc * s_to_mcs / (um_to_lat_width ** 2)   # virus diffusion constant
-virus_dl = cell_diameter * 3.0   # virus diffusion length
-virus_decay = virus_dc / (virus_dl ** 2)   # virus decay rate
+virus_dc = exp_virus_dc * s_to_mcs / (um_to_lat_width ** 2)  # virus diffusion constant
+virus_dl = cell_diameter * 3.0  # virus diffusion length
+virus_decay = virus_dc / (virus_dl ** 2)  # virus decay rate
 # virus intra-cellular
 unpacking_rate = exp_unpacking_rate * s_to_mcs
 replicating_rate = exp_replicating_rate * s_to_mcs
@@ -71,15 +69,15 @@ translating_rate = exp_translating_rate * s_to_mcs
 packing_rate = exp_packing_rate * s_to_mcs
 secretion_rate = exp_secretion_rate * s_to_mcs
 
-## cytokine
+# cytokine
 
-cytokine_dc = exp_cytokine_dc_cyto * s_to_mcs / (um_to_lat_width ** 2) # CK diff cst
+cytokine_dc = exp_cytokine_dc_cyto * s_to_mcs / (um_to_lat_width ** 2)  # CK diff cst
 
 # pM = pmol/L = pmol/(10^15 um^3) = 10^-15 pmol/(um^3) = 10^-15 * um_to_lat_width^3 pmol/pixel
 # pM/s = pM * s_to_mcs / MCS
-max_ck_consume = exp_max_cytokine_consumption_mol * um_to_lat_width**3 * s_to_mcs  * 1e-15 * pmol_to_cc3d_au#  cc3d_au/(pixel seconds)
-max_ck_secrete_im = exp_max_cytokine_immune_secretion_mol * um_to_lat_width**3 * s_to_mcs * 1e-15  * pmol_to_cc3d_au# * cc3d_au/(pixel seconds)
-EC50_ck_immune = exp_EC50_cytokine_immune * um_to_lat_width**3 * 1e-15 * pmol_to_cc3d_au #   * cc3d_au/pixel
+max_ck_consume = exp_max_cytokine_consumption_mol * um_to_lat_width ** 3 * s_to_mcs * 1e-15 * pmol_to_cc3d_au  # cc3d_au/(pixel seconds)
+max_ck_secrete_im = exp_max_cytokine_immune_secretion_mol * um_to_lat_width ** 3 * s_to_mcs * 1e-15 * pmol_to_cc3d_au  # * cc3d_au/(pixel seconds)
+EC50_ck_immune = exp_EC50_cytokine_immune * um_to_lat_width ** 3 * 1e-15 * pmol_to_cc3d_au  # * cc3d_au/pixel
 
 # Threshold at which cell infection is evaluated
 cell_infection_threshold = 1.0
@@ -261,8 +259,7 @@ class CellsInitializerSteppable(SteppableBasePy):
     def start(self):
         self.get_xml_element('virus_dc').cdata = virus_dc
         self.get_xml_element('virus_decay').cdata = virus_decay
-        
-        
+
         for x in range(0, self.dim.x, int(cell_diameter)):
             for y in range(0, self.dim.y, int(cell_diameter)):
                 cell = self.new_cell(self.UNINFECTED)
@@ -291,12 +288,12 @@ class CellsInitializerSteppable(SteppableBasePy):
             self.cellField[x:x + int(cell_diameter), y:y + int(cell_diameter), 1] = cell
             cell.targetVolume = cell_volume
             cell.lambdaVolume = cell_volume
-            cell.dict['activated'] = False # flag for immune cell being naive or activated
-            #cyttokine params
-            cell.dict['ck_production'] = max_ck_secrete_im ##TODO: replace secretion by hill
-            cell.dict['ck_consumption'] = max_ck_consume ##TODO: replace by hill
+            cell.dict['activated'] = False  # flag for immune cell being naive or activated
+            # cyttokine params
+            cell.dict['ck_production'] = max_ck_secrete_im  # TODO: replace secretion by hill
+            cell.dict['ck_consumption'] = max_ck_consume  # TODO: replace by hill
             cell.dict['tot_ck_upt'] = 0
-            
+
 
 class Viral_ReplicationSteppable(SteppableBasePy):
     def __init__(self, frequency=1):
@@ -353,10 +350,9 @@ class Viral_ReplicationSteppable(SteppableBasePy):
             if cell.dict['Assembled'] > cell_infection_threshold:
                 cell.type = self.INFECTEDSECRETING
                 enable_viral_secretion(cell)
-                
-                #cyttokine params
-                cell.dict['ck_production'] = max_ck_secrete_im ##TODO: replace secretion by hill
-                
+
+                # cyttokine params
+                cell.dict['ck_production'] = max_ck_secrete_im  # TODO: replace secretion by hill
 
             # Test for cell death
             if cell.dict['Assembled'] > cell_death_threshold:
@@ -416,10 +412,10 @@ class ChemotaxisSteppable(SteppableBasePy):
 
     def start(self):
         for cell in self.cell_list_by_type(self.IMMUNECELL):
-            
+
             cd = self.chemotaxisPlugin.addChemotaxisData(cell, "cytokine")
             if cell.dict['activated']:
-                cd.setLambda(50.0/10)
+                cd.setLambda(50.0 / 10)
             else:
                 cd.setLambda(0.0)
             cd.assignChemotactTowardsVectorTypes([self.MEDIUM])
@@ -427,10 +423,10 @@ class ChemotaxisSteppable(SteppableBasePy):
     def step(self, mcs):
         field = self.field.Virus
         for cell in self.cell_list_by_type(self.IMMUNECELL):
-            
+
             cd = self.chemotaxisPlugin.getChemotaxisData(cell, "cytokine")
             concentration = field[cell.xCOM, cell.yCOM, 0]
-            constant = 50.0/10
+            constant = 50.0 / 10
             l = constant / (1.0 + concentration)
             if cell.dict['activated']:
                 cd.setLambda(l)
@@ -475,12 +471,12 @@ class ImmuneCellSeedingSteppable(SteppableBasePy):
                         y_seed = yi
             if open_space:
                 cell = self.new_cell(self.IMMUNECELL)
-                cell.dict['activated'] = False # flag for immune cell being naive or activated
-                #cyttokine params
-                cell.dict['ck_production'] = max_ck_secrete_im ##TODO: replace secretion by hill
-                cell.dict['ck_consumption'] = max_ck_consume ##TODO: replace by hill
+                cell.dict['activated'] = False  # flag for immune cell being naive or activated
+                # cyttokine params
+                cell.dict['ck_production'] = max_ck_secrete_im  # TODO: replace secretion by hill
+                cell.dict['ck_consumption'] = max_ck_consume  # TODO: replace by hill
                 cell.dict['tot_ck_upt'] = 0
-                
+
                 self.cellField[x_seed:x_seed + int(cell_diameter), y_seed:y_seed + int(cell_diameter), 1] = cell
                 cd = self.chemotaxisPlugin.addChemotaxisData(cell, "cytokine")
                 if cell.dict['activated']:
@@ -492,7 +488,6 @@ class ImmuneCellSeedingSteppable(SteppableBasePy):
                 cell.lambdaVolume = cell_volume
 
 
-
 class SimDataSteppable(SteppableBasePy):
     def __init__(self, frequency=1):
         SteppableBasePy.__init__(self, frequency)
@@ -502,7 +497,7 @@ class SimDataSteppable(SteppableBasePy):
 
         self.med_viral_data_win = None
         self.med_viral_data_path = None
-        
+
         self.plot_pop_data = plot_pop_data_freq > 0
         self.write_pop_data = write_pop_data_freq > 0
 
@@ -613,70 +608,55 @@ class SimDataSteppable(SteppableBasePy):
     def finish(self):
         pass
 
+
 #
-        
+
 class CytokineProductionAbsorptionSteppable(SteppableBasePy):
     def __init__(self, frequency=1):
         SteppableBasePy.__init__(self, frequency)
         self.track_cell_level_scalar_attribute(field_name='activated', attribute_name='activated')
-        
-        
+
+        self.ck_secretor = None
 
     def start(self):
-        # cytokine diff parameters        
+        # cytokine diff parameters
         self.get_xml_element('cytokine_dc').cdata = cytokine_dc
-        self.get_xml_element('cytokine_decay').cdata = 0 # no "natural" decay, only consumption
-        
+        self.get_xml_element('cytokine_decay').cdata = 0  # no "natural" decay, only consumption
+
         for cell in self.cell_list_by_type(self.IMMUNECELL):
-            ## TODO: differentiate this rates between the cell types
+            # TODO: differentiate this rates between the cell types
             # cytokine production/uptake parameters for immune cells
-            cell.dict['ck_production'] = max_ck_secrete_im ##TODO: replace secretion by hill
-            cell.dict['ck_consumption'] = max_ck_consume ##TODO: replace by hill
+            cell.dict['ck_production'] = max_ck_secrete_im  # TODO: replace secretion by hill
+            cell.dict['ck_consumption'] = max_ck_consume  # TODO: replace by hill
         for cell in self.cell_list_by_type(self.INFECTED):
-            cell.dict['ck_production'] = max_ck_secrete_im ##TODO: replace secretion by hill
-        
+            cell.dict['ck_production'] = max_ck_secrete_im  # TODO: replace secretion by hill
+
         # Make sure Secretion plugin is loaded
         # make sure this field is defined in one of the PDE solvers
         # you may reuse secretor for many cells. Simply define it outside the loop
         self.ck_secretor = self.get_field_secretor("cytokine")
-        
-
 
     def step(self, mcs):
 
         for cell in self.cell_list_by_type(self.INFECTED):
-            
-            res = self.ck_secretor.secreteInsideCellTotalCount(cell, 
-                                max_ck_secrete_im/cell.volume)
-        
-        
-        
+            res = self.ck_secretor.secreteInsideCellTotalCount(cell,
+                                                               max_ck_secrete_im / cell.volume)
+
         for cell in self.cell_list_by_type(self.IMMUNECELL):
-            #print(EC50_ck_immune)
-            up_res = self.ck_secretor.uptakeInsideCellTotalCount(cell, 
-                    max_ck_consume/cell.volume, 0.1)
-            
-            cell.dict['tot_ck_upt'] -= up_res.tot_amount #from POV of secretion uptake is negative
-            #print('tot_upt',cell.dict['tot_ck_upt'],'upt_now',up_res.tot_amount)
+            # print(EC50_ck_immune)
+            up_res = self.ck_secretor.uptakeInsideCellTotalCount(cell,
+                                                                 max_ck_consume / cell.volume, 0.1)
+
+            cell.dict['tot_ck_upt'] -= up_res.tot_amount  # from POV of secretion uptake is negative
+            # print('tot_upt',cell.dict['tot_ck_upt'],'upt_now',up_res.tot_amount)
             if cell.dict['tot_ck_upt'] >= EC50_ck_immune:
                 cell.dict['activated'] = True
-            
+
             if cell.dict['activated']:
-                #print('activated', cell.id)
-                sec_res = self.ck_secretor.secreteInsideCellTotalCount(cell, 
-                                max_ck_secrete_im/cell.volume)
-            
-            
-            
-            
-    
-    
-    
-    
-    
+                # print('activated', cell.id)
+                sec_res = self.ck_secretor.secreteInsideCellTotalCount(cell,
+                                                                       max_ck_secrete_im / cell.volume)
 
     def finish(self):
         # this function may be called at the end of simulation - used very infrequently though
         return
-
-
