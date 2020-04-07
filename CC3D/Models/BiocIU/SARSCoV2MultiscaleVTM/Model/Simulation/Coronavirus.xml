@@ -68,6 +68,8 @@
    <Plugin Name="Chemotaxis">
         <ChemicalField Name="Virus">
         </ChemicalField>
+        <ChemicalField Name="cytokine">
+        </ChemicalField>
    </Plugin>
    
    <Plugin Name="Secretion">
@@ -79,6 +81,24 @@
             <FieldName>Virus</FieldName>
             <GlobalDiffusionConstant id = "virus_dc">10.0</GlobalDiffusionConstant>
             <GlobalDecayConstant id = "virus_decay">1.0E-5</GlobalDecayConstant>
+         </DiffusionData>
+         <BoundaryConditions>
+            <Plane Axis="X">
+               <Periodic/>
+            </Plane>
+            <Plane Axis="Y">
+               <Periodic/>
+            </Plane>
+            <Plane Axis="Z">
+               <Periodic/>
+            </Plane>
+         </BoundaryConditions>
+      </DiffusionField>
+      <DiffusionField Name="cytokine">
+         <DiffusionData>
+            <FieldName>cytokine</FieldName>
+            <GlobalDiffusionConstant id = "cytokine_dc">10.0</GlobalDiffusionConstant>
+            <GlobalDecayConstant id = "cytokine_decay">0</GlobalDecayConstant>
          </DiffusionData>
          <BoundaryConditions>
             <Plane Axis="X">
