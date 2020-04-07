@@ -506,7 +506,7 @@ class SimDataSteppable(SteppableBasePy):
         self.plot_pop_data = plot_pop_data_freq > 0
         self.write_pop_data = write_pop_data_freq > 0
 
-        self.plot_med_viral_data = plot_pop_data_freq > 0
+        self.plot_med_viral_data = plot_med_viral_data_freq > 0
         self.write_med_viral_data = write_med_viral_data_freq > 0
         self.med_viral_key = "MedViral"
 
