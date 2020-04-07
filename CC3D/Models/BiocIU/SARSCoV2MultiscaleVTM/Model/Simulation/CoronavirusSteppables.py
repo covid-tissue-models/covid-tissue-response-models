@@ -425,7 +425,7 @@ class ChemotaxisSteppable(SteppableBasePy):
         for cell in self.cell_list_by_type(self.IMMUNECELL):
 
             cd = self.chemotaxisPlugin.getChemotaxisData(cell, "cytokine")
-            concentration = field[cell.xCOM, cell.yCOM, 0]
+            concentration = field[cell.xCOM, cell.yCOM, 1]
             constant = 50.0 / 10
             l = constant / (1.0 + concentration)
             if cell.dict['activated']:
@@ -604,12 +604,6 @@ class SimDataSteppable(SteppableBasePy):
             if write_med_viral_data:
                 with open(self.med_viral_data_path, 'a') as fout:
                     fout.write('{}, {}\n'.format(mcs, med_viral_total))
-
-    def finish(self):
-        pass
-
-
-#
 
 class CytokineProductionAbsorptionSteppable(SteppableBasePy):
     def __init__(self, frequency=1):
