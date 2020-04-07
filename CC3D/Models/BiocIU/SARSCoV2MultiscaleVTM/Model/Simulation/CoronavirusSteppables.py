@@ -102,6 +102,8 @@ initial_immune_seeding = 10.0
 immune_seeding_rate = 1.0 / 10.0
 # Max dying rate of immune cells (actual rate is proportional to fraction of infected cells)
 immunecell_dying_rate = 1.0 / 500.0
+# Bystander effect
+bystander_effect = 2.0/4.0
 
 # Name of Antimony/SBML model
 vr_model_name = 'viralReplication'
@@ -399,12 +401,21 @@ class Viral_SecretionSteppable(SteppableBasePy):
 
 class ImmuneCellKillingSteppable(SteppableBasePy):
     def step(self, mcs):
+        killed_cells = []
         for cell in self.cell_list_by_type(self.INFECTED, self.INFECTEDSECRETING):
             for neighbor, common_surface_area in self.get_cell_neighbor_data_list(cell):
                 if neighbor:
                     if neighbor.type == self.IMMUNECELL:
                         kill_cell(self, cell)
+                        killed_cells.append(cell)
 
+        for cell in killed_cells:
+            for neighbor, common_surface_area in self.get_cell_neighbor_data_list(cell):
+                if neighbor:
+                    if neighbor.type == self.INFECTED or neighbor.type == self.INFECTEDSECRETING or neighbor.type ==  self.UNINFECTED:
+                        p_bystander_effect = np.random.random()
+                        if p_bystander_effect < bystander_effect:
+                            kill_cell(self, neighbor)
 
 class ChemotaxisSteppable(SteppableBasePy):
     def __init__(self, frequency=1):
