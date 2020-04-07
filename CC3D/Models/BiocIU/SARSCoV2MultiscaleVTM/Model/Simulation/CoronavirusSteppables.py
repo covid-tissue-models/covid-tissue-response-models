@@ -3,7 +3,7 @@
 #
 # Josua Aponte-Serrano, T.J. Sego, Juliano F. Gianlupi, James A. Glazier,
 # "Model of Viral Tissue Infection"
-# https://github.com/covid-tissue-models/covid-tissue-response-models/tree/master/tellurium/simple_virus_model
+# https://github.com/covid-tissue-models/covid-tissue-response-models/tree/master/CC3D/Models/BiocIU/SARSCoV2MultiscaleVTM
 ###############################################################################################################
 
 from cc3d.core.PySteppables import *
@@ -11,6 +11,12 @@ from cc3d.cpp import CompuCell
 import numpy as np
 
 vrl_key = 'viral_replication_loaded'  # Internal use; do not remove
+
+# Data control options
+plot_pop_data_freq = 1  # Plot population data frequency (disable with 0)
+write_pop_data_freq = 0  # Write population data to simulation directory frequency (disable with 0)
+plot_med_viral_data_freq = 0  # Plot total diffusive viral amount frequency (disable with 0)
+write_med_viral_data_freq = 0  # Write total diffusive viral amount frequency (disable with 0)
 
 # Conversion Factors
 s_to_mcs = 120.0  # s/mcs
@@ -23,7 +29,7 @@ pmol_to_cc3d_au = 1e15
 exp_cell_diameter = 12.0  # um 
 
 exp_replicating_rate = 1.0 / 20.0 * 1.0 / 60.0  # 1.0/20.0min * 1.0min/60.0s = 1.0/1200.0s
-exp_translating_rate = exp_replicating_rate * 2.0  #
+exp_translating_rate = exp_replicating_rate * 2.0
 exp_unpacking_rate = exp_replicating_rate * 20.0
 exp_packing_rate = exp_replicating_rate * 4.0
 exp_secretion_rate = exp_replicating_rate * 4.0
@@ -51,14 +57,14 @@ exp_EC50_cytokine_immune = 1 # pM from (B), it's a range from [1,50]pM
 
 ##=============================
 # CompuCell Parameters
-## cell
+# cell
 cell_diameter = exp_cell_diameter * 1.0 / um_to_lat_width
 cell_volume = cell_diameter ** 2
-## virus diffusion
+# virus diffusion
 virus_dc = exp_virus_dc * s_to_mcs / (um_to_lat_width ** 2)   # virus diffusion constant
 virus_dl = cell_diameter * 3.0   # virus diffusion length
 virus_decay = virus_dc / (virus_dl ** 2)   # virus decay rate
-## virus intra-cellular
+# virus intra-cellular
 unpacking_rate = exp_unpacking_rate * s_to_mcs
 replicating_rate = exp_replicating_rate * s_to_mcs
 translating_rate = exp_translating_rate * s_to_mcs
@@ -88,6 +94,9 @@ survival_probability = 0.95
 diss_coeff_uptake_pr = 0.5
 # Hill coefficient
 hill_coeff_uptake_pr = 3.0
+
+# Efficiency of viral uptake
+relative_viral_uptake = 0.1
 
 # Number of immune cells to seed at the beginning of the simulation
 initial_immune_seeding = 10.0
@@ -161,16 +170,28 @@ def load_viral_replication_model(_steppable, _cell):
                                     cell=_cell,
                                     step_size=vr_step_size)
     _cell.dict[vrl_key] = True
-    enable_viral_secretion(_cell, _cell.type == _steppable.INFECTED)
+    enable_viral_secretion(_cell, _cell.type == _steppable.INFECTEDSECRETING)
+
+
+# Enable/disable secretion in intracellular model
+def enable_viral_secretion(_cell, _enable: bool = True):
+    if _enable:
+        getattr(_cell.sbml, vr_model_name)['secretion_rate'] = secretion_rate
+    else:
+        getattr(_cell.sbml, vr_model_name)['secretion_rate'] = 0.0
 
 
 # Calculates the probability of viral uptake from the environment as a function of local viral particle amount
 # Returns true if cell uptakes virus
+# Model development note: ACE2, TMPRSS2 effects may be well-implemented here in future work
 def cell_uptakes_virus(_steppable, viral_field, _cell):
     # Calculate total viral amount in cell's domain
     cell_env_viral_val = 0.0
-    for ptd in _steppable.get_cell_pixel_list(_cell):
-        cell_env_viral_val += viral_field[ptd.pixel.x, ptd.pixel.y, ptd.pixel.z]
+    if False:  # Accurate measurement
+        for ptd in _steppable.get_cell_pixel_list(_cell):
+            cell_env_viral_val += viral_field[ptd.pixel.x, ptd.pixel.y, ptd.pixel.z]
+    else:  # Fast measurement
+        cell_env_viral_val = viral_field[_cell.xCOM, _cell.yCOM, _cell.zCOM] * _cell.volume
 
     # Evaluate probability of uptake
     if cell_env_viral_val != 0:
@@ -178,6 +199,14 @@ def cell_uptakes_virus(_steppable, viral_field, _cell):
         return np.random.random() < max_uptake_pr
     else:
         return False
+
+
+# Model-specific cell death routines
+def kill_cell(_steppable, _cell):
+    _cell.type = _steppable.DYING
+    reset_viral_replication_variables(_cell)
+    # Remove state model: no model for dead cell type
+    remove_viral_replication_model(_steppable, _cell)
 
 
 # These are prototypes of specialized utility functions for this project; do not modify
@@ -201,14 +230,6 @@ def get_viral_replication_cell_secretion(_cell):
     secr = getattr(_cell.sbml, vr_model_name)['Secretion']
     getattr(_cell.sbml, vr_model_name)['Secretion'] = 0.0
     return secr
-
-
-# Enable/disable secretion in intracellular model
-def enable_viral_secretion(_cell, _enable: bool = True):
-    if _enable:
-        getattr(_cell.sbml, vr_model_name)['secretion_rate'] = secretion_rate
-    else:
-        getattr(_cell.sbml, vr_model_name)['secretion_rate'] = 0.0
 
 
 # Loads state variables from SBML into cell dictionary
@@ -249,14 +270,12 @@ class CellsInitializerSteppable(SteppableBasePy):
                 cell.dict[vrl_key] = False
                 reset_viral_replication_variables(cell)
                 cell.dict['Survived'] = False
-#                 if x == int(self.dim.x / 2):
-#                     if y == int(self.dim.x / 2):
-#                         # Start infection of an uninfected cell:
-#                         cell.dict['Unpacking'] = 1.0
 
+        # Infect a cell
         cell = self.cell_field[self.dim.x // 2, self.dim.y // 2, 0]
         cell.dict['Unpacking'] = 1.0
-
+        cell.type = self.INFECTED
+        load_viral_replication_model(self, cell)
 
         for iteration in range(int(initial_immune_seeding)):
             cell = True
@@ -302,8 +321,6 @@ class Viral_ReplicationSteppable(SteppableBasePy):
         # Load model
         options = {'relative': 1e-10, 'absolute': 1e-12}
         self.set_sbml_global_options(options)
-        for cell in self.cell_list_by_type(self.UNINFECTED, self.INFECTED):
-            load_viral_replication_model(self, cell)
 
     def step(self, mcs):
 
@@ -326,15 +343,15 @@ class Viral_ReplicationSteppable(SteppableBasePy):
         self.plot_win.add_data_point("Secretion", mcs, cell.dict['Secretion'])
 
         # Do viral model
-        for cell in self.cell_list_by_type(self.UNINFECTED, self.INFECTED):
+        for cell in self.cell_list_by_type(self.INFECTED, self.INFECTEDSECRETING):
             # Step the model for this cell
             step_viral_replication_cell(cell)
             # Pack state variables into cell dictionary
             pack_viral_replication_variables(cell)
 
-            # Test for infection
+            # Test for infection secretion
             if cell.dict['Assembled'] > cell_infection_threshold:
-                cell.type = self.INFECTED
+                cell.type = self.INFECTEDSECRETING
                 enable_viral_secretion(cell)
                 
                 #cyttokine params
@@ -348,10 +365,7 @@ class Viral_ReplicationSteppable(SteppableBasePy):
                     if p_survival < survival_probability:
                         cell.dict['Survived'] = True
                     else:
-                        cell.type = self.DYING
-                        reset_viral_replication_variables(cell)
-                        # Remove state model: no model for dead cell type
-                        remove_viral_replication_model(self, cell)
+                        kill_cell(self, cell)
 
 
 class Viral_SecretionSteppable(SteppableBasePy):
@@ -368,32 +382,32 @@ class Viral_SecretionSteppable(SteppableBasePy):
 
     def step(self, mcs):
         secretor = self.get_field_secretor("Virus")
-        for cell in self.cell_list_by_type(self.INFECTED, self.UNINFECTED):
-            relative_viral_uptake = 0.1
+        for cell in self.cell_list_by_type(self.UNINFECTED, self.INFECTED, self.INFECTEDSECRETING):
 
             # Evaluate probability of cell uptake of viral particles from environment
+            # If cell isn't infected, it changes type to infected here if uptake occurs
             if cell_uptakes_virus(self, self.field.Virus, cell):
                 uptake = secretor.uptakeInsideCellTotalCount(cell,
                                                              cell_infection_threshold / cell.volume,
                                                              relative_viral_uptake)
                 cell.dict['Uptake'] = abs(uptake.tot_amount)
+                if cell.type == self.UNINFECTED:
+                    cell.type = self.INFECTED
+                    load_viral_replication_model(self, cell)
                 set_viral_replication_cell_uptake(cell, cell.dict['Uptake'])
 
-        for cell in self.cell_list_by_type(self.INFECTED):
-            sec_amount = get_viral_replication_cell_secretion(cell)
-            secretor.secreteInsideCellTotalCount(cell, sec_amount / cell.volume)
+            if cell.type == self.INFECTEDSECRETING:
+                sec_amount = get_viral_replication_cell_secretion(cell)
+                secretor.secreteInsideCellTotalCount(cell, sec_amount / cell.volume)
 
 
 class ImmuneCellKillingSteppable(SteppableBasePy):
     def step(self, mcs):
-        for cell in self.cell_list_by_type(self.INFECTED):
+        for cell in self.cell_list_by_type(self.INFECTED, self.INFECTEDSECRETING):
             for neighbor, common_surface_area in self.get_cell_neighbor_data_list(cell):
                 if neighbor:
                     if neighbor.type == self.IMMUNECELL:
-                        cell.type = self.DYING
-                        reset_viral_replication_variables(cell)
-                        # Remove state model
-                        remove_viral_replication_model(self, cell)
+                        kill_cell(self, cell)
 
 
 class ChemotaxisSteppable(SteppableBasePy):
@@ -429,8 +443,8 @@ class ImmuneCellSeedingSteppable(SteppableBasePy):
         SteppableBasePy.__init__(self, frequency)
 
     def step(self, mcs):
-        num_cells = len(self.cell_list_by_type(self.UNINFECTED, self.INFECTED))
-        num_infected = len(self.cell_list_by_type(self.INFECTED))
+        num_cells = len(self.cell_list_by_type(self.UNINFECTED, self.INFECTED, self.INFECTEDSECRETING))
+        num_infected = len(self.cell_list_by_type(self.INFECTED, self.INFECTEDSECRETING))
         fraction_infected = 1.0 / num_cells
         if num_cells:
             fraction_infected = num_infected / num_cells
@@ -476,6 +490,129 @@ class ImmuneCellSeedingSteppable(SteppableBasePy):
                 cd.assignChemotactTowardsVectorTypes([self.MEDIUM])
                 cell.targetVolume = cell_volume
                 cell.lambdaVolume = cell_volume
+
+
+
+class SimDataSteppable(SteppableBasePy):
+    def __init__(self, frequency=1):
+        SteppableBasePy.__init__(self, frequency)
+
+        self.pop_data_win = None
+        self.pop_data_path = None
+
+        self.med_viral_data_win = None
+        self.med_viral_data_path = None
+        
+        self.plot_pop_data = plot_pop_data_freq > 0
+        self.write_pop_data = write_pop_data_freq > 0
+
+        self.plot_med_viral_data = plot_pop_data_freq > 0
+        self.write_med_viral_data = write_med_viral_data_freq > 0
+        self.med_viral_key = "MedViral"
+
+    def start(self):
+
+        # Initialize population data plot if requested
+        if self.plot_pop_data:
+            self.pop_data_win = self.add_new_plot_window(title='Population data',
+                                                         x_axis_title='MCS',
+                                                         y_axis_title='Numer of cells',
+                                                         x_scale_type='linear',
+                                                         y_scale_type='log',
+                                                         grid=True,
+                                                         config_options={'legend': True})
+
+            self.pop_data_win.add_plot("Uninfected", style='Dots', color='blue', size=5)
+            self.pop_data_win.add_plot("Infected", style='Dots', color='red', size=5)
+            self.pop_data_win.add_plot("InfectedSecreting", style='Dots', color='green', size=5)
+            self.pop_data_win.add_plot("Dying", style='Dots', color='yellow', size=5)
+            self.pop_data_win.add_plot("ImmuneCell", style='Dots', color='white', size=5)
+
+        if self.plot_med_viral_data:
+            self.med_viral_data_win = self.add_new_plot_window(title='Total diffusive virus',
+                                                               x_axis_title='MCS',
+                                                               y_axis_title='Number of diffusive viral particles',
+                                                               x_scale_type='linear',
+                                                               y_scale_type='log',
+                                                               grid=True)
+
+            self.med_viral_data_win.add_plot(self.med_viral_key, style='Dots', color='red', size=5)
+
+        # Check that output directory is available
+        if self.output_dir is not None:
+            from pathlib import Path
+            if self.write_pop_data:
+                self.pop_data_path = Path(self.output_dir).joinpath('pop_data.dat')
+                with open(self.pop_data_path, 'w'):
+                    pass
+
+            if self.write_med_viral_data:
+                self.med_viral_data_path = Path(self.output_dir).joinpath('med_viral_data.dat')
+                with open(self.med_viral_data_path, 'w'):
+                    pass
+
+    def step(self, mcs):
+
+        plot_pop_data = self.plot_pop_data and mcs % plot_pop_data_freq == 0
+        plot_med_viral_data = self.plot_med_viral_data and mcs % plot_med_viral_data_freq == 0
+        if self.output_dir is not None:
+            write_pop_data = self.write_pop_data and mcs % write_pop_data_freq == 0
+            write_med_viral_data = self.write_med_viral_data and mcs % write_med_viral_data_freq == 0
+        else:
+            write_pop_data = False
+            write_med_viral_data = False
+
+        if plot_pop_data or write_pop_data:
+
+            # Gather population data
+            num_cells_uninfected = len(self.cell_list_by_type(self.UNINFECTED))
+            num_cells_infected = len(self.cell_list_by_type(self.INFECTED))
+            num_cells_infectedsecreting = len(self.cell_list_by_type(self.INFECTEDSECRETING))
+            num_cells_dying = len(self.cell_list_by_type(self.DYING))
+            num_cells_immune = len(self.cell_list_by_type(self.IMMUNECELL))
+
+            # Plot population data plot if requested
+            if plot_pop_data:
+                if num_cells_uninfected > 0:
+                    self.pop_data_win.add_data_point('Uninfected', mcs, num_cells_uninfected)
+                if num_cells_infected > 0:
+                    self.pop_data_win.add_data_point('Infected', mcs, num_cells_infected)
+                if num_cells_infectedsecreting > 0:
+                    self.pop_data_win.add_data_point('InfectedSecreting', mcs, num_cells_infectedsecreting)
+                if num_cells_dying > 0:
+                    self.pop_data_win.add_data_point('Dying', mcs, num_cells_dying)
+                if num_cells_immune > 0:
+                    self.pop_data_win.add_data_point('ImmuneCell', mcs, num_cells_immune)
+
+            # Write population data to file if requested
+            if write_pop_data:
+                with open(self.pop_data_path, 'a') as fout:
+                    fout.write('{}, {}, {}, {}, {}, {}\n'.format(mcs,
+                                                                 num_cells_uninfected,
+                                                                 num_cells_infected,
+                                                                 num_cells_infectedsecreting,
+                                                                 num_cells_dying,
+                                                                 num_cells_immune))
+
+        if plot_med_viral_data or write_med_viral_data:
+
+            # Gather total diffusive viral amount
+            med_viral_total = 0.0
+            for x, y, z in self.every_pixel():
+                med_viral_total += self.field.Virus[x, y, z]
+
+            # Plot total diffusive viral amount if requested
+            if plot_med_viral_data and med_viral_total > 0:
+                self.med_viral_data_win.add_data_point(self.med_viral_key, mcs, med_viral_total)
+
+            # Write total diffusive viral amount if requested
+            if write_med_viral_data:
+                with open(self.med_viral_data_path, 'a') as fout:
+                    fout.write('{}, {}\n'.format(mcs, med_viral_total))
+
+    def finish(self):
+        pass
+
 #
         
 class CytokineProductionAbsorptionSteppable(SteppableBasePy):
@@ -541,4 +678,5 @@ class CytokineProductionAbsorptionSteppable(SteppableBasePy):
     def finish(self):
         # this function may be called at the end of simulation - used very infrequently though
         return
+
 
