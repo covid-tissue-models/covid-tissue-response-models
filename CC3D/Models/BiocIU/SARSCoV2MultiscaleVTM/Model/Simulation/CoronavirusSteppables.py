@@ -79,7 +79,7 @@ max_ck_consume = exp_max_cytokine_consumption_mol * um_to_lat_width ** 3 * s_to_
 max_ck_secrete_im = exp_max_cytokine_immune_secretion_mol * um_to_lat_width ** 3 * s_to_mcs * 1e-15 * pmol_to_cc3d_au  # * cc3d_au/(pixel seconds)
 EC50_ck_immune = exp_EC50_cytokine_immune * um_to_lat_width ** 3 * 1e-15 * pmol_to_cc3d_au  # * cc3d_au/pixel
 
-max_ck_secrete_infect = max_ck_secrete_im
+max_ck_secrete_infect = 10*max_ck_secrete_im
 
 
 # Threshold at which cell infection is evaluated
