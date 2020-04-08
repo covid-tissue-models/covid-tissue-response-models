@@ -448,7 +448,7 @@ class ChemotaxisSteppable(SteppableBasePy):
                 cd.setLambda(l)
             else:
                 cd.setLambda(0)
-            cd.setLambda(l)
+#             cd.setLambda(l)
 
 
 class ImmuneCellSeedingSteppable(SteppableBasePy):
@@ -505,7 +505,7 @@ class ImmuneCellSeedingSteppable(SteppableBasePy):
                         cd.setLambda(lamda_chemotaxis)
                     else:
                         cd.setLambda(0.0)
-                    cd.setLambda(lamda_chemotaxis)
+#                     cd.setLambda(lamda_chemotaxis)
                     cd.assignChemotactTowardsVectorTypes([self.MEDIUM])
                     cell.targetVolume = cell_volume
                     cell.lambdaVolume = cell_volume
@@ -672,7 +672,7 @@ class CytokineProductionAbsorptionSteppable(SteppableBasePy):
             print('tot_upt',cell.dict['tot_ck_upt'],'upt_now',up_res.tot_amount)
             if cell.dict['tot_ck_upt'] >= EC50_ck_immune:
                 cell.dict['activated'] = True
-            cell.dict['activated'] = True
+#             cell.dict['activated'] = True
             if cell.dict['activated']:
                 # print('activated', cell.id)
                 sec_res = self.ck_secretor.secreteInsideCellTotalCount(cell,
