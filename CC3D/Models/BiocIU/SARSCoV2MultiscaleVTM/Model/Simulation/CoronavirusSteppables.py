@@ -280,6 +280,7 @@ class CellsInitializerSteppable(SteppableBasePy):
         cell = self.cell_field[self.dim.x // 2, self.dim.y // 2, 0]
         cell.dict['Unpacking'] = 1.0
         cell.type = self.INFECTED
+        cell.dict['ck_production'] = max_ck_secrete_infect
         load_viral_replication_model(self, cell)
 
         for iteration in range(int(initial_immune_seeding)):
@@ -357,6 +358,7 @@ class Viral_ReplicationSteppable(SteppableBasePy):
             # Test for infection secretion
             if cell.dict['Assembled'] > cell_infection_threshold:
                 cell.type = self.INFECTEDSECRETING
+                cell.dict['ck_production'] = max_ck_secrete_infect
                 enable_viral_secretion(cell)
 
                 # cyttokine params
@@ -397,6 +399,7 @@ class Viral_SecretionSteppable(SteppableBasePy):
                 cell.dict['Uptake'] = abs(uptake.tot_amount)
                 if cell.type == self.UNINFECTED:
                     cell.type = self.INFECTED
+                    cell.dict['ck_production'] = max_ck_secrete_infect
                     load_viral_replication_model(self, cell)
                 set_viral_replication_cell_uptake(cell, cell.dict['Uptake'])
 
