@@ -358,7 +358,7 @@ class Viral_ReplicationSteppable(SteppableBasePy):
             # Test for infection secretion
             if cell.dict['Assembled'] > cell_infection_threshold:
                 cell.type = self.INFECTEDSECRETING
-                cell.dict['ck_production'] = max_ck_secrete_infect
+                #cell.dict['ck_production'] = max_ck_secrete_infect
                 enable_viral_secretion(cell)
 
                 # cyttokine params
