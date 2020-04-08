@@ -13,7 +13,7 @@ import numpy as np
 vrl_key = 'viral_replication_loaded'  # Internal use; do not remove
 
 # Data control options
-plot_pop_data_freq = 1  # Plot population data frequency (disable with 0)
+plot_pop_data_freq = 0 # Plot population data frequency (disable with 0)
 write_pop_data_freq = 0  # Write population data to simulation directory frequency (disable with 0)
 plot_med_viral_data_freq = 0  # Plot total diffusive viral amount frequency (disable with 0)
 write_med_viral_data_freq = 0  # Write total diffusive viral amount frequency (disable with 0)
@@ -101,7 +101,7 @@ initial_immune_seeding = 0.0
 # Rate for seeding of immune cells (constant)
 immune_seeding_rate = 1.0 / 10.0
 # Max dying rate of immune cells (actual rate is proportional to fraction of infected cells)
-immunecell_dying_rate = 1.0 / 500.0
+immunecell_dying_rate = 0.0 / 500.0
 # Bystander effect
 bystander_effect = 2.0/4.0
 # Lambda Chemotaxis
@@ -464,46 +464,47 @@ class ImmuneCellSeedingSteppable(SteppableBasePy):
             if p_immune_dying < immunecell_dying_rate * fraction_infected:
                 cell.targetVolume = 0.0
 
-        p_immune_seeding = np.random.random()
-        if p_immune_seeding < immune_seeding_rate:
-            open_space = True
-            viral_concentration = 0
-            for iteration in range(50):
-                radius = 5
-                length = 0
-                while length <= radius:
-                    xi = np.random.randint(0, self.dim.x - 2 * cell_diameter)
-                    yi = np.random.randint(0, self.dim.y - 2 * cell_diameter)
-                    length = np.sqrt((self.dim.x // 2 - xi) ** 2 + (self.dim.y // 2 - xi) ** 2)
-                for x in range(xi, xi + int(cell_diameter)):
-                    for y in range(yi, yi + int(cell_diameter)):
-                        cell = self.cellField[x, y, 1]
-                        if cell:
-                            open_space = False
-                            break
+        if num_infected > 1:
+            p_immune_seeding = np.random.random()
+            if p_immune_seeding < immune_seeding_rate:
+                open_space = True
+                viral_concentration = 0
+                for iteration in range(10):
+                    radius = 10
+                    length = 0
+                    while length <= radius:
+                        xi = np.random.randint(0, self.dim.x - 2 * cell_diameter)
+                        yi = np.random.randint(0, self.dim.y - 2 * cell_diameter)
+                        length = np.sqrt((self.dim.x // 2 - xi) ** 2 + (self.dim.y // 2 - yi) ** 2)
+                    for x in range(xi, xi + int(cell_diameter)):
+                        for y in range(yi, yi + int(cell_diameter)):
+                            cell = self.cellField[x, y, 1]
+                            if cell:
+                                open_space = False
+                                break
+                    if open_space:
+                        concentration_iteration = self.field.Virus[xi, yi, 1]
+                        if concentration_iteration >= viral_concentration:
+                            viral_concentration = concentration_iteration
+                            x_seed = xi
+                            y_seed = yi
                 if open_space:
-                    concentration_iteration = self.field.Virus[xi, yi, 1]
-                    if concentration_iteration >= viral_concentration:
-                        viral_concentration = concentration_iteration
-                        x_seed = xi
-                        y_seed = yi
-            if open_space:
-                cell = self.new_cell(self.IMMUNECELL)
-                cell.dict['activated'] = False  # flag for immune cell being naive or activated
-                # cytokine parameters
-                cell.dict['ck_production'] = max_ck_secrete_im  # TODO: replace secretion by hill
-                cell.dict['ck_consumption'] = max_ck_consume  # TODO: replace by hill
-                cell.dict['tot_ck_upt'] = 0
+                    cell = self.new_cell(self.IMMUNECELL)
+                    cell.dict['activated'] = False  # flag for immune cell being naive or activated
+                    # cytokine parameters
+                    cell.dict['ck_production'] = max_ck_secrete_im  # TODO: replace secretion by hill
+                    cell.dict['ck_consumption'] = max_ck_consume  # TODO: replace by hill
+                    cell.dict['tot_ck_upt'] = 0
 
-                self.cellField[x_seed:x_seed + int(cell_diameter), y_seed:y_seed + int(cell_diameter), 1] = cell
-                cd = self.chemotaxisPlugin.addChemotaxisData(cell, "cytokine")
-                if cell.dict['activated']:
-                    cd.setLambda(lamda_chemotaxis)
-                else:
-                    cd.setLambda(0.0)
-                cd.assignChemotactTowardsVectorTypes([self.MEDIUM])
-                cell.targetVolume = cell_volume
-                cell.lambdaVolume = cell_volume
+                    self.cellField[x_seed:x_seed + int(cell_diameter), y_seed:y_seed + int(cell_diameter), 1] = cell
+                    cd = self.chemotaxisPlugin.addChemotaxisData(cell, "cytokine")
+                    if cell.dict['activated']:
+                        cd.setLambda(lamda_chemotaxis)
+                    else:
+                        cd.setLambda(0.0)
+                    cd.assignChemotactTowardsVectorTypes([self.MEDIUM])
+                    cell.targetVolume = cell_volume
+                    cell.lambdaVolume = cell_volume
 
 
 class SimDataSteppable(SteppableBasePy):
