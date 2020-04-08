@@ -89,7 +89,7 @@ survival_probability = 0.95
 # Hill equation coefficients for probability of viral particle uptake from the environment
 # Measurements are taken w.r.t. the total amount of viral particles in a cell's simulation subdomain
 # dissociationt constant
-diss_coeff_uptake_pr = 0.5
+diss_coeff_uptake_pr = 1.0
 # Hill coefficient
 hill_coeff_uptake_pr = 3.0
 
@@ -97,13 +97,15 @@ hill_coeff_uptake_pr = 3.0
 relative_viral_uptake = 0.1
 
 # Number of immune cells to seed at the beginning of the simulation
-initial_immune_seeding = 10.0
+initial_immune_seeding = 0.0
 # Rate for seeding of immune cells (constant)
 immune_seeding_rate = 1.0 / 10.0
 # Max dying rate of immune cells (actual rate is proportional to fraction of infected cells)
 immunecell_dying_rate = 1.0 / 500.0
 # Bystander effect
 bystander_effect = 2.0/4.0
+# Lambda Chemotaxis
+lamda_chemotaxis = 100.0
 
 # Name of Antimony/SBML model
 vr_model_name = 'viralReplication'
@@ -409,6 +411,7 @@ class ImmuneCellKillingSteppable(SteppableBasePy):
                         kill_cell(self, cell)
                         killed_cells.append(cell)
 
+        #Bystander Effect
         for cell in killed_cells:
             for neighbor, common_surface_area in self.get_cell_neighbor_data_list(cell):
                 if neighbor:
@@ -426,7 +429,7 @@ class ChemotaxisSteppable(SteppableBasePy):
 
             cd = self.chemotaxisPlugin.addChemotaxisData(cell, "cytokine")
             if cell.dict['activated']:
-                cd.setLambda(50.0 / 10)
+                cd.setLambda(lamda_chemotaxis)
             else:
                 cd.setLambda(0.0)
             cd.assignChemotactTowardsVectorTypes([self.MEDIUM])
@@ -437,7 +440,7 @@ class ChemotaxisSteppable(SteppableBasePy):
 
             cd = self.chemotaxisPlugin.getChemotaxisData(cell, "cytokine")
             concentration = field[cell.xCOM, cell.yCOM, 1]
-            constant = 50.0 / 10
+            constant = lamda_chemotaxis
             l = constant / (1.0 + concentration)
             if cell.dict['activated']:
                 cd.setLambda(l)
@@ -483,7 +486,7 @@ class ImmuneCellSeedingSteppable(SteppableBasePy):
             if open_space:
                 cell = self.new_cell(self.IMMUNECELL)
                 cell.dict['activated'] = False  # flag for immune cell being naive or activated
-                # cyttokine params
+                # cytokine parameters
                 cell.dict['ck_production'] = max_ck_secrete_im  # TODO: replace secretion by hill
                 cell.dict['ck_consumption'] = max_ck_consume  # TODO: replace by hill
                 cell.dict['tot_ck_upt'] = 0
@@ -491,7 +494,7 @@ class ImmuneCellSeedingSteppable(SteppableBasePy):
                 self.cellField[x_seed:x_seed + int(cell_diameter), y_seed:y_seed + int(cell_diameter), 1] = cell
                 cd = self.chemotaxisPlugin.addChemotaxisData(cell, "cytokine")
                 if cell.dict['activated']:
-                    cd.setLambda(50.0)
+                    cd.setLambda(lamda_chemotaxis)
                 else:
                     cd.setLambda(0.0)
                 cd.assignChemotactTowardsVectorTypes([self.MEDIUM])
@@ -620,7 +623,6 @@ class CytokineProductionAbsorptionSteppable(SteppableBasePy):
     def __init__(self, frequency=1):
         SteppableBasePy.__init__(self, frequency)
         self.track_cell_level_scalar_attribute(field_name='activated', attribute_name='activated')
-
         self.ck_secretor = None
 
     def start(self):
@@ -640,6 +642,7 @@ class CytokineProductionAbsorptionSteppable(SteppableBasePy):
         # make sure this field is defined in one of the PDE solvers
         # you may reuse secretor for many cells. Simply define it outside the loop
         self.ck_secretor = self.get_field_secretor("cytokine")
+        self.virus_secretor  = self.get_field_secretor("Virus")
 
     def step(self, mcs):
 
@@ -651,6 +654,8 @@ class CytokineProductionAbsorptionSteppable(SteppableBasePy):
             # print(EC50_ck_immune)
             up_res = self.ck_secretor.uptakeInsideCellTotalCount(cell,
                                                                  max_ck_consume / cell.volume, 0.1)
+            # Added virus uptake
+            self.virus_secretor.uptakeInsideCellTotalCount(cell,max_ck_consume / cell.volume, 0.1)
 
             cell.dict['tot_ck_upt'] -= up_res.tot_amount  # from POV of secretion uptake is negative
             # print('tot_upt',cell.dict['tot_ck_upt'],'upt_now',up_res.tot_amount)
