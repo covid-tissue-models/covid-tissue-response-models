@@ -82,7 +82,7 @@ EC50_ck_immune = exp_EC50_cytokine_immune * um_to_lat_width ** 3 * 1e-15 * pmol_
 # Threshold at which cell infection is evaluated
 cell_infection_threshold = 1.0
 # Threshold at which cell death is evaluated
-cell_death_threshold = 6.0
+cell_death_threshold = 1.1
 # Probability of survival of infected cell once cell_death_threshold is reached
 survival_probability = 0.95
 
@@ -468,9 +468,13 @@ class ImmuneCellSeedingSteppable(SteppableBasePy):
         if p_immune_seeding < immune_seeding_rate:
             open_space = True
             viral_concentration = 0
-            for iteration in range(10):
-                xi = np.random.randint(0, self.dim.x - 2 * cell_diameter)
-                yi = np.random.randint(0, self.dim.y - 2 * cell_diameter)
+            for iteration in range(50):
+                radius = 5
+                length = 0
+                while length <= radius:
+                    xi = np.random.randint(0, self.dim.x - 2 * cell_diameter)
+                    yi = np.random.randint(0, self.dim.y - 2 * cell_diameter)
+                    length = np.sqrt((self.dim.x // 2 - xi) ** 2 + (self.dim.y // 2 - xi) ** 2)
                 for x in range(xi, xi + int(cell_diameter)):
                     for y in range(yi, yi + int(cell_diameter)):
                         cell = self.cellField[x, y, 1]
