@@ -416,10 +416,11 @@ class ImmuneCellKillingSteppable(SteppableBasePy):
         for cell in killed_cells:
             for neighbor, common_surface_area in self.get_cell_neighbor_data_list(cell):
                 if neighbor:
-                    if neighbor.type == self.INFECTED or neighbor.type == self.INFECTEDSECRETING or neighbor.type ==  self.UNINFECTED:
+                    if neighbor.type in [self.INFECTED, self.INFECTEDSECRETING,  self.UNINFECTED]:
                         p_bystander_effect = np.random.random()
                         if p_bystander_effect < bystander_effect:
                             kill_cell(self, neighbor)
+
 
 class ChemotaxisSteppable(SteppableBasePy):
     def __init__(self, frequency=1):
