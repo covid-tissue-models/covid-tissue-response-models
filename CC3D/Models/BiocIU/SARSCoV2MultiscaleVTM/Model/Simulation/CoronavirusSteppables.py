@@ -82,7 +82,7 @@ EC50_ck_immune = exp_EC50_cytokine_immune * um_to_lat_width ** 3 * 1e-15 * pmol_
 # Threshold at which cell infection is evaluated
 cell_infection_threshold = 1.0
 # Threshold at which cell death is evaluated
-cell_death_threshold = 1.1
+cell_death_threshold = 1.2
 # Probability of survival of infected cell once cell_death_threshold is reached
 survival_probability = 0.95
 
@@ -105,7 +105,8 @@ immunecell_dying_rate = 0.0 / 500.0
 # Bystander effect
 bystander_effect = 2.0/4.0
 # Lambda Chemotaxis
-lamda_chemotaxis = 100.0
+#lamda_chemotaxis = 100.0
+lamda_chemotaxis = 100.0/100.0
 
 # Name of Antimony/SBML model
 vr_model_name = 'viralReplication'
@@ -446,7 +447,7 @@ class ChemotaxisSteppable(SteppableBasePy):
                 cd.setLambda(l)
             else:
                 cd.setLambda(0)
-
+            cd.setLambda(l)
 
 class ImmuneCellSeedingSteppable(SteppableBasePy):
     def __init__(self, frequency=1):
@@ -502,7 +503,7 @@ class ImmuneCellSeedingSteppable(SteppableBasePy):
                         cd.setLambda(lamda_chemotaxis)
                     else:
                         cd.setLambda(0.0)
-                    #cd.setLambda(lamda_chemotaxis)
+                    cd.setLambda(lamda_chemotaxis)
                     cd.assignChemotactTowardsVectorTypes([self.MEDIUM])
                     cell.targetVolume = cell_volume
                     cell.lambdaVolume = cell_volume
@@ -664,10 +665,10 @@ class CytokineProductionAbsorptionSteppable(SteppableBasePy):
             self.virus_secretor.uptakeInsideCellTotalCount(cell,max_ck_consume / cell.volume, 0.1)
 
             cell.dict['tot_ck_upt'] -= up_res.tot_amount  # from POV of secretion uptake is negative
-            # print('tot_upt',cell.dict['tot_ck_upt'],'upt_now',up_res.tot_amount)
-            # if cell.dict['tot_ck_upt'] >= EC50_ck_immune:
-            #     cell.dict['activated'] = True
-
+            print('tot_upt',cell.dict['tot_ck_upt'],'upt_now',up_res.tot_amount)
+            if cell.dict['tot_ck_upt'] >= EC50_ck_immune:
+                cell.dict['activated'] = True
+            cell.dict['activated'] = True
             if cell.dict['activated']:
                 # print('activated', cell.id)
                 sec_res = self.ck_secretor.secreteInsideCellTotalCount(cell,
