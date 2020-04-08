@@ -105,7 +105,7 @@ immunecell_dying_rate = 0.0 / 500.0
 # Bystander effect
 bystander_effect = 2.0/4.0
 # Lambda Chemotaxis
-#lamda_chemotaxis = 100.0
+# lamda_chemotaxis = 100.0
 lamda_chemotaxis = 100.0/100.0
 
 # Name of Antimony/SBML model
@@ -449,6 +449,7 @@ class ChemotaxisSteppable(SteppableBasePy):
                 cd.setLambda(0)
             cd.setLambda(l)
 
+
 class ImmuneCellSeedingSteppable(SteppableBasePy):
     def __init__(self, frequency=1):
         SteppableBasePy.__init__(self, frequency)
@@ -626,11 +627,13 @@ class SimDataSteppable(SteppableBasePy):
                 with open(self.med_viral_data_path, 'a') as fout:
                     fout.write('{}, {}\n'.format(mcs, med_viral_total))
 
+
 class CytokineProductionAbsorptionSteppable(SteppableBasePy):
     def __init__(self, frequency=1):
         SteppableBasePy.__init__(self, frequency)
         self.track_cell_level_scalar_attribute(field_name='activated', attribute_name='activated')
         self.ck_secretor = None
+        self.virus_secretor = None
 
     def start(self):
         # cytokine diff parameters
@@ -649,7 +652,7 @@ class CytokineProductionAbsorptionSteppable(SteppableBasePy):
         # make sure this field is defined in one of the PDE solvers
         # you may reuse secretor for many cells. Simply define it outside the loop
         self.ck_secretor = self.get_field_secretor("cytokine")
-        self.virus_secretor  = self.get_field_secretor("Virus")
+        self.virus_secretor = self.get_field_secretor("Virus")
 
     def step(self, mcs):
 
