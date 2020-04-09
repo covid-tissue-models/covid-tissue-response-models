@@ -125,6 +125,10 @@ ck_memory_immune = 1 - max_ck_consume/ck_equilibrium # decay therm for "seen" ck
 max_ck_secrete_infect = 10*max_ck_secrete_im
 minimum_activated_time = minimum_activated_time_seconds/s_to_mcs # mcs
 
+ec50_infecte_ck_prod = 0.1 # amount of 'internal assembled virus' to be at 50% ck production; chosen from 
+# tipical simulation values of cell.dict['Uptake'] + cell.dict['Assembled']. they stay around .1 and go up as the 
+# simulation progresses
+
 # Threshold at which cell infection is evaluated
 cell_infection_threshold = 1.0
 # Threshold at which cell death is evaluated
@@ -603,11 +607,17 @@ class CytokineProductionAbsorptionSteppable(CoronavirusSteppableBasePy):
 
     def step(self, mcs):
 
-
+        
         for cell in self.cell_list_by_type(self.INFECTED,self.INFECTEDSECRETING):
+            
+            viral_load = CoronavirusLib.get_assembled_viral_load_inside_cell(cell)
+            #ec50_infecte_ck_prod
+            produced = cell.dict['ck_production'] * nCoVUtils.hill_equation(viral_load, ec50_infecte_ck_prod, 2)
+            print('produced ck', produced, produced/cell.dict['ck_production'])
             res = self.ck_secretor.secreteInsideCellTotalCount(cell,
-                                                               cell.dict['ck_production'] / cell.volume)
-
+                                                               produced / cell.volume)
+        
+        
         for cell in self.cell_list_by_type(self.IMMUNECELL):
             
             self.virus_secretor.uptakeInsideCellTotalCount(cell,cell.dict['ck_consumption'] / cell.volume, 0.1)
@@ -625,7 +635,7 @@ class CytokineProductionAbsorptionSteppable(CoronavirusSteppableBasePy):
             
             p_activate = nCoVUtils.hill_equation(cell.dict['tot_ck_upt'], EC50_ck_immune, 2)
             
-            print('prob activation', p_activate, 'upt/ec50', cell.dict['tot_ck_upt']/EC50_ck_immune)
+#             print('prob activation', p_activate, 'upt/ec50', cell.dict['tot_ck_upt']/EC50_ck_immune)
             
             if rng.uniform() < p_activate and not cell.dict['activated'] :
                 cell.dict['activated'] = True
