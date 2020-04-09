@@ -602,6 +602,9 @@ class CytokineProductionAbsorptionSteppable(CoronavirusSteppableBasePy):
                                                                cell.dict['ck_production'] / cell.volume)
 
         for cell in self.cell_list_by_type(self.IMMUNECELL):
+            
+            self.virus_secretor.uptakeInsideCellTotalCount(cell,cell.dict['ck_consumption'] / cell.volume, 0.1)
+            
             # print(EC50_ck_immune)
             up_res = self.ck_secretor.uptakeInsideCellTotalCount(cell,
                                                                  cell.dict['ck_consumption'] / cell.volume, 0.1)
@@ -609,7 +612,7 @@ class CytokineProductionAbsorptionSteppable(CoronavirusSteppableBasePy):
             cell.dict['tot_ck_upt'] *= ck_memory_immune
             
             #uptake ck
-            self.virus_secretor.uptakeInsideCellTotalCount(cell,cell.dict['ck_consumption'] / cell.volume, 0.1)
+            
             cell.dict['tot_ck_upt'] -= up_res.tot_amount  # from POV of secretion uptake is negative
             print('tot_upt', cell.dict['tot_ck_upt'],'upt_now', up_res.tot_amount)
             if cell.dict['tot_ck_upt'] >= EC50_ck_immune:
