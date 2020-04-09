@@ -6,14 +6,40 @@
 # https://github.com/covid-tissue-models/covid-tissue-response-models/tree/master/CC3D/Models/BiocIU/SARSCoV2MultiscaleVTM
 ###############################################################################################################
 
+import os
+import sys
+
 from cc3d.core.PySteppables import *
 from cc3d.cpp import CompuCell
 import numpy as np
 
-vrl_key = 'viral_replication_loaded'  # Internal use; do not remove
+# Set this to True for local references when developing; False when running
+__dev_mode__ = False
+
+# This is just a gentle reminder to turn off debug mode
+assert not __dev_mode__, "Don't forget to set to run!"
+
+if __dev_mode__:
+
+    # Import project libraries and classes
+    from .CoronavirusSteppableBasePy import *
+    from . import CoronavirusLib
+
+    # Import toolkit
+    from ..nCoVToolkit import nCoVUtils
+
+else:
+    # Import project libraries and classes
+    sys.path.append(os.path.dirname(__file__))
+    from CoronavirusSteppableBasePy import *
+    import CoronavirusLib
+
+    # Import toolkit
+    sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+    from nCoVToolkit import nCoVUtils
 
 # Data control options
-plot_pop_data_freq = 1  # Plot population data frequency (disable with 0)
+plot_pop_data_freq = 0  # Plot population data frequency (disable with 0)
 write_pop_data_freq = 0  # Write population data to simulation directory frequency (disable with 0)
 plot_med_viral_data_freq = 0  # Plot total diffusive viral amount frequency (disable with 0)
 write_med_viral_data_freq = 0  # Write total diffusive viral amount frequency (disable with 0)
@@ -24,9 +50,8 @@ um_to_lat_width = 4.0  # um/lattice_length
 
 pmol_to_cc3d_au = 1e15
 
-
 # Experimental Parameters
-exp_cell_diameter = 12.0  # um 
+exp_cell_diameter = 12.0  # um
 
 exp_replicating_rate = 1.0 / 20.0 * 1.0 / 60.0  # 1.0/20.0min * 1.0min/60.0s = 1.0/1200.0s
 exp_translating_rate = exp_replicating_rate * 2.0
@@ -40,30 +65,29 @@ exp_virus_dc = 10.0 / 100.0  # um^2/s
 # data from https://www.sciencedirect.com/science/article/pii/S1074761317300924 supplemental materials (A)
 # and
 # from https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3433682/ (B)
-cytoplasm_density = 6 # unit = [density of water](B)
+cytoplasm_density = 6  # unit = [density of water](B)
 
-exp_cytokine_dc_w = 100 # um^2/s; diffusion constant in water (A,B)
-#the division by 10 is due to the small lattice size, as fiscussed with josh. we all should discuss this matter
-exp_cytokine_dc_cyto = 16/10 # um^2/s; estimated diffusion constant in cytoplasm (B)
+exp_cytokine_dc_w = 100  # um^2/s; diffusion constant in water (A,B)
+# the division by 10 is due to the small lattice size, as fiscussed with josh. we all should discuss this matter
+exp_cytokine_dc_cyto = 16 / 10  # um^2/s; estimated diffusion constant in cytoplasm (B)
 
-exp_max_cytokine_consumption = 1 # molecule / (cell second); maximum consumption of cytokine; actually a range [0.3,1] molecule / (cell second) (A)
-exp_max_cytokine_immune_secretion = 10 # molecule / (cell second) (B)
+exp_max_cytokine_consumption = 1  # molecule / (cell second); maximum consumption of cytokine; actually a range [0.3,1] molecule / (cell second) (A)
+exp_max_cytokine_immune_secretion = 10  # molecule / (cell second) (B)
 
-exp_max_cytokine_consumption_mol = 3.5e-4 # pM/s 
-exp_max_cytokine_immune_secretion_mol = 3.5e-3 # pM/s
+exp_max_cytokine_consumption_mol = 3.5e-4  # pM/s
+exp_max_cytokine_immune_secretion_mol = 3.5e-3  # pM/s
 
-exp_EC50_cytokine_immune = 1 # pM from (B), it's a range from [1,50]pM
+exp_EC50_cytokine_immune = 1  # pM from (B), it's a range from [1,50]pM
 
-
-##=============================
+# =============================
 # CompuCell Parameters
 # cell
 cell_diameter = exp_cell_diameter * 1.0 / um_to_lat_width
 cell_volume = cell_diameter ** 2
 # virus diffusion
-virus_dc = exp_virus_dc * s_to_mcs / (um_to_lat_width ** 2)   # virus diffusion constant
-virus_dl = cell_diameter * 3.0   # virus diffusion length
-virus_decay = virus_dc / (virus_dl ** 2)   # virus decay rate
+virus_dc = exp_virus_dc * s_to_mcs / (um_to_lat_width ** 2)  # virus diffusion constant
+virus_dl = cell_diameter * 3.0  # virus diffusion length
+virus_decay = virus_dc / (virus_dl ** 2)  # virus decay rate
 # virus intra-cellular
 unpacking_rate = exp_unpacking_rate * s_to_mcs
 replicating_rate = exp_replicating_rate * s_to_mcs
@@ -71,27 +95,30 @@ translating_rate = exp_translating_rate * s_to_mcs
 packing_rate = exp_packing_rate * s_to_mcs
 secretion_rate = exp_secretion_rate * s_to_mcs
 
-## cytokine
+# cytokine
 
-cytokine_dc = exp_cytokine_dc_cyto * s_to_mcs / (um_to_lat_width ** 2) # CK diff cst
+cytokine_dc = exp_cytokine_dc_cyto * s_to_mcs / (um_to_lat_width ** 2)  # CK diff cst
 
 # pM = pmol/L = pmol/(10^15 um^3) = 10^-15 pmol/(um^3) = 10^-15 * um_to_lat_width^3 pmol/pixel
 # pM/s = pM * s_to_mcs / MCS
-max_ck_consume = exp_max_cytokine_consumption_mol * um_to_lat_width**3 * s_to_mcs  * 1e-15 * pmol_to_cc3d_au#  cc3d_au/(pixel seconds)
-max_ck_secrete_im = exp_max_cytokine_immune_secretion_mol * um_to_lat_width**3 * s_to_mcs * 1e-15  * pmol_to_cc3d_au# * cc3d_au/(pixel seconds)
-EC50_ck_immune = exp_EC50_cytokine_immune * um_to_lat_width**3 * 1e-15 * pmol_to_cc3d_au #   * cc3d_au/pixel
+max_ck_consume = exp_max_cytokine_consumption_mol * um_to_lat_width ** 3 * s_to_mcs * 1e-15 * pmol_to_cc3d_au  # cc3d_au/(pixel seconds)
+max_ck_secrete_im = exp_max_cytokine_immune_secretion_mol * um_to_lat_width ** 3 * s_to_mcs * 1e-15 * pmol_to_cc3d_au  # * cc3d_au/(pixel seconds)
+EC50_ck_immune = exp_EC50_cytokine_immune * um_to_lat_width ** 3 * 1e-15 * pmol_to_cc3d_au  # * cc3d_au/pixel
+
+max_ck_secrete_infect = 10*max_ck_secrete_im
+
 
 # Threshold at which cell infection is evaluated
 cell_infection_threshold = 1.0
 # Threshold at which cell death is evaluated
-cell_death_threshold = 6.0
+cell_death_threshold = 1.2
 # Probability of survival of infected cell once cell_death_threshold is reached
 survival_probability = 0.95
 
 # Hill equation coefficients for probability of viral particle uptake from the environment
 # Measurements are taken w.r.t. the total amount of viral particles in a cell's simulation subdomain
 # dissociationt constant
-diss_coeff_uptake_pr = 0.5
+diss_coeff_uptake_pr = 1.0
 # Hill coefficient
 hill_coeff_uptake_pr = 3.0
 
@@ -99,183 +126,53 @@ hill_coeff_uptake_pr = 3.0
 relative_viral_uptake = 0.1
 
 # Number of immune cells to seed at the beginning of the simulation
-initial_immune_seeding = 10.0
+initial_immune_seeding = 0.0
 # Rate for seeding of immune cells (constant)
 immune_seeding_rate = 1.0 / 10.0
 # Max dying rate of immune cells (actual rate is proportional to fraction of infected cells)
-immunecell_dying_rate = 1.0 / 500.0
+immunecell_dying_rate = 0.0 / 500.0
+# Bystander effect
+bystander_effect = 2.0/4.0
+# Lambda Chemotaxis
+# lamda_chemotaxis = 100.0
+lamda_chemotaxis = 100.0/100.0
 
-# Name of Antimony/SBML model
-vr_model_name = 'viralReplication'
 # Antimony/SBML model step size
 vr_step_size = 1.0
-# Mapping from CellG instance dictionary keys to Antimony/SBML symbols
-vr_cell_dict_to_sym = {'Unpacking': 'U',
-                       'Replicating': 'R',
-                       'Packing': 'P',
-                       'Assembled': 'A'}
 
 
-# Antimony model string generator
-# To change models, modify according to this structure
-# Modifications should be reflected in
-#   1. the items of the dictionary "vr_cell_dict_to_sym"
-#   2. the signature of the function "load_viral_replication_model"
-# Variable "Uptake" is the uptake variable of the model, and should not be modified
-# Variable "Secretion" is the secretion variable of the model, and should not be modified
-def viral_replication_model_string(_unpacking_rate, _replicating_rate, _translating_rate, _packing_rate,
-                                   _secretion_rate, _u_ini, _r_ini, _p_ini, _a_ini, _uptake=0):
-    model_string = """model {}()
-      -> U ; Uptake
-    U -> R ; unpacking_rate * U;
-      -> R ; replicating_rate * R / (0.1 + R);
-    R -> P ; translating_rate * R;
-    P -> A ; packing_rate * P;
-    A -> Secretion ; secretion_rate * A;
-
-    unpacking_rate = {};
-    replicating_rate = {};
-    translating_rate = {};
-    packing_rate = {};
-    secretion_rate = {};
-    U = {};
-    R = {};
-    P = {};
-    A = {};
-    Uptake = {};
-    Secretion = 0;
-    end""".format(vr_model_name,
-                  _unpacking_rate, _replicating_rate, _translating_rate, _packing_rate, _secretion_rate,
-                  _u_ini, _r_ini, _p_ini, _a_ini, _uptake)
-    return model_string
-
-
-# Loads viral replication model for a cell
-def load_viral_replication_model(_steppable, _cell):
-    if _cell.dict[vrl_key]:
-        _steppable.delete_sbml_from_cell(vr_model_name, _cell)
-
-    model_string = viral_replication_model_string(unpacking_rate,
-                                                  replicating_rate,
-                                                  translating_rate,
-                                                  packing_rate,
-                                                  secretion_rate,
-                                                  _cell.dict['Unpacking'],
-                                                  _cell.dict['Replicating'],
-                                                  _cell.dict['Packing'],
-                                                  _cell.dict['Assembled'],
-                                                  _cell.dict['Uptake'])
-    _steppable.add_antimony_to_cell(model_string=model_string,
-                                    model_name=vr_model_name,
-                                    cell=_cell,
-                                    step_size=vr_step_size)
-    _cell.dict[vrl_key] = True
-    enable_viral_secretion(_cell, _cell.type == _steppable.INFECTEDSECRETING)
-
-
-# Enable/disable secretion in intracellular model
-def enable_viral_secretion(_cell, _enable: bool = True):
-    if _enable:
-        getattr(_cell.sbml, vr_model_name)['secretion_rate'] = secretion_rate
-    else:
-        getattr(_cell.sbml, vr_model_name)['secretion_rate'] = 0.0
-
-
-# Calculates the probability of viral uptake from the environment as a function of local viral particle amount
-# Returns true if cell uptakes virus
-# Model development note: ACE2, TMPRSS2 effects may be well-implemented here in future work
-def cell_uptakes_virus(_steppable, viral_field, _cell):
-    # Calculate total viral amount in cell's domain
-    cell_env_viral_val = 0.0
-    if False:  # Accurate measurement
-        for ptd in _steppable.get_cell_pixel_list(_cell):
-            cell_env_viral_val += viral_field[ptd.pixel.x, ptd.pixel.y, ptd.pixel.z]
-    else:  # Fast measurement
-        cell_env_viral_val = viral_field[_cell.xCOM, _cell.yCOM, _cell.zCOM] * _cell.volume
-
-    # Evaluate probability of uptake
-    if cell_env_viral_val != 0:
-        max_uptake_pr = 1 / (1 + (diss_coeff_uptake_pr / cell_env_viral_val) ** hill_coeff_uptake_pr)
-        return np.random.random() < max_uptake_pr
-    else:
-        return False
-
-
-# Model-specific cell death routines
-def kill_cell(_steppable, _cell):
-    _cell.type = _steppable.DYING
-    reset_viral_replication_variables(_cell)
-    # Remove state model: no model for dead cell type
-    remove_viral_replication_model(_steppable, _cell)
-
-
-# These are prototypes of specialized utility functions for this project; do not modify
-
-# Removes viral replication model for a cell
-def remove_viral_replication_model(_steppable, _cell):
-    if _cell.dict[vrl_key]:
-        _steppable.delete_sbml_from_cell(vr_model_name, _cell)
-        _cell.dict[vrl_key] = False
-
-
-# Sets the current state variable "Uptake" for a cell
-def set_viral_replication_cell_uptake(_cell, _uptake):
-    assert _cell.dict[vrl_key]
-    getattr(_cell.sbml, vr_model_name)['Uptake'] = _uptake
-
-
-# Gets the current state variable "Secretion" for a cell
-def get_viral_replication_cell_secretion(_cell):
-    assert _cell.dict[vrl_key]
-    secr = getattr(_cell.sbml, vr_model_name)['Secretion']
-    getattr(_cell.sbml, vr_model_name)['Secretion'] = 0.0
-    return secr
-
-
-# Loads state variables from SBML into cell dictionary
-def pack_viral_replication_variables(_cell):
-    assert _cell.dict[vrl_key]
-    for k, v in vr_cell_dict_to_sym.items():
-        _cell.dict[k] = getattr(_cell.sbml, vr_model_name)[v]
-
-
-# Loads state variables from SBML into cell dictionary
-def reset_viral_replication_variables(_cell):
-    _cell.dict['Uptake'] = 0
-    _cell.dict['Secretion'] = 0
-    for k in vr_cell_dict_to_sym.keys():
-        _cell.dict[k] = 0
-
-
-# Steps SBML model for a cell
-def step_viral_replication_cell(_cell):
-    dict_attrib = CompuCell.getPyAttrib(_cell)
-    assert 'SBMLSolver' in dict_attrib
-    dict_attrib['SBMLSolver'][vr_model_name].timestep()
-
-
-class CellsInitializerSteppable(SteppableBasePy):
+class CellsInitializerSteppable(CoronavirusSteppableBasePy):
+    """
+    DESCRIPTION HERE!
+    """
     def __init__(self, frequency=1):
-        SteppableBasePy.__init__(self, frequency)
+        CoronavirusSteppableBasePy.__init__(self, frequency)
 
     def start(self):
         self.get_xml_element('virus_dc').cdata = virus_dc
         self.get_xml_element('virus_decay').cdata = virus_decay
-        
-        
+
         for x in range(0, self.dim.x, int(cell_diameter)):
             for y in range(0, self.dim.y, int(cell_diameter)):
                 cell = self.new_cell(self.UNINFECTED)
                 self.cellField[x:x + int(cell_diameter), y:y + int(cell_diameter), 0] = cell
-                cell.dict[vrl_key] = False
-                reset_viral_replication_variables(cell)
+                cell.dict[CoronavirusLib.vrl_key] = False
+                CoronavirusLib.reset_viral_replication_variables(cell=cell)
                 cell.dict['Survived'] = False
 
         # Infect a cell
         cell = self.cell_field[self.dim.x // 2, self.dim.y // 2, 0]
         cell.dict['Unpacking'] = 1.0
         cell.type = self.INFECTED
-        load_viral_replication_model(self, cell)
+
+        self.load_viral_replication_model(cell=cell, vr_step_size=vr_step_size,
+                                          unpacking_rate=unpacking_rate,
+                                          replicating_rate=replicating_rate,
+                                          translating_rate=translating_rate,
+                                          packing_rate=packing_rate,
+                                          secretion_rate=secretion_rate)
+
+        cell.dict['ck_production'] = max_ck_secrete_infect
 
         for iteration in range(int(initial_immune_seeding)):
             cell = True
@@ -291,16 +188,19 @@ class CellsInitializerSteppable(SteppableBasePy):
             self.cellField[x:x + int(cell_diameter), y:y + int(cell_diameter), 1] = cell
             cell.targetVolume = cell_volume
             cell.lambdaVolume = cell_volume
-            cell.dict['activated'] = False # flag for immune cell being naive or activated
-            #cyttokine params
-            cell.dict['ck_production'] = max_ck_secrete_im ##TODO: replace secretion by hill
-            cell.dict['ck_consumption'] = max_ck_consume ##TODO: replace by hill
+            cell.dict['activated'] = False  # flag for immune cell being naive or activated
+            # cyttokine params
+            cell.dict['ck_production'] = max_ck_secrete_im  # TODO: replace secretion by hill
+            cell.dict['ck_consumption'] = max_ck_consume  # TODO: replace by hill
             cell.dict['tot_ck_upt'] = 0
-            
 
-class Viral_ReplicationSteppable(SteppableBasePy):
+
+class Viral_ReplicationSteppable(CoronavirusSteppableBasePy):
+    """
+    DESCRIPTION HERE!
+    """
     def __init__(self, frequency=1):
-        SteppableBasePy.__init__(self, frequency)
+        CoronavirusSteppableBasePy.__init__(self, frequency)
 
         self.plot_win = None
 
@@ -345,18 +245,18 @@ class Viral_ReplicationSteppable(SteppableBasePy):
         # Do viral model
         for cell in self.cell_list_by_type(self.INFECTED, self.INFECTEDSECRETING):
             # Step the model for this cell
-            step_viral_replication_cell(cell)
+            CoronavirusLib.step_sbml_model_cell(cell)
             # Pack state variables into cell dictionary
-            pack_viral_replication_variables(cell)
+            CoronavirusLib.pack_viral_replication_variables(cell=cell)
 
             # Test for infection secretion
             if cell.dict['Assembled'] > cell_infection_threshold:
                 cell.type = self.INFECTEDSECRETING
-                enable_viral_secretion(cell)
-                
-                #cyttokine params
-                cell.dict['ck_production'] = max_ck_secrete_im ##TODO: replace secretion by hill
-                
+                CoronavirusLib.enable_viral_secretion(cell=cell, secretion_rate=secretion_rate)
+
+
+                # cyttokine params
+                cell.dict['ck_production'] = max_ck_secrete_infect  # TODO: replace secretion by hill
 
             # Test for cell death
             if cell.dict['Assembled'] > cell_death_threshold:
@@ -365,12 +265,15 @@ class Viral_ReplicationSteppable(SteppableBasePy):
                     if p_survival < survival_probability:
                         cell.dict['Survived'] = True
                     else:
-                        kill_cell(self, cell)
+                        self.kill_cell(cell=cell)
 
 
-class Viral_SecretionSteppable(SteppableBasePy):
+class Viral_SecretionSteppable(CoronavirusSteppableBasePy):
+    """
+    DESCRIPTION HERE!
+    """
     def __init__(self, frequency=1):
-        SteppableBasePy.__init__(self, frequency)
+        CoronavirusSteppableBasePy.__init__(self, frequency)
 
     def start(self):
         self.track_cell_level_scalar_attribute(field_name='Uptake', attribute_name='Uptake')
@@ -386,40 +289,67 @@ class Viral_SecretionSteppable(SteppableBasePy):
 
             # Evaluate probability of cell uptake of viral particles from environment
             # If cell isn't infected, it changes type to infected here if uptake occurs
-            if cell_uptakes_virus(self, self.field.Virus, cell):
+            if self.cell_uptakes_virus(viral_field=self.field.Virus,
+                                       cell=cell,
+                                       diss_coeff_uptake_pr=diss_coeff_uptake_pr,
+                                       hill_coeff_uptake_pr=hill_coeff_uptake_pr):
                 uptake = secretor.uptakeInsideCellTotalCount(cell,
                                                              cell_infection_threshold / cell.volume,
                                                              relative_viral_uptake)
                 cell.dict['Uptake'] = abs(uptake.tot_amount)
                 if cell.type == self.UNINFECTED:
                     cell.type = self.INFECTED
-                    load_viral_replication_model(self, cell)
-                set_viral_replication_cell_uptake(cell, cell.dict['Uptake'])
+                    cell.dict['ck_production'] = max_ck_secrete_infect
+                    self.load_viral_replication_model(cell=cell, vr_step_size=vr_step_size,
+                                                      unpacking_rate=unpacking_rate,
+                                                      replicating_rate=replicating_rate,
+                                                      translating_rate=translating_rate,
+                                                      packing_rate=packing_rate,
+                                                      secretion_rate=secretion_rate)
+                CoronavirusLib.set_viral_replication_cell_uptake(cell=cell, uptake=cell.dict['Uptake'])
+
 
             if cell.type == self.INFECTEDSECRETING:
-                sec_amount = get_viral_replication_cell_secretion(cell)
+                sec_amount = CoronavirusLib.get_viral_replication_cell_secretion(cell=cell)
                 secretor.secreteInsideCellTotalCount(cell, sec_amount / cell.volume)
 
 
-class ImmuneCellKillingSteppable(SteppableBasePy):
+class ImmuneCellKillingSteppable(CoronavirusSteppableBasePy):
+    """
+    DESCRIPTION HERE!
+    """
     def step(self, mcs):
+        killed_cells = []
         for cell in self.cell_list_by_type(self.INFECTED, self.INFECTEDSECRETING):
             for neighbor, common_surface_area in self.get_cell_neighbor_data_list(cell):
                 if neighbor:
                     if neighbor.type == self.IMMUNECELL:
-                        kill_cell(self, cell)
+                        self.kill_cell(cell=cell)
+                        killed_cells.append(cell)
+
+        # Bystander Effect
+        for cell in killed_cells:
+            for neighbor, common_surface_area in self.get_cell_neighbor_data_list(cell):
+                if neighbor:
+                    if neighbor.type in [self.INFECTED, self.INFECTEDSECRETING, self.UNINFECTED]:
+                        p_bystander_effect = np.random.random()
+                        if p_bystander_effect < bystander_effect:
+                            self.kill_cell(cell=neighbor)
 
 
-class ChemotaxisSteppable(SteppableBasePy):
+class ChemotaxisSteppable(CoronavirusSteppableBasePy):
+    """
+    DESCRIPTION HERE!
+    """
     def __init__(self, frequency=1):
-        SteppableBasePy.__init__(self, frequency)
+        CoronavirusSteppableBasePy.__init__(self, frequency)
 
     def start(self):
         for cell in self.cell_list_by_type(self.IMMUNECELL):
-            
+
             cd = self.chemotaxisPlugin.addChemotaxisData(cell, "cytokine")
             if cell.dict['activated']:
-                cd.setLambda(50.0/10)
+                cd.setLambda(lamda_chemotaxis)
             else:
                 cd.setLambda(0.0)
             cd.assignChemotactTowardsVectorTypes([self.MEDIUM])
@@ -427,10 +357,10 @@ class ChemotaxisSteppable(SteppableBasePy):
     def step(self, mcs):
         field = self.field.Virus
         for cell in self.cell_list_by_type(self.IMMUNECELL):
-            
+
             cd = self.chemotaxisPlugin.getChemotaxisData(cell, "cytokine")
-            concentration = field[cell.xCOM, cell.yCOM, 0]
-            constant = 50.0/10
+            concentration = field[cell.xCOM, cell.yCOM, 1]
+            constant = lamda_chemotaxis
             l = constant / (1.0 + concentration)
             if cell.dict['activated']:
                 cd.setLambda(l)
@@ -438,9 +368,12 @@ class ChemotaxisSteppable(SteppableBasePy):
                 cd.setLambda(0)
 
 
-class ImmuneCellSeedingSteppable(SteppableBasePy):
+class ImmuneCellSeedingSteppable(CoronavirusSteppableBasePy):
+    """
+    DESCRIPTION HERE!
+    """
     def __init__(self, frequency=1):
-        SteppableBasePy.__init__(self, frequency)
+        CoronavirusSteppableBasePy.__init__(self, frequency)
 
     def step(self, mcs):
         num_cells = len(self.cell_list_by_type(self.UNINFECTED, self.INFECTED, self.INFECTEDSECRETING))
@@ -454,46 +387,54 @@ class ImmuneCellSeedingSteppable(SteppableBasePy):
             if p_immune_dying < immunecell_dying_rate * fraction_infected:
                 cell.targetVolume = 0.0
 
-        p_immune_seeding = np.random.random()
-        if p_immune_seeding < immune_seeding_rate:
-            open_space = True
-            viral_concentration = 0
-            for iteration in range(10):
-                xi = np.random.randint(0, self.dim.x - 2 * cell_diameter)
-                yi = np.random.randint(0, self.dim.y - 2 * cell_diameter)
-                for x in range(xi, xi + int(cell_diameter)):
-                    for y in range(yi, yi + int(cell_diameter)):
-                        cell = self.cellField[x, y, 1]
-                        if cell:
-                            open_space = False
-                            break
+        if num_infected > 1:
+            p_immune_seeding = np.random.random()
+            if p_immune_seeding < immune_seeding_rate:
+                open_space = True
+                viral_concentration = 0
+                for iteration in range(10):
+                    radius = 10
+                    length = 0
+                    while length <= radius:
+                        xi = np.random.randint(0, self.dim.x - 2 * cell_diameter)
+                        yi = np.random.randint(0, self.dim.y - 2 * cell_diameter)
+                        length = np.sqrt((self.dim.x // 2 - xi) ** 2 + (self.dim.y // 2 - yi) ** 2)
+                    for x in range(xi, xi + int(cell_diameter)):
+                        for y in range(yi, yi + int(cell_diameter)):
+                            cell = self.cellField[x, y, 1]
+                            if cell:
+                                open_space = False
+                                break
+                    if open_space:
+                        concentration_iteration = self.field.Virus[xi, yi, 1]
+                        if concentration_iteration >= viral_concentration:
+                            viral_concentration = concentration_iteration
+                            x_seed = xi
+                            y_seed = yi
                 if open_space:
-                    concentration_iteration = self.field.Virus[xi, yi, 1]
-                    if concentration_iteration >= viral_concentration:
-                        viral_concentration = concentration_iteration
-                        x_seed = xi
-                        y_seed = yi
-            if open_space:
-                cell = self.new_cell(self.IMMUNECELL)
-                cell.dict['activated'] = False # flag for immune cell being naive or activated
-                #cyttokine params
-                cell.dict['ck_production'] = max_ck_secrete_im ##TODO: replace secretion by hill
-                cell.dict['ck_consumption'] = max_ck_consume ##TODO: replace by hill
-                cell.dict['tot_ck_upt'] = 0
-                
-                self.cellField[x_seed:x_seed + int(cell_diameter), y_seed:y_seed + int(cell_diameter), 1] = cell
-                cd = self.chemotaxisPlugin.addChemotaxisData(cell, "cytokine")
-                if cell.dict['activated']:
-                    cd.setLambda(50.0)
-                else:
-                    cd.setLambda(0.0)
-                cd.assignChemotactTowardsVectorTypes([self.MEDIUM])
-                cell.targetVolume = cell_volume
-                cell.lambdaVolume = cell_volume
+                    cell = self.new_cell(self.IMMUNECELL)
+                    cell.dict['activated'] = False  # flag for immune cell being naive or activated
+                    # cytokine parameters
+                    cell.dict['ck_production'] = max_ck_secrete_im  # TODO: replace secretion by hill
+                    cell.dict['ck_consumption'] = max_ck_consume  # TODO: replace by hill
+                    cell.dict['tot_ck_upt'] = 0
 
+                    self.cellField[x_seed:x_seed + int(cell_diameter), y_seed:y_seed + int(cell_diameter), 1] = cell
+                    cd = self.chemotaxisPlugin.addChemotaxisData(cell, "cytokine")
+                    if cell.dict['activated']:
+                        cd.setLambda(lamda_chemotaxis)
+                    else:
+                        cd.setLambda(0.0)
+
+                    cd.assignChemotactTowardsVectorTypes([self.MEDIUM])
+                    cell.targetVolume = cell_volume
+                    cell.lambdaVolume = cell_volume
 
 
 class SimDataSteppable(SteppableBasePy):
+    """
+    Plots/writes simulation data of interest
+    """
     def __init__(self, frequency=1):
         SteppableBasePy.__init__(self, frequency)
 
@@ -502,11 +443,11 @@ class SimDataSteppable(SteppableBasePy):
 
         self.med_viral_data_win = None
         self.med_viral_data_path = None
-        
+
         self.plot_pop_data = plot_pop_data_freq > 0
         self.write_pop_data = write_pop_data_freq > 0
 
-        self.plot_med_viral_data = plot_pop_data_freq > 0
+        self.plot_med_viral_data = plot_med_viral_data_freq > 0
         self.write_med_viral_data = write_med_viral_data_freq > 0
         self.med_viral_key = "MedViral"
 
@@ -610,73 +551,60 @@ class SimDataSteppable(SteppableBasePy):
                 with open(self.med_viral_data_path, 'a') as fout:
                     fout.write('{}, {}\n'.format(mcs, med_viral_total))
 
-    def finish(self):
-        pass
 
-#
-        
-class CytokineProductionAbsorptionSteppable(SteppableBasePy):
+class CytokineProductionAbsorptionSteppable(CoronavirusSteppableBasePy):
+    """
+    DESCRIPTION HERE!
+    """
     def __init__(self, frequency=1):
-        SteppableBasePy.__init__(self, frequency)
+        CoronavirusSteppableBasePy.__init__(self, frequency)
         self.track_cell_level_scalar_attribute(field_name='activated', attribute_name='activated')
-        
-        
+        self.ck_secretor = None
+        self.virus_secretor = None
 
     def start(self):
-        # cytokine diff parameters        
+        # cytokine diff parameters
         self.get_xml_element('cytokine_dc').cdata = cytokine_dc
-        self.get_xml_element('cytokine_decay').cdata = 0 # no "natural" decay, only consumption
-        
+        self.get_xml_element('cytokine_decay').cdata = 0  # no "natural" decay, only consumption
+
         for cell in self.cell_list_by_type(self.IMMUNECELL):
-            ## TODO: differentiate this rates between the cell types
+            # TODO: differentiate this rates between the cell types
             # cytokine production/uptake parameters for immune cells
-            cell.dict['ck_production'] = max_ck_secrete_im ##TODO: replace secretion by hill
-            cell.dict['ck_consumption'] = max_ck_consume ##TODO: replace by hill
-        for cell in self.cell_list_by_type(self.INFECTED, self.INFECTEDSECRETING):
-            cell.dict['ck_production'] = max_ck_secrete_im ##TODO: replace secretion by hill
-        
+
+            cell.dict['ck_production'] = max_ck_secrete_im  # TODO: replace secretion by hill
+            cell.dict['ck_consumption'] = max_ck_consume  # TODO: replace by hill
+
+        for cell in self.cell_list_by_type(self.INFECTED,self.INFECTEDSECRETING):
+            cell.dict['ck_production'] = max_ck_secrete_infect  # TODO: replace secretion by hill
+
         # Make sure Secretion plugin is loaded
         # make sure this field is defined in one of the PDE solvers
         # you may reuse secretor for many cells. Simply define it outside the loop
         self.ck_secretor = self.get_field_secretor("cytokine")
-        
-
+        self.virus_secretor = self.get_field_secretor("Virus")
 
     def step(self, mcs):
 
-        for cell in self.cell_list_by_type(self.INFECTED, self.INFECTEDSECRETING):
-            
-            res = self.ck_secretor.secreteInsideCellTotalCount(cell, 
-                                max_ck_secrete_im/cell.volume)
-        
-        
-        
+
+        for cell in self.cell_list_by_type(self.INFECTED,self.INFECTEDSECRETING):
+            res = self.ck_secretor.secreteInsideCellTotalCount(cell,
+                                                               cell.dict['ck_production'] / cell.volume)
+
         for cell in self.cell_list_by_type(self.IMMUNECELL):
-            #print(EC50_ck_immune)
-            up_res = self.ck_secretor.uptakeInsideCellTotalCount(cell, 
-                    max_ck_consume/cell.volume, 0.1)
-            
-            cell.dict['tot_ck_upt'] -= up_res.tot_amount #from POV of secretion uptake is negative
-            #print('tot_upt',cell.dict['tot_ck_upt'],'upt_now',up_res.tot_amount)
+            # print(EC50_ck_immune)
+            up_res = self.ck_secretor.uptakeInsideCellTotalCount(cell,
+                                                                 cell.dict['ck_consumption'] / cell.volume, 0.1)
+            # Added virus uptake
+
+            self.virus_secretor.uptakeInsideCellTotalCount(cell,cell.dict['ck_consumption'] / cell.volume, 0.1)
+
+
+            cell.dict['tot_ck_upt'] -= up_res.tot_amount  # from POV of secretion uptake is negative
+            print('tot_upt', cell.dict['tot_ck_upt'],'upt_now', up_res.tot_amount)
             if cell.dict['tot_ck_upt'] >= EC50_ck_immune:
                 cell.dict['activated'] = True
-            
+
             if cell.dict['activated']:
-                #print('activated', cell.id)
-                sec_res = self.ck_secretor.secreteInsideCellTotalCount(cell, 
-                                max_ck_secrete_im/cell.volume)
-            
-            
-            
-            
-    
-    
-    
-    
-    
-
-    def finish(self):
-        # this function may be called at the end of simulation - used very infrequently though
-        return
-
-
+                # print('activated', cell.id)
+                sec_res = self.ck_secretor.secreteInsideCellTotalCount(cell,
+                                                                       cell.dict['ck_production'] / cell.volume)
