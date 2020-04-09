@@ -119,7 +119,7 @@ max_ck_consume = exp_max_cytokine_consumption_mol * um_to_lat_width ** 3 * s_to_
 max_ck_secrete_im = exp_max_cytokine_immune_secretion_mol * um_to_lat_width ** 3 * s_to_mcs * 1e-15 * pmol_to_cc3d_au  # * cc3d_au/(pixel seconds)
 EC50_ck_immune = exp_EC50_cytokine_immune * um_to_lat_width ** 3 * 1e-15 * pmol_to_cc3d_au  # * cc3d_au/pixel
 # ck_equilibrium = 1.5*EC50_ck_immune # equilibrium amount of ck in immune surface
-ck_equilibrium = 5*EC50_ck_immune # equilibrium amount of ck in immune surface
+ck_equilibrium = 2.1*EC50_ck_immune # equilibrium amount of ck in immune surface
 ck_memory_immune = 1 - max_ck_consume/ck_equilibrium # decay therm for "seen" ck by immune
 
 max_ck_secrete_infect = 10*max_ck_secrete_im
