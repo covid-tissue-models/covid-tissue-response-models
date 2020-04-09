@@ -111,7 +111,25 @@
                <Periodic/>
             </Plane>
          </BoundaryConditions>
+      <DiffusionField Name="death_signal">
+         <DiffusionData>
+            <FieldName>death_signal</FieldName>
+            <GlobalDiffusionConstant>0.1</GlobalDiffusionConstant>
+            <GlobalDecayConstant>1e-05</GlobalDecayConstant>
+         </DiffusionData>
+         <BoundaryConditions>
+            <Plane Axis="X">
+               <Periodic/>
+            </Plane>
+            <Plane Axis="Y">
+               <Periodic/>
+            </Plane>
+            <Plane Axis="Z">
+               <Periodic/>
+            </Plane>
+         </BoundaryConditions>
       </DiffusionField>
    </Steppable>
+
 
 </CompuCell3D>
