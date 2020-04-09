@@ -13,6 +13,8 @@ from cc3d.core.PySteppables import *
 from cc3d.cpp import CompuCell
 import numpy as np
 
+rng = np.random #alias for random number generators (rng)
+
 # Set this to True for local references when developing; False when running
 __dev_mode__ = False
 
@@ -615,9 +617,15 @@ class CytokineProductionAbsorptionSteppable(CoronavirusSteppableBasePy):
             
             cell.dict['tot_ck_upt'] -= up_res.tot_amount  # from POV of secretion uptake is negative
             print('tot_upt', cell.dict['tot_ck_upt'],'upt_now', up_res.tot_amount)
-            if cell.dict['tot_ck_upt'] >= EC50_ck_immune:
+            
+            p_activate = nCoVUtils.hill_equation(cell.dict['tot_ck_upt'], EC50_ck_immune, 2)
+            print('prob activation', p_activate, 'upt/ec50', cell.dict['tot_ck_upt']/EC50_ck_immune)
+            
+#             if cell.dict['tot_ck_upt'] >= EC50_ck_immune:
+            if rng.uniform() < p_activate:
                 cell.dict['activated'] = True
-            elif cell.dict['activated'] and cell.dict['tot_ck_upt'] < EC50_ck_immune:
+#             elif cell.dict['activated'] and cell.dict['tot_ck_upt'] < EC50_ck_immune:
+            elif cell.dict['activated']:
                 cell.dict['activated'] = False
             if cell.dict['activated']:
                 # print('activated', cell.id)
