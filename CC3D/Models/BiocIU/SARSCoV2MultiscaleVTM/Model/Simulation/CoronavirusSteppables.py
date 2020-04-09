@@ -313,6 +313,22 @@ class Viral_SecretionSteppable(CoronavirusSteppableBasePy):
                 sec_amount = CoronavirusLib.get_viral_replication_cell_secretion(cell=cell)
                 secretor.secreteInsideCellTotalCount(cell, sec_amount / cell.volume)
 
+class Death_Signal_Secretion_Steppable(CoronavirusSteppableBasePy):
+    """
+    Extracellular pathway - death ligand secretion
+    """
+    def __init__(self, frequency=1):
+        CoronavirusSteppableBasePy.__init__(self, frequency)
+
+    def start(self):
+
+    def step(self, mcs):
+        secretion = self.get_field_secretor("death_signal")
+        for cell in self.cell_list_by_type(self.UNINFECTED, self.INFECTED, self.INFECTEDSECRETING):
+            # Evaluate probability of cell uptake of viral particles from environment
+            # If cell isn't infected, it changes type to infected here if uptake occurs
+
+
 
 class ImmuneCellKillingSteppable(CoronavirusSteppableBasePy):
     """
