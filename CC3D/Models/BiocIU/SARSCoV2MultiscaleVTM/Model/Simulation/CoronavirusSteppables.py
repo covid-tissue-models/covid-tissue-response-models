@@ -103,7 +103,7 @@ translating_rate = exp_translating_rate * s_to_mcs
 packing_rate = exp_packing_rate * s_to_mcs
 secretion_rate = exp_secretion_rate * s_to_mcs
 
-# cytokine
+# cytokine / immune activation
 
 cytokine_dc = exp_cytokine_dc_cyto * s_to_mcs / (um_to_lat_width ** 2)  # CK diff cst
 # [1/g] = [s] -> [1/g]/s_to_mcs = [s]/[s/mcs] = [mcs]
@@ -114,11 +114,14 @@ cytokine_field_decay = exp_min_ck_decay * s_to_mcs
 max_ck_consume = exp_max_cytokine_consumption_mol * um_to_lat_width ** 3 * s_to_mcs * 1e-15 * pmol_to_cc3d_au  # cc3d_au/(pixel seconds)
 max_ck_secrete_im = exp_max_cytokine_immune_secretion_mol * um_to_lat_width ** 3 * s_to_mcs * 1e-15 * pmol_to_cc3d_au  # * cc3d_au/(pixel seconds)
 EC50_ck_immune = exp_EC50_cytokine_immune * um_to_lat_width ** 3 * 1e-15 * pmol_to_cc3d_au  # * cc3d_au/pixel
-ck_equilibrium = 1.5*EC50_ck_immune # equilibrium amount of ck in immune surface
+# ck_equilibrium = 1.5*EC50_ck_immune # equilibrium amount of ck in immune surface
+ck_equilibrium = 5*EC50_ck_immune # equilibrium amount of ck in immune surface
 ck_memory_immune = 1 - max_ck_consume/ck_equilibrium # decay therm for "seen" ck by immune
 
 max_ck_secrete_infect = 10*max_ck_secrete_im
 
+
+minimum_activated_time = 50 # mcs
 
 # Threshold at which cell infection is evaluated
 cell_infection_threshold = 1.0
@@ -616,17 +619,21 @@ class CytokineProductionAbsorptionSteppable(CoronavirusSteppableBasePy):
             #uptake ck
             
             cell.dict['tot_ck_upt'] -= up_res.tot_amount  # from POV of secretion uptake is negative
-            print('tot_upt', cell.dict['tot_ck_upt'],'upt_now', up_res.tot_amount)
+#             print('tot_upt', cell.dict['tot_ck_upt'],'upt_now', up_res.tot_amount)
             
             p_activate = nCoVUtils.hill_equation(cell.dict['tot_ck_upt'], EC50_ck_immune, 2)
+            
             print('prob activation', p_activate, 'upt/ec50', cell.dict['tot_ck_upt']/EC50_ck_immune)
             
-#             if cell.dict['tot_ck_upt'] >= EC50_ck_immune:
-            if rng.uniform() < p_activate:
+            if rng.uniform() < p_activate and not cell.dict['activated'] :
                 cell.dict['activated'] = True
-#             elif cell.dict['activated'] and cell.dict['tot_ck_upt'] < EC50_ck_immune:
-            elif cell.dict['activated']:
+                cell.dict['time_activation'] = mcs
+            elif (cell.dict['activated'] 
+                    and mcs - cell.dict['time_activation'] > minimum_activated_time):
                 cell.dict['activated'] = False
+                cell.dict['time_activation'] = - 99
+            
+            
             if cell.dict['activated']:
                 # print('activated', cell.id)
                 sec_res = self.ck_secretor.secreteInsideCellTotalCount(cell,
