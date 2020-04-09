@@ -72,6 +72,11 @@ exp_cytokine_dc_w = 100  # um^2/s; diffusion constant in water (A,B)
 exp_cytokine_dc_cyto = 16 / 10  # um^2/s; estimated diffusion constant in cytoplasm (B)
 # ^ the  /10 is not experimental; added because of relative small area and because virus D is (or was) slowed down
 
+exp_max_ck_diff_len = 100 # um  from (A); this diffusion length is due to uptake, I'm using it as a base
+# for the decay due to ck leakage outside of the simulatted lattice.
+# dl = sqrt(D/g) -> g = D/dl**2
+exp_min_ck_decay = exp_cytokine_dc_cyto/(1.1*exp_max_ck_diff_len)**2
+
 exp_max_cytokine_consumption = 1  # molecule / (cell second); maximum consumption of cytokine; actually a range [0.3,1] molecule / (cell second) (A)
 exp_max_cytokine_immune_secretion = 10  # molecule / (cell second) (B)
 
@@ -99,7 +104,9 @@ secretion_rate = exp_secretion_rate * s_to_mcs
 # cytokine
 
 cytokine_dc = exp_cytokine_dc_cyto * s_to_mcs / (um_to_lat_width ** 2)  # CK diff cst
-
+# [1/g] = [s] -> [1/g]/s_to_mcs = [s]/[s/mcs] = [mcs]
+# -> [g] = [1/s] -> [g]*[s_to_mcs] = [1/s]*[s/mcs] = [1/mcs]
+cytokine_field_decay = exp_min_ck_decay * s_to_mcs
 # pM = pmol/L = pmol/(10^15 um^3) = 10^-15 pmol/(um^3) = 10^-15 * um_to_lat_width^3 pmol/pixel
 # pM/s = pM * s_to_mcs / MCS
 max_ck_consume = exp_max_cytokine_consumption_mol * um_to_lat_width ** 3 * s_to_mcs * 1e-15 * pmol_to_cc3d_au  # cc3d_au/(pixel seconds)
@@ -568,7 +575,8 @@ class CytokineProductionAbsorptionSteppable(CoronavirusSteppableBasePy):
     def start(self):
         # cytokine diff parameters
         self.get_xml_element('cytokine_dc').cdata = cytokine_dc
-        self.get_xml_element('cytokine_decay').cdata = 0  # no "natural" decay, only consumption
+        self.get_xml_element('cytokine_decay').cdata = cytokine_field_decay  # no "natural" decay, only consumption
+        # and "leakage" outside of simulation laticce
 
         for cell in self.cell_list_by_type(self.IMMUNECELL):
             # TODO: differentiate this rates between the cell types
