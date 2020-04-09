@@ -87,6 +87,10 @@ exp_max_cytokine_immune_secretion_mol = 3.5e-3  # pM/s
 
 exp_EC50_cytokine_immune = 1  # pM from (B), it's a range from [1,50]pM
 
+## tbd: try to find experimental data
+minimum_activated_time_seconds = 60 * 60 # min * s/min
+
+
 # =============================
 # CompuCell Parameters
 # cell
@@ -119,9 +123,7 @@ ck_equilibrium = 5*EC50_ck_immune # equilibrium amount of ck in immune surface
 ck_memory_immune = 1 - max_ck_consume/ck_equilibrium # decay therm for "seen" ck by immune
 
 max_ck_secrete_infect = 10*max_ck_secrete_im
-
-
-minimum_activated_time = 50 # mcs
+minimum_activated_time = minimum_activated_time_seconds/s_to_mcs # mcs
 
 # Threshold at which cell infection is evaluated
 cell_infection_threshold = 1.0
