@@ -14,7 +14,7 @@
     <Potts>
         <!-- Basic properties of CPM (GGH) algorithm -->
         <Dimensions x="90" y="90" z="2"/>
-        <Steps>1000</Steps>
+        <Steps>1001</Steps>
         <Temperature>10.0</Temperature>
         <NeighborOrder>3</NeighborOrder>
         <Boundary_x>Periodic</Boundary_x>
@@ -61,7 +61,7 @@
         <Energy Type1="InfectedSecreting" Type2="Immunecell">10.0</Energy>
         <Energy Type1="Dying" Type2="Dying">10.0</Energy>
         <Energy Type1="Dying" Type2="Immunecell">10.0</Energy>
-        <Energy Type1="Immunecell" Type2="Immunecell">20.0</Energy>
+        <Energy Type1="Immunecell" Type2="Immunecell">25.0</Energy>
         <NeighborOrder>3</NeighborOrder>
     </Plugin>
    
