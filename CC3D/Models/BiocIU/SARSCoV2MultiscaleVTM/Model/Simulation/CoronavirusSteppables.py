@@ -105,8 +105,7 @@ max_ck_consume = exp_max_cytokine_consumption_mol * um_to_lat_width ** 3 * s_to_
 max_ck_secrete_im = exp_max_cytokine_immune_secretion_mol * um_to_lat_width ** 3 * s_to_mcs * 1e-15 * pmol_to_cc3d_au  # * cc3d_au/(pixel seconds)
 EC50_ck_immune = exp_EC50_cytokine_immune * um_to_lat_width ** 3 * 1e-15 * pmol_to_cc3d_au  # * cc3d_au/pixel
 
-max_ck_secrete_infect = 10*max_ck_secrete_im
-
+max_ck_secrete_infect = 10 * max_ck_secrete_im
 
 # Threshold at which cell infection is evaluated
 cell_infection_threshold = 1.0
@@ -125,6 +124,13 @@ hill_coeff_uptake_pr = 3.0
 # Efficiency of viral uptake
 relative_viral_uptake = 0.1
 
+# Hill equation coefficients for probability of death ligand binding to death receptor
+
+# dissociationt constant
+diss_coeff_bind_pr = 1.0
+# Hill coefficient
+hill_coeff_bind_pr = 1.0
+
 # Number of immune cells to seed at the beginning of the simulation
 initial_immune_seeding = 0.0
 # Rate for seeding of immune cells (constant)
@@ -132,10 +138,10 @@ immune_seeding_rate = 1.0 / 10.0
 # Max dying rate of immune cells (actual rate is proportional to fraction of infected cells)
 immunecell_dying_rate = 0.0 / 500.0
 # Bystander effect
-bystander_effect = 2.0/4.0
+bystander_effect = 2.0 / 4.0
 # Lambda Chemotaxis
 # lamda_chemotaxis = 100.0
-lamda_chemotaxis = 100.0/100.0
+lamda_chemotaxis = 100.0 / 100.0
 
 # Antimony/SBML model step size
 vr_step_size = 1.0
@@ -145,6 +151,7 @@ class CellsInitializerSteppable(CoronavirusSteppableBasePy):
     """
     DESCRIPTION HERE!
     """
+
     def __init__(self, frequency=1):
         CoronavirusSteppableBasePy.__init__(self, frequency)
 
@@ -199,6 +206,7 @@ class Viral_ReplicationSteppable(CoronavirusSteppableBasePy):
     """
     DESCRIPTION HERE!
     """
+
     def __init__(self, frequency=1):
         CoronavirusSteppableBasePy.__init__(self, frequency)
 
@@ -254,7 +262,6 @@ class Viral_ReplicationSteppable(CoronavirusSteppableBasePy):
                 cell.type = self.INFECTEDSECRETING
                 CoronavirusLib.enable_viral_secretion(cell=cell, secretion_rate=secretion_rate)
 
-
                 # cyttokine params
                 cell.dict['ck_production'] = max_ck_secrete_infect  # TODO: replace secretion by hill
 
@@ -272,6 +279,7 @@ class Viral_SecretionSteppable(CoronavirusSteppableBasePy):
     """
     DESCRIPTION HERE!
     """
+
     def __init__(self, frequency=1):
         CoronavirusSteppableBasePy.__init__(self, frequency)
 
@@ -308,7 +316,6 @@ class Viral_SecretionSteppable(CoronavirusSteppableBasePy):
                                                       secretion_rate=secretion_rate)
                 CoronavirusLib.set_viral_replication_cell_uptake(cell=cell, uptake=cell.dict['Uptake'])
 
-
             if cell.type == self.INFECTEDSECRETING:
                 sec_amount = CoronavirusLib.get_viral_replication_cell_secretion(cell=cell)
                 secretor.secreteInsideCellTotalCount(cell, sec_amount / cell.volume)
@@ -321,19 +328,29 @@ class Death_Signal_Secretion_Steppable(CoronavirusSteppableBasePy):
         CoronavirusSteppableBasePy.__init__(self, frequency)
 
     def start(self):
+        pass
 
     def step(self, mcs):
-        secretion = self.get_field_secretor("death_signal")
+        secretor = self.get_field_secretor("death_signal")
         for cell in self.cell_list_by_type(self.UNINFECTED, self.INFECTED, self.INFECTEDSECRETING):
-            # Evaluate probability of cell uptake of viral particles from environment
-            # If cell isn't infected, it changes type to infected here if uptake occurs
+            # check if cell's death receptor has bound with death ligand
+            if self.death_signal_binding(death_field=self.field.death_signal,
+                                         cell=cell,
+                                         diss_coeff_bind_pr=diss_coeff_bind_pr,
+                                         hill_coeff_bind_pr=hill_coeff_bind_pr):
+                # K complex (chemical reaction Secretion + Trail)
+                self.kill_cell(cell=cell)
 
-
+            if cell.type == self.INFECTED:
+                # amount of death ligands leaked as a fraction of viral particles in packing rate
+                leak = cell.dict['Packing'] / 10
+                secretor.secreteInsideCellTotalCount(cell, leak / cell.volume)
 
 class ImmuneCellKillingSteppable(CoronavirusSteppableBasePy):
     """
     DESCRIPTION HERE!
     """
+
     def step(self, mcs):
         killed_cells = []
         for cell in self.cell_list_by_type(self.INFECTED, self.INFECTEDSECRETING):
@@ -357,6 +374,7 @@ class ChemotaxisSteppable(CoronavirusSteppableBasePy):
     """
     DESCRIPTION HERE!
     """
+
     def __init__(self, frequency=1):
         CoronavirusSteppableBasePy.__init__(self, frequency)
 
@@ -388,6 +406,7 @@ class ImmuneCellSeedingSteppable(CoronavirusSteppableBasePy):
     """
     DESCRIPTION HERE!
     """
+
     def __init__(self, frequency=1):
         CoronavirusSteppableBasePy.__init__(self, frequency)
 
@@ -451,6 +470,7 @@ class SimDataSteppable(SteppableBasePy):
     """
     Plots/writes simulation data of interest
     """
+
     def __init__(self, frequency=1):
         SteppableBasePy.__init__(self, frequency)
 
@@ -572,6 +592,7 @@ class CytokineProductionAbsorptionSteppable(CoronavirusSteppableBasePy):
     """
     DESCRIPTION HERE!
     """
+
     def __init__(self, frequency=1):
         CoronavirusSteppableBasePy.__init__(self, frequency)
         self.track_cell_level_scalar_attribute(field_name='activated', attribute_name='activated')
@@ -589,7 +610,7 @@ class CytokineProductionAbsorptionSteppable(CoronavirusSteppableBasePy):
             cell.dict['ck_production'] = max_ck_secrete_im  # TODO: replace secretion by hill
             cell.dict['ck_consumption'] = max_ck_consume  # TODO: replace by hill
 
-        for cell in self.cell_list_by_type(self.INFECTED,self.INFECTEDSECRETING):
+        for cell in self.cell_list_by_type(self.INFECTED, self.INFECTEDSECRETING):
             cell.dict['ck_production'] = max_ck_secrete_infect  # TODO: replace secretion by hill
 
         # Make sure Secretion plugin is loaded
@@ -600,7 +621,7 @@ class CytokineProductionAbsorptionSteppable(CoronavirusSteppableBasePy):
 
     def step(self, mcs):
 
-        for cell in self.cell_list_by_type(self.INFECTED,self.INFECTEDSECRETING):
+        for cell in self.cell_list_by_type(self.INFECTED, self.INFECTEDSECRETING):
             res = self.ck_secretor.secreteInsideCellTotalCount(cell,
                                                                cell.dict['ck_production'] / cell.volume)
 
@@ -610,11 +631,10 @@ class CytokineProductionAbsorptionSteppable(CoronavirusSteppableBasePy):
                                                                  cell.dict['ck_consumption'] / cell.volume, 0.1)
             # Added virus uptake
 
-            self.virus_secretor.uptakeInsideCellTotalCount(cell,cell.dict['ck_consumption'] / cell.volume, 0.1)
-
+            self.virus_secretor.uptakeInsideCellTotalCount(cell, cell.dict['ck_consumption'] / cell.volume, 0.1)
 
             cell.dict['tot_ck_upt'] -= up_res.tot_amount  # from POV of secretion uptake is negative
-            print('tot_upt', cell.dict['tot_ck_upt'],'upt_now', up_res.tot_amount)
+            print('tot_upt', cell.dict['tot_ck_upt'], 'upt_now', up_res.tot_amount)
             if cell.dict['tot_ck_upt'] >= EC50_ck_immune:
                 cell.dict['activated'] = True
 

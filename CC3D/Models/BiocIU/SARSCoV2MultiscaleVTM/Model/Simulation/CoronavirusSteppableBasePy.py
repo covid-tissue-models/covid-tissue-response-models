@@ -107,6 +107,18 @@ class CoronavirusSteppableBasePy(nCoVSteppableBase):
         else:
             return False
 
+    def death_signal_binding(self, death_field, cell, diss_coeff_bind_pr, hill_coeff_bind_pr):
+        # general measurement of amount of death ligands in cell's extracellular surrounding
+        cell_env_death_ligands = death_field[cell.xCOM, cell.yCOM, cell.zCOM] * cell.volume
+        if cell_env_death_ligands != 0:
+            # could add Trail here for K-complex
+            max_death_ligands = nCoVUtils.hill_equation(val=cell_env_death_ligands,
+                                                        diss_cf=diss_coeff_bind_pr,
+                                                        hill_cf=hill_coeff_bind_pr)
+            return np.random.random() < max_death_ligands
+        else:
+            return False
+
     def kill_cell(self, cell):
         """
         Model-specific cell death routines
