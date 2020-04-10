@@ -48,7 +48,7 @@ write_med_viral_data_freq = 0  # Write total diffusive viral amount frequency (d
 s_to_mcs = 120.0  # s/mcs
 um_to_lat_width = 4.0  # um/lattice_length
 
-pmol_to_cc3d_au = 1e15 # 1e15au/1pmol
+pmol_to_cc3d_au = 1e15  # 1e15au/1pmol
 
 # Experimental Parameters
 exp_cell_diameter = 12.0  # um
@@ -72,7 +72,7 @@ exp_cytokine_dc_w = 100  # um^2/s; diffusion constant in water (A,B)
 exp_cytokine_dc_cyto = 16 / 10  # um^2/s; estimated diffusion constant in cytoplasm (B)
 # ^ the  /10 is not experimental; added because of relative small area and because virus D is (or was) slowed down
 
-exp_max_ck_diff_len = 100 # um  from (A); this diffusion length is due to uptake, I'm using it as a base
+exp_max_ck_diff_len = 100  # um  from (A); this diffusion length is due to uptake, I'm using it as a base
 # for the decay due to ck leakage outside of the simulatted lattice.
 # dl = sqrt(D/g) -> g = D/dl**2
 exp_min_ck_decay = exp_cytokine_dc_cyto/(1.1*exp_max_ck_diff_len)**2
@@ -151,24 +151,25 @@ lamda_chemotaxis = 100.0/100.0
 vr_step_size = 1.0
 
 # Viral Internalization parameters
-exp_kon = 1.36E5 #1/(M * s)
-exp_koff = 4.70E-3 #1/s
-exp_internalization_rate = 1.0/10.0 #1/s
+exp_kon = 1.36E5  # 1/(M * s)
+exp_koff = 4.70E-3  # 1/s
+exp_internalization_rate = 1.0/10.0  # 1/s
 
 initial_unbound_receptors = 2E4
-#TODO Something wrong with parameter conversion
+# TODO Something wrong with parameter conversion
 kon = exp_kon * s_to_mcs * 1.0E15 * (1.0/(um_to_lat_width**3)) * (1.0/1.0E12) * (1.0/pmol_to_cc3d_au)
 koff = exp_koff * s_to_mcs
 internalization_rate = exp_internalization_rate * s_to_mcs
 rounding_threshold = 700*0.1
 
-#TODO THIS NEEDS A LOT OF WORK AND NEEDS MOVING TO UTILITIES
+# TODO THIS NEEDS A LOT OF WORK AND NEEDS MOVING TO UTILITIES
 vi_model_name = 'viralInternalization'
 vil_key = 'viral_internalization_loaded'
 vi_step_size = 1.0
 vi_cell_dict_to_sym = {'Unbound_Receptors': 'R',
                        'Surface_Complexes': 'VR',
                        'Internalized_Complexes': 'Vi'}
+
 
 def pack_viral_internalization_variables(cell):
     """
@@ -179,6 +180,7 @@ def pack_viral_internalization_variables(cell):
     assert cell.dict[vrl_key]
     for k, v in vr_cell_dict_to_sym.items():
         cell.dict[k] = getattr(cell.sbml, vr_model_name)[v]
+
 
 def viral_internalization_model_string(_kon, _koff, _internalization_rate):
     """
@@ -203,6 +205,7 @@ def viral_internalization_model_string(_kon, _koff, _internalization_rate):
         end""".format(vi_model_name, _kon, _koff, _internalization_rate)
     return model_string
 
+
 def load_viral_internalization_model(self, cell, vi_step_size, kon=0, koff=0,
                                      internalization_rate=0):
         """
@@ -216,7 +219,7 @@ def load_viral_internalization_model(self, cell, vi_step_size, kon=0, koff=0,
         """
         if cell.dict[vil_key]:
             self.delete_sbml_from_cell(vi_model_name, cell)
-        #TODO: WHY?
+        # TODO: WHY?
         model_string = viral_internalization_model_string(
             kon, koff, internalization_rate,
             cell.dict['Unbound_Receptors'], cell.dict['Surface_Complexes'], cell.dict['Internalized_Complexes'], cell.dict['Assembled'],
@@ -226,6 +229,7 @@ def load_viral_internalization_model(self, cell, vi_step_size, kon=0, koff=0,
                                   cell=cell,
                                   step_size=vi_step_size)
         cell.dict[vil_key] = True
+
 
 class CellsInitializerSteppable(CoronavirusSteppableBasePy):
     """
@@ -283,17 +287,19 @@ class CellsInitializerSteppable(CoronavirusSteppableBasePy):
             cell.dict['ck_consumption'] = max_ck_consume
             cell.dict['tot_ck_upt'] = 0
 
-#TODO Needs validation and rescaling of the VRM parameter to get accurate number of viral titers
+
+# TODO Needs validation and rescaling of the VRM parameter to get accurate number of viral titers
 class Viral_InternalizationSteppable(CoronavirusSteppableBasePy):
     def __init__(self, frequency=1):
         CoronavirusSteppableBasePy.__init__(self, frequency)
 
     def __init_fresh_recruitment_model(self):
         # Generate solver instance
-        model_string =viral_internalization_model_string(kon,koff,internalization_rate)
+        model_string = viral_internalization_model_string(kon, koff, internalization_rate)
         self.add_free_floating_antimony(model_string=model_string,
                                         model_name=vi_model_name,
                                         step_size=vi_step_size)
+
     def start(self):
         self.__init_fresh_recruitment_model()
 
@@ -306,23 +312,23 @@ class Viral_InternalizationSteppable(CoronavirusSteppableBasePy):
         for cell in self.cell_list_by_type(self.UNINFECTED, self.INFECTED, self.INFECTEDSECRETING):
             # Fast measurement
             if go_fast:
-                reference_volume = 1 #pixel
+                reference_volume = 1  # pixel
                 num_internalized_complexes = cell.dict['Internalized_Complexes']
                 num_unbound_receptors = cell.dict['Unbound_Receptors'] / cell.volume
                 num_surface_complexes = cell.dict['Surface_Complexes'] / cell.volume
 
                 # Averaging: Determine concentration at the COM
                 cell_env_viral_val_com = viral_field[cell.xCOM, cell.yCOM, cell.zCOM]
-                num_viral_particles_environment = cell_env_viral_val_com * (1.0/pmol_to_cc3d_au) \
-                                                     * 10.0E-12 * 6.022E23 * cell.volume
+                num_viral_particles_environment = \
+                    cell_env_viral_val_com * (1.0/pmol_to_cc3d_au) * 10.0E-12 * 6.022E23 * cell.volume
 
                 if num_viral_particles_environment >= rounding_threshold:
-                    #TODO Step SBML MODEL
+                    # TODO Step SBML MODEL
                     pass
 
                 else:
-                    num_viral_particles_environment = int(num_viral_particles_environment )
-                    num_surface_complexes = int(num_surface_complexes )
+                    num_viral_particles_environment = int(num_viral_particles_environment)
+                    num_surface_complexes = int(num_surface_complexes)
                     num_unbound_receptors = int(num_unbound_receptors)
                     num_internalized_complexes = int(num_internalized_complexes)
                     # Determine association (binding) events
@@ -333,15 +339,15 @@ class Viral_InternalizationSteppable(CoronavirusSteppableBasePy):
                                 num_surface_complexes += 1
                                 num_unbound_receptors -= 1
 
-                    #Determine disassociation (unbinding) event
+                    # Determine disassociation (unbinding) event
                     if num_surface_complexes > 1:
-                        for complex in range(num_surface_complexes):
+                        for surf_complex in range(num_surface_complexes):
                             p_unbinding = np.random.random()
-                            if p_unbinding < koff/ reference_volume:
+                            if p_unbinding < koff / reference_volume:
                                 num_unbound_receptors += 1
                                 num_surface_complexes -= 1
 
-                    #Determine internalization event
+                    # Determine internalization event
                     total_num_unbound_receptors = num_unbound_receptors*cell.volume
                     total_num_surface_complexes = num_surface_complexes*cell.volume
                     if total_num_surface_complexes > 1:
@@ -354,7 +360,8 @@ class Viral_InternalizationSteppable(CoronavirusSteppableBasePy):
                     cell.dict['Surface_Complexes'] = total_num_surface_complexes
                     cell.dict['Internalized_Complexes'] = num_internalized_complexes
 
-            #TODO Add actual uptake from the field based on discussion with James
+
+# TODO Add actual uptake from the field based on discussion with James
 class Viral_ReplicationSteppable(CoronavirusSteppableBasePy):
     """
     DESCRIPTION HERE!
@@ -414,7 +421,6 @@ class Viral_ReplicationSteppable(CoronavirusSteppableBasePy):
                 cell.type = self.INFECTEDSECRETING
                 CoronavirusLib.enable_viral_secretion(cell=cell, secretion_rate=secretion_rate)
 
-
                 # cyttokine params
                 cell.dict['ck_production'] = max_ck_secrete_infect
 
@@ -467,7 +473,6 @@ class Viral_SecretionSteppable(CoronavirusSteppableBasePy):
                                                       packing_rate=packing_rate,
                                                       secretion_rate=secretion_rate)
                 CoronavirusLib.set_viral_replication_cell_uptake(cell=cell, uptake=cell.dict['Uptake'])
-
 
             if cell.type == self.INFECTEDSECRETING:
                 sec_amount = CoronavirusLib.get_viral_replication_cell_secretion(cell=cell)
@@ -745,25 +750,24 @@ class CytokineProductionAbsorptionSteppable(CoronavirusSteppableBasePy):
 
     def step(self, mcs):
 
-
         for cell in self.cell_list_by_type(self.INFECTED,self.INFECTEDSECRETING):
             res = self.ck_secretor.secreteInsideCellTotalCount(cell,
                                                                cell.dict['ck_production'] / cell.volume)
 
         for cell in self.cell_list_by_type(self.IMMUNECELL):
             
-            self.virus_secretor.uptakeInsideCellTotalCount(cell,cell.dict['ck_consumption'] / cell.volume, 0.1)
+            self.virus_secretor.uptakeInsideCellTotalCount(cell, cell.dict['ck_consumption'] / cell.volume, 0.1)
             
             # print(EC50_ck_immune)
             up_res = self.ck_secretor.uptakeInsideCellTotalCount(cell,
                                                                  cell.dict['ck_consumption'] / cell.volume, 0.1)
-            #decay seen ck
+            # decay seen ck
             cell.dict['tot_ck_upt'] *= ck_memory_immune
             
-            #uptake ck
+            # uptake ck
             
             cell.dict['tot_ck_upt'] -= up_res.tot_amount  # from POV of secretion uptake is negative
-            print('tot_upt', cell.dict['tot_ck_upt'],'upt_now', up_res.tot_amount)
+            print('tot_upt', cell.dict['tot_ck_upt'], 'upt_now', up_res.tot_amount)
             if cell.dict['tot_ck_upt'] >= EC50_ck_immune:
                 cell.dict['activated'] = True
             elif cell.dict['activated'] and cell.dict['tot_ck_upt'] < EC50_ck_immune:
