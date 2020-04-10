@@ -15,6 +15,8 @@ from cc3d.core.PySteppables import *
 from cc3d.cpp import CompuCell
 import numpy as np
 
+rng = np.random #alias for random number generators (rng)
+
 # Set this to True for local references when developing; False when running
 __dev_mode__ = False
 
@@ -89,6 +91,10 @@ exp_max_cytokine_immune_secretion_mol = 3.5e-3  # pM/s
 
 exp_EC50_cytokine_immune = 1  # pM from (B), it's a range from [1,50]pM
 
+## tbd: try to find experimental data
+minimum_activated_time_seconds = 60 * 60 # min * s/min
+
+
 # =============================
 # CompuCell Parameters
 # cell
@@ -105,7 +111,7 @@ translating_rate = exp_translating_rate * s_to_mcs
 packing_rate = exp_packing_rate * s_to_mcs
 secretion_rate = exp_secretion_rate * s_to_mcs
 
-# cytokine
+# cytokine / immune activation
 
 cytokine_dc = exp_cytokine_dc_cyto * s_to_mcs / (um_to_lat_width ** 2)  # CK diff cst
 # [1/g] = [s] -> [1/g]/s_to_mcs = [s]/[s/mcs] = [mcs]
@@ -116,11 +122,16 @@ cytokine_field_decay = exp_min_ck_decay * s_to_mcs
 max_ck_consume = exp_max_cytokine_consumption_mol * um_to_lat_width ** 3 * s_to_mcs * 1e-15 * pmol_to_cc3d_au  # cc3d_au/(pixel seconds)
 max_ck_secrete_im = exp_max_cytokine_immune_secretion_mol * um_to_lat_width ** 3 * s_to_mcs * 1e-15 * pmol_to_cc3d_au  # * cc3d_au/(pixel seconds)
 EC50_ck_immune = exp_EC50_cytokine_immune * um_to_lat_width ** 3 * 1e-15 * pmol_to_cc3d_au  # * cc3d_au/pixel
-ck_equilibrium = 1.5*EC50_ck_immune # equilibrium amount of ck in immune surface
+# ck_equilibrium = 1.5*EC50_ck_immune # equilibrium amount of ck in immune surface
+ck_equilibrium = 2.1*EC50_ck_immune # equilibrium amount of ck in immune surface
 ck_memory_immune = 1 - max_ck_consume/ck_equilibrium # decay therm for "seen" ck by immune
 
 max_ck_secrete_infect = 10*max_ck_secrete_im
+minimum_activated_time = minimum_activated_time_seconds/s_to_mcs # mcs
 
+ec50_infecte_ck_prod = 0.1 # amount of 'internal assembled virus' to be at 50% ck production; chosen from 
+# tipical simulation values of cell.dict['Uptake'] + cell.dict['Assembled']. they stay around .1 and go up as the 
+# simulation progresses
 
 # Threshold at which cell infection is evaluated
 cell_infection_threshold = 1.0
@@ -657,10 +668,13 @@ class CytokineProductionAbsorptionSteppable(CoronavirusSteppableBasePy):
 
 
         for cell in self.cell_list_by_type(self.INFECTED,self.INFECTEDSECRETING):
-            res = self.ck_secretor.secreteInsideCellTotalCount(cell,
-                                                               cell.dict['ck_production'] / cell.volume)
+            viral_load = CoronavirusLib.get_assembled_viral_load_inside_cell(cell,vr_step_size)
+            produced = cell.dict['ck_production'] * nCoVUtils.hill_equation(viral_load, ec50_infecte_ck_prod, 2)
+#             print('produced ck', produced, produced/cell.dict['ck_production'])
+            res = self.ck_secretor.secreteInsideCellTotalCount(cell,produced / cell.volume)
             total_ck_inc += res.tot_amount
-
+            
+        
         for cell in self.cell_list_by_type(self.IMMUNECELL):
             
             self.virus_secretor.uptakeInsideCellTotalCount(cell,cell.dict['ck_consumption'] / cell.volume, 0.1)
@@ -678,16 +692,31 @@ class CytokineProductionAbsorptionSteppable(CoronavirusSteppableBasePy):
             #uptake ck
             
             cell.dict['tot_ck_upt'] -= up_res.tot_amount  # from POV of secretion uptake is negative
+#             print('tot_upt', cell.dict['tot_ck_upt'],'upt_now', up_res.tot_amount)
             total_ck_inc += up_res.tot_amount
-            print('tot_upt', cell.dict['tot_ck_upt'], 'upt_now', up_res.tot_amount)
-            if cell.dict['tot_ck_upt'] >= EC50_ck_immune:
+            p_activate = nCoVUtils.hill_equation(cell.dict['tot_ck_upt'], EC50_ck_immune, 2)
+            
+#             print('prob activation', p_activate, 'upt/ec50', cell.dict['tot_ck_upt']/EC50_ck_immune)
+            
+            if rng.uniform() < p_activate and not cell.dict['activated'] :
+
                 cell.dict['activated'] = True
-            elif cell.dict['activated'] and cell.dict['tot_ck_upt'] < EC50_ck_immune:
+                cell.dict['time_activation'] = mcs
+            elif (cell.dict['activated'] 
+                    and mcs - cell.dict['time_activation'] > minimum_activated_time):
                 cell.dict['activated'] = False
+                cell.dict['time_activation'] = - 99
+            
+            
             if cell.dict['activated']:
                 # print('activated', cell.id)
-                sec_res = self.ck_secretor.secreteInsideCellTotalCount(cell,
-                                                                       cell.dict['ck_production'] / cell.volume)
+                
+                seen_field = self.total_seen_field(self.field.cytokine,cell)
+                produced = cell.dict['ck_production'] * nCoVUtils.hill_equation(seen_field, 100, 1)
+#                 print('produced ck', produced, produced/cell.dict['ck_production'],seen_field)
+                sec_res = self.ck_secretor.secreteInsideCellTotalCount(cell,produced / cell.volume)
+
+
                 total_ck_inc += sec_res.tot_amount
 
         self.ir_steppable.increment_total_cytokine_count(total_ck_inc)
@@ -801,3 +830,4 @@ class ImmuneRecruitmentSteppable(CoronavirusSteppableBasePy):
         """
         self.__total_cytokine = max(0.0, self.__total_cytokine + _inc_amount)
         print('self.__total_cytokine:', self.__total_cytokine)
+
