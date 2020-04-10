@@ -43,13 +43,13 @@ else:
     from nCoVToolkit import nCoVUtils
 
 # Data control options
-plot_vrm_data_freq = 1  # Plot viral replication model data frequency (disable with 0)
+plot_vrm_data_freq = 0  # Plot viral replication model data frequency (disable with 0)
 write_vrm_data_freq = 0  # Write viral replication model data to simulation directory frequency (disable with 0)
 plot_pop_data_freq = 0  # Plot population data frequency (disable with 0)
 write_pop_data_freq = 0  # Write population data to simulation directory frequency (disable with 0)
 plot_med_viral_data_freq = 0  # Plot total diffusive viral amount frequency (disable with 0)
 write_med_viral_data_freq = 0  # Write total diffusive viral amount frequency (disable with 0)
-plot_ir_data_freq = 1  # Plot immune recruitment data frequency (disable with 0)
+plot_ir_data_freq = 0  # Plot immune recruitment data frequency (disable with 0)
 write_ir_data_freq = 0  # Write immune recruitment data to simulation directory frequency (disable with 0)
 
 # Conversion Factors
@@ -98,10 +98,16 @@ minimum_activated_time_seconds = 60 * 60 # min * s/min
 
 ## oxidation agent
 
-exp_oxi_dl = 2 * exp_cell_diameter # [um]; guestimation; [.3,3]
+exp_oxi_dl = 3 * exp_cell_diameter # [um]; guestimation; [.3,3]
 exp_oxi_dc_water = 1.2 # cm2/day; http://www.idc-online.com/technical_references/pdfs/chemical_engineering/Transport_Properties_of_Hydrogen_Peroxide_II.pdf
 exp_oxi_dc_water = exp_oxi_dc_water * 1e8 / 86400 # um2/s
 exp_oxi_dc_cyto = exp_oxi_dc_water * .16 # rescale by relative density; cyto ~ 6*water
+# exp_oxi_dc_cyto = exp_cytokine_dc_cyto
+
+# the experimental values are WAY WAY too high for the simulation to behave properlly, so:
+exp_oxi_dc_cyto = 4 * exp_cytokine_dc_cyto
+
+
 
 
 
@@ -149,9 +155,11 @@ ec50_infecte_ck_prod = 0.1 # amount of 'internal assembled virus' to be at 50% c
 
 oxi_dl = exp_oxi_dl/um_to_lat_width
 
-oxi_dc_cyto = exp_oxi_dc_cyto * s_to_mcs / (um_to_lat_width ** 2)
+oxi_dc = exp_oxi_dc_cyto * s_to_mcs / (um_to_lat_width ** 2)
+# oxi_dc = cytokine_dc
 
-oxi_decay = oxi_dl**2/oxi_dc_cyto
+oxi_decay = oxi_dl**2/oxi_dc
+# oxi_decay = cytokine_field_decay
 
 
 # Threshold at which cell infection is evaluated
@@ -844,7 +852,7 @@ class ImmuneRecruitmentSteppable(CoronavirusSteppableBasePy):
         :return: probability of immune cell seeding due to local and global recruitment
         """
         s_val = self.get_state_variable_val()
-        print('get_immune_seeding_prob:', s_val, math.erf(self.prob_scaling_factor * s_val))
+        #print('get_immune_seeding_prob:', s_val, math.erf(self.prob_scaling_factor * s_val))
         if s_val < 0:
             return 0.0
         else:
@@ -858,7 +866,7 @@ class ImmuneRecruitmentSteppable(CoronavirusSteppableBasePy):
         :return: probability of immune cell removal due to local and global recruitment
         """
         s_val = self.get_state_variable_val()
-        print('get_immune_removal_prob:', s_val, math.erf(self.prob_scaling_factor * s_val))
+#         print('get_immune_removal_prob:', s_val, math.erf(self.prob_scaling_factor * s_val))
         if s_val > 0:
             return 0.0
         else:
@@ -871,7 +879,7 @@ class ImmuneRecruitmentSteppable(CoronavirusSteppableBasePy):
         :return: None
         """
         self.__total_cytokine = max(0.0, self.__total_cytokine + _inc_amount)
-        print('self.__total_cytokine:', self.__total_cytokine)
+#         print('self.__total_cytokine:', self.__total_cytokine)
 
 
 
@@ -884,15 +892,23 @@ class oxidationAgentModelSteppable(CoronavirusSteppableBasePy):
 
     def start(self):
         self.get_xml_element('oxi_dc').cdata = oxi_dc
-        self.get_xml_element('oxi_decay').cdata = oxi_field_decay  
-
-
+        self.get_xml_element('oxi_decay').cdata = oxi_decay  
+        
+        self.oxi_secretor = self.get_field_secretor("oxidator")
+        
     def step(self, mcs):
-        print("oxidationAgentModelSteppable: This function is called every 1 MCS")
+        
 
-        for cell in self.cell_list:
-            print("CELL ID=",cell.id, " CELL TYPE=",cell.type," volume=",cell.volume)
-
+        for cell in self.cell_list_by_type(self.IMMUNECELL):
+#             oxi_sec = self.oxi_secretor.secreteInsideCellTotalCount(cell, max_ck_secrete_infect )
+            if cell.dict['activated']:
+                seen_field = self.total_seen_field(self.field.cytokine, cell)
+                #print(seen_field)
+                if seen_field > 10:
+                    oxi_sec = self.oxi_secretor.secreteInsideCellTotalCount(cell, max_ck_secrete_infect )
+            
+        for cell in self.cell_list_by_type(self.INFECTED, self.INFECTEDSECRETING):
+            print(self.total_seen_field(self.field.oxidator, cell))
 
     def finish(self):
         # this function may be called at the end of simulation - used very infrequently though
