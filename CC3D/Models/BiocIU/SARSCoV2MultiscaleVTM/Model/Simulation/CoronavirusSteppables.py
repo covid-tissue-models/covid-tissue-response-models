@@ -45,6 +45,8 @@ plot_pop_data_freq = 0  # Plot population data frequency (disable with 0)
 write_pop_data_freq = 0  # Write population data to simulation directory frequency (disable with 0)
 plot_med_viral_data_freq = 0  # Plot total diffusive viral amount frequency (disable with 0)
 write_med_viral_data_freq = 0  # Write total diffusive viral amount frequency (disable with 0)
+plot_ir_data_freq = 1  # Plot immune recruitment data frequency (disable with 0)
+write_ir_data_freq = 0  # Write immune recruitment data to simulation directory frequency (disable with 0)
 
 # Conversion Factors
 s_to_mcs = 120.0  # s/mcs
@@ -449,12 +451,20 @@ class SimDataSteppable(SteppableBasePy):
         self.med_viral_data_win = None
         self.med_viral_data_path = None
 
+        self.ir_data_win = None
+        self.ir_data_path = None
+
         self.plot_pop_data = plot_pop_data_freq > 0
         self.write_pop_data = write_pop_data_freq > 0
 
         self.plot_med_viral_data = plot_med_viral_data_freq > 0
         self.write_med_viral_data = write_med_viral_data_freq > 0
         self.med_viral_key = "MedViral"
+
+        self.plot_ir_data = plot_ir_data_freq > 0
+        self.write_ir_data = write_ir_data_freq > 0
+        self.ir_key = "ImmuneResp"
+        self.ir_steppable = None
 
     def start(self):
 
@@ -484,6 +494,16 @@ class SimDataSteppable(SteppableBasePy):
 
             self.med_viral_data_win.add_plot(self.med_viral_key, style='Dots', color='red', size=5)
 
+        if self.plot_ir_data:
+            self.ir_data_win = self.add_new_plot_window(title='Immune Response Model',
+                                                        x_axis_title='MCS',
+                                                        y_axis_title='State variable S',
+                                                        x_scale_type='linear',
+                                                        y_scale_type='linear',
+                                                        grid=True)
+
+            self.ir_data_win.add_plot(self.ir_key, style='Dots', color='red', size=5)
+
         # Check that output directory is available
         if self.output_dir is not None:
             from pathlib import Path
@@ -497,16 +517,24 @@ class SimDataSteppable(SteppableBasePy):
                 with open(self.med_viral_data_path, 'w'):
                     pass
 
+            if self.write_ir_data:
+                self.ir_data_path = Path(self.output_dir).joinpath('ir_data.dat')
+                with open(self.ir_data_path, 'w'):
+                    pass
+
     def step(self, mcs):
 
         plot_pop_data = self.plot_pop_data and mcs % plot_pop_data_freq == 0
         plot_med_viral_data = self.plot_med_viral_data and mcs % plot_med_viral_data_freq == 0
+        plot_ir_data = self.plot_ir_data and mcs % plot_ir_data_freq == 0
         if self.output_dir is not None:
             write_pop_data = self.write_pop_data and mcs % write_pop_data_freq == 0
             write_med_viral_data = self.write_med_viral_data and mcs % write_med_viral_data_freq == 0
+            write_ir_data = self.write_ir_data and mcs % write_ir_data_freq == 0
         else:
             write_pop_data = False
             write_med_viral_data = False
+            write_ir_data = False
 
         if plot_pop_data or write_pop_data:
 
@@ -555,6 +583,24 @@ class SimDataSteppable(SteppableBasePy):
             if write_med_viral_data:
                 with open(self.med_viral_data_path, 'a') as fout:
                     fout.write('{}, {}\n'.format(mcs, med_viral_total))
+
+        if plot_ir_data or write_ir_data:
+            if self.ir_steppable is None:
+                if self.ir_steppable is None:
+                    self.ir_steppable: ImmuneRecruitmentSteppable = self.shared_steppable_vars[
+                        CoronavirusLib.ir_steppable_key]
+
+            s_val = self.ir_steppable.get_state_variable_val()
+
+            # Plot state variable S if requested
+            if plot_ir_data:
+                self.ir_data_win.add_data_point(self.ir_key, mcs, s_val)
+
+            # Write state variable S if requested
+            if write_ir_data:
+                with open(self.ir_data_path, 'a') as fout:
+                    fout.write('{}, {}\n'.format(mcs, s_val))
+
 
 
 class CytokineProductionAbsorptionSteppable(CoronavirusSteppableBasePy):
