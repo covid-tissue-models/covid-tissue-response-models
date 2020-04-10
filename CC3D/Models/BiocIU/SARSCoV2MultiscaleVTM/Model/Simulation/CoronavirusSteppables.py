@@ -179,11 +179,8 @@ class CellsInitializerSteppable(CoronavirusSteppableBasePy):
 
         for x in range(0, self.dim.x, int(cell_diameter)):
             for y in range(0, self.dim.y, int(cell_diameter)):
-                cell = self.new_cell_in_time(self.UNINFECTED)
+                cell = self.new_uninfected_cell_in_time()
                 self.cellField[x:x + int(cell_diameter), y:y + int(cell_diameter), 0] = cell
-                cell.dict[CoronavirusLib.vrl_key] = False
-                CoronavirusLib.reset_viral_replication_variables(cell=cell)
-                cell.dict['Survived'] = False
 
         # Infect a cell
         cell = self.cell_field[self.dim.x // 2, self.dim.y // 2, 0]
@@ -209,15 +206,10 @@ class CellsInitializerSteppable(CoronavirusSteppableBasePy):
                         cell = self.cellField[x, y, 1]
                         break
                 cell = False
-            cell = self.new_cell_in_time(self.IMMUNECELL)
+            cell = self.new_immune_cell_in_time(ck_production=max_ck_secrete_im, ck_consumption=max_ck_consume)
             self.cellField[x:x + int(cell_diameter), y:y + int(cell_diameter), 1] = cell
             cell.targetVolume = cell_volume
             cell.lambdaVolume = cell_volume
-            cell.dict['activated'] = False  # flag for immune cell being naive or activated
-            # cyttokine params
-            cell.dict['ck_production'] = max_ck_secrete_im  # TODO: replace secretion by hill
-            cell.dict['ck_consumption'] = max_ck_consume  # TODO: replace by hill
-            cell.dict['tot_ck_upt'] = 0
 
 
 class Viral_ReplicationSteppable(CoronavirusSteppableBasePy):
@@ -440,12 +432,7 @@ class ImmuneCellSeedingSteppable(CoronavirusSteppableBasePy):
                         x_seed = xi
                         y_seed = yi
             if open_space:
-                cell = self.new_cell_in_time(self.IMMUNECELL)
-                cell.dict['activated'] = False  # flag for immune cell being naive or activated
-                # cytokine parameters
-                cell.dict['ck_production'] = max_ck_secrete_im  # TODO: replace secretion by hill
-                cell.dict['ck_consumption'] = max_ck_consume  # TODO: replace by hill
-                cell.dict['tot_ck_upt'] = 0
+                cell = self.new_immune_cell_in_time(ck_production=max_ck_secrete_im, ck_consumption=max_ck_consume)
 
                 self.cellField[x_seed:x_seed + int(cell_diameter), y_seed:y_seed + int(cell_diameter), 1] = cell
                 cd = self.chemotaxisPlugin.addChemotaxisData(cell, "cytokine")
