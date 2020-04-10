@@ -45,6 +45,8 @@ else:
 # Data control options
 plot_vrm_data_freq = 1  # Plot viral replication model data frequency (disable with 0)
 write_vrm_data_freq = 0  # Write viral replication model data to simulation directory frequency (disable with 0)
+plot_vim_data_freq = 1  # Plot viral internalization model data frequency (disable with 0)
+write_vim_data_freq = 0  # Write viral internalization model data to simulation directory frequency (disable with 0)
 plot_pop_data_freq = 0  # Plot population data frequency (disable with 0)
 write_pop_data_freq = 0  # Write population data to simulation directory frequency (disable with 0)
 plot_med_viral_data_freq = 0  # Plot total diffusive viral amount frequency (disable with 0)
@@ -564,6 +566,9 @@ class SimDataSteppable(SteppableBasePy):
         # The viral replication model of this cell is tracked and plotted/recorded
         self.vrm_tracked_cell = None
 
+        self.vim_data_win = None
+        self.vim_data_path = None
+
         self.pop_data_win = None
         self.pop_data_path = None
 
@@ -575,6 +580,9 @@ class SimDataSteppable(SteppableBasePy):
 
         self.plot_vrm_data = plot_vrm_data_freq > 0
         self.write_vrm_data = write_vrm_data_freq > 0
+
+        self.plot_vim_data = plot_vim_data_freq > 0
+        self.write_vim_data = write_vim_data_freq > 0
 
         self.plot_pop_data = plot_pop_data_freq > 0
         self.write_pop_data = write_pop_data_freq > 0
@@ -606,6 +614,17 @@ class SimDataSteppable(SteppableBasePy):
             self.vrm_data_win.add_plot("A", style='Dots', color='red', size=5)
             self.vrm_data_win.add_plot("Uptake", style='Dots', color='yellow', size=5)
             self.vrm_data_win.add_plot("Secretion", style='Dots', color='white', size=5)
+
+        if self.plot_vim_data:
+            self.vim_data_win = self.add_new_plot_window(title='VIM',
+                                                         x_axis_title='MonteCarlo Step (MCS)',
+                                                         y_axis_title='Variables', x_scale_type='linear',
+                                                         y_scale_type='linear',
+                                                         grid=False,
+                                                         config_options={'legend': True})
+
+            self.vim_data_win.add_plot("R", style='Dots', color='orange', size=5)
+            self.vim_data_win.add_plot("VR", style='Dots', color='green', size=5)
 
         # Initialize population data plot if requested
         if self.plot_pop_data:
@@ -651,6 +670,11 @@ class SimDataSteppable(SteppableBasePy):
                 with open(self.vrm_data_path, 'w'):
                     pass
 
+            if self.write_vim_data:
+                self.vim_data_path = Path(self.output_dir).joinpath('vim_data.dat')
+                with open(self.vim_data_path, 'w'):
+                    pass
+
             if self.write_pop_data:
                 self.pop_data_path = Path(self.output_dir).joinpath('pop_data.dat')
                 with open(self.pop_data_path, 'w'):
@@ -672,16 +696,19 @@ class SimDataSteppable(SteppableBasePy):
         plot_med_viral_data = self.plot_med_viral_data and mcs % plot_med_viral_data_freq == 0
         plot_ir_data = self.plot_ir_data and mcs % plot_ir_data_freq == 0
         plot_vrm_data = self.plot_vrm_data and mcs % plot_vrm_data_freq == 0
+        plot_vim_data = self.plot_vim_data and mcs % plot_vim_data_freq == 0
         if self.output_dir is not None:
             write_pop_data = self.write_pop_data and mcs % write_pop_data_freq == 0
             write_med_viral_data = self.write_med_viral_data and mcs % write_med_viral_data_freq == 0
             write_ir_data = self.write_ir_data and mcs % write_ir_data_freq == 0
             write_vrm_data = self.write_vrm_data and mcs % write_vrm_data_freq == 0
+            write_vim_data = self.write_vim_data and mcs % write_vim_data_freq == 0
         else:
             write_pop_data = False
             write_med_viral_data = False
             write_ir_data = False
             write_vrm_data = False
+            write_vim_data = False
 
         if self.vrm_tracked_cell is not None and (plot_vrm_data or write_vrm_data):
             if plot_vrm_data:
@@ -702,6 +729,18 @@ class SimDataSteppable(SteppableBasePy):
                                                                          self.vrm_tracked_cell.dict['Assembled'],
                                                                          self.vrm_tracked_cell.dict['Uptake'],
                                                                          self.vrm_tracked_cell.dict['Secretion']))
+
+        if self.vrm_tracked_cell is not None and (plot_vim_data or write_vim_data):
+            if plot_vim_data:
+                self.vim_data_win.add_data_point("R", mcs, self.vrm_tracked_cell.dict['Unbound_Receptors'])
+                self.vim_data_win.add_data_point("VR", mcs, self.vrm_tracked_cell.dict['Surface_Complexes'])
+
+            if write_vim_data:
+                with open(self.vim_data_path, 'a') as fout:
+                    fout.write('{}, {}, {}, {}\n'.format(mcs,
+                                                         self.vrm_tracked_cell.id,
+                                                         self.vrm_tracked_cell.dict['Unbound_Receptors'],
+                                                         self.vrm_tracked_cell.dict['Surface_Complexes']))
 
         if plot_pop_data or write_pop_data:
 
@@ -770,6 +809,7 @@ class SimDataSteppable(SteppableBasePy):
 
     def set_vrm_tracked_cell(self, cell):
         self.vrm_tracked_cell = cell
+
 
 class CytokineProductionAbsorptionSteppable(CoronavirusSteppableBasePy):
     """
