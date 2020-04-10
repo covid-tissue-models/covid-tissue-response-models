@@ -180,6 +180,7 @@ class CellsInitializerSteppable(CoronavirusSteppableBasePy):
                 cell = self.new_cell(self.UNINFECTED)
                 self.cellField[x:x + int(cell_diameter), y:y + int(cell_diameter), 0] = cell
                 cell.dict[CoronavirusLib.vrl_key] = False
+                cell.dict[CoronavirusLib.vil_key] = False
                 CoronavirusLib.reset_viral_replication_variables(cell=cell)
                 cell.dict['Survived'] = False
                 cell.dict['Unbound_Receptors'] = initial_unbound_receptors
