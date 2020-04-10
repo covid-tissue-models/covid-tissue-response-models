@@ -185,6 +185,12 @@ class CellsInitializerSteppable(CoronavirusSteppableBasePy):
                 cell.dict['Unbound_Receptors'] = initial_unbound_receptors
                 cell.dict['Surface_Complexes'] = 0.0
                 cell.dict['Internalized_Complexes'] = 0.0
+                self.load_viral_replication_model(cell=cell, vr_step_size=vr_step_size,
+                                                  unpacking_rate=unpacking_rate,
+                                                  replicating_rate=replicating_rate,
+                                                  translating_rate=translating_rate,
+                                                  packing_rate=packing_rate)
+                self.load_viral_internalization_model(cell, vi_step_size, kon, koff, internalization_rate)
 
         # Infect a cell
         cell = self.cell_field[self.dim.x // 2, self.dim.y // 2, 0]
