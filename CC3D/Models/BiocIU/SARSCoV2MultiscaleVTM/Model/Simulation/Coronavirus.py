@@ -26,7 +26,6 @@ CompuCellSetup.register_steppable(steppable=ChemotaxisSteppable(frequency=1))
 from CoronavirusSteppables import ImmuneCellSeedingSteppable
 CompuCellSetup.register_steppable(steppable=ImmuneCellSeedingSteppable(frequency=1))
 
-
 from CoronavirusSteppables import SimDataSteppable
 CompuCellSetup.register_steppable(steppable=SimDataSteppable(frequency=1))
         
@@ -35,5 +34,9 @@ CompuCellSetup.register_steppable(steppable=CytokineProductionAbsorptionSteppabl
 
 from CoronavirusSteppables import Viral_InternalizationSteppable
 CompuCellSetup.register_steppable(steppable=Viral_InternalizationSteppable(frequency=1))
+
+from CoronavirusSteppables import ImmuneRecruitmentSteppable
+CompuCellSetup.register_steppable(steppable=ImmuneRecruitmentSteppable(frequency=1))
+
 
 CompuCellSetup.run()
