@@ -106,6 +106,24 @@ class CoronavirusSteppableBasePy(nCoVSteppableBase):
             return np.random.random() < max_uptake_pr
         else:
             return False
+
+    def new_cell_in_time(self, cell_type, mcs=None):
+        """
+        Add cell and record MCS
+        :param cell_type: type id of cell (e.g., for cell.type)
+        :param mcs: step when cell is created; defaults from steppable mcs attribute
+        :return: new cell instance
+        """
+        cell = self.new_cell(cell_type)
+        if mcs is None:
+            if self.mcs < 0:
+                mcs = 0
+            else:
+                mcs = self.mcs
+
+        cell.dict[CoronavirusLib.new_cell_mcs_key] = mcs
+        return cell
+
     def total_seen_field(self,field,cell, estimate = True):
         """
         Calculates total value of field in the cell.
@@ -123,7 +141,7 @@ class CoronavirusSteppableBasePy(nCoVSteppableBase):
                 tot_field += field[ptd.pixel.x, ptd.pixel.y, ptd.pixel.z]
         
         return tot_field
-    
+
     def kill_cell(self, cell):
         """
         Model-specific cell death routines

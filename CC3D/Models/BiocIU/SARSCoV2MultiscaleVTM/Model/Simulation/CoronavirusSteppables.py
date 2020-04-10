@@ -179,7 +179,7 @@ class CellsInitializerSteppable(CoronavirusSteppableBasePy):
 
         for x in range(0, self.dim.x, int(cell_diameter)):
             for y in range(0, self.dim.y, int(cell_diameter)):
-                cell = self.new_cell(self.UNINFECTED)
+                cell = self.new_cell_in_time(self.UNINFECTED)
                 self.cellField[x:x + int(cell_diameter), y:y + int(cell_diameter), 0] = cell
                 cell.dict[CoronavirusLib.vrl_key] = False
                 CoronavirusLib.reset_viral_replication_variables(cell=cell)
@@ -209,7 +209,7 @@ class CellsInitializerSteppable(CoronavirusSteppableBasePy):
                         cell = self.cellField[x, y, 1]
                         break
                 cell = False
-            cell = self.new_cell(self.IMMUNECELL)
+            cell = self.new_cell_in_time(self.IMMUNECELL)
             self.cellField[x:x + int(cell_diameter), y:y + int(cell_diameter), 1] = cell
             cell.targetVolume = cell_volume
             cell.lambdaVolume = cell_volume
@@ -440,7 +440,7 @@ class ImmuneCellSeedingSteppable(CoronavirusSteppableBasePy):
                         x_seed = xi
                         y_seed = yi
             if open_space:
-                cell = self.new_cell(self.IMMUNECELL)
+                cell = self.new_cell_in_time(self.IMMUNECELL)
                 cell.dict['activated'] = False  # flag for immune cell being naive or activated
                 # cytokine parameters
                 cell.dict['ck_production'] = max_ck_secrete_im  # TODO: replace secretion by hill
