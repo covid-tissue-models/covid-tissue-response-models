@@ -155,10 +155,12 @@ exp_kon = 1.36E5 #1/(M * s)
 exp_koff = 4.70E-3 #1/s
 exp_internalization_rate = 1.0/10.0 #1/s
 
-initial_unbound_receptors = 1.0E6
-kon = exp_kon * s_to_mcs * 1.0E15 * (1.0/(um_to_lat_width**3)) *  (1.0/1.0E12) * (1.0/pmol_to_cc3d_au)
+initial_unbound_receptors = 2E4
+#TODO Something wrong with these parameter translation
+kon = exp_kon * s_to_mcs * 1.0E15 * (1.0/(um_to_lat_width**3)) * (1.0/1.0E12) * (1.0/pmol_to_cc3d_au)
 koff = exp_koff * s_to_mcs
 internalization_rate = exp_internalization_rate * s_to_mcs
+rounding_threshold = 700*0.1
 
 class CellsInitializerSteppable(CoronavirusSteppableBasePy):
     """
@@ -212,14 +214,63 @@ class CellsInitializerSteppable(CoronavirusSteppableBasePy):
             cell.lambdaVolume = cell_volume
             cell.dict['activated'] = False  # flag for immune cell being naive or activated
             # cyttokine params
-            cell.dict['ck_production'] = max_ck_secrete_im  # TODO: replace secretion by hill
-            cell.dict['ck_consumption'] = max_ck_consume  # TODO: replace by hill
+            cell.dict['ck_production'] = max_ck_secrete_im
+            cell.dict['ck_consumption'] = max_ck_consume
             cell.dict['tot_ck_upt'] = 0
+
+#TODO THIS NEEDS A LOT OF WORK
+vi_model_name = 'viralInternalization'
+vi_step_size = 1.0
+vi_cell_dict_to_sym = {'Unbound_Receptors': 'R',
+                       'Surface_Complexes': 'VR',
+                       'Internalized_Complexes': 'Vi'}
+
+def pack_viral_internalization_variables(cell):
+    """
+    Loads state variables from SBML into cell dictionary
+    :param cell: cell for which to load state variables from SBML into cell dictionary
+    :return: None
+    """
+    assert cell.dict[vrl_key]
+    for k, v in vr_cell_dict_to_sym.items():
+        cell.dict[k] = getattr(cell.sbml, vr_model_name)[v]
+
+def viral_internalization_model_string(_kon, _koff, _internalization_rate):
+    """
+    dVe/dt = -kon*Ve*R + koff*VR
+    dR/dt = -kon*Ve*R + koff*VR
+    dVR/dt = kon*Ve*R - koff*VR - internalization_rate*VR
+    dVi/dt = internalization_rate*VR
+    Derived by J. Aponte-Serrano and J. Mathur
+    :param _kon: association rate constant of extracellular virus particles and unbound cell receptors
+    :param _koff: dissasociation rate constant of virus-receptor surface complex
+    :param _internalization_rate: internalization rate of virus-receptor surface complex
+    :param _R_ini: initial number of unbound cell receptors
+    :return: None
+    """
+    model_string = """model {}()
+        Ve + R  -> VR ; kon * Ve * R ;
+        VR -> Ve + R  ; koff * VR ;
+        VR -> Vi ; internalization_rate * VR ;
+        kon = {};
+        koff = {};
+        internalization_rate = {};
+        end""".format(vi_model_name, _kon, _koff, _internalization_rate)
+    return model_string
 
 #TODO Needs validation and rescaling of the VRM parameter to get accurate number of viral titers
 class Viral_InternalizationSteppable(CoronavirusSteppableBasePy):
     def __init__(self, frequency=1):
         CoronavirusSteppableBasePy.__init__(self, frequency)
+
+    def __init_fresh_recruitment_model(self):
+        # Generate solver instance
+        model_string =viral_internalization_model_string(kon,koff,internalization_rate)
+        self.add_free_floating_antimony(model_string=model_string,
+                                        model_name=vi_model_name,
+                                        step_size=vi_step_size)
+    def start(self):
+        self.__init_fresh_recruitment_model()
 
     def step(self, mcs):
         global num_surface_complexes, total_num_unbound_receptors
@@ -229,7 +280,6 @@ class Viral_InternalizationSteppable(CoronavirusSteppableBasePy):
         go_fast = True
         for cell in self.cell_list_by_type(self.UNINFECTED, self.INFECTED, self.INFECTEDSECRETING):
             # Fast measurement
-            # TODO Determine if its better to do this calculation over the whole surface of the cell or just one pixel
             if go_fast:
                 reference_volume = 1 #pixel
                 num_internalized_complexes = cell.dict['Internalized_Complexes']
@@ -238,38 +288,46 @@ class Viral_InternalizationSteppable(CoronavirusSteppableBasePy):
 
                 # Averaging: Determine concentration at the COM
                 cell_env_viral_val_com = viral_field[cell.xCOM, cell.yCOM, cell.zCOM]
-                # TODO Determine if this number must be an integer
                 num_viral_particles_environment = cell_env_viral_val_com * (1.0/pmol_to_cc3d_au) \
                                                      * 10.0E-12 * 6.022E23 * cell.volume
 
-                #Determine association (binding) events
-                if num_viral_particles_environment > 1:
-                    for particle in range(num_viral_particles_environment):
-                        p_binding = np.random.random()
-                        if p_binding < kon * num_unbound_receptors / reference_volume:
-                            num_surface_complexes += 1
-                            num_unbound_receptors -= 1
+                if num_viral_particles_environment >= rounding_threshold:
+                    #TODO Step SBML MODEL
+                    pass
 
-                #Determine disassociation (unbinding) event
-                if num_surface_complexes > 1:
-                    for complex in range(num_surface_complexes):
-                        p_unbinding = np.random.random()
-                        if p_unbinding < koff/ reference_volume:
-                            num_unbound_receptors += 1
-                            num_surface_complexes -= 1
+                else:
+                    num_viral_particles_environment = int(num_viral_particles_environment )
+                    num_surface_complexes = int(num_surface_complexes )
+                    num_unbound_receptors = int(num_unbound_receptors)
+                    num_internalized_complexes = int(num_internalized_complexes)
+                    # Determine association (binding) events
+                    if num_viral_particles_environment > 1:
+                        for particle in range(num_viral_particles_environment):
+                            p_binding = np.random.random()
+                            if p_binding < kon * num_unbound_receptors / reference_volume:
+                                num_surface_complexes += 1
+                                num_unbound_receptors -= 1
 
-                #Determine internalization event
-                total_num_unbound_receptors = num_unbound_receptors*cell.volume
-                total_num_surface_complexes = num_surface_complexes*cell.volume
-                if total_num_surface_complexes > 1:
-                    p_internalization = np.random.random()
-                    if p_internalization < internalization_rate:
-                        total_num_surface_complexes -= 1
-                        num_internalized_complexes += 1
+                    #Determine disassociation (unbinding) event
+                    if num_surface_complexes > 1:
+                        for complex in range(num_surface_complexes):
+                            p_unbinding = np.random.random()
+                            if p_unbinding < koff/ reference_volume:
+                                num_unbound_receptors += 1
+                                num_surface_complexes -= 1
 
-                cell.dict['Unbound_Receptors'] = total_num_unbound_receptors
-                cell.dict['Surface_Complexes'] = total_num_surface_complexes
-                cell.dict['Internalized_Complexes'] = num_internalized_complexes
+                    #Determine internalization event
+                    total_num_unbound_receptors = num_unbound_receptors*cell.volume
+                    total_num_surface_complexes = num_surface_complexes*cell.volume
+                    if total_num_surface_complexes > 1:
+                        p_internalization = np.random.random()
+                        if p_internalization < internalization_rate:
+                            total_num_surface_complexes -= 1
+                            num_internalized_complexes += 1
+
+                    cell.dict['Unbound_Receptors'] = total_num_unbound_receptors
+                    cell.dict['Surface_Complexes'] = total_num_surface_complexes
+                    cell.dict['Internalized_Complexes'] = num_internalized_complexes
 
 class Viral_ReplicationSteppable(CoronavirusSteppableBasePy):
     """
@@ -491,8 +549,8 @@ class ImmuneCellSeedingSteppable(CoronavirusSteppableBasePy):
                     cell = self.new_cell(self.IMMUNECELL)
                     cell.dict['activated'] = False  # flag for immune cell being naive or activated
                     # cytokine parameters
-                    cell.dict['ck_production'] = max_ck_secrete_im  # TODO: replace secretion by hill
-                    cell.dict['ck_consumption'] = max_ck_consume  # TODO: replace by hill
+                    cell.dict['ck_production'] = max_ck_secrete_im
+                    cell.dict['ck_consumption'] = max_ck_consume
                     cell.dict['tot_ck_upt'] = 0
 
                     self.cellField[x_seed:x_seed + int(cell_diameter), y_seed:y_seed + int(cell_diameter), 1] = cell
@@ -645,14 +703,13 @@ class CytokineProductionAbsorptionSteppable(CoronavirusSteppableBasePy):
         # and "leakage" outside of simulation laticce
 
         for cell in self.cell_list_by_type(self.IMMUNECELL):
-            # TODO: differentiate this rates between the cell types
             # cytokine production/uptake parameters for immune cells
 
-            cell.dict['ck_production'] = max_ck_secrete_im  # TODO: replace secretion by hill
-            cell.dict['ck_consumption'] = max_ck_consume  # TODO: replace by hill
+            cell.dict['ck_production'] = max_ck_secrete_im
+            cell.dict['ck_consumption'] = max_ck_consume
 
         for cell in self.cell_list_by_type(self.INFECTED,self.INFECTEDSECRETING):
-            cell.dict['ck_production'] = max_ck_secrete_infect  # TODO: replace secretion by hill
+            cell.dict['ck_production'] = max_ck_secrete_infect
 
         # Make sure Secretion plugin is loaded
         # make sure this field is defined in one of the PDE solvers
