@@ -234,6 +234,8 @@ class Viral_InternalizationSteppable(CoronavirusSteppableBasePy):
         print('Kon = ' + str(kon))
         print('Koff = ' + str(koff))
         viral_field = self.field.Virus
+        secretor = self.get_field_secretor("Virus")
+
         go_fast = True
         for cell in self.cell_list_by_type(self.UNINFECTED, self.INFECTED, self.INFECTEDSECRETING):
             # Fast measurement
@@ -298,7 +300,7 @@ class Viral_InternalizationSteppable(CoronavirusSteppableBasePy):
                     uptake = secretor.uptakeInsideCellTotalCount(cell, local_uptake_from_field, relative_viral_uptake)
 
                     #Internalize viral particles into viral replication model
-                    set_viral_replication_cell_uptake(cell, num_internalized_complexes / vi_step_size)
+                    CoronavirusLib.set_viral_replication_cell_uptake(cell, num_internalized_complexes / vi_step_size)
 
 
     def __init_fresh_recruitment_model(self):
