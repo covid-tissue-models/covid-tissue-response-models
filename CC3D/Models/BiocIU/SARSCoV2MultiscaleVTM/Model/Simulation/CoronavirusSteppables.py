@@ -180,6 +180,7 @@ class CellsInitializerSteppable(CoronavirusSteppableBasePy):
                 cell = self.new_cell(self.UNINFECTED)
                 self.cellField[x:x + int(cell_diameter), y:y + int(cell_diameter), 0] = cell
                 cell.dict[CoronavirusLib.vrl_key] = False
+                cell.dict[CoronavirusLib.vil_key] = False
                 CoronavirusLib.reset_viral_replication_variables(cell=cell)
                 cell.dict['Survived'] = False
                 cell.dict['Unbound_Receptors'] = initial_unbound_receptors
@@ -240,6 +241,8 @@ class Viral_InternalizationSteppable(CoronavirusSteppableBasePy):
         print('Kon = ' + str(kon))
         print('Koff = ' + str(koff))
         viral_field = self.field.Virus
+        secretor = self.get_field_secretor("Virus")
+
         go_fast = True
         for cell in self.cell_list_by_type(self.UNINFECTED, self.INFECTED, self.INFECTEDSECRETING):
             # Fast measurement
@@ -256,6 +259,13 @@ class Viral_InternalizationSteppable(CoronavirusSteppableBasePy):
 
                 if num_viral_particles_environment >= rounding_threshold:
                     # TODO Step SBML MODEL
+                    external_vir = CoronavirusLib.step_sbml_viral_internalization_cell(cell, vi_step_size, num_viral_particles_environment)
+                    local_uptake_from_field = num_viral_particles_environment - external_vir
+                    uptake = secretor.uptakeInsideCellTotalCount(cell, local_uptake_from_field, relative_viral_uptake)
+
+                    CoronavirusLib.internalize_viral_particles(cell, vi_step_size)
+                    CoronavirusLib.pack_viral_internalization_variables(cell)
+
                     pass
 
                 else:
@@ -291,6 +301,14 @@ class Viral_InternalizationSteppable(CoronavirusSteppableBasePy):
                     cell.dict['Unbound_Receptors'] = total_num_unbound_receptors
                     cell.dict['Surface_Complexes'] = total_num_surface_complexes
                     cell.dict['Internalized_Complexes'] = num_internalized_complexes
+
+                    # Update field- surface complexes is akin to Ve in the sbml model
+                    local_uptake_from_field = num_viral_particles_environment - total_num_surface_complexes
+                    uptake = secretor.uptakeInsideCellTotalCount(cell, local_uptake_from_field, relative_viral_uptake)
+
+                    #Internalize viral particles into viral replication model
+                    CoronavirusLib.set_viral_replication_cell_uptake(cell, num_internalized_complexes / vi_step_size)
+
 
     def __init_fresh_recruitment_model(self):
         # Generate solver instance
