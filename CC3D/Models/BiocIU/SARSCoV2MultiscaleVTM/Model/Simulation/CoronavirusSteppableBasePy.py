@@ -62,6 +62,7 @@ class CoronavirusSteppableBasePy(nCoVSteppableBase):
         if cell.dict[CoronavirusLib.vrl_key]:
             self.delete_sbml_from_cell(CoronavirusLib.vr_model_name, cell)
 
+        # Generate Antimony model string
         model_string = CoronavirusLib.viral_replication_model_string(
             unpacking_rate, replicating_rate, translating_rate, packing_rate, secretion_rate,
             cell.dict['Unpacking'], cell.dict['Replicating'], cell.dict['Packing'], cell.dict['Assembled'],
@@ -73,6 +74,31 @@ class CoronavirusSteppableBasePy(nCoVSteppableBase):
         cell.dict[CoronavirusLib.vrl_key] = True
         CoronavirusLib.enable_viral_secretion(cell, cell.type == self.INFECTEDSECRETING)
 
+    def load_viral_internalization_model(self, cell, vi_step_size, kon=0, koff=0, intern_rate=0):
+        """
+        Loads viral internalization model for a cell; initial values of state model are extract from cell.dict
+        :param cell: cell for which the viral replication model is loaded
+        :param vi_step_size: Antimony/SBML model step size
+        :param kon: model association rate constant
+        :param koff: model dissasociation rate constant
+        :param intern_rate: model internalization rate
+        :return: None
+        """
+        if cell.dict[CoronavirusLib.vil_key]:
+            self.delete_sbml_from_cell(CoronavirusLib.vi_model_name, cell)
+
+        # Generate Antimony model string
+        model_string = CoronavirusLib.viral_internalization_model_string(kon, koff, intern_rate, 0,
+                                                                         cell.dict['Unbound_Receptors'],
+                                                                         cell.dict['Surface_Complexes'],
+                                                                         cell.dict['Internalized_Complexes'])
+        self.add_antimony_to_cell(model_string=model_string,
+                                  model_name=CoronavirusLib.vi_model_name,
+                                  cell=cell,
+                                  step_size=vi_step_size)
+        cell.dict[CoronavirusLib.vil_key] = True
+
+    # todo: implement viral internalization model
     def cell_uptakes_virus(self, viral_field, cell, diss_coeff_uptake_pr, hill_coeff_uptake_pr, go_fast=True):
         """
         Calculates the probability of viral uptake from the environment as a function of local viral particle amount
@@ -127,3 +153,5 @@ class CoronavirusSteppableBasePy(nCoVSteppableBase):
         if cell.dict[CoronavirusLib.vrl_key]:
             self.delete_sbml_from_cell(CoronavirusLib.vr_model_name, cell)
             cell.dict[CoronavirusLib.vrl_key] = False
+
+

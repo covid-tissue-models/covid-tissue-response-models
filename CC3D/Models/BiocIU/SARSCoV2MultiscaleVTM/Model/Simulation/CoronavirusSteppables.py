@@ -149,6 +149,7 @@ lamda_chemotaxis = 100.0/100.0
 
 # Antimony/SBML model step size
 vr_step_size = 1.0
+vi_step_size = vr_step_size
 
 # Viral Internalization parameters
 exp_kon = 1.36E5  # 1/(M * s)
@@ -161,73 +162,6 @@ kon = exp_kon * s_to_mcs * 1.0E15 * (1.0/(um_to_lat_width**3)) * (1.0/1.0E12) * 
 koff = exp_koff * s_to_mcs
 internalization_rate = exp_internalization_rate * s_to_mcs
 rounding_threshold = 700*0.1
-
-# TODO THIS NEEDS A LOT OF WORK AND NEEDS MOVING TO UTILITIES
-vi_model_name = 'viralInternalization'
-vil_key = 'viral_internalization_loaded'
-vi_step_size = 1.0
-vi_cell_dict_to_sym = {'Unbound_Receptors': 'R',
-                       'Surface_Complexes': 'VR',
-                       'Internalized_Complexes': 'Vi'}
-
-
-def viral_internalization_model_string(_kon, _koff, _intern_rate, _ve_ini=0, _r_ini=0, _vr_ini=0, _vi_ini=0, _ve_src=0):
-    """
-    dVe/dt = -kon*Ve*R + koff*VR + VeSrc
-    dR/dt = -kon*Ve*R + koff*VR
-    dVR/dt = kon*Ve*R - koff*VR - intern_rate*VR
-    dVi/dt = intern_rate*VR
-    Derived by J. Aponte-Serrano and J. Mathur
-    :param _kon: association rate constant of extracellular virus particles and unbound cell receptors
-    :param _koff: dissasociation rate constant of virus-receptor surface complex
-    :param _intern_rate: internalization rate of virus-receptor surface complex
-    :param _ve_ini: initial number of extracellular virus particles
-    :param _r_ini: initial number of unbound cell receptors
-    :param _vr_ini: initial number of virus-receptor surface complexes
-    :param _vi_ini: initial number of internalized virus particles
-    :param _ve_src: incoming extracellular virus particles from viral field
-    :return: None
-    """
-    model_string = """model {}()
-          -> Ve; VeSrc;
-        Ve + R  -> VR ; kon * Ve * R ;
-        VR -> Ve + R  ; koff * VR ;
-        VR -> Vi ; intern_rate * VR ;
-        kon = {};
-        koff = {};
-        intern_rate = {};
-        VeSrc = {};
-        Ve = {};
-        R = {};
-        VR = {};
-        Vi = {};
-        end""".format(vi_model_name, _kon, _koff, _intern_rate, _ve_src, _ve_ini, _r_ini, _vr_ini, _vi_ini)
-    return model_string
-
-
-def load_viral_internalization_model(self, cell, vi_step_size, kon=0, koff=0,
-                                     internalization_rate=0):
-        """
-        Loads viral internalization model for a cell; initial values of state model are extract from cell.dict
-        :param cell: cell for which the viral replication model is loaded
-        :param vr_step_size: Antimony/SBML model step size
-        :param kon: model association rate constant
-        :param koff: model dissasociation rate constant
-        :param internalization_rate: model internalization rate
-        :return: None
-        """
-        if cell.dict[vil_key]:
-            self.delete_sbml_from_cell(vi_model_name, cell)
-        # TODO: WHY?
-        model_string = viral_internalization_model_string(
-            kon, koff, internalization_rate,
-            cell.dict['Unbound_Receptors'], cell.dict['Surface_Complexes'], cell.dict['Internalized_Complexes'], cell.dict['Assembled'],
-            cell.dict['Uptake'])
-        self.add_antimony_to_cell(model_string=model_string,
-                                  model_name=vi_model_name,
-                                  cell=cell,
-                                  step_size=vi_step_size)
-        cell.dict[vil_key] = True
 
 
 class CellsInitializerSteppable(CoronavirusSteppableBasePy):
@@ -292,13 +226,6 @@ class Viral_InternalizationSteppable(CoronavirusSteppableBasePy):
     def __init__(self, frequency=1):
         CoronavirusSteppableBasePy.__init__(self, frequency)
 
-    def __init_fresh_recruitment_model(self):
-        # Generate solver instance
-        model_string = viral_internalization_model_string(kon, koff, internalization_rate)
-        self.add_free_floating_antimony(model_string=model_string,
-                                        model_name=vi_model_name,
-                                        step_size=vi_step_size)
-
     def start(self):
         self.__init_fresh_recruitment_model()
 
@@ -358,6 +285,13 @@ class Viral_InternalizationSteppable(CoronavirusSteppableBasePy):
                     cell.dict['Unbound_Receptors'] = total_num_unbound_receptors
                     cell.dict['Surface_Complexes'] = total_num_surface_complexes
                     cell.dict['Internalized_Complexes'] = num_internalized_complexes
+
+    def __init_fresh_recruitment_model(self):
+        # Generate solver instance
+        model_string = CoronavirusLib.viral_internalization_model_string(kon, koff, internalization_rate)
+        self.add_free_floating_antimony(model_string=model_string,
+                                        model_name=CoronavirusLib.vi_model_name,
+                                        step_size=vi_step_size)
 
 
 # TODO Add actual uptake from the field based on discussion with James
