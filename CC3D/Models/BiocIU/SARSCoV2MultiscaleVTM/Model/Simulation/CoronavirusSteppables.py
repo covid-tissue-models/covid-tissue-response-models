@@ -607,16 +607,15 @@ class CytokineProductionAbsorptionSteppable(CoronavirusSteppableBasePy):
 
     def step(self, mcs):
 
-        
+
         for cell in self.cell_list_by_type(self.INFECTED,self.INFECTEDSECRETING):
             
-            viral_load = CoronavirusLib.get_assembled_viral_load_inside_cell(cell)
+            viral_load = CoronavirusLib.get_assembled_viral_load_inside_cell(cell,vr_step_size)
+
             produced = cell.dict['ck_production'] * nCoVUtils.hill_equation(viral_load, ec50_infecte_ck_prod, 2)
 #             print('produced ck', produced, produced/cell.dict['ck_production'])
             res = self.ck_secretor.secreteInsideCellTotalCount(cell,
                                                                produced / cell.volume)
-        
-        
         
         
         for cell in self.cell_list_by_type(self.IMMUNECELL):
