@@ -88,9 +88,9 @@ exp_EC50_cytokine_immune = 1  # pM from (B), it's a range from [1,50]pM
 # oxidation agent
 
 exp_oxi_dl = 2 * exp_cell_diameter # [um]; guestimation; [.3,3]
-oxi_dc_water = 1.2 # cm2/s
-
-oxi_dc_cyto = oxi_dc_water * .16 # rescale by relative density; cyto ~ 6*water
+exp_oxi_dc_water = 1.2 # cm2/day; http://www.idc-online.com/technical_references/pdfs/chemical_engineering/Transport_Properties_of_Hydrogen_Peroxide_II.pdf
+exp_oxi_dc_water = exp_oxi_dc_water * 1e8 / 86400 # um2/s
+exp_oxi_dc_cyto = exp_oxi_dc_water * .16 # rescale by relative density; cyto ~ 6*water
 
 
 
@@ -129,11 +129,12 @@ max_ck_secrete_infect = 10*max_ck_secrete_im
 
 # oxidation agent
 
-exp_oxi_dl = 2 * exp_cell_diameter # guestimation; [.3,3]
-
-oxi_dc_cyto = oxi_dc_water * .16 # rescale by relative density; cyto ~ 6*water
 
 oxi_dl = exp_oxi_dl/um_to_lat_width
+
+oxi_dc_cyto = exp_oxi_dc_cyto * s_to_mcs / (um_to_lat_width ** 2)
+
+oxi_decay = oxi_dl**2/oxi_dc_cyto
 
 
 # Threshold at which cell infection is evaluated
