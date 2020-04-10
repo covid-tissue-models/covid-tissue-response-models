@@ -719,9 +719,9 @@ class ImmuneRecruitmentSteppable(CoronavirusSteppableBasePy):
         # These are model parameters to be made global
         self.add_coeff = 1.0
         self.subtract_coeff = self.add_coeff / 10.0
-        self.delay_coeff = 1*1E-9
+        self.delay_coeff = 1*1E-2
         self.decay_coeff = 1E-1
-        self.transmission_coeff = 1E-1
+        self.transmission_coeff = 5E-1
         self.prob_scaling_factor = 1.0 / 100.0
 
     def start(self):
