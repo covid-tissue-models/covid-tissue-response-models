@@ -124,6 +124,35 @@ class CoronavirusSteppableBasePy(nCoVSteppableBase):
         cell.dict[CoronavirusLib.new_cell_mcs_key] = mcs
         return cell
 
+    def new_uninfected_cell_in_time(self, mcs=None):
+        """
+        Add an uninfected cell with default initial configuration and record MCS
+        :param mcs: step when cell is created; defaults from steppable mcs attribute
+        :return: new cell instance of immune cell type
+        """
+        cell = self.new_cell_in_time(self.UNINFECTED, mcs)
+        cell.dict[CoronavirusLib.vrl_key] = False
+        CoronavirusLib.reset_viral_replication_variables(cell=cell)
+        cell.dict['Survived'] = False
+        return cell
+
+    def new_immune_cell_in_time(self, ck_production, ck_consumption, mcs=None, activated=False):
+        """
+        Add an immune cell with default initial configuration and record MCS
+        :param ck_production: cytokine production rate
+        :param ck_consumption: cytokine consumption rate
+        :param mcs: step when cell is created; defaults from steppable mcs attribute
+        :param activated: flag for immune cell being naive or activated
+        :return: new cell instance of immune cell type
+        """
+        cell = self.new_cell_in_time(self.IMMUNECELL, mcs)
+        # cyttokine params
+        cell.dict['ck_production'] = ck_production  # TODO: replace secretion by hill
+        cell.dict['ck_consumption'] = ck_consumption  # TODO: replace by hill
+        cell.dict['activated'] = activated
+        cell.dict['tot_ck_upt'] = 0
+        return cell
+
     def total_seen_field(self,field,cell, estimate = True):
         """
         Calculates total value of field in the cell.
