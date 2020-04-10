@@ -7,6 +7,9 @@ import sys
 from cc3d.cpp import CompuCell
 import numpy as np
 
+# Key to mcs value when a cell was created
+new_cell_mcs_key = 'new_cell_mcs'
+
 # Key to cell dictionary boolean for whether an instance of the viral replication model has been loaded
 vrl_key = 'viral_replication_loaded'
 
