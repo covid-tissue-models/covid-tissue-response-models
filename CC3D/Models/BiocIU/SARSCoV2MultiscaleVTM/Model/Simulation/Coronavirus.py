@@ -34,4 +34,9 @@ from CoronavirusSteppables import CytokineProductionAbsorptionSteppable
 CompuCellSetup.register_steppable(steppable=CytokineProductionAbsorptionSteppable(frequency=1))
 
 
+
+        
+from CoronavirusSteppables import oxidationAgentModelSteppable
+CompuCellSetup.register_steppable(steppable=oxidationAgentModelSteppable(frequency=1))
+
 CompuCellSetup.run()

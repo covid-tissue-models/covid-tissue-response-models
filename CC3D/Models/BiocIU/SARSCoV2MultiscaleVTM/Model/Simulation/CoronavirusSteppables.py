@@ -85,6 +85,16 @@ exp_max_cytokine_immune_secretion_mol = 3.5e-3  # pM/s
 
 exp_EC50_cytokine_immune = 1  # pM from (B), it's a range from [1,50]pM
 
+# oxidation agent
+
+exp_oxi_dl = 2 * exp_cell_diameter # [um]; guestimation; [.3,3]
+oxi_dc_water = 1.2 # cm2/s
+
+oxi_dc_cyto = oxi_dc_water * .16 # rescale by relative density; cyto ~ 6*water
+
+
+
+
 # =============================
 # CompuCell Parameters
 # cell
@@ -116,6 +126,14 @@ ck_equilibrium = 1.5*EC50_ck_immune # equilibrium amount of ck in immune surface
 ck_memory_immune = 1 - max_ck_consume/ck_equilibrium # decay therm for "seen" ck by immune
 
 max_ck_secrete_infect = 10*max_ck_secrete_im
+
+# oxidation agent
+
+exp_oxi_dl = 2 * exp_cell_diameter # guestimation; [.3,3]
+
+oxi_dc_cyto = oxi_dc_water * .16 # rescale by relative density; cyto ~ 6*water
+
+oxi_dl = exp_oxi_dl/um_to_lat_width
 
 
 # Threshold at which cell infection is evaluated
@@ -623,3 +641,29 @@ class CytokineProductionAbsorptionSteppable(CoronavirusSteppableBasePy):
                 # print('activated', cell.id)
                 sec_res = self.ck_secretor.secreteInsideCellTotalCount(cell,
                                                                        cell.dict['ck_production'] / cell.volume)
+#
+
+
+
+
+class oxidationAgentModelSteppable(CoronavirusSteppableBasePy):
+    def __init__(self, frequency=1):
+        SteppableBasePy.__init__(self, frequency)
+        
+
+    def start(self):
+        self.get_xml_element('oxi_dc').cdata = oxi_dc
+        self.get_xml_element('oxi_decay').cdata = oxi_field_decay  
+
+
+    def step(self, mcs):
+        print("oxidationAgentModelSteppable: This function is called every 1 MCS")
+
+        for cell in self.cell_list:
+            print("CELL ID=",cell.id, " CELL TYPE=",cell.type," volume=",cell.volume)
+
+
+    def finish(self):
+        # this function may be called at the end of simulation - used very infrequently though
+        return
+
