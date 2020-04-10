@@ -124,6 +124,24 @@ class CoronavirusSteppableBasePy(nCoVSteppableBase):
         cell.dict[CoronavirusLib.new_cell_mcs_key] = mcs
         return cell
 
+    def total_seen_field(self,field,cell, estimate = True):
+        """
+        Calculates total value of field in the cell.
+        :param field: the field to be looked
+        :param cell: the cell 
+        :param estimate: when true assumes homogeneous field. false is slower 
+        :return: calculated total field value 
+        """
+        tot_field = 0
+        if estimate:
+            tot_field = field[cell.xCOM, cell.yCOM, cell.zCOM] * cell.volume
+        else:
+            tot_field = 0
+            for ptd in self.get_cell_pixel_list(cell):
+                tot_field += field[ptd.pixel.x, ptd.pixel.y, ptd.pixel.z]
+        
+        return tot_field
+
     def kill_cell(self, cell):
         """
         Model-specific cell death routines
