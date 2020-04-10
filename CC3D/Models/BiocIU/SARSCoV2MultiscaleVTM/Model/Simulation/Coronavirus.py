@@ -33,5 +33,7 @@ CompuCellSetup.register_steppable(steppable=SimDataSteppable(frequency=1))
 from CoronavirusSteppables import CytokineProductionAbsorptionSteppable
 CompuCellSetup.register_steppable(steppable=CytokineProductionAbsorptionSteppable(frequency=1))
 
+from CoronavirusSteppables import Viral_InternalizationSteppable
+CompuCellSetup.register_steppable(steppable=Viral_InternalizationSteppable(frequency=1))
 
 CompuCellSetup.run()

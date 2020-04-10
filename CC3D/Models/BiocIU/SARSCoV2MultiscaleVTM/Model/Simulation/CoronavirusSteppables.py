@@ -48,7 +48,7 @@ write_med_viral_data_freq = 0  # Write total diffusive viral amount frequency (d
 s_to_mcs = 120.0  # s/mcs
 um_to_lat_width = 4.0  # um/lattice_length
 
-pmol_to_cc3d_au = 1e15
+pmol_to_cc3d_au = 1e15 # 1e15au/1pmol
 
 # Experimental Parameters
 exp_cell_diameter = 12.0  # um
@@ -150,6 +150,15 @@ lamda_chemotaxis = 100.0/100.0
 # Antimony/SBML model step size
 vr_step_size = 1.0
 
+# Viral Internalization parameters
+exp_kon = 1.36E5 #1/(M * s)
+exp_koff = 4.70E-3 #1/s
+exp_internalization_rate = 1.0/10.0 #1/s
+
+initial_unbound_receptors = 1.0E6
+kon = exp_kon * s_to_mcs * 1.0E15 * (1.0/(um_to_lat_width**3)) *  (1.0/1.0E12) * (1.0/pmol_to_cc3d_au)
+koff = exp_koff * s_to_mcs
+internalization_rate = exp_internalization_rate * s_to_mcs
 
 class CellsInitializerSteppable(CoronavirusSteppableBasePy):
     """
@@ -169,6 +178,9 @@ class CellsInitializerSteppable(CoronavirusSteppableBasePy):
                 cell.dict[CoronavirusLib.vrl_key] = False
                 CoronavirusLib.reset_viral_replication_variables(cell=cell)
                 cell.dict['Survived'] = False
+                cell.dict['Unbound_Receptors'] = initial_unbound_receptors
+                cell.dict['Surface_Complexes'] = 0.0
+                cell.dict['Internalized_Complexes'] = 0.0
 
         # Infect a cell
         cell = self.cell_field[self.dim.x // 2, self.dim.y // 2, 0]
@@ -204,6 +216,60 @@ class CellsInitializerSteppable(CoronavirusSteppableBasePy):
             cell.dict['ck_consumption'] = max_ck_consume  # TODO: replace by hill
             cell.dict['tot_ck_upt'] = 0
 
+#TODO Needs validation and rescaling of the VRM parameter to get accurate number of viral titers
+class Viral_InternalizationSteppable(CoronavirusSteppableBasePy):
+    def __init__(self, frequency=1):
+        CoronavirusSteppableBasePy.__init__(self, frequency)
+
+    def step(self, mcs):
+        global num_surface_complexes, total_num_unbound_receptors
+        print('Kon = ' + str(kon))
+        print('Koff = ' + str(koff))
+        viral_field = self.field.Virus
+        go_fast = True
+        for cell in self.cell_list_by_type(self.UNINFECTED, self.INFECTED, self.INFECTEDSECRETING):
+            # Fast measurement
+            # TODO Determine if its better to do this calculation over the whole surface of the cell or just one pixel
+            if go_fast:
+                reference_volume = 1 #pixel
+                num_internalized_complexes = cell.dict['Internalized_Complexes']
+                num_unbound_receptors = cell.dict['Unbound_Receptors'] / cell.volume
+                num_surface_complexes = cell.dict['Surface_Complexes'] / cell.volume
+
+                # Averaging: Determine concentration at the COM
+                cell_env_viral_val_com = viral_field[cell.xCOM, cell.yCOM, cell.zCOM]
+                # TODO Determine if this number must be an integer
+                num_viral_particles_environment = cell_env_viral_val_com * (1.0/pmol_to_cc3d_au) \
+                                                     * 10.0E-12 * 6.022E23 * cell.volume
+
+                #Determine association (binding) events
+                if num_viral_particles_environment > 1:
+                    for particle in range(num_viral_particles_environment):
+                        p_binding = np.random.random()
+                        if p_binding < kon * num_unbound_receptors / reference_volume:
+                            num_surface_complexes += 1
+                            num_unbound_receptors -= 1
+
+                #Determine disassociation (unbinding) event
+                if num_surface_complexes > 1:
+                    for complex in range(num_surface_complexes):
+                        p_unbinding = np.random.random()
+                        if p_unbinding < koff/ reference_volume:
+                            num_unbound_receptors += 1
+                            num_surface_complexes -= 1
+
+                #Determine internalization event
+                total_num_unbound_receptors = num_unbound_receptors*cell.volume
+                total_num_surface_complexes = num_surface_complexes*cell.volume
+                if total_num_surface_complexes > 1:
+                    p_internalization = np.random.random()
+                    if p_internalization < internalization_rate:
+                        total_num_surface_complexes -= 1
+                        num_internalized_complexes += 1
+
+                cell.dict['Unbound_Receptors'] = total_num_unbound_receptors
+                cell.dict['Surface_Complexes'] = total_num_surface_complexes
+                cell.dict['Internalized_Complexes'] = num_internalized_complexes
 
 class Viral_ReplicationSteppable(CoronavirusSteppableBasePy):
     """
