@@ -90,7 +90,8 @@
                <Periodic/>
             </Plane>
             <Plane Axis="Z">
-               <Periodic/>
+               <ConstantDerivative PlanePosition="Min" Value="0.0"/>
+               <ConstantDerivative PlanePosition="Max" Value="0.0"/>
             </Plane>
          </BoundaryConditions>
       </DiffusionField>
@@ -108,10 +109,14 @@
                <Periodic/>
             </Plane>
             <Plane Axis="Z">
-               <Periodic/>
+               <ConstantDerivative PlanePosition="Min" Value="0.0"/>
+               <ConstantDerivative PlanePosition="Max" Value="0.0"/>
             </Plane>
          </BoundaryConditions>
       </DiffusionField>
    </Steppable>
-
+    
+    
+   
+   
 </CompuCell3D>
