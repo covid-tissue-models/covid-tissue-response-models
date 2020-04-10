@@ -194,3 +194,44 @@ def reset_viral_replication_variables(cell):
     cell.dict['Secretion'] = 0
     for k in vr_cell_dict_to_sym.keys():
         cell.dict[k] = 0
+
+
+def reset_viral_internalization_variables(cell):
+    """
+    Sets state variables from viral internalization model in cell dictionary to zero
+    :param cell: cell for which to set state variables in cell dictionary to zero
+    :return: None
+    """
+    for k in vi_cell_dict_to_sym.keys():
+        cell.dict[k] = 0
+
+
+def internalize_viral_particles(cell, vi_step_size):
+    """
+    Moves internalized viral particles from internalization model to replication model for a cell
+    :param cell: cell for which to perform transfer of internalized viral particles
+    :param vi_step_size: time step size of viral internalization model
+    :return: None
+    """
+    assert cell.dict[vrl_key] and cell.dict[vil_key]
+    vi_sbml = getattr(cell.sbml, vi_model_name)
+    intern_vir = vi_sbml['Vi']
+    vi_sbml['Vi'] = 0.0
+    set_viral_replication_cell_uptake(cell, intern_vir / vi_step_size)
+
+
+def step_sbml_viral_internalization_cell(cell, vi_step_size, ve_tot=0):
+    """
+    Steps viral internalization SBML model for a cell
+    :param cell: cell with a SBML model to step
+    :param vi_step_size: time step size of viral internalization model
+    :param ve_tot: total environmental viral amount to pass to SBML model
+    :return: extracellular viral amount after integration of SBML model
+    """
+    assert cell.dict[vil_key]
+    vi_sbml = getattr(cell.sbml, vi_model_name)
+    vi_sbml['VeSrc'] = ve_tot / vi_step_size
+    step_sbml_model_cell(cell, vi_model_name)
+    extern_vir = vi_sbml['Ve']
+    vi_sbml['Ve'] = 0.0
+    return extern_vir
