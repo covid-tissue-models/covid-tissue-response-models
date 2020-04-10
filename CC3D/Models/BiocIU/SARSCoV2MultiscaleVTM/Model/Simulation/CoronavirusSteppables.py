@@ -171,38 +171,37 @@ vi_cell_dict_to_sym = {'Unbound_Receptors': 'R',
                        'Internalized_Complexes': 'Vi'}
 
 
-def pack_viral_internalization_variables(cell):
+def viral_internalization_model_string(_kon, _koff, _intern_rate, _ve_ini=0, _r_ini=0, _vr_ini=0, _vi_ini=0, _ve_src=0):
     """
-    Loads state variables from SBML into cell dictionary
-    :param cell: cell for which to load state variables from SBML into cell dictionary
-    :return: None
-    """
-    assert cell.dict[vrl_key]
-    for k, v in vr_cell_dict_to_sym.items():
-        cell.dict[k] = getattr(cell.sbml, vr_model_name)[v]
-
-
-def viral_internalization_model_string(_kon, _koff, _internalization_rate):
-    """
-    dVe/dt = -kon*Ve*R + koff*VR
+    dVe/dt = -kon*Ve*R + koff*VR + VeSrc
     dR/dt = -kon*Ve*R + koff*VR
-    dVR/dt = kon*Ve*R - koff*VR - internalization_rate*VR
-    dVi/dt = internalization_rate*VR
+    dVR/dt = kon*Ve*R - koff*VR - intern_rate*VR
+    dVi/dt = intern_rate*VR
     Derived by J. Aponte-Serrano and J. Mathur
     :param _kon: association rate constant of extracellular virus particles and unbound cell receptors
     :param _koff: dissasociation rate constant of virus-receptor surface complex
-    :param _internalization_rate: internalization rate of virus-receptor surface complex
-    :param _R_ini: initial number of unbound cell receptors
+    :param _intern_rate: internalization rate of virus-receptor surface complex
+    :param _ve_ini: initial number of extracellular virus particles
+    :param _r_ini: initial number of unbound cell receptors
+    :param _vr_ini: initial number of virus-receptor surface complexes
+    :param _vi_ini: initial number of internalized virus particles
+    :param _ve_src: incoming extracellular virus particles from viral field
     :return: None
     """
     model_string = """model {}()
+          -> Ve; VeSrc;
         Ve + R  -> VR ; kon * Ve * R ;
         VR -> Ve + R  ; koff * VR ;
-        VR -> Vi ; internalization_rate * VR ;
+        VR -> Vi ; intern_rate * VR ;
         kon = {};
         koff = {};
-        internalization_rate = {};
-        end""".format(vi_model_name, _kon, _koff, _internalization_rate)
+        intern_rate = {};
+        VeSrc = {};
+        Ve = {};
+        R = {};
+        VR = {};
+        Vi = {};
+        end""".format(vi_model_name, _kon, _koff, _intern_rate, _ve_src, _ve_ini, _r_ini, _vr_ini, _vi_ini)
     return model_string
 
 
