@@ -721,6 +721,7 @@ class ImmuneRecruitmentSteppable(CoronavirusSteppableBasePy):
         self.subtract_coeff = self.add_coeff / 10.0
         self.delay_coeff = 1*1E-9
         self.decay_coeff = 1E-1
+        self.transmission_coeff = 1E-1
         self.prob_scaling_factor = 1.0 / 100.0
 
     def start(self):
@@ -737,11 +738,13 @@ class ImmuneRecruitmentSteppable(CoronavirusSteppableBasePy):
         # Update total count of immune cells
         num_immune_cells = len(self.cell_list_by_type(self.IMMUNECELL))
 
-        # Apply consumption decay
-        self.__total_cytokine *= 1.0 - self.__ck_decay
+        # Apply consumption / transmission decay to running total
+        total_cytokine_decayed = self.__total_cytokine * self.__ck_decay
+        self.__total_cytokine -= total_cytokine_decayed
 
         # Update model
-        self.update_running_recruitment_model(num_immune_cells, self.__total_cytokine)
+        total_cytokine_transmitted = self.transmission_coeff * total_cytokine_decayed
+        self.update_running_recruitment_model(num_immune_cells, total_cytokine_transmitted)
 
     def finish(self):
         pass
