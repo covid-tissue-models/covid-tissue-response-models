@@ -140,9 +140,14 @@ class CoronavirusSteppableBasePy(nCoVSteppableBase):
         :return: None
         """
         cell.type = self.DYING
+
+        # Remove viral replication model: no model for dead cell type
         CoronavirusLib.reset_viral_replication_variables(cell=cell)
-        # Remove state model: no model for dead cell type
         self.remove_viral_replication_model(cell=cell)
+
+        # Remove viral internalization model: no model for dead cell type
+        CoronavirusLib.reset_viral_internalization_variables(cell=cell)
+        self.remove_viral_internalization_model(cell=cell)
 
     def remove_viral_replication_model(self, cell):
         """
@@ -154,4 +159,12 @@ class CoronavirusSteppableBasePy(nCoVSteppableBase):
             self.delete_sbml_from_cell(CoronavirusLib.vr_model_name, cell)
             cell.dict[CoronavirusLib.vrl_key] = False
 
-
+    def remove_viral_internalization_model(self, cell):
+        """
+        Removes viral internalization model for a cell
+        :param cell: cell for which to remove the viral internalization model
+        :return: None
+        """
+        if cell.dict[CoronavirusLib.vil_key]:
+            self.delete_sbml_from_cell(CoronavirusLib.vi_model_name, cell)
+            cell.dict[CoronavirusLib.vil_key] = False
