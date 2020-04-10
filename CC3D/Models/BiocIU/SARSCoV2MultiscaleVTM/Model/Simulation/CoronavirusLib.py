@@ -7,10 +7,13 @@ import sys
 from cc3d.cpp import CompuCell
 import numpy as np
 
+# Key to mcs value when a cell was created
+new_cell_mcs_key = 'new_cell_mcs'
+
 # Key to cell dictionary boolean for whether an instance of the viral replication model has been loaded
 vrl_key = 'viral_replication_loaded'
 
-# Name of Antimony/SBML model
+# Name of Antimony/SBML model of viral replication
 vr_model_name = 'viralReplication'
 
 # Mapping from CellG instance dictionary keys to Antimony/SBML symbols
@@ -18,6 +21,16 @@ vr_cell_dict_to_sym = {'Unpacking': 'U',
                        'Replicating': 'R',
                        'Packing': 'P',
                        'Assembled': 'A'}
+
+
+# Name of Antimony/SBML model of immune cell recruitment
+ir_model_name = 'immuneRecruitment'
+
+# Key to reference of ImmuneRecruitmentSteppable instance in shared global dictionary
+ir_steppable_key = 'ir_steppable'
+
+# Key to reference of SimDataSteppable instance in shared global dictionary
+simdata_steppable_key = 'simdata_steppable'
 
 
 # todo: Generalize Antimony model string generator for general use
@@ -65,6 +78,35 @@ def viral_replication_model_string(_unpacking_rate, _replicating_rate, _translat
     end""".format(vr_model_name,
                   _unpacking_rate, _replicating_rate, _translating_rate, _packing_rate, _secretion_rate,
                   _u_ini, _r_ini, _p_ini, _a_ini, _uptake)
+    return model_string
+
+
+def immune_recruitment_model_string(_add_rate, _sub_rate, _delay_rate, _decay_rate, _total_ck=0, _num_imm=0, _s_ini=0):
+    """
+    dS/dt = addRate - subRate * numImmuneCells + delayRate * totalCytokine - decayRate * S
+    The probability of adding an immume cell is non-zero for S > 0
+    The probabiilty of removing an immune cell is non-zero for S < 0
+    Derived in part thanks to J. Toledo
+    :param _add_rate: addition rate
+    :param _sub_rate: substraction rate
+    :param _delay_rate: delay rate
+    :param _decay_rate: decay rate
+    :param _total_ck: total cytokine signal
+    :param _num_imm: total number of immune cells
+    :param _s_ini: initial value of state variable *S*
+    :return: None
+    """
+    model_string = """model {}()
+          -> S ; addRate + delayRate * totalCytokine;
+        S ->   ; subRate * numImmuneCells + decayRate * S;
+        addRate = {};
+        subRate = {};
+        delayRate = {};
+        decayRate = {};
+        numImmuneCells = {};
+        totalCytokine = {};
+        S = {};
+        end""".format(ir_model_name, _add_rate, _sub_rate, _delay_rate, _decay_rate, _total_ck, _num_imm, _s_ini)
     return model_string
 
 
@@ -138,3 +180,7 @@ def reset_viral_replication_variables(cell):
     cell.dict['Secretion'] = 0
     for k in vr_cell_dict_to_sym.keys():
         cell.dict[k] = 0
+
+
+def get_assembled_viral_load_inside_cell(cell, sbml_rate):
+    return sbml_rate*cell.dict['Uptake'] + cell.dict['Assembled']

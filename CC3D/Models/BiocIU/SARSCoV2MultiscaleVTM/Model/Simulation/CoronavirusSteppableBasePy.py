@@ -107,6 +107,69 @@ class CoronavirusSteppableBasePy(nCoVSteppableBase):
         else:
             return False
 
+    def new_cell_in_time(self, cell_type, mcs=None):
+        """
+        Add cell and record MCS
+        :param cell_type: type id of cell (e.g., for cell.type)
+        :param mcs: step when cell is created; defaults from steppable mcs attribute
+        :return: new cell instance
+        """
+        cell = self.new_cell(cell_type)
+        if mcs is None:
+            if self.mcs < 0:
+                mcs = 0
+            else:
+                mcs = self.mcs
+
+        cell.dict[CoronavirusLib.new_cell_mcs_key] = mcs
+        return cell
+
+    def new_uninfected_cell_in_time(self, mcs=None):
+        """
+        Add an uninfected cell with default initial configuration and record MCS
+        :param mcs: step when cell is created; defaults from steppable mcs attribute
+        :return: new cell instance of immune cell type
+        """
+        cell = self.new_cell_in_time(self.UNINFECTED, mcs)
+        cell.dict[CoronavirusLib.vrl_key] = False
+        CoronavirusLib.reset_viral_replication_variables(cell=cell)
+        cell.dict['Survived'] = False
+        return cell
+
+    def new_immune_cell_in_time(self, ck_production, ck_consumption, mcs=None, activated=False):
+        """
+        Add an immune cell with default initial configuration and record MCS
+        :param ck_production: cytokine production rate
+        :param ck_consumption: cytokine consumption rate
+        :param mcs: step when cell is created; defaults from steppable mcs attribute
+        :param activated: flag for immune cell being naive or activated
+        :return: new cell instance of immune cell type
+        """
+        cell = self.new_cell_in_time(self.IMMUNECELL, mcs)
+        # cyttokine params
+        cell.dict['ck_production'] = ck_production  # TODO: replace secretion by hill
+        cell.dict['ck_consumption'] = ck_consumption  # TODO: replace by hill
+        cell.dict['activated'] = activated
+        cell.dict['tot_ck_upt'] = 0
+        return cell
+
+    def total_seen_field(self, field, cell, estimate=True):
+        """
+        Calculates total value of field in the cell.
+        :param field: the field to be looked
+        :param cell: the cell 
+        :param estimate: when true assumes homogeneous field. false is slower 
+        :return: calculated total field value 
+        """
+        if estimate:
+            tot_field = field[cell.xCOM, cell.yCOM, cell.zCOM] * cell.volume
+        else:
+            tot_field = 0
+            for ptd in self.get_cell_pixel_list(cell):
+                tot_field += field[ptd.pixel.x, ptd.pixel.y, ptd.pixel.z]
+        
+        return tot_field
+
     def kill_cell(self, cell):
         """
         Model-specific cell death routines
