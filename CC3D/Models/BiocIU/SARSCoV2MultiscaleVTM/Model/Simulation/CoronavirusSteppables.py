@@ -888,7 +888,8 @@ class ImmuneRecruitmentSteppable(CoronavirusSteppableBasePy):
 class oxidationAgentModelSteppable(CoronavirusSteppableBasePy):
     def __init__(self, frequency=1):
         SteppableBasePy.__init__(self, frequency)
-        
+        self.track_cell_level_scalar_attribute(field_name='oxi_killed', attribute_name='oxi_killed')
+        self.oxi_secretor = None
 
     def start(self):
         self.get_xml_element('oxi_dc').cdata = oxi_dc
@@ -905,10 +906,16 @@ class oxidationAgentModelSteppable(CoronavirusSteppableBasePy):
                 seen_field = self.total_seen_field(self.field.cytokine, cell)
                 #print(seen_field)
                 if seen_field > 10:
-                    oxi_sec = self.oxi_secretor.secreteInsideCellTotalCount(cell, max_ck_secrete_infect )
+                    oxi_sec = self.oxi_secretor.secreteInsideCellTotalCount(cell, max_ck_secrete_infect/cell.volume )
             
-        for cell in self.cell_list_by_type(self.INFECTED, self.INFECTEDSECRETING):
-            print(self.total_seen_field(self.field.oxidator, cell))
+        for cell in self.cell_list_by_type(self.UNINFECTED, self.INFECTED, self.INFECTEDSECRETING):
+            
+            seen_field = self.total_seen_field(self.field.oxidator, cell)
+            print(seen_field, seen_field/max_ck_secrete_infect)
+            if seen_field >= 1.5:
+                self.kill_cell(cell=cell)
+                cell.dict['oxi_killed'] = True
+                print('oxi agent cell kill: ', cell.id, ', x ', cell.xCOM, ', y ', cell.yCOM)
 
     def finish(self):
         # this function may be called at the end of simulation - used very infrequently though
