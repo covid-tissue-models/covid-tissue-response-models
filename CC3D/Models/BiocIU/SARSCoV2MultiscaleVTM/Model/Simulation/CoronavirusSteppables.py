@@ -9,6 +9,8 @@
 import os
 import sys
 
+import math
+
 from cc3d.core.PySteppables import *
 from cc3d.cpp import CompuCell
 import numpy as np
@@ -43,6 +45,8 @@ plot_pop_data_freq = 0  # Plot population data frequency (disable with 0)
 write_pop_data_freq = 0  # Write population data to simulation directory frequency (disable with 0)
 plot_med_viral_data_freq = 0  # Plot total diffusive viral amount frequency (disable with 0)
 write_med_viral_data_freq = 0  # Write total diffusive viral amount frequency (disable with 0)
+plot_ir_data_freq = 1  # Plot immune recruitment data frequency (disable with 0)
+write_ir_data_freq = 0  # Write immune recruitment data to simulation directory frequency (disable with 0)
 
 # Conversion Factors
 s_to_mcs = 120.0  # s/mcs
@@ -264,7 +268,6 @@ class Viral_ReplicationSteppable(CoronavirusSteppableBasePy):
                 cell.type = self.INFECTEDSECRETING
                 CoronavirusLib.enable_viral_secretion(cell=cell, secretion_rate=secretion_rate)
 
-
                 # cyttokine params
                 cell.dict['ck_production'] = max_ck_secrete_infect  # TODO: replace secretion by hill
 
@@ -317,7 +320,6 @@ class Viral_SecretionSteppable(CoronavirusSteppableBasePy):
                                                       packing_rate=packing_rate,
                                                       secretion_rate=secretion_rate)
                 CoronavirusLib.set_viral_replication_cell_uptake(cell=cell, uptake=cell.dict['Uptake'])
-
 
             if cell.type == self.INFECTEDSECRETING:
                 sec_amount = CoronavirusLib.get_viral_replication_cell_secretion(cell=cell)
@@ -385,7 +387,13 @@ class ImmuneCellSeedingSteppable(CoronavirusSteppableBasePy):
     def __init__(self, frequency=1):
         CoronavirusSteppableBasePy.__init__(self, frequency)
 
+        # Reference to ImmuneResponseSteppable
+        self.ir_steppable = None
+
     def step(self, mcs):
+        if self.ir_steppable is None:
+            self.ir_steppable: ImmuneRecruitmentSteppable = self.shared_steppable_vars[CoronavirusLib.ir_steppable_key]
+
         num_cells = len(self.cell_list_by_type(self.UNINFECTED, self.INFECTED, self.INFECTEDSECRETING))
         num_infected = len(self.cell_list_by_type(self.INFECTED, self.INFECTEDSECRETING))
         fraction_infected = 1.0 / num_cells
@@ -394,51 +402,50 @@ class ImmuneCellSeedingSteppable(CoronavirusSteppableBasePy):
 
         for cell in self.cell_list_by_type(self.IMMUNECELL):
             p_immune_dying = np.random.random()
-            if p_immune_dying < immunecell_dying_rate * fraction_infected:
+            if p_immune_dying < self.ir_steppable.get_immune_removal_prob():
                 cell.targetVolume = 0.0
 
-        if num_infected > 1:
-            p_immune_seeding = np.random.random()
-            if p_immune_seeding < immune_seeding_rate:
-                open_space = True
-                viral_concentration = 0
-                for iteration in range(10):
-                    radius = 10
-                    length = 0
-                    while length <= radius:
-                        xi = np.random.randint(0, self.dim.x - 2 * cell_diameter)
-                        yi = np.random.randint(0, self.dim.y - 2 * cell_diameter)
-                        length = np.sqrt((self.dim.x // 2 - xi) ** 2 + (self.dim.y // 2 - yi) ** 2)
-                    for x in range(xi, xi + int(cell_diameter)):
-                        for y in range(yi, yi + int(cell_diameter)):
-                            cell = self.cellField[x, y, 1]
-                            if cell:
-                                open_space = False
-                                break
-                    if open_space:
-                        concentration_iteration = self.field.Virus[xi, yi, 1]
-                        if concentration_iteration >= viral_concentration:
-                            viral_concentration = concentration_iteration
-                            x_seed = xi
-                            y_seed = yi
+        p_immune_seeding = np.random.random()
+        if p_immune_seeding < self.ir_steppable.get_immune_seeding_prob():
+            open_space = True
+            viral_concentration = 0
+            for iteration in range(10):
+                radius = 10
+                length = 0
+                while length <= radius:
+                    xi = np.random.randint(0, self.dim.x - 2 * cell_diameter)
+                    yi = np.random.randint(0, self.dim.y - 2 * cell_diameter)
+                    length = np.sqrt((self.dim.x // 2 - xi) ** 2 + (self.dim.y // 2 - yi) ** 2)
+                for x in range(xi, xi + int(cell_diameter)):
+                    for y in range(yi, yi + int(cell_diameter)):
+                        cell = self.cellField[x, y, 1]
+                        if cell:
+                            open_space = False
+                            break
                 if open_space:
-                    cell = self.new_cell(self.IMMUNECELL)
-                    cell.dict['activated'] = False  # flag for immune cell being naive or activated
-                    # cytokine parameters
-                    cell.dict['ck_production'] = max_ck_secrete_im  # TODO: replace secretion by hill
-                    cell.dict['ck_consumption'] = max_ck_consume  # TODO: replace by hill
-                    cell.dict['tot_ck_upt'] = 0
+                    concentration_iteration = self.field.Virus[xi, yi, 1]
+                    if concentration_iteration >= viral_concentration:
+                        viral_concentration = concentration_iteration
+                        x_seed = xi
+                        y_seed = yi
+            if open_space:
+                cell = self.new_cell(self.IMMUNECELL)
+                cell.dict['activated'] = False  # flag for immune cell being naive or activated
+                # cytokine parameters
+                cell.dict['ck_production'] = max_ck_secrete_im  # TODO: replace secretion by hill
+                cell.dict['ck_consumption'] = max_ck_consume  # TODO: replace by hill
+                cell.dict['tot_ck_upt'] = 0
 
-                    self.cellField[x_seed:x_seed + int(cell_diameter), y_seed:y_seed + int(cell_diameter), 1] = cell
-                    cd = self.chemotaxisPlugin.addChemotaxisData(cell, "cytokine")
-                    if cell.dict['activated']:
-                        cd.setLambda(lamda_chemotaxis)
-                    else:
-                        cd.setLambda(0.0)
+                self.cellField[x_seed:x_seed + int(cell_diameter), y_seed:y_seed + int(cell_diameter), 1] = cell
+                cd = self.chemotaxisPlugin.addChemotaxisData(cell, "cytokine")
+                if cell.dict['activated']:
+                    cd.setLambda(lamda_chemotaxis)
+                else:
+                    cd.setLambda(0.0)
 
-                    cd.assignChemotactTowardsVectorTypes([self.MEDIUM])
-                    cell.targetVolume = cell_volume
-                    cell.lambdaVolume = cell_volume
+                cd.assignChemotactTowardsVectorTypes([self.MEDIUM])
+                cell.targetVolume = cell_volume
+                cell.lambdaVolume = cell_volume
 
 
 class SimDataSteppable(SteppableBasePy):
@@ -454,12 +461,20 @@ class SimDataSteppable(SteppableBasePy):
         self.med_viral_data_win = None
         self.med_viral_data_path = None
 
+        self.ir_data_win = None
+        self.ir_data_path = None
+
         self.plot_pop_data = plot_pop_data_freq > 0
         self.write_pop_data = write_pop_data_freq > 0
 
         self.plot_med_viral_data = plot_med_viral_data_freq > 0
         self.write_med_viral_data = write_med_viral_data_freq > 0
         self.med_viral_key = "MedViral"
+
+        self.plot_ir_data = plot_ir_data_freq > 0
+        self.write_ir_data = write_ir_data_freq > 0
+        self.ir_key = "ImmuneResp"
+        self.ir_steppable = None
 
     def start(self):
 
@@ -489,6 +504,16 @@ class SimDataSteppable(SteppableBasePy):
 
             self.med_viral_data_win.add_plot(self.med_viral_key, style='Dots', color='red', size=5)
 
+        if self.plot_ir_data:
+            self.ir_data_win = self.add_new_plot_window(title='Immune Response Model',
+                                                        x_axis_title='MCS',
+                                                        y_axis_title='State variable S',
+                                                        x_scale_type='linear',
+                                                        y_scale_type='linear',
+                                                        grid=True)
+
+            self.ir_data_win.add_plot(self.ir_key, style='Dots', color='red', size=5)
+
         # Check that output directory is available
         if self.output_dir is not None:
             from pathlib import Path
@@ -502,16 +527,24 @@ class SimDataSteppable(SteppableBasePy):
                 with open(self.med_viral_data_path, 'w'):
                     pass
 
+            if self.write_ir_data:
+                self.ir_data_path = Path(self.output_dir).joinpath('ir_data.dat')
+                with open(self.ir_data_path, 'w'):
+                    pass
+
     def step(self, mcs):
 
         plot_pop_data = self.plot_pop_data and mcs % plot_pop_data_freq == 0
         plot_med_viral_data = self.plot_med_viral_data and mcs % plot_med_viral_data_freq == 0
+        plot_ir_data = self.plot_ir_data and mcs % plot_ir_data_freq == 0
         if self.output_dir is not None:
             write_pop_data = self.write_pop_data and mcs % write_pop_data_freq == 0
             write_med_viral_data = self.write_med_viral_data and mcs % write_med_viral_data_freq == 0
+            write_ir_data = self.write_ir_data and mcs % write_ir_data_freq == 0
         else:
             write_pop_data = False
             write_med_viral_data = False
+            write_ir_data = False
 
         if plot_pop_data or write_pop_data:
 
@@ -561,6 +594,24 @@ class SimDataSteppable(SteppableBasePy):
                 with open(self.med_viral_data_path, 'a') as fout:
                     fout.write('{}, {}\n'.format(mcs, med_viral_total))
 
+        if plot_ir_data or write_ir_data:
+            if self.ir_steppable is None:
+                if self.ir_steppable is None:
+                    self.ir_steppable: ImmuneRecruitmentSteppable = self.shared_steppable_vars[
+                        CoronavirusLib.ir_steppable_key]
+
+            s_val = self.ir_steppable.get_state_variable_val()
+
+            # Plot state variable S if requested
+            if plot_ir_data:
+                self.ir_data_win.add_data_point(self.ir_key, mcs, s_val)
+
+            # Write state variable S if requested
+            if write_ir_data:
+                with open(self.ir_data_path, 'a') as fout:
+                    fout.write('{}, {}\n'.format(mcs, s_val))
+
+
 
 class CytokineProductionAbsorptionSteppable(CoronavirusSteppableBasePy):
     """
@@ -571,6 +622,9 @@ class CytokineProductionAbsorptionSteppable(CoronavirusSteppableBasePy):
         self.track_cell_level_scalar_attribute(field_name='activated', attribute_name='activated')
         self.ck_secretor = None
         self.virus_secretor = None
+
+        # Reference to ImmuneResponseSteppable
+        self.ir_steppable = None
 
     def start(self):
         # cytokine diff parameters
@@ -595,11 +649,17 @@ class CytokineProductionAbsorptionSteppable(CoronavirusSteppableBasePy):
         self.virus_secretor = self.get_field_secretor("Virus")
 
     def step(self, mcs):
+        if self.ir_steppable is None:
+            self.ir_steppable: ImmuneRecruitmentSteppable = self.shared_steppable_vars[CoronavirusLib.ir_steppable_key]
+
+        # Track the total amount added and subtracted to the cytokine field
+        total_ck_inc = 0.0
 
 
         for cell in self.cell_list_by_type(self.INFECTED,self.INFECTEDSECRETING):
             res = self.ck_secretor.secreteInsideCellTotalCount(cell,
                                                                cell.dict['ck_production'] / cell.volume)
+            total_ck_inc += res.tot_amount
 
         for cell in self.cell_list_by_type(self.IMMUNECELL):
             
@@ -608,13 +668,18 @@ class CytokineProductionAbsorptionSteppable(CoronavirusSteppableBasePy):
             # print(EC50_ck_immune)
             up_res = self.ck_secretor.uptakeInsideCellTotalCount(cell,
                                                                  cell.dict['ck_consumption'] / cell.volume, 0.1)
+            # Added virus uptake
+
+            self.virus_secretor.uptakeInsideCellTotalCount(cell,cell.dict['ck_consumption'] / cell.volume, 0.1)
+
             #decay seen ck
             cell.dict['tot_ck_upt'] *= ck_memory_immune
             
             #uptake ck
             
             cell.dict['tot_ck_upt'] -= up_res.tot_amount  # from POV of secretion uptake is negative
-            print('tot_upt', cell.dict['tot_ck_upt'],'upt_now', up_res.tot_amount)
+            total_ck_inc += up_res.tot_amount
+            print('tot_upt', cell.dict['tot_ck_upt'], 'upt_now', up_res.tot_amount)
             if cell.dict['tot_ck_upt'] >= EC50_ck_immune:
                 cell.dict['activated'] = True
             elif cell.dict['activated'] and cell.dict['tot_ck_upt'] < EC50_ck_immune:
@@ -623,3 +688,116 @@ class CytokineProductionAbsorptionSteppable(CoronavirusSteppableBasePy):
                 # print('activated', cell.id)
                 sec_res = self.ck_secretor.secreteInsideCellTotalCount(cell,
                                                                        cell.dict['ck_production'] / cell.volume)
+                total_ck_inc += sec_res.tot_amount
+
+        self.ir_steppable.increment_total_cytokine_count(total_ck_inc)
+
+
+class ImmuneRecruitmentSteppable(CoronavirusSteppableBasePy):
+    """
+    Implements immune response global recruitment
+    Note that total cytokine is currently tracked elsewhere by counting uptake and secretion, and by applying the
+    field decay rate applied to the cytokine field. This is only relevant for periodic and zero-flux boundary conditions
+    for the diffusive cytokine field.
+    """
+    def __init__(self, frequency=1):
+        CoronavirusSteppableBasePy.__init__(self, frequency)
+
+        # Reference to solver
+        self.__rr = None
+
+        # Running value of total cytokine; to be updated externally through accessor
+        self.__total_cytokine = 0.0
+
+        self.__ck_decay = 0.0
+
+        # These are model parameters to be made global
+        self.add_coeff = 1.0
+        self.subtract_coeff = self.add_coeff / 10.0
+        self.delay_coeff = 1*1E-9
+        self.decay_coeff = 1E-1
+        self.prob_scaling_factor = 1.0 / 100.0
+
+    def start(self):
+        self.__ck_decay = float(self.get_xml_element('cytokine_decay').cdata)
+
+        # Post reference to self
+        self.shared_steppable_vars[CoronavirusLib.ir_steppable_key] = self
+
+        # Initialize model
+        self.__init_fresh_recruitment_model()
+
+    def step(self, mcs):
+
+        # Update total count of immune cells
+        num_immune_cells = len(self.cell_list_by_type(self.IMMUNECELL))
+
+        # Apply consumption decay
+        self.__total_cytokine *= 1.0 - self.__ck_decay
+
+        # Update model
+        self.update_running_recruitment_model(num_immune_cells, self.__total_cytokine)
+
+    def finish(self):
+        pass
+
+    def __init_fresh_recruitment_model(self):
+        # Generate solver instance
+        model_string = CoronavirusLib.immune_recruitment_model_string(self.add_coeff,
+                                                                      self.subtract_coeff,
+                                                                      self.delay_coeff,
+                                                                      self.decay_coeff)
+        self.add_free_floating_antimony(model_string=model_string,
+                                        model_name=CoronavirusLib.ir_model_name,
+                                        step_size=vr_step_size)
+
+        # Get reference to solver
+        from cc3d.CompuCellSetup import persistent_globals as pg
+        for model_name, rr in pg.free_floating_sbml_simulators.items():
+            if model_name == CoronavirusLib.ir_model_name:
+                self.__rr = rr
+
+    def update_running_recruitment_model(self, num_immune_cells, total_cytokine):
+        self.__rr['numImmuneCells'] = num_immune_cells
+        self.__rr['totalCytokine'] = total_cytokine
+        self.__rr.timestep()
+
+    def get_state_variable_val(self):
+        return self.__rr['S']
+
+    def get_immune_seeding_prob(self):
+        """
+        Returns probability of immune cell seeding due to local and global recruitment
+        Probability is only non-zero if the state variable *S* is positive, in which case
+        the probability is an error function of *S*
+        :return: probability of immune cell seeding due to local and global recruitment
+        """
+        s_val = self.get_state_variable_val()
+        print('get_immune_seeding_prob:', s_val, math.erf(self.prob_scaling_factor * s_val))
+        if s_val < 0:
+            return 0.0
+        else:
+            return math.erf(self.prob_scaling_factor * s_val)
+
+    def get_immune_removal_prob(self):
+        """
+        Returns probability of immune cell removal due to local and global recruitment
+        Probability is only non-zero if the state variable *S* is negative, in which case
+        the probability is an error function of *S*
+        :return: probability of immune cell removal due to local and global recruitment
+        """
+        s_val = self.get_state_variable_val()
+        print('get_immune_removal_prob:', s_val, math.erf(self.prob_scaling_factor * s_val))
+        if s_val > 0:
+            return 0.0
+        else:
+            return math.erf(- self.prob_scaling_factor * s_val)
+
+    def increment_total_cytokine_count(self, _inc_amount):
+        """
+        Method to efficient maintain total count of cytokine
+        :param _inc_amount: total amount increment
+        :return: None
+        """
+        self.__total_cytokine = max(0.0, self.__total_cytokine + _inc_amount)
+        print('self.__total_cytokine:', self.__total_cytokine)
