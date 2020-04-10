@@ -178,6 +178,6 @@ def reset_viral_replication_variables(cell):
     for k in vr_cell_dict_to_sym.keys():
         cell.dict[k] = 0
 
-def get_assembled_viral_load_inside_cell(cell,sbml_rate):
-    return sbml_rate*cell.dict['Uptake'] + cell.dict['Assembled']
 
+def get_assembled_viral_load_inside_cell(cell, sbml_rate):
+    return sbml_rate*cell.dict['Uptake'] + cell.dict['Assembled']
