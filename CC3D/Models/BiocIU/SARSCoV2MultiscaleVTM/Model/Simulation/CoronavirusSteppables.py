@@ -91,7 +91,7 @@ exp_max_cytokine_immune_secretion_mol = 3.5e-3  # pM/s
 
 exp_EC50_cytokine_immune = 1  # pM from (B), it's a range from [1,50]pM
 
-## tbd: try to find experimental data
+# tbd: try to find experimental data
 minimum_activated_time_seconds = 60 * 60 # min * s/min
 
 
@@ -397,12 +397,6 @@ class ImmuneCellSeedingSteppable(CoronavirusSteppableBasePy):
         if self.ir_steppable is None:
             self.ir_steppable: ImmuneRecruitmentSteppable = self.shared_steppable_vars[CoronavirusLib.ir_steppable_key]
 
-        num_cells = len(self.cell_list_by_type(self.UNINFECTED, self.INFECTED, self.INFECTEDSECRETING))
-        num_infected = len(self.cell_list_by_type(self.INFECTED, self.INFECTEDSECRETING))
-        fraction_infected = 1.0 / num_cells
-        if num_cells:
-            fraction_infected = num_infected / num_cells
-
         for cell in self.cell_list_by_type(self.IMMUNECELL):
             p_immune_dying = np.random.random()
             if p_immune_dying < self.ir_steppable.get_immune_removal_prob():
@@ -610,7 +604,6 @@ class SimDataSteppable(SteppableBasePy):
                     fout.write('{}, {}\n'.format(mcs, s_val))
 
 
-
 class CytokineProductionAbsorptionSteppable(CoronavirusSteppableBasePy):
     """
     DESCRIPTION HERE!
@@ -653,30 +646,28 @@ class CytokineProductionAbsorptionSteppable(CoronavirusSteppableBasePy):
         # Track the total amount added and subtracted to the cytokine field
         total_ck_inc = 0.0
 
-
-        for cell in self.cell_list_by_type(self.INFECTED,self.INFECTEDSECRETING):
-            viral_load = CoronavirusLib.get_assembled_viral_load_inside_cell(cell,vr_step_size)
+        for cell in self.cell_list_by_type(self.INFECTED, self.INFECTEDSECRETING):
+            viral_load = CoronavirusLib.get_assembled_viral_load_inside_cell(cell, vr_step_size)
             produced = cell.dict['ck_production'] * nCoVUtils.hill_equation(viral_load, ec50_infecte_ck_prod, 2)
 #             print('produced ck', produced, produced/cell.dict['ck_production'])
-            res = self.ck_secretor.secreteInsideCellTotalCount(cell,produced / cell.volume)
+            res = self.ck_secretor.secreteInsideCellTotalCount(cell, produced / cell.volume)
             total_ck_inc += res.tot_amount
-            
         
         for cell in self.cell_list_by_type(self.IMMUNECELL):
             
-            self.virus_secretor.uptakeInsideCellTotalCount(cell,cell.dict['ck_consumption'] / cell.volume, 0.1)
+            self.virus_secretor.uptakeInsideCellTotalCount(cell, cell.dict['ck_consumption'] / cell.volume, 0.1)
             
             # print(EC50_ck_immune)
             up_res = self.ck_secretor.uptakeInsideCellTotalCount(cell,
                                                                  cell.dict['ck_consumption'] / cell.volume, 0.1)
             # Added virus uptake
 
-            self.virus_secretor.uptakeInsideCellTotalCount(cell,cell.dict['ck_consumption'] / cell.volume, 0.1)
+            self.virus_secretor.uptakeInsideCellTotalCount(cell, cell.dict['ck_consumption'] / cell.volume, 0.1)
 
-            #decay seen ck
+            # decay seen ck
             cell.dict['tot_ck_upt'] *= ck_memory_immune
             
-            #uptake ck
+            # uptake ck
             
             cell.dict['tot_ck_upt'] -= up_res.tot_amount  # from POV of secretion uptake is negative
 #             print('tot_upt', cell.dict['tot_ck_upt'],'upt_now', up_res.tot_amount)
@@ -685,7 +676,7 @@ class CytokineProductionAbsorptionSteppable(CoronavirusSteppableBasePy):
             
 #             print('prob activation', p_activate, 'upt/ec50', cell.dict['tot_ck_upt']/EC50_ck_immune)
             
-            if rng.uniform() < p_activate and not cell.dict['activated'] :
+            if rng.uniform() < p_activate and not cell.dict['activated']:
 
                 cell.dict['activated'] = True
                 cell.dict['time_activation'] = mcs
@@ -694,15 +685,13 @@ class CytokineProductionAbsorptionSteppable(CoronavirusSteppableBasePy):
                 cell.dict['activated'] = False
                 cell.dict['time_activation'] = - 99
             
-            
             if cell.dict['activated']:
                 # print('activated', cell.id)
                 
-                seen_field = self.total_seen_field(self.field.cytokine,cell)
+                seen_field = self.total_seen_field(self.field.cytokine, cell)
                 produced = cell.dict['ck_production'] * nCoVUtils.hill_equation(seen_field, 100, 1)
 #                 print('produced ck', produced, produced/cell.dict['ck_production'],seen_field)
-                sec_res = self.ck_secretor.secreteInsideCellTotalCount(cell,produced / cell.volume)
-
+                sec_res = self.ck_secretor.secreteInsideCellTotalCount(cell, produced / cell.volume)
 
                 total_ck_inc += sec_res.tot_amount
 
@@ -730,8 +719,9 @@ class ImmuneRecruitmentSteppable(CoronavirusSteppableBasePy):
         # These are model parameters to be made global
         self.add_coeff = 1.0
         self.subtract_coeff = self.add_coeff / 10.0
-        self.delay_coeff = 1*1E-9
+        self.delay_coeff = 1*1E-2
         self.decay_coeff = 1E-1
+        self.transmission_coeff = 5E-1
         self.prob_scaling_factor = 1.0 / 100.0
 
     def start(self):
@@ -748,11 +738,13 @@ class ImmuneRecruitmentSteppable(CoronavirusSteppableBasePy):
         # Update total count of immune cells
         num_immune_cells = len(self.cell_list_by_type(self.IMMUNECELL))
 
-        # Apply consumption decay
-        self.__total_cytokine *= 1.0 - self.__ck_decay
+        # Apply consumption / transmission decay to running total
+        total_cytokine_decayed = self.__total_cytokine * self.__ck_decay
+        self.__total_cytokine -= total_cytokine_decayed
 
         # Update model
-        self.update_running_recruitment_model(num_immune_cells, self.__total_cytokine)
+        total_cytokine_transmitted = self.transmission_coeff * total_cytokine_decayed
+        self.update_running_recruitment_model(num_immune_cells, total_cytokine_transmitted)
 
     def finish(self):
         pass
@@ -817,4 +809,3 @@ class ImmuneRecruitmentSteppable(CoronavirusSteppableBasePy):
         """
         self.__total_cytokine = max(0.0, self.__total_cytokine + _inc_amount)
         print('self.__total_cytokine:', self.__total_cytokine)
-

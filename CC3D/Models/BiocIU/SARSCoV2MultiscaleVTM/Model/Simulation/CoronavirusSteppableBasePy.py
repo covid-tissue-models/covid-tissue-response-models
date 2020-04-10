@@ -153,7 +153,7 @@ class CoronavirusSteppableBasePy(nCoVSteppableBase):
         cell.dict['tot_ck_upt'] = 0
         return cell
 
-    def total_seen_field(self,field,cell, estimate = True):
+    def total_seen_field(self, field, cell, estimate=True):
         """
         Calculates total value of field in the cell.
         :param field: the field to be looked
@@ -161,7 +161,6 @@ class CoronavirusSteppableBasePy(nCoVSteppableBase):
         :param estimate: when true assumes homogeneous field. false is slower 
         :return: calculated total field value 
         """
-        tot_field = 0
         if estimate:
             tot_field = field[cell.xCOM, cell.yCOM, cell.zCOM] * cell.volume
         else:
