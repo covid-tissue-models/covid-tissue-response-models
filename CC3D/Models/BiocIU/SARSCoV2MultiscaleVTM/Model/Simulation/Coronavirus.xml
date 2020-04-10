@@ -118,7 +118,7 @@
          <DiffusionData>
             <FieldName>oxidator</FieldName>
             <GlobalDiffusionConstant id = "oxi_dc">10.0</GlobalDiffusionConstant>
-            <GlobalDecayConstant id = "oxi_decay">1.0E-5</GlobalDecayConstant>
+            <GlobalDecayConstant id = "oxi_decay">0</GlobalDecayConstant>
          </DiffusionData>
          <BoundaryConditions>
             <Plane Axis="X">
@@ -128,8 +128,9 @@
                <Periodic/>
             </Plane>
             <Plane Axis="Z">
-               <ConstantDerivative PlanePosition="Min" Value="0.0"/>
-               <ConstantDerivative PlanePosition="Max" Value="0.0"/>
+                <Periodic/> <!-- constant flux = 0 was miss behaving in this field -->
+<!--                <ConstantDerivative PlanePosition="Min" Value="0.0"/> -->
+<!--                <ConstantDerivative PlanePosition="Max" Value="0.0"/> -->
             </Plane>
          </BoundaryConditions>
       </DiffusionField>
