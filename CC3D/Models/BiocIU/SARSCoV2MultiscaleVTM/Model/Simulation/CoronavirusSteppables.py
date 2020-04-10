@@ -74,6 +74,12 @@ cytoplasm_density = 6  # unit = [density of water](B)
 exp_cytokine_dc_w = 100  # um^2/s; diffusion constant in water (A,B)
 # the division by 10 is due to the small lattice size, as fiscussed with josh. we all should discuss this matter
 exp_cytokine_dc_cyto = 16 / 10  # um^2/s; estimated diffusion constant in cytoplasm (B)
+# ^ the  /10 is not experimental; added because of relative small area and because virus D is (or was) slowed down
+
+exp_max_ck_diff_len = 100 # um  from (A); this diffusion length is due to uptake, I'm using it as a base
+# for the decay due to ck leakage outside of the simulatted lattice.
+# dl = sqrt(D/g) -> g = D/dl**2
+exp_min_ck_decay = exp_cytokine_dc_cyto/(1.1*exp_max_ck_diff_len)**2
 
 exp_max_cytokine_consumption = 1  # molecule / (cell second); maximum consumption of cytokine; actually a range [0.3,1] molecule / (cell second) (A)
 exp_max_cytokine_immune_secretion = 10  # molecule / (cell second) (B)
@@ -102,12 +108,16 @@ secretion_rate = exp_secretion_rate * s_to_mcs
 # cytokine
 
 cytokine_dc = exp_cytokine_dc_cyto * s_to_mcs / (um_to_lat_width ** 2)  # CK diff cst
-
+# [1/g] = [s] -> [1/g]/s_to_mcs = [s]/[s/mcs] = [mcs]
+# -> [g] = [1/s] -> [g]*[s_to_mcs] = [1/s]*[s/mcs] = [1/mcs]
+cytokine_field_decay = exp_min_ck_decay * s_to_mcs
 # pM = pmol/L = pmol/(10^15 um^3) = 10^-15 pmol/(um^3) = 10^-15 * um_to_lat_width^3 pmol/pixel
 # pM/s = pM * s_to_mcs / MCS
 max_ck_consume = exp_max_cytokine_consumption_mol * um_to_lat_width ** 3 * s_to_mcs * 1e-15 * pmol_to_cc3d_au  # cc3d_au/(pixel seconds)
 max_ck_secrete_im = exp_max_cytokine_immune_secretion_mol * um_to_lat_width ** 3 * s_to_mcs * 1e-15 * pmol_to_cc3d_au  # * cc3d_au/(pixel seconds)
 EC50_ck_immune = exp_EC50_cytokine_immune * um_to_lat_width ** 3 * 1e-15 * pmol_to_cc3d_au  # * cc3d_au/pixel
+ck_equilibrium = 1.5*EC50_ck_immune # equilibrium amount of ck in immune surface
+ck_memory_immune = 1 - max_ck_consume/ck_equilibrium # decay therm for "seen" ck by immune
 
 max_ck_secrete_infect = 10*max_ck_secrete_im
 
@@ -619,11 +629,13 @@ class CytokineProductionAbsorptionSteppable(CoronavirusSteppableBasePy):
     def start(self):
         # cytokine diff parameters
         self.get_xml_element('cytokine_dc').cdata = cytokine_dc
-        self.get_xml_element('cytokine_decay').cdata = 0  # no "natural" decay, only consumption
+        self.get_xml_element('cytokine_decay').cdata = cytokine_field_decay  # no "natural" decay, only consumption
+        # and "leakage" outside of simulation laticce
 
         for cell in self.cell_list_by_type(self.IMMUNECELL):
             # TODO: differentiate this rates between the cell types
             # cytokine production/uptake parameters for immune cells
+
             cell.dict['ck_production'] = max_ck_secrete_im  # TODO: replace secretion by hill
             cell.dict['ck_consumption'] = max_ck_consume  # TODO: replace by hill
 
@@ -643,12 +655,16 @@ class CytokineProductionAbsorptionSteppable(CoronavirusSteppableBasePy):
         # Track the total amount added and subtracted to the cytokine field
         total_ck_inc = 0.0
 
+
         for cell in self.cell_list_by_type(self.INFECTED,self.INFECTEDSECRETING):
             res = self.ck_secretor.secreteInsideCellTotalCount(cell,
                                                                cell.dict['ck_production'] / cell.volume)
             total_ck_inc += res.tot_amount
 
         for cell in self.cell_list_by_type(self.IMMUNECELL):
+            
+            self.virus_secretor.uptakeInsideCellTotalCount(cell,cell.dict['ck_consumption'] / cell.volume, 0.1)
+            
             # print(EC50_ck_immune)
             up_res = self.ck_secretor.uptakeInsideCellTotalCount(cell,
                                                                  cell.dict['ck_consumption'] / cell.volume, 0.1)
@@ -656,12 +672,18 @@ class CytokineProductionAbsorptionSteppable(CoronavirusSteppableBasePy):
 
             self.virus_secretor.uptakeInsideCellTotalCount(cell,cell.dict['ck_consumption'] / cell.volume, 0.1)
 
+            #decay seen ck
+            cell.dict['tot_ck_upt'] *= ck_memory_immune
+            
+            #uptake ck
+            
             cell.dict['tot_ck_upt'] -= up_res.tot_amount  # from POV of secretion uptake is negative
             total_ck_inc += up_res.tot_amount
             print('tot_upt', cell.dict['tot_ck_upt'], 'upt_now', up_res.tot_amount)
             if cell.dict['tot_ck_upt'] >= EC50_ck_immune:
                 cell.dict['activated'] = True
-
+            elif cell.dict['activated'] and cell.dict['tot_ck_upt'] < EC50_ck_immune:
+                cell.dict['activated'] = False
             if cell.dict['activated']:
                 # print('activated', cell.id)
                 sec_res = self.ck_secretor.secreteInsideCellTotalCount(cell,
