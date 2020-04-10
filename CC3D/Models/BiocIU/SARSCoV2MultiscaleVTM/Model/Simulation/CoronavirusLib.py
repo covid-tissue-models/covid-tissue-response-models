@@ -29,6 +29,9 @@ ir_model_name = 'immuneRecruitment'
 # Key to reference of ImmuneRecruitmentSteppable instance in shared global dictionary
 ir_steppable_key = 'ir_steppable'
 
+# Key to reference of SimDataSteppable instance in shared global dictionary
+simdata_steppable_key = 'simdata_steppable'
+
 
 # todo: Generalize Antimony model string generator for general use
 def viral_replication_model_string(_unpacking_rate, _replicating_rate, _translating_rate, _packing_rate,

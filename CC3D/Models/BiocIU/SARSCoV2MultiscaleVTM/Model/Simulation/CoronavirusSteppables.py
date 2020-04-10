@@ -43,6 +43,8 @@ else:
     from nCoVToolkit import nCoVUtils
 
 # Data control options
+plot_vrm_data_freq = 1  # Plot viral replication model data frequency (disable with 0)
+write_vrm_data_freq = 0  # Write viral replication model data to simulation directory frequency (disable with 0)
 plot_pop_data_freq = 0  # Plot population data frequency (disable with 0)
 write_pop_data_freq = 0  # Write population data to simulation directory frequency (disable with 0)
 plot_med_viral_data_freq = 0  # Plot total diffusive viral amount frequency (disable with 0)
@@ -221,25 +223,18 @@ class Viral_ReplicationSteppable(CoronavirusSteppableBasePy):
 
         self.plot_win = None
 
-    def start(self):
-        self.plot_win = self.add_new_plot_window(title='VRM',
-                                                 x_axis_title='MonteCarlo Step (MCS)',
-                                                 y_axis_title='Variables', x_scale_type='linear', y_scale_type='linear',
-                                                 grid=False,
-                                                 config_options={'legend': True})
+        # Reference to SimDataSteppable
+        self.simdata_steppable = None
 
-        self.plot_win.add_plot("U", style='Dots', color='blue', size=5)
-        self.plot_win.add_plot("R", style='Dots', color='orange', size=5)
-        self.plot_win.add_plot("P", style='Dots', color='green', size=5)
-        self.plot_win.add_plot("A", style='Dots', color='red', size=5)
-        self.plot_win.add_plot("Uptake", style='Dots', color='yellow', size=5)
-        self.plot_win.add_plot("Secretion", style='Dots', color='white', size=5)
+    def start(self):
 
         # Load model
         options = {'relative': 1e-10, 'absolute': 1e-12}
         self.set_sbml_global_options(options)
 
     def step(self, mcs):
+        if self.simdata_steppable is None:
+            self.simdata_steppable: SimDataSteppable = self.shared_steppable_vars[CoronavirusLib.simdata_steppable_key]
 
         # Report rates to console
         print("Unpacking Rate = " + str(unpacking_rate))
@@ -252,12 +247,7 @@ class Viral_ReplicationSteppable(CoronavirusSteppableBasePy):
         cell = self.cellField[self.dim.x / 2, self.dim.y / 2, 0]
         # Or sample state of cell near the first infected cell
         # cell = self.cellField[40, 45, 0]
-        self.plot_win.add_data_point("U", mcs, cell.dict['Unpacking'])
-        self.plot_win.add_data_point("R", mcs, cell.dict['Replicating'])
-        self.plot_win.add_data_point("P", mcs, cell.dict['Packing'])
-        self.plot_win.add_data_point("A", mcs, cell.dict['Assembled'])
-        self.plot_win.add_data_point("Uptake", mcs, cell.dict['Uptake'])
-        self.plot_win.add_data_point("Secretion", mcs, cell.dict['Secretion'])
+        self.simdata_steppable.set_vrm_tracked_cell(cell=cell)
 
         # Do viral model
         for cell in self.cell_list_by_type(self.INFECTED, self.INFECTEDSECRETING):
@@ -447,6 +437,11 @@ class SimDataSteppable(SteppableBasePy):
     def __init__(self, frequency=1):
         SteppableBasePy.__init__(self, frequency)
 
+        self.vrm_data_win = None
+        self.vrm_data_path = None
+        # The viral replication model of this cell is tracked and plotted/recorded
+        self.vrm_tracked_cell = None
+
         self.pop_data_win = None
         self.pop_data_path = None
 
@@ -455,6 +450,9 @@ class SimDataSteppable(SteppableBasePy):
 
         self.ir_data_win = None
         self.ir_data_path = None
+
+        self.plot_vrm_data = plot_vrm_data_freq > 0
+        self.write_vrm_data = write_vrm_data_freq > 0
 
         self.plot_pop_data = plot_pop_data_freq > 0
         self.write_pop_data = write_pop_data_freq > 0
@@ -469,6 +467,23 @@ class SimDataSteppable(SteppableBasePy):
         self.ir_steppable = None
 
     def start(self):
+        # Post reference to self
+        self.shared_steppable_vars[CoronavirusLib.simdata_steppable_key] = self
+
+        if self.plot_vrm_data:
+            self.vrm_data_win = self.add_new_plot_window(title='VRM',
+                                                         x_axis_title='MonteCarlo Step (MCS)',
+                                                         y_axis_title='Variables', x_scale_type='linear',
+                                                         y_scale_type='linear',
+                                                         grid=False,
+                                                         config_options={'legend': True})
+
+            self.vrm_data_win.add_plot("U", style='Dots', color='blue', size=5)
+            self.vrm_data_win.add_plot("R", style='Dots', color='orange', size=5)
+            self.vrm_data_win.add_plot("P", style='Dots', color='green', size=5)
+            self.vrm_data_win.add_plot("A", style='Dots', color='red', size=5)
+            self.vrm_data_win.add_plot("Uptake", style='Dots', color='yellow', size=5)
+            self.vrm_data_win.add_plot("Secretion", style='Dots', color='white', size=5)
 
         # Initialize population data plot if requested
         if self.plot_pop_data:
@@ -509,6 +524,11 @@ class SimDataSteppable(SteppableBasePy):
         # Check that output directory is available
         if self.output_dir is not None:
             from pathlib import Path
+            if self.write_vrm_data:
+                self.vrm_data_path = Path(self.output_dir).joinpath('vrm_data.dat')
+                with open(self.vrm_data_path, 'w'):
+                    pass
+
             if self.write_pop_data:
                 self.pop_data_path = Path(self.output_dir).joinpath('pop_data.dat')
                 with open(self.pop_data_path, 'w'):
@@ -529,14 +549,37 @@ class SimDataSteppable(SteppableBasePy):
         plot_pop_data = self.plot_pop_data and mcs % plot_pop_data_freq == 0
         plot_med_viral_data = self.plot_med_viral_data and mcs % plot_med_viral_data_freq == 0
         plot_ir_data = self.plot_ir_data and mcs % plot_ir_data_freq == 0
+        plot_vrm_data = self.plot_vrm_data and mcs % plot_vrm_data_freq == 0
         if self.output_dir is not None:
             write_pop_data = self.write_pop_data and mcs % write_pop_data_freq == 0
             write_med_viral_data = self.write_med_viral_data and mcs % write_med_viral_data_freq == 0
             write_ir_data = self.write_ir_data and mcs % write_ir_data_freq == 0
+            write_vrm_data = self.write_vrm_data and mcs % write_vrm_data_freq == 0
         else:
             write_pop_data = False
             write_med_viral_data = False
             write_ir_data = False
+            write_vrm_data = False
+
+        if self.vrm_tracked_cell is not None and (plot_vrm_data or write_vrm_data):
+            if plot_vrm_data:
+                self.vrm_data_win.add_data_point("U", mcs, self.vrm_tracked_cell.dict['Unpacking'])
+                self.vrm_data_win.add_data_point("R", mcs, self.vrm_tracked_cell.dict['Replicating'])
+                self.vrm_data_win.add_data_point("P", mcs, self.vrm_tracked_cell.dict['Packing'])
+                self.vrm_data_win.add_data_point("A", mcs, self.vrm_tracked_cell.dict['Assembled'])
+                self.vrm_data_win.add_data_point("Uptake", mcs, self.vrm_tracked_cell.dict['Uptake'])
+                self.vrm_data_win.add_data_point("Secretion", mcs, self.vrm_tracked_cell.dict['Secretion'])
+
+            if write_vrm_data:
+                with open(self.vrm_data_path, 'a') as fout:
+                    fout.write('{}, {}, {}, {}, {}, {}, {}, {}\n'.format(mcs,
+                                                                         self.vrm_tracked_cell.id,
+                                                                         self.vrm_tracked_cell.dict['Unpacking'],
+                                                                         self.vrm_tracked_cell.dict['Replicating'],
+                                                                         self.vrm_tracked_cell.dict['Packing'],
+                                                                         self.vrm_tracked_cell.dict['Assembled'],
+                                                                         self.vrm_tracked_cell.dict['Uptake'],
+                                                                         self.vrm_tracked_cell.dict['Secretion']))
 
         if plot_pop_data or write_pop_data:
 
@@ -603,6 +646,8 @@ class SimDataSteppable(SteppableBasePy):
                 with open(self.ir_data_path, 'a') as fout:
                     fout.write('{}, {}\n'.format(mcs, s_val))
 
+    def set_vrm_tracked_cell(self, cell):
+        self.vrm_tracked_cell = cell
 
 class CytokineProductionAbsorptionSteppable(CoronavirusSteppableBasePy):
     """
