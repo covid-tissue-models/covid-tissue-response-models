@@ -45,7 +45,7 @@ else:
 # Data control options
 plot_vrm_data_freq = 1  # Plot viral replication model data frequency (disable with 0)
 write_vrm_data_freq = 0  # Write viral replication model data to simulation directory frequency (disable with 0)
-plot_vim_data_freq = 1  # Plot viral internalization model data frequency (disable with 0)
+plot_vim_data_freq = 0  # Plot viral internalization model data frequency (disable with 0)
 write_vim_data_freq = 0  # Write viral internalization model data to simulation directory frequency (disable with 0)
 plot_pop_data_freq = 0  # Plot population data frequency (disable with 0)
 write_pop_data_freq = 0  # Write population data to simulation directory frequency (disable with 0)
@@ -268,19 +268,18 @@ class Viral_InternalizationSteppable(CoronavirusSteppableBasePy):
             if go_fast:
                 reference_volume = 1  # pixel
                 num_internalized_complexes = cell.dict['Internalized_Complexes']
-
                 num_unbound_receptors = cell.dict['Unbound_Receptors'] / cell.volume
                 num_surface_complexes = cell.dict['Surface_Complexes'] / cell.volume
-                cell_env_viral_val_com = viral_field[cell.xCOM, cell.yCOM, cell.zCOM]
-                num_viral_particles_COM = \
-                    cell_env_viral_val_com * (1.0/pmol_to_cc3d_au) * 10.0E-12 * 6.022E23
 
                 # Averaging: Determine concentration at the COM
-                total_num_viral_particles_environment = num_viral_particles_COM * cell.volume
-                if total_num_viral_particles_environment >= rounding_threshold:
-                    total_num_viral_particles_environment *= cell.volume
-                    external_vir = CoronavirusLib.step_sbml_viral_internalization_cell(cell, vi_step_size, total_num_viral_particles_environment)
-                    local_uptake_from_field = total_num_viral_particles_environment - external_vir
+                cell_env_viral_val_com = viral_field[cell.xCOM, cell.yCOM, cell.zCOM]
+                num_viral_particles_environment = \
+                    cell_env_viral_val_com * (1.0/pmol_to_cc3d_au) * 10.0E-12 * 6.022E23 * cell.volume
+
+                if num_viral_particles_environment >= rounding_threshold:
+                    # TODO Step SBML MODEL
+                    external_vir = CoronavirusLib.step_sbml_viral_internalization_cell(cell, vi_step_size, num_viral_particles_environment)
+                    local_uptake_from_field = num_viral_particles_environment - external_vir
                     uptake = secretor.uptakeInsideCellTotalCount(cell, local_uptake_from_field, relative_viral_uptake)
 
                     CoronavirusLib.internalize_viral_particles(cell, vi_step_size)
@@ -289,13 +288,13 @@ class Viral_InternalizationSteppable(CoronavirusSteppableBasePy):
                     pass
 
                 else:
-                    num_viral_particles_environment = int(num_viral_particles_COM)
+                    num_viral_particles_environment = int(num_viral_particles_environment)
                     num_surface_complexes = int(num_surface_complexes)
                     num_unbound_receptors = int(num_unbound_receptors)
                     num_internalized_complexes = int(num_internalized_complexes)
                     # Determine association (binding) events
                     if num_viral_particles_environment > 1:
-                        for particle in range(num_viral_particles_COM):
+                        for particle in range(num_viral_particles_environment):
                             p_binding = np.random.random()
                             if p_binding < kon * num_unbound_receptors / reference_volume:
                                 num_surface_complexes += 1
@@ -305,7 +304,7 @@ class Viral_InternalizationSteppable(CoronavirusSteppableBasePy):
                     if num_surface_complexes > 1:
                         for surf_complex in range(num_surface_complexes):
                             p_unbinding = np.random.random()
-                            if p_unbinding < koff:
+                            if p_unbinding < koff / reference_volume:
                                 num_unbound_receptors += 1
                                 num_surface_complexes -= 1
 
