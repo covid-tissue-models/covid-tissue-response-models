@@ -107,17 +107,35 @@ class CoronavirusSteppableBasePy(nCoVSteppableBase):
         else:
             return False
 
-    def death_signal_binding(self, death_field, cell, diss_coeff_bind_pr, hill_coeff_bind_pr):
-        # general measurement of amount of death ligands in cell's extracellular surrounding
+    def death_signal_binding(self, death_field, cell, diss_coeff_bind_pr, hill_coeff_bind_pr, trail):
+        """
+        Calculates the probability of extracellular death ligands binding to a cell receptor
+        Returns true if ligand binds to receptor
+        :param death_field: environmental viral field
+        :param cell: cell
+        :param diss_coeff_bind_pr: dissociation coefficient of Hill equation for probability function
+        :param hill_coeff_bind_pr: Hill coefficient of Hill equation for probability function
+        :param trail: percent of pre-assembled particles that leak out during packing
+        :return: True if ligand binds to cell; False if not
+        """
         cell_env_death_ligands = death_field[cell.xCOM, cell.yCOM, cell.zCOM] * cell.volume
         if cell_env_death_ligands != 0:
-            # could add Trail here for K-complex
             max_death_ligands = nCoVUtils.hill_equation(val=cell_env_death_ligands,
                                                         diss_cf=diss_coeff_bind_pr,
                                                         hill_cf=hill_coeff_bind_pr)
-            return np.random.random() < max_death_ligands
+            return np.random.random() < max_death_ligands * trail
         else:
             return False
+
+    def intrinsic_pathway(self, cell):
+        """
+        Calculates the probability that a cell will die via the intrinsic pathway as a rate based function of viral load
+        :param cell: cell
+        :return: True if probability of cell dying is met, False if not
+        """
+        P = get_assembled_viral_load_inside_cell(cell=cell)
+
+
 
     def kill_cell(self, cell):
         """

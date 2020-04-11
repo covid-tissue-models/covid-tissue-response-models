@@ -127,9 +127,13 @@ relative_viral_uptake = 0.1
 # Hill equation coefficients for probability of death ligand binding to death receptor
 
 # dissociationt constant
-diss_coeff_bind_pr = 1.0
+diss_coeff_bind_pr = 0.5
 # Hill coefficient
 hill_coeff_bind_pr = 1.0
+# Receptor efficiency
+trail = 1.0
+# percent of pre-assembled particles that leak out during packing
+leak_intensity = 0.15
 
 # Number of immune cells to seed at the beginning of the simulation
 initial_immune_seeding = 0.0
@@ -320,10 +324,12 @@ class Viral_SecretionSteppable(CoronavirusSteppableBasePy):
                 sec_amount = CoronavirusLib.get_viral_replication_cell_secretion(cell=cell)
                 secretor.secreteInsideCellTotalCount(cell, sec_amount / cell.volume)
 
-class Death_Signal_Secretion_Steppable(CoronavirusSteppableBasePy):
+
+class DeathSignalSecretionSteppable(CoronavirusSteppableBasePy):
     """
     Extracellular pathway - death ligand secretion
     """
+    
     def __init__(self, frequency=1):
         CoronavirusSteppableBasePy.__init__(self, frequency)
 
@@ -331,6 +337,7 @@ class Death_Signal_Secretion_Steppable(CoronavirusSteppableBasePy):
         pass
 
     def step(self, mcs):
+        print('in_function')
         secretor = self.get_field_secretor("death_signal")
         for cell in self.cell_list_by_type(self.UNINFECTED, self.INFECTED, self.INFECTEDSECRETING):
             # check if cell's death receptor has bound with death ligand
@@ -340,11 +347,19 @@ class Death_Signal_Secretion_Steppable(CoronavirusSteppableBasePy):
                                          hill_coeff_bind_pr=hill_coeff_bind_pr):
                 # K complex (chemical reaction Secretion + Trail)
                 self.kill_cell(cell=cell)
-
-            if cell.type == self.INFECTED:
+                leak = secretor.uptakeInsideCellTotalCount(cell,
+                                                             trail / cell.volume,
+                                                             leak_intensity)
+            if cell.type != self.UNINFECTED:
                 # amount of death ligands leaked as a fraction of viral particles in packing rate
-                leak = cell.dict['Packing'] / 10
-                secretor.secreteInsideCellTotalCount(cell, leak / cell.volume)
+                leak_amount = cell.dict['Packing'] * leak_intensity
+                print("Leak = " + str(leak_amount))
+                secretor.secreteInsideCellTotalCount(cell, leak_amount / cell.volume)
+                # Intrinsic death pathway
+                if self.intrinsic_pathway(cell=cell):
+                    self.kill_cell(cell=cell)
+
+
 
 class ImmuneCellKillingSteppable(CoronavirusSteppableBasePy):
     """

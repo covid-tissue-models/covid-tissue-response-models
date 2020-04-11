@@ -111,6 +111,7 @@
                <Periodic/>
             </Plane>
          </BoundaryConditions>
+      </DiffusionField>   
       <DiffusionField Name="death_signal">
          <DiffusionData>
             <FieldName>death_signal</FieldName>
@@ -130,6 +131,4 @@
          </BoundaryConditions>
       </DiffusionField>
    </Steppable>
-
-
 </CompuCell3D>
