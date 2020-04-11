@@ -119,11 +119,17 @@ class CoronavirusSteppableBasePy(nCoVSteppableBase):
         :return: True if ligand binds to cell; False if not
         """
         cell_env_death_ligands = death_field[cell.xCOM, cell.yCOM, cell.zCOM] * cell.volume
+        # print('cell_env_death_ligands=', cell_env_death_ligands)
         if cell_env_death_ligands != 0:
             max_death_ligands = nCoVUtils.hill_equation(val=cell_env_death_ligands,
                                                         diss_cf=diss_coeff_bind_pr,
                                                         hill_cf=hill_coeff_bind_pr)
-            return np.random.random() < max_death_ligands * trail
+            max_death_ligands = cell_env_death_ligands
+            print(' max_death_ligands=',  max_death_ligands)
+            result = np.random.random() < max_death_ligands * trail
+            # if fraction of cells dying is too large, reduce trail to compensate
+            # print('result=', result)
+            return result
         else:
             return False
 
@@ -133,7 +139,7 @@ class CoronavirusSteppableBasePy(nCoVSteppableBase):
         :param cell: cell
         :return: True if probability of cell dying is met, False if not
         """
-        P = get_assembled_viral_load_inside_cell(cell=cell)
+        # P = get_assembled_viral_load_inside_cell(cell=cell)
 
 
 

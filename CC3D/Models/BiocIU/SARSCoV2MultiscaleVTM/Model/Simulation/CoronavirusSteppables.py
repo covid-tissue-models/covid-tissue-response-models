@@ -133,7 +133,7 @@ hill_coeff_bind_pr = 1.0
 # Receptor efficiency
 trail = 1.0
 # percent of pre-assembled particles that leak out during packing
-leak_intensity = 0.15
+leak_intensity = 0.05
 
 # Number of immune cells to seed at the beginning of the simulation
 initial_immune_seeding = 0.0
@@ -338,14 +338,19 @@ class DeathSignalSecretionSteppable(CoronavirusSteppableBasePy):
 
     def step(self, mcs):
         print('in_function')
+        death_list = []
         secretor = self.get_field_secretor("death_signal")
         for cell in self.cell_list_by_type(self.UNINFECTED, self.INFECTED, self.INFECTEDSECRETING):
             # check if cell's death receptor has bound with death ligand
+            cell_env_death_ligands = self.field.death_signal[cell.xCOM, cell.yCOM, cell.zCOM] * cell.volume
+            death_list.append(cell_env_death_ligands)
             if self.death_signal_binding(death_field=self.field.death_signal,
                                          cell=cell,
                                          diss_coeff_bind_pr=diss_coeff_bind_pr,
-                                         hill_coeff_bind_pr=hill_coeff_bind_pr):
+                                         hill_coeff_bind_pr=hill_coeff_bind_pr,
+                                         trail=trail):
                 # K complex (chemical reaction Secretion + Trail)
+                print('cell dying from Kiras death mechanism')
                 self.kill_cell(cell=cell)
                 leak = secretor.uptakeInsideCellTotalCount(cell,
                                                              trail / cell.volume,
@@ -356,8 +361,9 @@ class DeathSignalSecretionSteppable(CoronavirusSteppableBasePy):
                 print("Leak = " + str(leak_amount))
                 secretor.secreteInsideCellTotalCount(cell, leak_amount / cell.volume)
                 # Intrinsic death pathway
-                if self.intrinsic_pathway(cell=cell):
-                    self.kill_cell(cell=cell)
+                # if self.intrinsic_pathway(cell=cell):
+                #     self.kill_cell(cell=cell)
+        print('biggest death signal was', np.max(death_list))
 
 
 
