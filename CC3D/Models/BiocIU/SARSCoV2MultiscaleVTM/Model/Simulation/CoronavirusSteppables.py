@@ -112,6 +112,7 @@ exp_oxi_dc_cyto = 4 * exp_cytokine_dc_cyto
 
 
 
+
 # =============================
 # CompuCell Parameters
 # cell
@@ -156,10 +157,14 @@ ec50_infecte_ck_prod = 0.1 # amount of 'internal assembled virus' to be at 50% c
 oxi_dl = exp_oxi_dl/um_to_lat_width
 
 oxi_dc = exp_oxi_dc_cyto * s_to_mcs / (um_to_lat_width ** 2)
-# oxi_dc = cytokine_dc
 
 oxi_decay = oxi_dl**2/oxi_dc
-# oxi_decay = cytokine_field_decay
+
+oxi_sec_thr = 10
+
+max_oxi_secrete = max_ck_secrete_infect
+
+oxi_death_thr = 1.5
 
 
 # Threshold at which cell infection is evaluated
@@ -905,17 +910,17 @@ class oxidationAgentModelSteppable(CoronavirusSteppableBasePy):
             if cell.dict['activated']:
                 seen_field = self.total_seen_field(self.field.cytokine, cell)
                 #print(seen_field)
-                if seen_field > 10:
-                    oxi_sec = self.oxi_secretor.secreteInsideCellTotalCount(cell, max_ck_secrete_infect/cell.volume )
+                if seen_field > oxi_sec_thr:
+                    oxi_sec = self.oxi_secretor.secreteInsideCellTotalCount(cell, max_oxi_secrete/cell.volume )
             
         for cell in self.cell_list_by_type(self.UNINFECTED, self.INFECTED, self.INFECTEDSECRETING):
             
             seen_field = self.total_seen_field(self.field.oxidator, cell)
             print(seen_field, seen_field/max_ck_secrete_infect)
-            if seen_field >= 1.5:
+            if seen_field >= oxi_death_thr:
                 self.kill_cell(cell=cell)
                 cell.dict['oxi_killed'] = True
-                print('oxi agent cell kill: ', cell.id, ', x ', cell.xCOM, ', y ', cell.yCOM)
+#                 print('oxi agent cell kill: ', cell.id, ', x ', cell.xCOM, ', y ', cell.yCOM)
 
     def finish(self):
         # this function may be called at the end of simulation - used very infrequently though
