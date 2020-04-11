@@ -36,5 +36,7 @@ CompuCellSetup.register_steppable(steppable=CytokineProductionAbsorptionSteppabl
 from CoronavirusSteppables import DeathSignalSecretionSteppable
 CompuCellSetup.register_steppable(steppable=DeathSignalSecretionSteppable(frequency=1))
 
+from CoronavirusSteppables import IntrinsicDeathPathwaySteppable
+CompuCellSetup.register_steppable(steppable=IntrinsicDeathPathwaySteppable(frequency=1))
 
 CompuCellSetup.run()

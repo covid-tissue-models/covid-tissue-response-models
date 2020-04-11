@@ -350,21 +350,23 @@ class DeathSignalSecretionSteppable(CoronavirusSteppableBasePy):
                                          hill_coeff_bind_pr=hill_coeff_bind_pr,
                                          trail=trail):
                 # K complex (chemical reaction Secretion + Trail)
-                print('cell dying from Kiras death mechanism')
+                # print('cell dying from extrinsic death mechanism')
                 self.kill_cell(cell=cell)
-                leak = secretor.uptakeInsideCellTotalCount(cell,
-                                                             trail / cell.volume,
-                                                             leak_intensity)
+                # leak = secretor.uptakeInsideCellTotalCount(cell,
+                #                                              trail / cell.volume,
+                #                                              leak_intensity)
             if cell.type != self.UNINFECTED:
                 # amount of death ligands leaked as a fraction of viral particles in packing rate
                 leak_amount = cell.dict['Packing'] * leak_intensity
-                print("Leak = " + str(leak_amount))
+                # print("Leak = " + str(leak_amount))
                 secretor.secreteInsideCellTotalCount(cell, leak_amount / cell.volume)
-                # Intrinsic death pathway
-                # if self.intrinsic_pathway(cell=cell):
-                #     self.kill_cell(cell=cell)
-        print('biggest death signal was', np.max(death_list))
+        # print('biggest death signal was', np.max(death_list))
 
+
+class IntrinsicDeathPathwaySteppable(CoronavirusSteppableBasePy):
+
+if self.intrinsic_pathway(cell=cell):
+    self.kill_cell(cell=cell)
 
 
 class ImmuneCellKillingSteppable(CoronavirusSteppableBasePy):
