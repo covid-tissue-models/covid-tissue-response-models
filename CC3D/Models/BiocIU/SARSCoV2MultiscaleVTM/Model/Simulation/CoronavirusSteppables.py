@@ -45,13 +45,13 @@ else:
 # Data control options
 plot_vrm_data_freq = 1  # Plot viral replication model data frequency (disable with 0)
 write_vrm_data_freq = 0  # Write viral replication model data to simulation directory frequency (disable with 0)
-plot_vim_data_freq = 0  # Plot viral internalization model data frequency (disable with 0)
+plot_vim_data_freq = 1  # Plot viral internalization model data frequency (disable with 0)
 write_vim_data_freq = 0  # Write viral internalization model data to simulation directory frequency (disable with 0)
 plot_pop_data_freq = 0  # Plot population data frequency (disable with 0)
 write_pop_data_freq = 0  # Write population data to simulation directory frequency (disable with 0)
 plot_med_viral_data_freq = 0  # Plot total diffusive viral amount frequency (disable with 0)
 write_med_viral_data_freq = 0  # Write total diffusive viral amount frequency (disable with 0)
-plot_ir_data_freq = 1  # Plot immune recruitment data frequency (disable with 0)
+plot_ir_data_freq = 0  # Plot immune recruitment data frequency (disable with 0)
 write_ir_data_freq = 0  # Write immune recruitment data to simulation directory frequency (disable with 0)
 
 # Conversion Factors
@@ -180,7 +180,7 @@ initial_unbound_receptors = 2E4
 kon = exp_kon * s_to_mcs * 1.0E15 * (1.0/(um_to_lat_width**3)) * (1.0/1.0E12) * (1.0/pmol_to_cc3d_au)
 koff = exp_koff * s_to_mcs
 internalization_rate = exp_internalization_rate * s_to_mcs
-rounding_threshold = 700*0.1
+rounding_threshold = 700*0.1*0.0
 
 
 class CellsInitializerSteppable(CoronavirusSteppableBasePy):
@@ -268,33 +268,50 @@ class Viral_InternalizationSteppable(CoronavirusSteppableBasePy):
             if go_fast:
                 reference_volume = 1  # pixel
                 num_internalized_complexes = cell.dict['Internalized_Complexes']
+
                 num_unbound_receptors = cell.dict['Unbound_Receptors'] / cell.volume
                 num_surface_complexes = cell.dict['Surface_Complexes'] / cell.volume
+                cell_env_viral_val_com = viral_field[cell.xCOM, cell.yCOM, cell.zCOM]
+                # 10E-12 was original, too little
+                # 10E-9 was too little
+                # 10E-8 was too little
+                # 10E-7 was too little
+                # 10E-6 was very sensitive
+                num_viral_particles_COM = \
+                    cell_env_viral_val_com * (1.0/pmol_to_cc3d_au) * 10.0E-7 * 6.022E23
 
                 # Averaging: Determine concentration at the COM
-                cell_env_viral_val_com = viral_field[cell.xCOM, cell.yCOM, cell.zCOM]
-                num_viral_particles_environment = \
-                    cell_env_viral_val_com * (1.0/pmol_to_cc3d_au) * 10.0E-12 * 6.022E23 * cell.volume
-
-                if num_viral_particles_environment >= rounding_threshold:
-                    # TODO Step SBML MODEL
-                    external_vir = CoronavirusLib.step_sbml_viral_internalization_cell(cell, vi_step_size, num_viral_particles_environment)
-                    local_uptake_from_field = num_viral_particles_environment - external_vir
+                total_num_viral_particles_environment = num_viral_particles_COM * cell.volume
+                print(total_num_viral_particles_environment)
+                if total_num_viral_particles_environment >= rounding_threshold:
+                    external_vir = CoronavirusLib.step_sbml_viral_internalization_cell(
+                        cell, vi_step_size, total_num_viral_particles_environment)
+                    local_uptake_from_field = total_num_viral_particles_environment - external_vir
                     uptake = secretor.uptakeInsideCellTotalCount(cell, local_uptake_from_field, relative_viral_uptake)
 
-                    CoronavirusLib.internalize_viral_particles(cell, vi_step_size)
+                    intern_occurred = CoronavirusLib.internalize_viral_particles(cell, vi_step_size)
+
+                    # Change cell type to infected if internalization and uninfected
+                    if intern_occurred and cell.type == self.UNINFECTED:
+                        cell.type = self.INFECTED
+                        cell.dict['ck_production'] = max_ck_secrete_infect
+                        self.load_viral_replication_model(cell=cell, vr_step_size=vr_step_size,
+                                                          unpacking_rate=unpacking_rate,
+                                                          replicating_rate=replicating_rate,
+                                                          translating_rate=translating_rate,
+                                                          packing_rate=packing_rate,
+                                                          secretion_rate=secretion_rate)
+
                     CoronavirusLib.pack_viral_internalization_variables(cell)
 
-                    pass
-
                 else:
-                    num_viral_particles_environment = int(num_viral_particles_environment)
+                    num_viral_particles_environment = int(num_viral_particles_COM)
                     num_surface_complexes = int(num_surface_complexes)
                     num_unbound_receptors = int(num_unbound_receptors)
                     num_internalized_complexes = int(num_internalized_complexes)
                     # Determine association (binding) events
                     if num_viral_particles_environment > 1:
-                        for particle in range(num_viral_particles_environment):
+                        for particle in range(num_viral_particles_COM):
                             p_binding = np.random.random()
                             if p_binding < kon * num_unbound_receptors / reference_volume:
                                 num_surface_complexes += 1
@@ -304,7 +321,7 @@ class Viral_InternalizationSteppable(CoronavirusSteppableBasePy):
                     if num_surface_complexes > 1:
                         for surf_complex in range(num_surface_complexes):
                             p_unbinding = np.random.random()
-                            if p_unbinding < koff / reference_volume:
+                            if p_unbinding < koff:
                                 num_unbound_receptors += 1
                                 num_surface_complexes -= 1
 
@@ -325,7 +342,18 @@ class Viral_InternalizationSteppable(CoronavirusSteppableBasePy):
                     local_uptake_from_field = num_viral_particles_environment - total_num_surface_complexes
                     uptake = secretor.uptakeInsideCellTotalCount(cell, local_uptake_from_field, relative_viral_uptake)
 
-                    #Internalize viral particles into viral replication model
+                    # Change cell type to infected if internalization and uninfected
+                    if uptake.tot_amount > 0 and cell.type == self.UNINFECTED:
+                        cell.type = self.INFECTED
+                        cell.dict['ck_production'] = max_ck_secrete_infect
+                        self.load_viral_replication_model(cell=cell, vr_step_size=vr_step_size,
+                                                          unpacking_rate=unpacking_rate,
+                                                          replicating_rate=replicating_rate,
+                                                          translating_rate=translating_rate,
+                                                          packing_rate=packing_rate,
+                                                          secretion_rate=secretion_rate)
+
+                    # Internalize viral particles into viral replication model
                     CoronavirusLib.set_viral_replication_cell_uptake(cell, num_internalized_complexes / vi_step_size)
 
 
@@ -368,9 +396,9 @@ class Viral_ReplicationSteppable(CoronavirusSteppableBasePy):
         print("Secretion Rate = " + str(secretion_rate))
 
         # Sample state of cell at center of domain (first infected cell)
-        cell = self.cellField[self.dim.x / 2, self.dim.y / 2, 0]
+        # cell = self.cellField[self.dim.x / 2, self.dim.y / 2, 0]
         # Or sample state of cell near the first infected cell
-        # cell = self.cellField[40, 45, 0]
+        cell = self.cellField[40, 45, 0]
         self.simdata_steppable.set_vrm_tracked_cell(cell=cell)
 
         # Do viral model
@@ -415,32 +443,9 @@ class Viral_SecretionSteppable(CoronavirusSteppableBasePy):
 
     def step(self, mcs):
         secretor = self.get_field_secretor("Virus")
-        for cell in self.cell_list_by_type(self.UNINFECTED, self.INFECTED, self.INFECTEDSECRETING):
-
-            # Evaluate probability of cell uptake of viral particles from environment
-            # If cell isn't infected, it changes type to infected here if uptake occurs
-            if self.cell_uptakes_virus(viral_field=self.field.Virus,
-                                       cell=cell,
-                                       diss_coeff_uptake_pr=diss_coeff_uptake_pr,
-                                       hill_coeff_uptake_pr=hill_coeff_uptake_pr):
-                uptake = secretor.uptakeInsideCellTotalCount(cell,
-                                                             cell_infection_threshold / cell.volume,
-                                                             relative_viral_uptake)
-                cell.dict['Uptake'] = abs(uptake.tot_amount)
-                if cell.type == self.UNINFECTED:
-                    cell.type = self.INFECTED
-                    cell.dict['ck_production'] = max_ck_secrete_infect
-                    self.load_viral_replication_model(cell=cell, vr_step_size=vr_step_size,
-                                                      unpacking_rate=unpacking_rate,
-                                                      replicating_rate=replicating_rate,
-                                                      translating_rate=translating_rate,
-                                                      packing_rate=packing_rate,
-                                                      secretion_rate=secretion_rate)
-                CoronavirusLib.set_viral_replication_cell_uptake(cell=cell, uptake=cell.dict['Uptake'])
-
-            if cell.type == self.INFECTEDSECRETING:
-                sec_amount = CoronavirusLib.get_viral_replication_cell_secretion(cell=cell)
-                secretor.secreteInsideCellTotalCount(cell, sec_amount / cell.volume)
+        for cell in self.cell_list_by_type(self.INFECTEDSECRETING):
+            sec_amount = CoronavirusLib.get_viral_replication_cell_secretion(cell=cell)
+            secretor.secreteInsideCellTotalCount(cell, sec_amount / cell.volume)
 
 
 class ImmuneCellKillingSteppable(CoronavirusSteppableBasePy):
@@ -657,7 +662,7 @@ class SimDataSteppable(SteppableBasePy):
                                                         x_axis_title='MCS',
                                                         y_axis_title='State variable S',
                                                         x_scale_type='linear',
-                                                        y_scale_type='linear',
+                                                        y_scale_type='log',
                                                         grid=True)
 
             self.ir_data_win.add_plot(self.ir_key, style='Dots', color='red', size=5)
@@ -732,8 +737,10 @@ class SimDataSteppable(SteppableBasePy):
 
         if self.vrm_tracked_cell is not None and (plot_vim_data or write_vim_data):
             if plot_vim_data:
-                self.vim_data_win.add_data_point("R", mcs, self.vrm_tracked_cell.dict['Unbound_Receptors'])
-                self.vim_data_win.add_data_point("VR", mcs, self.vrm_tracked_cell.dict['Surface_Complexes'])
+                if self.vrm_tracked_cell.dict['Unbound_Receptors'] > 0:
+                    self.vim_data_win.add_data_point("R", mcs, self.vrm_tracked_cell.dict['Unbound_Receptors'])
+                if self.vrm_tracked_cell.dict['Surface_Complexes'] > 0:
+                    self.vim_data_win.add_data_point("VR", mcs, self.vrm_tracked_cell.dict['Surface_Complexes'])
 
             if write_vim_data:
                 with open(self.vim_data_path, 'a') as fout:
@@ -854,6 +861,8 @@ class CytokineProductionAbsorptionSteppable(CoronavirusSteppableBasePy):
 
         for cell in self.cell_list_by_type(self.INFECTED, self.INFECTEDSECRETING):
             viral_load = CoronavirusLib.get_assembled_viral_load_inside_cell(cell, vr_step_size)
+            if viral_load == 0.0:
+                continue
             produced = cell.dict['ck_production'] * nCoVUtils.hill_equation(viral_load, ec50_infecte_ck_prod, 2)
 #             print('produced ck', produced, produced/cell.dict['ck_production'])
             res = self.ck_secretor.secreteInsideCellTotalCount(cell, produced / cell.volume)

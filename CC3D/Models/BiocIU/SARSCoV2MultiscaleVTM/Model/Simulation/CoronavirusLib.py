@@ -253,13 +253,15 @@ def internalize_viral_particles(cell, vi_step_size):
     Moves internalized viral particles from internalization model to replication model for a cell
     :param cell: cell for which to perform transfer of internalized viral particles
     :param vi_step_size: time step size of viral internalization model
-    :return: None
+    :return: True if internalization occurred
     """
     assert cell.dict[vrl_key] and cell.dict[vil_key]
     vi_sbml = getattr(cell.sbml, vi_model_name)
-    intern_vir = vi_sbml['Vi']
+    intern_vir = int(vi_sbml['Vi'])
     vi_sbml['Vi'] = 0.0
     set_viral_replication_cell_uptake(cell, intern_vir / vi_step_size)
+
+    return intern_vir > 0
 
 
 def step_sbml_viral_internalization_cell(cell, vi_step_size, ve_tot=0):
