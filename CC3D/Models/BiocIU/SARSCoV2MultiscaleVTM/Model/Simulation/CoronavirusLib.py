@@ -16,11 +16,22 @@ vrl_key = 'viral_replication_loaded'
 # Name of Antimony/SBML model of viral replication
 vr_model_name = 'viralReplication'
 
-# Mapping from CellG instance dictionary keys to Antimony/SBML symbols
+# Mapping from CellG instance dictionary keys to Antimony/SBML viral replication model symbols
 vr_cell_dict_to_sym = {'Unpacking': 'U',
                        'Replicating': 'R',
                        'Packing': 'P',
                        'Assembled': 'A'}
+
+# Key to cell dictionary boolean for whether an instance of the viral internalization model has been loaded
+vil_key = 'viral_internalization_loaded'
+
+# Name of Antimony/SBML viral internalization model
+vi_model_name = 'viralInternalization'
+
+# Mapping from CellG instance dictionary keys to Antimony/SBML viral internalization model symbols
+vi_cell_dict_to_sym = {'Unbound_Receptors': 'R',
+                       'Surface_Complexes': 'VR',
+                       'Internalized_Complexes': 'Vi'}
 
 
 # Name of Antimony/SBML model of immune cell recruitment
@@ -78,6 +89,40 @@ def viral_replication_model_string(_unpacking_rate, _replicating_rate, _translat
     end""".format(vr_model_name,
                   _unpacking_rate, _replicating_rate, _translating_rate, _packing_rate, _secretion_rate,
                   _u_ini, _r_ini, _p_ini, _a_ini, _uptake)
+    return model_string
+
+
+def viral_internalization_model_string(_kon, _koff, _intern_rate, _ve_ini=0, _r_ini=0, _vr_ini=0, _vi_ini=0, _ve_src=0):
+    """
+    dVe/dt = -kon*Ve*R + koff*VR + VeSrc
+    dR/dt = -kon*Ve*R + koff*VR
+    dVR/dt = kon*Ve*R - koff*VR - intern_rate*VR
+    dVi/dt = intern_rate*VR
+    Derived by J. Aponte-Serrano and J. Mathur
+    :param _kon: association rate constant of extracellular virus particles and unbound cell receptors
+    :param _koff: dissasociation rate constant of virus-receptor surface complex
+    :param _intern_rate: internalization rate of virus-receptor surface complex
+    :param _ve_ini: initial number of extracellular virus particles
+    :param _r_ini: initial number of unbound cell receptors
+    :param _vr_ini: initial number of virus-receptor surface complexes
+    :param _vi_ini: initial number of internalized virus particles
+    :param _ve_src: incoming extracellular virus particles from viral field
+    :return: None
+    """
+    model_string = """model {}()
+          -> Ve; VeSrc;
+        Ve + R  -> VR ; kon * Ve * R ;
+        VR -> Ve + R  ; koff * VR ;
+        VR -> Vi ; intern_rate * VR ;
+        kon = {};
+        koff = {};
+        intern_rate = {};
+        VeSrc = {};
+        Ve = {};
+        R = {};
+        VR = {};
+        Vi = {};
+        end""".format(vi_model_name, _kon, _koff, _intern_rate, _ve_src, _ve_ini, _r_ini, _vr_ini, _vi_ini)
     return model_string
 
 
@@ -161,7 +206,7 @@ def get_viral_replication_cell_secretion(cell):
 
 def pack_viral_replication_variables(cell):
     """
-    Loads state variables from SBML into cell dictionary
+    Loads state variables from viral replication model SBML into cell dictionary
     :param cell: cell for which to load state variables from SBML into cell dictionary
     :return: None
     """
@@ -170,9 +215,20 @@ def pack_viral_replication_variables(cell):
         cell.dict[k] = getattr(cell.sbml, vr_model_name)[v]
 
 
+def pack_viral_internalization_variables(cell):
+    """
+    Loads state variables from viral internalization model SBML into cell dictionary
+    :param cell: cell for which to load state variables from SBML into cell dictionary
+    :return: None
+    """
+    assert cell.dict[vil_key]
+    for k, v in vi_cell_dict_to_sym.items():
+        cell.dict[k] = getattr(cell.sbml, vi_model_name)[v]
+
+
 def reset_viral_replication_variables(cell):
     """
-    Sets state variables in cell dictionary to zero
+    Sets state variables from viral replication model in cell dictionary to zero
     :param cell: cell for which to set state variables in cell dictionary to zero
     :return: None
     """
@@ -180,6 +236,47 @@ def reset_viral_replication_variables(cell):
     cell.dict['Secretion'] = 0
     for k in vr_cell_dict_to_sym.keys():
         cell.dict[k] = 0
+
+
+def reset_viral_internalization_variables(cell):
+    """
+    Sets state variables from viral internalization model in cell dictionary to zero
+    :param cell: cell for which to set state variables in cell dictionary to zero
+    :return: None
+    """
+    for k in vi_cell_dict_to_sym.keys():
+        cell.dict[k] = 0
+
+
+def internalize_viral_particles(cell, vi_step_size):
+    """
+    Moves internalized viral particles from internalization model to replication model for a cell
+    :param cell: cell for which to perform transfer of internalized viral particles
+    :param vi_step_size: time step size of viral internalization model
+    :return: None
+    """
+    assert cell.dict[vrl_key] and cell.dict[vil_key]
+    vi_sbml = getattr(cell.sbml, vi_model_name)
+    intern_vir = vi_sbml['Vi']
+    vi_sbml['Vi'] = 0.0
+    set_viral_replication_cell_uptake(cell, intern_vir / vi_step_size)
+
+
+def step_sbml_viral_internalization_cell(cell, vi_step_size, ve_tot=0):
+    """
+    Steps viral internalization SBML model for a cell
+    :param cell: cell with a SBML model to step
+    :param vi_step_size: time step size of viral internalization model
+    :param ve_tot: total environmental viral amount to pass to SBML model
+    :return: extracellular viral amount after integration of SBML model
+    """
+    assert cell.dict[vil_key]
+    vi_sbml = getattr(cell.sbml, vi_model_name)
+    vi_sbml['VeSrc'] = ve_tot / vi_step_size
+    step_sbml_model_cell(cell, vi_model_name)
+    extern_vir = vi_sbml['Ve']
+    vi_sbml['Ve'] = 0.0
+    return extern_vir
 
 
 def get_assembled_viral_load_inside_cell(cell, sbml_rate):
