@@ -444,6 +444,13 @@ class Viral_SecretionSteppable(CoronavirusSteppableBasePy):
                 secretor.secreteInsideCellTotalCount(cell, sec_amount / cell.volume)
 
 
+
+class IntrinsicDeathPathwaySteppable(CoronavirusSteppableBasePy):
+
+if self.intrinsic_pathway(cell=cell):
+    self.kill_cell(cell=cell)
+
+
 class ImmuneCellKillingSteppable(CoronavirusSteppableBasePy):
     """
     DESCRIPTION HERE!
