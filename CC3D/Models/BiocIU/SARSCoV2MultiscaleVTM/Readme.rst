@@ -1,184 +1,137 @@
+
+.. _title_start:
+
+===============================
 Model of Viral Tissue Infection
-======================================================
+===============================
 
-Josua Aponte-Serrano, T.J. Sego, James A. Glazier
-------------------------------------------------------
+.. note::
 
-**Model Description**
+    To cite this model please use the following:
 
-This simulation implements a model of viral infection that accounts for
-intracellular and intercellular interactions between generalized
-epithelial and immune cells and their extracellular environment.
+    Josua Aponte-Serrano, T.J. Sego, Juliano F. Gianlupi, James A. Glazier,
+    "Model of Viral Tissue Infection",
+    https://github.com/covid-tissue-models/covid-tissue-response-models/tree/master/CC3D/Models/BiocIU/SARSCoV2MultiscaleVTM
 
-1. At the epithelial cell level, the model accounts for internalization,
-   replication, release and clearance of viral particles as well as for
-   induced cell apoptosis by either viral damage or immune cytotoxicity.
+.. _title_end:
+
+.. _model_description_start:
+
+Model Description
+=================
+
+This model describes select interactions between generalized epithelial
+and immune cells and their extracellular environment associated with
+viral infection and immune response at the cellular and intracellular
+levels, and in the context of spatiotemporal dynamics. While at the
+moment, the model is a generic viral infection model our hope is to
+collaboratively develop it into a model of SARS-CoV-2 tissue infection
+and Covid-19 progression. As such, it is intended to serve as a base
+model for constructing and implementing more advanced models of targeted
+cellular- and intracellular-level phenomena in tissue after initial
+exposure. In its current state, it has not been formally peer-reviewed,
+and should not be used for patient diagnostics or predicting clinical
+outcomes. Rather, the model and its implementation can be used to
+develop and interrogate mechanistic hypotheses about the spread of a
+virus and how the interplay between viral spreading and immune response
+determine the outcome of the disease, such as: 
+
+-  Why does the progression of the disease seem to be dependent on the
+   initial viral exposure level?
+
+-  Why is the start time of symptoms and immune response so variable?
+
+-  What is the role of cytokine signaling in explaining immune response
+   variability?
+
+-  What are the specific factors determining early immune response? What
+   are the key players on early immune response?
+
+-  Does the collapse observed in individuals who develop complications
+   result from viral replication in a secondary location or is it
+   primarily a delayed hyper-inflammatory response? 
+
+-  Could we build a personalized model for immune response to predict
+   who is likely to develop immune complications and use it to design
+   a personalized immunosuppressive therapy to determine timing and
+   dosage of an immunosuppressive regime?
+
+Some factors to be included in future developments of the model are:
+
+-  How is the virus transported in the extracellular environment and
+   mucus?
+
+-  What is the role of the humoral immune response in controlling the
+   viral spreading?
+
+The model includes a representation of extracellular virus in the mucus,
+epithelial cells and immune cells. It also includes the processes of
+epithelial cell infection by extracellular virus, viral replication and
+cell damage inside epithelial cells, release of viruses by epithelial
+cells, immune cell response to infected epithelial cells and immune cell
+killing of infected and non-infected epithelial cells. 
+
+At the epithelial cell level, the model accounts for internalization,
+replication, release and clearance of viral particles, as well as for
+induced cell apoptosis by either viral damage or immune cytotoxicity.
 
 -  **Viral internalization**: model of viral binding to cell receptors,
-      endocytosis and release of genetic material into the cytoplasm 
+   endocytosis and release of genetic material into the cytoplasm 
 
 -  **Viral replication**: model of replication of viral genetic
-      material, transcription, translation and virion packing
+   material, transcription, translation and virion packing
 
 -  **Viral release**: model of the release of newly assembled virions
-      into the extracellular environment
+   into the extracellular environment
 
 -  **Viral damage:** model of accumulated damage to the cell due to
-      viral load
+   viral load
 
--  **Viral clearance**: model of anti-viral processes that clear
-      virion-associated molecules from different internal compartments
-      of the cell
+-  **Cell death:** model of cell death due to accumulated damage from
+   viral infection or by cytotoxicity from immune response
 
-2. At the immune cell level, the model accounts for recruitment and
-      chemotaxis of immune cells due to cytokine signaling, the
-      cytotoxic effect on infected epithelial cells as well as the
-      clearance of immune cells.
+At the immune cell level, the model accounts for recruitment and
+chemotaxis of immune cells due to cytokine signaling, the cytotoxic
+effect on infected epithelial cells as well as the clearance of immune
+cells.
 
 -  **Immune cell recruitment**: model of immune cell recruitment and
-      infiltration into the tissue by signaling molecules produced in
-      response to viral insult on infected cells
+   infiltration into the tissue by signaling molecules produced in
+   response to viral insult on infected cells
 
 -  **Immune cell chemotaxis**: model of immune cell movement guided by
-      the difference in concentration of a signal represented as a
-      chemical field
+   the difference in concentration of a signal represented as a
+   chemical field
 
 -  **Immune cell cytotoxicity**: model of cell-dependent cytotoxic
-      effect of immune cells on infected cells
+   effect of immune cells on infected cells
 
 -  **Immune cell clearance**: model of immune cell-accumulated damage,
-      cell death and clearance from the tissue
+   cell death and clearance from the tissue
 
-3. At the tissue level, the model accounts for the extracellular
-      transport of viral particles and cytokines, and can be extended to
-      incorporate recovery by reepithelialization. 
+-  **Immune activation**: model of immune cells changing behaviour based
+   on lung tissue status (amount of cytokine in the environment).
+
+At the tissue level, the model accounts for the extracellular transport
+of viral particles, cytokine transport, and an oxidative burst agent. It
+can be extended to incorporate recovery by reepithelialization. 
 
 -  **Viral transport**: model of diffusion and spreading of viral
-      particles in the extracellular environment
+   particles in the extracellular environment
 
-**Conceptual model**
+-  **Cytokine transport**: model of transport of small immune signaling
+   molecules in the extracellular environment (to be included)
 
-|image0|
+-  **Tissue recovery**: model of recovery of the tissue by
+   reepithelialization following cell death (to be included)
 
-**Model Implementation**
+.. _fig1:
 
-Epithelial cells can adopt one of three different phenotypes: uninfected,
-infected and dead. Uninfected cells can absorb viral particles from the
-extracellular environment but do not release newly assembled particles
-until a critical viral load is reached. Once the critical viral load is
-reached, uninfected cells become infected cells. Infected cells absorb and
-release viral particles from the extracellular environment. Infected
-cells can become uninfected cells by clearing their viral load. Infected
-cells can also trigger apoptosis and become dead cells either by
-reaching a critical viral load or by cytotoxic interaction with immune
-cells. 
+.. figure:: https://raw.githubusercontent.com/covid-tissue-models/covid-tissue-response-models/master/CC3D/Models/BiocIU/SARSCoV2MultiscaleVTM/media/image1.png
+   :width: 4in
+   :height: 3.39167in
+   :align: center
 
--  **Viral internalization** is implemented as an uptake function.
-   Uninfected and infected cells have the ability of absorbing particles
-   from the extracellular viral field. The total uptake amount is
-   proportional to the concentration of the viral field and saturates at
-   a determined threshold. The amount absorbed by each cell is
-   subtracted from the viral field and passed to the cell’s instance of
-   the viral replication model.
+   Conceptual Model
 
--  **Viral replication** is implemented as a system of ordinary
-   differential equations assigned to each uninfected and infected cell.
-   The model contains four variables representing different states of
-   the viral replication process: unpacking, replicating, packing and
-   assembly of new virion capsids. The number of newly assembled virion
-   capsids is passed to the cell’s instance of the viral release model
-
--  **Viral release** is implemented as a secretion function. Infected
-   cells have the ability to secrete diffusive viral particles into the
-   extracellular viral field. The total amount released is proportional
-   to the assembled virions state variable of the viral replication
-   model. The amount released by each cell is subtracted from the cell’s
-   state variable of assembled virions and passed to the source term of
-   the extracellular viral field. 
-
--  **Virally induced apoptosis** is implemented by assigning to each
-   cell infected cell a survival probability. Once the viral load in the
-   cell reaches a critical threshold, the survival is evaluated against
-   a uniformly distributed random variable. The viral load is determined
-   from the newly assembled virions state variable from the viral
-   replication model. Surviving cells remain infected and their survival
-   is not re-evaluated. Dying cells change cell type to dead cell and
-   their instances of the viral internalization, replication and release
-   models are disabled. 
-
--  **Viral clearance** is implemented by assigning to each infected cell
-   a clearance probability. Once the viral load in the cell reaches a
-   critical threshold, the clearance probability is evaluated against a
-   uniformly distributed random variable. The viral load is determined
-   from the newly assembled virions state variable from the viral
-   replication model. Uncleared cells remain infected and their
-   clearance is not re-evaluated. Cleared cells become uninfected cells and
-   their instance of the viral replication model is reset. 
-
-Immune cells infiltrate the tissue and move up the gradient of the
-extracellular viral field. The viral field is used as a proxy for
-cytokines. Immune cells can induce cytotoxicity on infected cells and
-trigger apoptosis. Immune cells are cleared out from the tissue.
-
--  **Immune cell recruitment** is implemented by seeding immune cells
-   into the simulation space at a rate determined by the seeding
-   probability. At each simulation step the seeding probability is
-   evaluated against a uniformly distributed random variable. To seed
-   immune cells, points inside the simulation space are randomly chosen
-   and evaluated to determine if they are already occupied by another
-   immune cell. The concentration of the viral field is evaluated at
-   each unoccupied location, and the immune cell is seeded at the
-   location with the highest concentration. If no location is
-   unoccupied, then the immune cell is not seeded. 
-
--  **Immune cell chemotaxis** is implemented by assigning to each immune
-   cell a chemotactic function. The chemotactic function measures the
-   local gradient of the viral field and computes the motile force from
-   the gradient and the chemotactic sensitivity parameter. The
-   chemotactic motile force is saturated by normalizing the chemotactic
-   sensitivity parameter by the local concentration.
-
--  **Immune cell cytotoxicity** is implemented by direct contact between
-   infected and immune cells. At each simulation step, neighbors of
-   infected cells are evaluated. Apoptosis is triggered in an infected
-   cell if it has an immune cell as one of its neighbors. The infected
-   cell changes its cell type to dead cell and its instances of the
-   viral internalization, replication and release models are disabled.
-
--  **Immune cell clearance** is implemented by assigning each infected
-   immune cell a dying probability. Each simulation step the dying
-   probability is evaluated against a uniformly distributed random
-   variable. Clearance is achieved by setting the immune cell volume
-   constraint to zero.
-
-The extracellular viral field is used to represent the transport of
-viral particles across the tissue. Sources and rates of secretion into
-the field are determined by the output of the viral release model. Sinks
-and rates of absorption from the field are determined by the viral
-internalization model.
-
--  **Viral transport** is implemented by using a partial differential
-   equation solver to calculate the change in concentration of the viral
-   field at each location using a reaction-diffusion equation. Transport
-   parameters such as diffusion constant, decay length and decay rate
-   are estimated from the literature. Conversion factors are used to
-   convert experimental parameter values to internal simulation
-   parameters.
-
-**Implementation: Tissue Model**
-
-|image1|
-
-**Implementation: Viral Replication Model**
-
-|image2|
-
-.. |image0| image:: media/image1.jpg
-   :width: 4.99435in
-   :height: 4.51181in
-.. |image1| image:: media/image2.jpg
-   :width: 4.99999in
-   :height: 2.32014in
-.. |image2| image:: media/image3.jpg
-   :width: 4.97168in
-   :height: 1.79167in
+.. _model_description_end:
