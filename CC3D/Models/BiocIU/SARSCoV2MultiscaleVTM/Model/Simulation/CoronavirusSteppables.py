@@ -444,8 +444,45 @@ class Viral_SecretionSteppable(CoronavirusSteppableBasePy):
                 secretor.secreteInsideCellTotalCount(cell, sec_amount / cell.volume)
 
 
+class DeathSignalSecretionSteppable(CoronavirusSteppableBasePy):
+    """
+    Extracellular pathway - death ligand secretion
+    """
 
-class IntrinsicDeathPathwaySteppable(CoronavirusSteppableBasePy):
+    def __init__(self, frequency=1):
+        CoronavirusSteppableBasePy.__init__(self, frequency)
+
+    def start(self):
+        pass
+
+    def step(self, mcs):
+        print('in_function')
+        death_list = []
+        secretor = self.get_field_secretor("death_signal")
+        for cell in self.cell_list_by_type(self.UNINFECTED, self.INFECTED, self.INFECTEDSECRETING):
+            # check if cell's death receptor has bound with death ligand
+            cell_env_death_ligands = self.field.death_signal[cell.xCOM, cell.yCOM, cell.zCOM] * cell.volume
+            death_list.append(cell_env_death_ligands)
+            if self.death_signal_binding(death_field=self.field.death_signal,
+                                         cell=cell,
+                                         diss_coeff_bind_pr=diss_coeff_bind_pr,
+                                         hill_coeff_bind_pr=hill_coeff_bind_pr,
+                                         trail=trail):
+                # K complex (chemical reaction Secretion + Trail)
+                # print('cell dying from extrinsic death mechanism')
+                self.kill_cell(cell=cell)
+                # leak = secretor.uptakeInsideCellTotalCount(cell,
+                #                                              trail / cell.volume,
+                #                                              leak_intensity)
+            if cell.type != self.UNINFECTED:
+                # amount of death ligands leaked as a fraction of viral particles in packing rate
+                leak_amount = cell.dict['Packing'] * leak_intensity
+                # print("Leak = " + str(leak_amount))
+                secretor.secreteInsideCellTotalCount(cell, leak_amount / cell.volume)
+        # print('biggest death signal was', np.max(death_list))
+
+
+class IntrinsicDamageSteppable(CoronavirusSteppableBasePy):
 
 if self.intrinsic_pathway(cell=cell):
     self.kill_cell(cell=cell)
