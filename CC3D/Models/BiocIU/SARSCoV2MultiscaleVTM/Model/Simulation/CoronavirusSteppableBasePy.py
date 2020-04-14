@@ -228,7 +228,7 @@ class CoronavirusSteppableBasePy(nCoVSteppableBase):
         :param cell: cell
         :return: True if probability of cell dying is met, False if not
         """
-        # P = get_assembled_viral_load_inside_cell(cell=cell)
+
 
     def kill_cell(self, cell):
         """

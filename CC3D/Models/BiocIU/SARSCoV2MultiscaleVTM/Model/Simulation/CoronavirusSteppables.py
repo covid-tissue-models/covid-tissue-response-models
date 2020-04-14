@@ -144,6 +144,20 @@ cell_death_threshold = 1.2
 # Probability of survival of infected cell once cell_death_threshold is reached
 survival_probability = 0.95
 
+# damage internilization parameters
+# point on graph at which viral protein load (P) flattens
+pStar = 350.0
+# dissociation constant
+k = 200.0
+# hill coefficient
+h = 3.0
+# microscopic dissociation constant
+mk = pStar/2.0
+# threshold at which cell death is evaluated
+dying_threshold = 35
+# Probability of death once dying_threshold is reached
+dying_rate = 1.0/10.0 # 1/s
+
 # Hill equation coefficients for probability of viral particle uptake from the environment
 # Measurements are taken w.r.t. the total amount of viral particles in a cell's simulation subdomain
 # dissociationt constant
@@ -205,6 +219,7 @@ class CellsInitializerSteppable(CoronavirusSteppableBasePy):
                 cell.dict['Unbound_Receptors'] = initial_unbound_receptors
                 cell.dict['Surface_Complexes'] = 0.0
                 cell.dict['Internalized_Complexes'] = 0.0
+                cell.dict['Damage'] = 0.0
                 self.load_viral_replication_model(cell=cell, vr_step_size=vr_step_size,
                                                   unpacking_rate=unpacking_rate,
                                                   replicating_rate=replicating_rate,
@@ -482,10 +497,46 @@ class DeathSignalSecretionSteppable(CoronavirusSteppableBasePy):
         # print('biggest death signal was', np.max(death_list))
 
 
-class IntrinsicDamageSteppable(CoronavirusSteppableBasePy):
+# class IntrinsicDamageSteppable(CoronavirusSteppableBasePy):
+#
+# if self.intrinsic_pathway(cell=cell):
+#     self.kill_cell(cell=cell)
 
-if self.intrinsic_pathway(cell=cell):
-    self.kill_cell(cell=cell)
+
+class IntrinsicDamageSteppable(CoronavirusSteppableBasePy):
+    def __init__(self, frequency=1):
+        CoronavirusSteppableBasePy.__init__(self, frequency)
+
+    def start(self):
+        self.plot_win = self.add_new_plot_window(title='Protein and Damage in time',
+                                                 x_axis_title='MonteCarlo Step (MCS)',
+                                                 y_axis_title='Variables', x_scale_type='linear', y_scale_type='linear',
+                                                 grid=False)
+
+        self.plot_win.add_plot("D", style='Lines', color='red', size=3)
+        self.plot_win.add_plot("P", style='Lines', color='green', size=3)
+
+    def step(self, mcs):
+        for cell in self.cell_list_by_type(self.INFECTEDSECRETING):
+            # fetch damage level of cell
+            Do = cell.dict['Damage']
+            # measure viral protein level inside cell
+            P = self.get_assembled_viral_load_inside_cell(cell=cell)
+            # determine change in cummulative cell damage
+            dD = translating_rate * P / (P + mk)
+            # update cell damage
+            Dt = Do + dD
+            cell.dict['damage'] = Dt
+            # evaluate cell death
+            if cell.dict['damage'] > dying_threashold:
+                p_dying = np.random.random()
+                if p_dying < dying_rate:
+                    cell.type = self.DYING
+        print('accumulated damage:' + str(Dt))
+        print('protein:' + str(P))
+
+        self.plot_win.add_data_point('D', mcs, cell.dict['damage'])
+        self.plot_win.add_data_point('P', mcs, P)
 
 
 class ImmuneCellKillingSteppable(CoronavirusSteppableBasePy):
