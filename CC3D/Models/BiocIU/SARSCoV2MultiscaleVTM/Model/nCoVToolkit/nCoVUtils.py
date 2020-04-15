@@ -10,4 +10,7 @@ def hill_equation(val, diss_cf, hill_cf):
     :param hill_cf: Hill coefficient
     :return: Hill equation for input *val*
     """
-    return 1 / (1 + (diss_cf / val) ** hill_cf)
+    if val == 0:
+        return 0
+    else:
+        return 1 / (1 + (diss_cf / val) ** hill_cf)
