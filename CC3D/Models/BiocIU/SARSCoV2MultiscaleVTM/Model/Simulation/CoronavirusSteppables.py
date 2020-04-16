@@ -385,7 +385,7 @@ class Viral_SecretionSteppable(CoronavirusSteppableBasePy):
                                                          diss_coeff_uptake_pr,
                                                          hill_coeff_uptake_pr)
             if np.random.rand() < uptake_probability:
-                uptake = secretor.uptakeInsideCellTotalCount(cell, 1E12, uptake_probability)
+                uptake = secretor.uptakeInsideCellTotalCount(cell, 1E12, uptake_probability / cell.volume)
                 cell.dict['Uptake'] = abs(uptake.tot_amount)
                 cell.dict['Receptors'] = max(cell.dict['Receptors'] + cell.dict['Uptake']*s_to_mcs, 0.0)
                 if cell.type == self.UNINFECTED:
