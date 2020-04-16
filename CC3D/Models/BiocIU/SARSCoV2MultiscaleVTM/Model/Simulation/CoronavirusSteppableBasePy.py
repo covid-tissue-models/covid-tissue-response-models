@@ -46,7 +46,7 @@ class CoronavirusSteppableBasePy(nCoVSteppableBase):
     def finish(self):
         pass
 
-    def load_viral_replication_model(self, cell, vr_step_size, unpacking_rate=0, replicating_rate=0,
+    def load_viral_replication_model(self, cell, vr_step_size, unpacking_rate=0, replicating_rate=0, r_half=0,
                                      translating_rate=0, packing_rate=0, secretion_rate=0):
         """
         Loads viral replication model for a cell; initial values of state model are extract from cell.dict
@@ -54,6 +54,7 @@ class CoronavirusSteppableBasePy(nCoVSteppableBase):
         :param vr_step_size: Antimony/SBML model step size
         :param unpacking_rate: model unpacking rate
         :param replicating_rate: model replicating rate
+        :param r_half: Value of R at which the replication rate is half max
         :param translating_rate: model translating rate
         :param packing_rate: model packing rate
         :param secretion_rate: model secretion rate
@@ -64,7 +65,7 @@ class CoronavirusSteppableBasePy(nCoVSteppableBase):
 
         # Generate Antimony model string
         model_string = CoronavirusLib.viral_replication_model_string(
-            unpacking_rate, replicating_rate, translating_rate, packing_rate, secretion_rate,
+            unpacking_rate, replicating_rate, r_half, translating_rate, packing_rate, secretion_rate,
             cell.dict['Unpacking'], cell.dict['Replicating'], cell.dict['Packing'], cell.dict['Assembled'],
             cell.dict['Uptake'])
         self.add_antimony_to_cell(model_string=model_string,
@@ -73,65 +74,6 @@ class CoronavirusSteppableBasePy(nCoVSteppableBase):
                                   step_size=vr_step_size)
         cell.dict[CoronavirusLib.vrl_key] = True
         CoronavirusLib.enable_viral_secretion(cell, cell.type == self.INFECTEDSECRETING)
-
-    def load_viral_internalization_model(self, cell, vi_step_size, kon=0, koff=0, intern_rate=0):
-        """
-        Loads viral internalization model for a cell; initial values of state model are extract from cell.dict
-        :param cell: cell for which the viral replication model is loaded
-        :param vi_step_size: Antimony/SBML model step size
-        :param kon: model association rate constant
-        :param koff: model dissasociation rate constant
-        :param intern_rate: model internalization rate
-        :return: None
-        """
-        if cell.dict[CoronavirusLib.vil_key]:
-            self.delete_sbml_from_cell(CoronavirusLib.vi_model_name, cell)
-
-        # Generate Antimony model string
-        model_string = CoronavirusLib.viral_internalization_model_string(kon, koff, intern_rate, 0,
-                                                                         cell.dict['Unbound_Receptors'],
-                                                                         cell.dict['Surface_Complexes'],
-                                                                         cell.dict['Internalized_Complexes'])
-        self.add_antimony_to_cell(model_string=model_string,
-                                  model_name=CoronavirusLib.vi_model_name,
-                                  cell=cell,
-                                  step_size=vi_step_size)
-        cell.dict[CoronavirusLib.vil_key] = True
-
-    # todo: implement viral internalization model
-    def cell_uptakes_virus(self, viral_field, cell, diss_coeff_uptake_pr, hill_coeff_uptake_pr, go_fast=True):
-        """
-        Calculates the probability of viral uptake from the environment as a function of local viral particle amount
-        Returns true if cell uptakes virus
-        Model development note: ACE2, TMPRSS2 effects may be well-implemented here in future work
-        :param viral_field: environmental viral field
-        :param cell: cell
-        :param diss_coeff_uptake_pr: dissociation coefficient of Hill equation for probability function
-        :param hill_coeff_uptake_pr: Hill coefficient of Hill equation for probability function
-        :param go_fast: when True, a fast homogenized measurement is made; when False, it's slower but more accurate
-        :return: True if cell uptakes; False if not
-        """
-
-        # Calculate total viral amount in cell's domain
-
-        if go_fast:
-            # Fast measurement
-            cell_env_viral_val = viral_field[cell.xCOM, cell.yCOM, cell.zCOM] * cell.volume
-        else:
-            # Accurate measurement
-            cell_env_viral_val = 0.0
-            for ptd in self.get_cell_pixel_list(cell):
-                cell_env_viral_val += viral_field[ptd.pixel.x, ptd.pixel.y, ptd.pixel.z]
-
-        # Evaluate probability of uptake
-
-        if cell_env_viral_val != 0:
-            max_uptake_pr = nCoVUtils.hill_equation(val=cell_env_viral_val,
-                                                    diss_cf=diss_coeff_uptake_pr,
-                                                    hill_cf=hill_coeff_uptake_pr)
-            return np.random.random() < max_uptake_pr
-        else:
-            return False
 
     def new_cell_in_time(self, cell_type, mcs=None):
         """
@@ -208,10 +150,6 @@ class CoronavirusSteppableBasePy(nCoVSteppableBase):
         CoronavirusLib.reset_viral_replication_variables(cell=cell)
         self.remove_viral_replication_model(cell=cell)
 
-        # Remove viral internalization model: no model for dead cell type
-        CoronavirusLib.reset_viral_internalization_variables(cell=cell)
-        self.remove_viral_internalization_model(cell=cell)
-
     def remove_viral_replication_model(self, cell):
         """
         Removes viral replication model for a cell
@@ -221,13 +159,3 @@ class CoronavirusSteppableBasePy(nCoVSteppableBase):
         if cell.dict[CoronavirusLib.vrl_key]:
             self.delete_sbml_from_cell(CoronavirusLib.vr_model_name, cell)
             cell.dict[CoronavirusLib.vrl_key] = False
-
-    def remove_viral_internalization_model(self, cell):
-        """
-        Removes viral internalization model for a cell
-        :param cell: cell for which to remove the viral internalization model
-        :return: None
-        """
-        if cell.dict[CoronavirusLib.vil_key]:
-            self.delete_sbml_from_cell(CoronavirusLib.vi_model_name, cell)
-            cell.dict[CoronavirusLib.vil_key] = False
