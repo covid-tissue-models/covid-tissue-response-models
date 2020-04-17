@@ -49,8 +49,8 @@ plot_vim_data_freq = 0  # Plot viral internalization model data frequency (disab
 write_vim_data_freq = 0  # Write viral internalization model data to simulation directory frequency (disable with 0)
 plot_pop_data_freq = 0  # Plot population data frequency (disable with 0)
 write_pop_data_freq = 0  # Write population data to simulation directory frequency (disable with 0)
-plot_med_viral_data_freq = 0  # Plot total diffusive viral amount frequency (disable with 0)
-write_med_viral_data_freq = 0  # Write total diffusive viral amount frequency (disable with 0)
+plot_med_diff_data_freq = 10  # Plot total diffusive field amount frequency (disable with 0)
+write_med_diff_data_freq = 0  # Write total diffusive field amount frequency (disable with 0)
 plot_ir_data_freq = 1  # Plot immune recruitment data frequency (disable with 0)
 write_ir_data_freq = 0  # Write immune recruitment data to simulation directory frequency (disable with 0)
 
@@ -534,8 +534,8 @@ class SimDataSteppable(SteppableBasePy):
         self.pop_data_win = None
         self.pop_data_path = None
 
-        self.med_viral_data_win = None
-        self.med_viral_data_path = None
+        self.med_diff_data_win = None
+        self.med_diff_data_path = None
 
         self.ir_data_win = None
         self.ir_data_path = None
@@ -549,9 +549,9 @@ class SimDataSteppable(SteppableBasePy):
         self.plot_pop_data = plot_pop_data_freq > 0
         self.write_pop_data = write_pop_data_freq > 0
 
-        self.plot_med_viral_data = plot_med_viral_data_freq > 0
-        self.write_med_viral_data = write_med_viral_data_freq > 0
-        self.med_viral_key = "MedViral"
+        self.plot_med_diff_data = plot_med_diff_data_freq > 0
+        self.write_med_diff_data = write_med_diff_data_freq > 0
+        self.med_diff_key = "MedDiff"
 
         self.plot_ir_data = plot_ir_data_freq > 0
         self.write_ir_data = write_ir_data_freq > 0
@@ -604,15 +604,17 @@ class SimDataSteppable(SteppableBasePy):
             self.pop_data_win.add_plot("ImmuneCell", style='Dots', color='white', size=5)
             self.pop_data_win.add_plot("ImmuneCellActivated", style='Dots', color='purple', size=5)
 
-        if self.plot_med_viral_data:
-            self.med_viral_data_win = self.add_new_plot_window(title='Total diffusive virus',
-                                                               x_axis_title='MCS',
-                                                               y_axis_title='Number of diffusive viral particles',
-                                                               x_scale_type='linear',
-                                                               y_scale_type='log',
-                                                               grid=True)
+        if self.plot_med_diff_data:
+            self.med_diff_data_win = self.add_new_plot_window(title='Total diffusive species',
+                                                              x_axis_title='MCS',
+                                                              y_axis_title='Number of diffusive species per volume',
+                                                              x_scale_type='linear',
+                                                              y_scale_type='log',
+                                                              grid=True,
+                                                              config_options={'legend': True})
 
-            self.med_viral_data_win.add_plot(self.med_viral_key, style='Dots', color='red', size=5)
+            self.med_diff_data_win.add_plot("MedViral", style='Dots', color='red', size=5)
+            self.med_diff_data_win.add_plot("MedCyt", style='Dots', color='blue', size=5)
 
         if self.plot_ir_data:
             self.ir_data_win = self.add_new_plot_window(title='Immune Response Model',
@@ -642,9 +644,9 @@ class SimDataSteppable(SteppableBasePy):
                 with open(self.pop_data_path, 'w'):
                     pass
 
-            if self.write_med_viral_data:
-                self.med_viral_data_path = Path(self.output_dir).joinpath('med_viral_data.dat')
-                with open(self.med_viral_data_path, 'w'):
+            if self.write_med_diff_data:
+                self.med_diff_data_path = Path(self.output_dir).joinpath('med_diff_data.dat')
+                with open(self.med_diff_data_path, 'w'):
                     pass
 
             if self.write_ir_data:
@@ -655,19 +657,19 @@ class SimDataSteppable(SteppableBasePy):
     def step(self, mcs):
 
         plot_pop_data = self.plot_pop_data and mcs % plot_pop_data_freq == 0
-        plot_med_viral_data = self.plot_med_viral_data and mcs % plot_med_viral_data_freq == 0
+        plot_med_diff_data = self.plot_med_diff_data and mcs % plot_med_diff_data_freq == 0
         plot_ir_data = self.plot_ir_data and mcs % plot_ir_data_freq == 0
         plot_vrm_data = self.plot_vrm_data and mcs % plot_vrm_data_freq == 0
         plot_vim_data = self.plot_vim_data and mcs % plot_vim_data_freq == 0
         if self.output_dir is not None:
             write_pop_data = self.write_pop_data and mcs % write_pop_data_freq == 0
-            write_med_viral_data = self.write_med_viral_data and mcs % write_med_viral_data_freq == 0
+            write_med_diff_data = self.write_med_diff_data and mcs % write_med_diff_data_freq == 0
             write_ir_data = self.write_ir_data and mcs % write_ir_data_freq == 0
             write_vrm_data = self.write_vrm_data and mcs % write_vrm_data_freq == 0
             write_vim_data = self.write_vim_data and mcs % write_vim_data_freq == 0
         else:
             write_pop_data = False
-            write_med_viral_data = False
+            write_med_diff_data = False
             write_ir_data = False
             write_vrm_data = False
             write_vim_data = False
@@ -738,21 +740,26 @@ class SimDataSteppable(SteppableBasePy):
                                                                      num_cells_immune,
                                                                      num_cells_immune_act))
 
-        if plot_med_viral_data or write_med_viral_data:
+        if plot_med_diff_data or write_med_diff_data:
 
-            # Gather total diffusive viral amount
+            # Gather total diffusive amounts
             med_viral_total = 0.0
+            med_cyt_total = 0.0
             for x, y, z in self.every_pixel():
                 med_viral_total += self.field.Virus[x, y, z]
+                med_cyt_total += self.field.cytokine[x, y, z]
 
             # Plot total diffusive viral amount if requested
-            if plot_med_viral_data and med_viral_total > 0:
-                self.med_viral_data_win.add_data_point(self.med_viral_key, mcs, med_viral_total)
+            if plot_med_diff_data:
+                if med_viral_total > 0:
+                    self.med_diff_data_win.add_data_point("MedViral", mcs, med_viral_total)
+                if med_cyt_total > 0:
+                    self.med_diff_data_win.add_data_point("MedCyt", mcs, med_cyt_total)
 
             # Write total diffusive viral amount if requested
-            if write_med_viral_data:
-                with open(self.med_viral_data_path, 'a') as fout:
-                    fout.write('{}, {}\n'.format(mcs, med_viral_total))
+            if write_med_diff_data:
+                with open(self.med_diff_data_path, 'a') as fout:
+                    fout.write('{}, {}, {}\n'.format(mcs, med_viral_total, med_cyt_total))
 
         if plot_ir_data or write_ir_data:
             if self.ir_steppable is None:
