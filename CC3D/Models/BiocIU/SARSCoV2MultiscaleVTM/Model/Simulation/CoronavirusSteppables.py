@@ -566,6 +566,11 @@ class SimDataSteppable(SteppableBasePy):
         self.plot_spat_data = plot_spat_data_freq > 0
         self.write_spat_data = write_spat_data_freq > 0
 
+        # Origin of infection point; if more than one cell is first detected, then measure the mean COM
+        # If first infection is far from center of domain, then measurements of infection front probably won't
+        # be very useful
+        self.init_infect_pt = None
+
     def start(self):
         # Post reference to self
         self.shared_steppable_vars[CoronavirusLib.simdata_steppable_key] = self
@@ -640,9 +645,11 @@ class SimDataSteppable(SteppableBasePy):
                                                           y_axis_title='',
                                                           x_scale_type='linear',
                                                           y_scale_type='linear',
-                                                          grid=True)
+                                                          grid=True,
+                                                          config_options={'legend': True})
 
             self.spat_data_win.add_plot("DeathComp", style='Dots', color='red', size=5)
+            self.spat_data_win.add_plot("InfectDist", style='Dots', color='blue', size=5)
 
         # Check that output directory is available
         if self.output_dir is not None:
@@ -823,14 +830,39 @@ class SimDataSteppable(SteppableBasePy):
 
                 dead_comp = dead_srf / dead_vol
 
+            # Calculate infection front: max. distance from initial point of infection to all infected cells
+            # If no infected cells, distance is -1
+            max_infect_dist = -1
+            if self.init_infect_pt is None:
+                infected_cell_list = self.cell_list_by_type(self.INFECTED, self.INFECTEDSECRETING)
+                num_cells_infected = len(infected_cell_list)
+                if num_cells_infected > 0:
+                    self.init_infect_pt = [0, 0, 0]
+                    for cell in infected_cell_list:
+                        self.init_infect_pt[0] += cell.xCOM
+                        self.init_infect_pt[1] += cell.yCOM
+
+                    self.init_infect_pt[0] /= num_cells_infected
+                    self.init_infect_pt[1] /= num_cells_infected
+
+            if self.init_infect_pt is not None:
+                for cell in self.cell_list_by_type(self.INFECTED, self.INFECTEDSECRETING):
+                    dx = cell.xCOM - self.init_infect_pt[0]
+                    dy = cell.yCOM - self.init_infect_pt[1]
+                    max_infect_dist = max(max_infect_dist, math.sqrt(dx * dx + dy * dy))
+
             # Plot spatial data if requested
+            #   Infection distance is normalized by average lattice dimension
             if plot_spat_data:
                 self.spat_data_win.add_data_point("DeathComp", mcs, dead_comp)
+                if max_infect_dist > 0:
+                    max_infect_dist_norm = max_infect_dist / ((self.dim.x + self.dim.y) / 2.0)
+                    self.spat_data_win.add_data_point("InfectDist", mcs, max_infect_dist_norm)
 
             # Write spatial data if requested
             if write_spat_data:
                 with open(self.spat_data_path, 'a') as fout:
-                    fout.write('{}, {}\n'.format(mcs, dead_comp))
+                    fout.write('{}, {}, {}\n'.format(mcs, dead_comp, max_infect_dist))
 
     def set_vrm_tracked_cell(self, cell):
         self.vrm_tracked_cell = cell
