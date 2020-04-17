@@ -49,10 +49,12 @@ plot_vim_data_freq = 0  # Plot viral internalization model data frequency (disab
 write_vim_data_freq = 0  # Write viral internalization model data to simulation directory frequency (disable with 0)
 plot_pop_data_freq = 0  # Plot population data frequency (disable with 0)
 write_pop_data_freq = 0  # Write population data to simulation directory frequency (disable with 0)
-plot_med_diff_data_freq = 10  # Plot total diffusive field amount frequency (disable with 0)
+plot_med_diff_data_freq = 0  # Plot total diffusive field amount frequency (disable with 0)
 write_med_diff_data_freq = 0  # Write total diffusive field amount frequency (disable with 0)
-plot_ir_data_freq = 1  # Plot immune recruitment data frequency (disable with 0)
+plot_ir_data_freq = 0  # Plot immune recruitment data frequency (disable with 0)
 write_ir_data_freq = 0  # Write immune recruitment data to simulation directory frequency (disable with 0)
+plot_spat_data_freq = 1  # Plot spatial data frequency (disable with 0)
+write_spat_data_freq = 0  # Write spatial data to simulation directory frequency (disable with 0)
 
 # Conversion Factors
 s_to_mcs = 120.0  # s/mcs
@@ -540,6 +542,9 @@ class SimDataSteppable(SteppableBasePy):
         self.ir_data_win = None
         self.ir_data_path = None
 
+        self.spat_data_win = None
+        self.spat_data_path = None
+
         self.plot_vrm_data = plot_vrm_data_freq > 0
         self.write_vrm_data = write_vrm_data_freq > 0
 
@@ -557,6 +562,9 @@ class SimDataSteppable(SteppableBasePy):
         self.write_ir_data = write_ir_data_freq > 0
         self.ir_key = "ImmuneResp"
         self.ir_steppable = None
+
+        self.plot_spat_data = plot_spat_data_freq > 0
+        self.write_spat_data = write_spat_data_freq > 0
 
     def start(self):
         # Post reference to self
@@ -626,6 +634,16 @@ class SimDataSteppable(SteppableBasePy):
 
             self.ir_data_win.add_plot(self.ir_key, style='Dots', color='red', size=5)
 
+        if self.plot_spat_data:
+            self.spat_data_win = self.add_new_plot_window(title='Spatial data',
+                                                          x_axis_title='MCS',
+                                                          y_axis_title='',
+                                                          x_scale_type='linear',
+                                                          y_scale_type='linear',
+                                                          grid=True)
+
+            self.spat_data_win.add_plot("DeathComp", style='Dots', color='red', size=5)
+
         # Check that output directory is available
         if self.output_dir is not None:
             from pathlib import Path
@@ -654,6 +672,11 @@ class SimDataSteppable(SteppableBasePy):
                 with open(self.ir_data_path, 'w'):
                     pass
 
+            if self.write_spat_data:
+                self.spat_data_path = Path(self.output_dir).joinpath('spat_data.dat')
+                with open(self.spat_data_path, 'w'):
+                    pass
+
     def step(self, mcs):
 
         plot_pop_data = self.plot_pop_data and mcs % plot_pop_data_freq == 0
@@ -661,18 +684,21 @@ class SimDataSteppable(SteppableBasePy):
         plot_ir_data = self.plot_ir_data and mcs % plot_ir_data_freq == 0
         plot_vrm_data = self.plot_vrm_data and mcs % plot_vrm_data_freq == 0
         plot_vim_data = self.plot_vim_data and mcs % plot_vim_data_freq == 0
+        plot_spat_data = self.plot_spat_data and mcs % plot_spat_data_freq == 0
         if self.output_dir is not None:
             write_pop_data = self.write_pop_data and mcs % write_pop_data_freq == 0
             write_med_diff_data = self.write_med_diff_data and mcs % write_med_diff_data_freq == 0
             write_ir_data = self.write_ir_data and mcs % write_ir_data_freq == 0
             write_vrm_data = self.write_vrm_data and mcs % write_vrm_data_freq == 0
             write_vim_data = self.write_vim_data and mcs % write_vim_data_freq == 0
+            write_spat_data = self.write_spat_data and mcs % write_spat_data_freq == 0
         else:
             write_pop_data = False
             write_med_diff_data = False
             write_ir_data = False
             write_vrm_data = False
             write_vim_data = False
+            write_spat_data = False
 
         if self.vrm_tracked_cell is not None and (plot_vrm_data or write_vrm_data):
             if plot_vrm_data:
@@ -777,6 +803,34 @@ class SimDataSteppable(SteppableBasePy):
             if write_ir_data:
                 with open(self.ir_data_path, 'a') as fout:
                     fout.write('{}, {}\n'.format(mcs, s_val))
+
+        if plot_spat_data or write_spat_data:
+            # Calculate compactness of dead cell area as total surface area of intefaces between dying and non-dying
+            # types in epithelial sheet divided by total volume of dying types
+            dead_srf = 0
+            dead_vol = 0
+            dying_cell_list = self.cell_list_by_type(self.DYING)
+            if not dying_cell_list:
+                dead_comp = 0
+            else:
+                for cell in dying_cell_list:
+                    dead_vol += cell.volume
+                    for neighbor, common_srf in self.get_cell_neighbor_data_list(cell):
+                        if neighbor is not None and neighbor.type in [self.UNINFECTED,
+                                                                      self.INFECTED,
+                                                                      self.INFECTEDSECRETING]:
+                            dead_srf += common_srf
+
+                dead_comp = dead_srf / dead_vol
+
+            # Plot spatial data if requested
+            if plot_spat_data:
+                self.spat_data_win.add_data_point("DeathComp", mcs, dead_comp)
+
+            # Write spatial data if requested
+            if write_spat_data:
+                with open(self.spat_data_path, 'a') as fout:
+                    fout.write('{}, {}\n'.format(mcs, dead_comp))
 
     def set_vrm_tracked_cell(self, cell):
         self.vrm_tracked_cell = cell
