@@ -602,6 +602,7 @@ class SimDataSteppable(SteppableBasePy):
             self.pop_data_win.add_plot("InfectedSecreting", style='Dots', color='green', size=5)
             self.pop_data_win.add_plot("Dying", style='Dots', color='yellow', size=5)
             self.pop_data_win.add_plot("ImmuneCell", style='Dots', color='white', size=5)
+            self.pop_data_win.add_plot("ImmuneCellActivated", style='Dots', color='purple', size=5)
 
         if self.plot_med_viral_data:
             self.med_viral_data_win = self.add_new_plot_window(title='Total diffusive virus',
@@ -709,6 +710,7 @@ class SimDataSteppable(SteppableBasePy):
             num_cells_infectedsecreting = len(self.cell_list_by_type(self.INFECTEDSECRETING))
             num_cells_dying = len(self.cell_list_by_type(self.DYING))
             num_cells_immune = len(self.cell_list_by_type(self.IMMUNECELL))
+            num_cells_immune_act = len([c for c in self.cell_list_by_type(self.IMMUNECELL) if c.dict['activated']])
 
             # Plot population data plot if requested
             if plot_pop_data:
@@ -722,16 +724,19 @@ class SimDataSteppable(SteppableBasePy):
                     self.pop_data_win.add_data_point('Dying', mcs, num_cells_dying)
                 if num_cells_immune > 0:
                     self.pop_data_win.add_data_point('ImmuneCell', mcs, num_cells_immune)
+                if num_cells_immune_act > 0:
+                    self.pop_data_win.add_data_point('ImmuneCellActivated', mcs, num_cells_immune_act)
 
             # Write population data to file if requested
             if write_pop_data:
                 with open(self.pop_data_path, 'a') as fout:
-                    fout.write('{}, {}, {}, {}, {}, {}\n'.format(mcs,
-                                                                 num_cells_uninfected,
-                                                                 num_cells_infected,
-                                                                 num_cells_infectedsecreting,
-                                                                 num_cells_dying,
-                                                                 num_cells_immune))
+                    fout.write('{}, {}, {}, {}, {}, {}, {}\n'.format(mcs,
+                                                                     num_cells_uninfected,
+                                                                     num_cells_infected,
+                                                                     num_cells_infectedsecreting,
+                                                                     num_cells_dying,
+                                                                     num_cells_immune,
+                                                                     num_cells_immune_act))
 
         if plot_med_viral_data or write_med_viral_data:
 
