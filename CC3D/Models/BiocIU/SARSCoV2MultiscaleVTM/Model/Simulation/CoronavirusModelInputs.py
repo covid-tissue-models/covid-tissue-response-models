@@ -101,12 +101,12 @@ max_ck_secrete_im = exp_max_cytokine_immune_secretion_mol * um_to_lat_width ** 3
 EC50_ck_immune = exp_EC50_cytokine_immune * um_to_lat_width ** 3 * 1e-15 * pmol_to_cc3d_au  # * cc3d_au/pixel
 # ck_equilibrium = 1.5*EC50_ck_immune # equilibrium amount of ck in immune surface
 ck_equilibrium = 2.1*EC50_ck_immune  # equilibrium amount of ck in immune surface
-ck_memory_immune = 1 - max_ck_consume/ck_equilibrium # decay therm for "seen" ck by immune
+ck_memory_immune = 1 - max_ck_consume/ck_equilibrium  # decay therm for "seen" ck by immune
 
 max_ck_secrete_infect = 10*max_ck_secrete_im
-minimum_activated_time = minimum_activated_time_seconds/s_to_mcs # mcs
+minimum_activated_time = minimum_activated_time_seconds/s_to_mcs  # mcs
 
-ec50_infecte_ck_prod = 0.1 # amount of 'internal assembled virus' to be at 50% ck production; chosen from
+ec50_infecte_ck_prod = 0.1  # amount of 'internal assembled virus' to be at 50% ck production; chosen from
 # tipical simulation values of cell.dict['Uptake'] + cell.dict['Assembled']. they stay around .1 and go up as the
 # simulation progresses
 
