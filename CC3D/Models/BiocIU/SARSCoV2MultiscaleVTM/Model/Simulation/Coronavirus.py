@@ -11,11 +11,11 @@ from cc3d import CompuCellSetup
 from CoronavirusSteppables import CellsInitializerSteppable
 CompuCellSetup.register_steppable(steppable=CellsInitializerSteppable(frequency=1))
 
-from CoronavirusSteppables import Viral_ReplicationSteppable
-CompuCellSetup.register_steppable(steppable=Viral_ReplicationSteppable(frequency=1))
+from CoronavirusSteppables import ViralReplicationSteppable
+CompuCellSetup.register_steppable(steppable=ViralReplicationSteppable(frequency=1))
 
-from CoronavirusSteppables import Viral_SecretionSteppable
-CompuCellSetup.register_steppable(steppable=Viral_SecretionSteppable(frequency=1))
+from CoronavirusSteppables import ViralSecretionSteppable
+CompuCellSetup.register_steppable(steppable=ViralSecretionSteppable(frequency=1))
 
 from CoronavirusSteppables import ImmuneCellKillingSteppable
 CompuCellSetup.register_steppable(steppable=ImmuneCellKillingSteppable(frequency=1))

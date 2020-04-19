@@ -15,7 +15,7 @@ from cc3d.core.PySteppables import *
 from cc3d.cpp import CompuCell
 import numpy as np
 
-rng = np.random #alias for random number generators (rng)
+rng = np.random  # alias for random number generators (rng)
 
 # Set this to True for local references when developing; False when running
 __dev_mode__ = False
@@ -89,8 +89,10 @@ exp_max_ck_diff_len = 100  # um  from (A); this diffusion length is due to uptak
 # dl = sqrt(D/g) -> g = D/dl**2
 exp_min_ck_decay = exp_cytokine_dc_cyto/(1.1*exp_max_ck_diff_len)**2
 
-exp_max_cytokine_consumption = 1  # molecule / (cell second); maximum consumption of cytokine; actually a range [0.3,1] molecule / (cell second) (A)
-exp_max_cytokine_immune_secretion = 10  # molecule / (cell second) (B)
+# molecule / (cell second); maximum consumption of cytokine; actually a range [0.3,1] molecule / (cell second) (A)
+exp_max_cytokine_consumption = 1
+# molecule / (cell second) (B)
+exp_max_cytokine_immune_secretion = 10
 
 exp_max_cytokine_consumption_mol = 3.5e-4  # pM/s
 exp_max_cytokine_immune_secretion_mol = 3.5e-3  # pM/s
@@ -141,7 +143,7 @@ max_ck_consume = exp_max_cytokine_consumption_mol * um_to_lat_width ** 3 * s_to_
 max_ck_secrete_im = exp_max_cytokine_immune_secretion_mol * um_to_lat_width ** 3 * s_to_mcs * 1e-15 * pmol_to_cc3d_au  # * cc3d_au/(pixel seconds)
 EC50_ck_immune = exp_EC50_cytokine_immune * um_to_lat_width ** 3 * 1e-15 * pmol_to_cc3d_au  # * cc3d_au/pixel
 # ck_equilibrium = 1.5*EC50_ck_immune # equilibrium amount of ck in immune surface
-ck_equilibrium = 2.1*EC50_ck_immune # equilibrium amount of ck in immune surface
+ck_equilibrium = 2.1*EC50_ck_immune  # equilibrium amount of ck in immune surface
 ck_memory_immune = 1 - max_ck_consume/ck_equilibrium # decay therm for "seen" ck by immune
 
 max_ck_secrete_infect = 10*max_ck_secrete_im
@@ -301,7 +303,7 @@ class CellsInitializerSteppable(CoronavirusSteppableBasePy):
 
 
 # TODO Add actual uptake from the field based on discussion with James
-class Viral_ReplicationSteppable(CoronavirusSteppableBasePy):
+class ViralReplicationSteppable(CoronavirusSteppableBasePy):
     """
     DESCRIPTION HERE!
     """
@@ -324,11 +326,11 @@ class Viral_ReplicationSteppable(CoronavirusSteppableBasePy):
             self.simdata_steppable: SimDataSteppable = self.shared_steppable_vars[CoronavirusLib.simdata_steppable_key]
 
         # Report rates to console
-        print("Unpacking Rate = " + str(unpacking_rate))
-        print("Replicating Rate = " + str(replicating_rate))
-        print("Translating Rate = " + str(translating_rate))
-        print("Packing Rate = " + str(packing_rate))
-        print("Secretion Rate = " + str(secretion_rate))
+        # print("Unpacking Rate = " + str(unpacking_rate))
+        # print("Replicating Rate = " + str(replicating_rate))
+        # print("Translating Rate = " + str(translating_rate))
+        # print("Packing Rate = " + str(packing_rate))
+        # print("Secretion Rate = " + str(secretion_rate))
 
         # Sample state of cell at center of domain (first infected cell)
         cell = self.cellField[self.dim.x / 2, self.dim.y / 2, 0]
@@ -359,7 +361,7 @@ class Viral_ReplicationSteppable(CoronavirusSteppableBasePy):
                 self.kill_cell(cell=cell)
 
 
-class Viral_SecretionSteppable(CoronavirusSteppableBasePy):
+class ViralSecretionSteppable(CoronavirusSteppableBasePy):
     """
     DESCRIPTION HERE!
     """
@@ -929,11 +931,11 @@ class CytokineProductionAbsorptionSteppable(CoronavirusSteppableBasePy):
             # uptake ck
             
             cell.dict['tot_ck_upt'] -= up_res.tot_amount  # from POV of secretion uptake is negative
-#             print('tot_upt', cell.dict['tot_ck_upt'],'upt_now', up_res.tot_amount)
+            # print('tot_upt', cell.dict['tot_ck_upt'],'upt_now', up_res.tot_amount)
             total_ck_inc += up_res.tot_amount
             p_activate = nCoVUtils.hill_equation(cell.dict['tot_ck_upt'], EC50_ck_immune, 2)
             
-#             print('prob activation', p_activate, 'upt/ec50', cell.dict['tot_ck_upt']/EC50_ck_immune)
+            # print('prob activation', p_activate, 'upt/ec50', cell.dict['tot_ck_upt']/EC50_ck_immune)
             
             if rng.uniform() < p_activate and not cell.dict['activated']:
 
@@ -948,7 +950,7 @@ class CytokineProductionAbsorptionSteppable(CoronavirusSteppableBasePy):
                 # print('activated', cell.id)
                 seen_field = self.total_seen_field(self.field.cytokine, cell)
                 produced = cell.dict['ck_production'] * nCoVUtils.hill_equation(seen_field, 100, 1)
-#                 print('produced ck', produced, produced/cell.dict['ck_production'],seen_field)
+                # print('produced ck', produced, produced/cell.dict['ck_production'],seen_field)
                 sec_res = self.ck_secretor.secreteInsideCellTotalCount(cell, produced / cell.volume)
 
                 total_ck_inc += sec_res.tot_amount
@@ -1084,7 +1086,7 @@ class oxidationAgentModelSteppable(CoronavirusSteppableBasePy):
         for cell in self.cell_list_by_type(self.UNINFECTED, self.INFECTED, self.INFECTEDSECRETING):
             
             seen_field = self.total_seen_field(self.field.oxidator, cell)
-            print(seen_field, seen_field/max_ck_secrete_infect)
+            # print(seen_field, seen_field/max_ck_secrete_infect)
             if seen_field >= oxi_death_thr:
                 self.kill_cell(cell=cell)
                 cell.dict['oxi_killed'] = True
