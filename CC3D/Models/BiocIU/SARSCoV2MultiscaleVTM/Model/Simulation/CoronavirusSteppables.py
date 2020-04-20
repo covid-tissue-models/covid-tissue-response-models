@@ -92,11 +92,11 @@ class CellsInitializerSteppable(CoronavirusSteppableBasePy):
                 yi = np.random.randint(0, self.dim.y - 2 * cell_diameter)
                 for x in range(xi, xi + int(cell_diameter)):
                     for y in range(yi, yi + int(cell_diameter)):
-                        cell = self.cellField[x, y, 1]
+                        cell = self.cell_field[x, y, 1]
                         break
                 cell = False
             cell = self.new_immune_cell_in_time(ck_production=max_ck_secrete_im, ck_consumption=max_ck_consume)
-            self.cellField[x:x + int(cell_diameter), y:y + int(cell_diameter), 1] = cell
+            self.cell_field[x:x + int(cell_diameter), y:y + int(cell_diameter), 1] = cell
             cell.targetVolume = cell_volume
             cell.lambdaVolume = cell_volume
             cell.dict['activated'] = False  # flag for immune cell being naive or activated
