@@ -150,7 +150,8 @@ hill_coeff_uptake_pr = 2.0
 relative_viral_uptake = 0.1
 
 # Number of immune cells to seed at the beginning of the simulation
-initial_immune_seeding = 5.0
+# Leave as zero if running through CallableCC3D (bug in NeighborTracker)
+initial_immune_seeding = 0.0
 # Rate for seeding of immune cells (constant)
 immune_seeding_rate = 1.0 / 10.0
 # Max dying rate of immune cells (actual rate is proportional to fraction of infected cells)
@@ -176,7 +177,7 @@ initial_unbound_receptors = 200
 # Number of cell receptors at which the replication rate is half max (sets the steady state value of mRNA)
 r_half = exp_max_amount_viral_mRNA/(replicating_rate/translating_rate-1)
 
-kon = exp_kon * s_to_mcs * 1.0E15 * (1.0/(um_to_lat_width**3)) * (1.0/1.0E12) * (1.0/pmol_to_cc3d_au)
+kon = exp_kon * s_to_mcs * 1.0E15 * (1.0/(um_to_lat_width**3)) * (1.0/1.0E12) * (1.0/pmol_to_cc3d_au) * 100
 koff = exp_koff * s_to_mcs
 internalization_rate = exp_internalization_rate * s_to_mcs
 
