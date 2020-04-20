@@ -1,17 +1,18 @@
 
 # Data control options
-plot_vrm_data_freq = 1  # Plot viral replication model data frequency (disable with 0)
+track_model_variables = False  # Set to true to enable cell-level tracking of model variables (for rendering)
+plot_vrm_data_freq = 0  # Plot viral replication model data frequency (disable with 0)
 write_vrm_data_freq = 0  # Write viral replication model data to simulation directory frequency (disable with 0)
 plot_vim_data_freq = 0  # Plot viral internalization model data frequency (disable with 0)
 write_vim_data_freq = 0  # Write viral internalization model data to simulation directory frequency (disable with 0)
 plot_pop_data_freq = 0  # Plot population data frequency (disable with 0)
-write_pop_data_freq = 0  # Write population data to simulation directory frequency (disable with 0)
+write_pop_data_freq = 10  # Write population data to simulation directory frequency (disable with 0)
 plot_med_diff_data_freq = 0  # Plot total diffusive field amount frequency (disable with 0)
-write_med_diff_data_freq = 0  # Write total diffusive field amount frequency (disable with 0)
+write_med_diff_data_freq = 10  # Write total diffusive field amount frequency (disable with 0)
 plot_ir_data_freq = 0  # Plot immune recruitment data frequency (disable with 0)
-write_ir_data_freq = 0  # Write immune recruitment data to simulation directory frequency (disable with 0)
-plot_spat_data_freq = 1  # Plot spatial data frequency (disable with 0)
-write_spat_data_freq = 0  # Write spatial data to simulation directory frequency (disable with 0)
+write_ir_data_freq = 10  # Write immune recruitment data to simulation directory frequency (disable with 0)
+plot_spat_data_freq = 0  # Plot spatial data frequency (disable with 0)
+write_spat_data_freq = 10  # Write spatial data to simulation directory frequency (disable with 0)
 
 # Conversion Factors
 s_to_mcs = 120.0  # s/mcs

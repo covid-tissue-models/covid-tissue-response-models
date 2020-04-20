@@ -173,12 +173,13 @@ class ViralSecretionSteppable(CoronavirusSteppableBasePy):
         CoronavirusSteppableBasePy.__init__(self, frequency)
 
     def start(self):
-        self.track_cell_level_scalar_attribute(field_name='Uptake', attribute_name='Uptake')
-        self.track_cell_level_scalar_attribute(field_name='Assembled', attribute_name='Assembled')
-        self.track_cell_level_scalar_attribute(field_name='Unpacking', attribute_name='Unpacking')
-        self.track_cell_level_scalar_attribute(field_name='Replicating', attribute_name='Replicating')
-        self.track_cell_level_scalar_attribute(field_name='Uptake', attribute_name='Uptake')
-        self.track_cell_level_scalar_attribute(field_name='Secretion', attribute_name='Secretion')
+        if track_model_variables:
+            self.track_cell_level_scalar_attribute(field_name='Uptake', attribute_name='Uptake')
+            self.track_cell_level_scalar_attribute(field_name='Assembled', attribute_name='Assembled')
+            self.track_cell_level_scalar_attribute(field_name='Unpacking', attribute_name='Unpacking')
+            self.track_cell_level_scalar_attribute(field_name='Replicating', attribute_name='Replicating')
+            self.track_cell_level_scalar_attribute(field_name='Uptake', attribute_name='Uptake')
+            self.track_cell_level_scalar_attribute(field_name='Secretion', attribute_name='Secretion')
 
     def step(self, mcs):
         secretor = self.get_field_secretor("Virus")
@@ -680,7 +681,8 @@ class CytokineProductionAbsorptionSteppable(CoronavirusSteppableBasePy):
     """
     def __init__(self, frequency=1):
         CoronavirusSteppableBasePy.__init__(self, frequency)
-        self.track_cell_level_scalar_attribute(field_name='activated', attribute_name='activated')
+        if track_model_variables:
+            self.track_cell_level_scalar_attribute(field_name='activated', attribute_name='activated')
         self.ck_secretor = None
         self.virus_secretor = None
 
@@ -868,7 +870,8 @@ class ImmuneRecruitmentSteppable(CoronavirusSteppableBasePy):
 class oxidationAgentModelSteppable(CoronavirusSteppableBasePy):
     def __init__(self, frequency=1):
         SteppableBasePy.__init__(self, frequency)
-        self.track_cell_level_scalar_attribute(field_name='oxi_killed', attribute_name='oxi_killed')
+        if track_model_variables:
+            self.track_cell_level_scalar_attribute(field_name='oxi_killed', attribute_name='oxi_killed')
         self.oxi_secretor = None
 
     def start(self):
