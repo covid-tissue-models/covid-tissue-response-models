@@ -4,17 +4,20 @@
 
 def export_parameters(param_module, export_file):
     """
-    Exports parameters defined in a module to csv
-    :param param_module: module containing parameters
+    Exports parameters defined in a module or dictionary to csv
+    :param param_module: module or dictionary containing parameters
     :param export_file: location of file to write csv
     :return: None
     """
     import csv
 
-    params_list = [x for x in dir(param_module) if not (x.startswith('__') and x.endswith('__'))]
-    params_dict = dict()
-    for k in params_list:
-        params_dict[k] = getattr(param_module, k)
+    if isinstance(param_module, dict):
+        params_dict = param_module
+    else:
+        params_dict = dict()
+        params_list = [x for x in dir(param_module) if not (x.startswith('__') and x.endswith('__'))]
+        for k in params_list:
+            params_dict[k] = getattr(param_module, k)
 
     with open(export_file, 'w', newline='') as fout:
         csv_data_writer = csv.writer(fout, delimiter=',')
