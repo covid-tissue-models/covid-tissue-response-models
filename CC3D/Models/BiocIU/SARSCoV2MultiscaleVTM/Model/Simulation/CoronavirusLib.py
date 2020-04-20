@@ -31,6 +31,9 @@ ir_steppable_key = 'ir_steppable'
 # Key to reference of SimDataSteppable instance in shared global dictionary
 simdata_steppable_key = 'simdata_steppable'
 
+# Key to reference of ViralInternalizationSteppable instance in shared global dictionary
+vim_steppable_key = 'vim_steppable'
+
 
 # todo: Generalize Antimony model string generator for general use
 def viral_replication_model_string(_unpacking_rate, _replicating_rate, _r_half, _translating_rate, _packing_rate,

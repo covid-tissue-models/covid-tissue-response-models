@@ -165,12 +165,57 @@ class ViralReplicationSteppable(CoronavirusSteppableBasePy):
                 self.kill_cell(cell=cell)
 
 
+class ViralInternalizationSteppable(CoronavirusSteppableBasePy):
+    """
+    DESCRIPTION HERE!
+    """
+    def __init__(self, frequency=1):
+        CoronavirusSteppableBasePy.__init__(self, frequency)
+
+    def start(self):
+
+        # Post reference to self
+        self.shared_steppable_vars[CoronavirusLib.vim_steppable_key] = self
+
+    def step(self, mcs):
+        pass
+
+    def do_cell_internalization(self, cell, viral_amount_com):
+        _k = kon * cell.volume / koff
+        diss_coeff_uptake_pr = math.sqrt(initial_unbound_receptors / 2.0 / _k / cell.dict['Receptors'])
+        uptake_probability = nCoVUtils.hill_equation(viral_amount_com,
+                                                     diss_coeff_uptake_pr,
+                                                     hill_coeff_uptake_pr)
+
+        cell_does_uptake = np.random.rand() < uptake_probability
+        uptake_amount = uptake_probability
+
+        if cell_does_uptake and cell.type == self.UNINFECTED:
+            cell.type = self.INFECTED
+            cell.dict['ck_production'] = max_ck_secrete_infect
+            self.load_viral_replication_model(cell=cell, vr_step_size=vr_step_size,
+                                              unpacking_rate=unpacking_rate,
+                                              replicating_rate=replicating_rate,
+                                              r_half=r_half,
+                                              translating_rate=translating_rate,
+                                              packing_rate=packing_rate,
+                                              secretion_rate=secretion_rate)
+
+        return cell_does_uptake, uptake_amount
+
+    def update_cell_receptors(self, cell, receptors_increment):
+        cell.dict['Receptors'] = max(cell.dict['Receptors'] + receptors_increment, 0.0)
+
+
 class ViralSecretionSteppable(CoronavirusSteppableBasePy):
     """
     DESCRIPTION HERE!
     """
     def __init__(self, frequency=1):
         CoronavirusSteppableBasePy.__init__(self, frequency)
+
+        # Reference to ViralInternalizationSteppable
+        self.vim_steppable = None
 
     def start(self):
         if track_model_variables:
@@ -182,21 +227,21 @@ class ViralSecretionSteppable(CoronavirusSteppableBasePy):
             self.track_cell_level_scalar_attribute(field_name='Secretion', attribute_name='Secretion')
 
     def step(self, mcs):
+        if self.vim_steppable is None:
+            self.vim_steppable: ViralInternalizationSteppable = \
+                self.shared_steppable_vars[CoronavirusLib.vim_steppable_key]
+
         secretor = self.get_field_secretor("Virus")
         for cell in self.cell_list_by_type(self.UNINFECTED, self.INFECTED, self.INFECTEDSECRETING):
 
             # Evaluate probability of cell uptake of viral particles from environment
             # If cell isn't infected, it changes type to infected here if uptake occurs
-            _k = kon * cell.volume / koff
-            diss_coeff_uptake_pr = math.sqrt(initial_unbound_receptors / 2.0 / _k / cell.dict['Receptors'])
             viral_amount_com = self.field.Virus[cell.xCOM, cell.yCOM, cell.zCOM] * cell.volume
-            uptake_probability = nCoVUtils.hill_equation(viral_amount_com,
-                                                         diss_coeff_uptake_pr,
-                                                         hill_coeff_uptake_pr)
-            if np.random.rand() < uptake_probability:
-                uptake = secretor.uptakeInsideCellTotalCount(cell, 1E12, uptake_probability / cell.volume)
+            cell_does_uptake, uptake_amount = self.vim_steppable.do_cell_internalization(cell, viral_amount_com)
+            if cell_does_uptake:
+                uptake = secretor.uptakeInsideCellTotalCount(cell, 1E12, uptake_amount / cell.volume)
                 cell.dict['Uptake'] = abs(uptake.tot_amount)
-                cell.dict['Receptors'] = max(cell.dict['Receptors'] + cell.dict['Uptake']*s_to_mcs, 0.0)
+                self.vim_steppable.update_cell_receptors(cell=cell, receptors_increment=cell.dict['Uptake']*s_to_mcs)
                 if cell.type == self.UNINFECTED:
                     cell.type = self.INFECTED
                     cell.dict['ck_production'] = max_ck_secrete_infect
