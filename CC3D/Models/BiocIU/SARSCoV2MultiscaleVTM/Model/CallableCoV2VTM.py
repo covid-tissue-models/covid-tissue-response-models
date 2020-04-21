@@ -1,25 +1,25 @@
-import csv
 import multiprocessing
-from os.path import dirname, join
+import os
 from cc3d.CompuCellSetup.CC3DCaller import CC3DCaller, CC3DCallerWorker
 
 from nCoVToolkit import nCoVUtils
+from BatchPostCoV2VTM import CallableCC3DRenderer, CoV2VTMSimRunPost
 
-simulation_fname = join(dirname(__file__), 'Coronavirus.cc3d')
-generic_root_output_folder = join(dirname(__file__), 'CallableCoV2VTM')
+simulation_fname = os.path.join(os.path.dirname(__file__), 'Coronavirus.cc3d')
+generic_root_output_folder = os.path.abspath(os.path.join(os.path.splitdrive(os.getcwd())[0], '/CallableCoV2VTM'))
 
 
 class CoV2VTMSimRun:
-    def __init__(self, root_output_folder=generic_root_output_folder, output_frequency=0, screensht_output_frequency=0,
+    def __init__(self, root_output_folder=generic_root_output_folder, output_frequency=0, screenshot_output_frequency=0,
                  num_workers=1, num_runs=1, sim_input=None):
 
         assert output_frequency >= 0
-        assert screensht_output_frequency >= 0
+        assert screenshot_output_frequency >= 0
         assert num_runs > 0
         assert num_workers > 0
 
         self.output_frequency = output_frequency
-        self.screensht_output_frequency = screensht_output_frequency
+        self.screenshot_output_frequency = screenshot_output_frequency
         self.output_dir_root = root_output_folder
         self.num_workers = num_workers
         self.num_runs = num_runs
@@ -50,13 +50,16 @@ class CoV2VTMSimRun:
         self.__sim_input[run_idx] = sim_inputs
 
     def get_run_output_dir(self, run_idx):
-        return join(self.output_dir_root, f'run_{run_idx}')
+        return os.path.join(self.output_dir_root, f'run_{run_idx}')
+
+    def get_trial_dirs(self):
+        return [self.get_run_output_dir(x) for x in range(self.num_runs)]
 
     def write_sim_inputs(self, run_idx):
         if self.__sim_input is None:
             return
         sim_inputs = self.__sim_input[run_idx]
-        nCoVUtils.export_parameters(sim_inputs, join(self.get_run_output_dir(run_idx), 'CallableSimInputs.csv'))
+        nCoVUtils.export_parameters(sim_inputs, os.path.join(self.get_run_output_dir(run_idx), 'CallableSimInputs.csv'))
 
     def generate_callable(self, run_idx=0):
         if self.__sim_input is not None:
@@ -66,7 +69,7 @@ class CoV2VTMSimRun:
 
         cc3d_caller = CC3DCaller(cc3d_sim_fname=simulation_fname,
                                  output_frequency=self.output_frequency,
-                                 screenshot_output_frequency=self.screensht_output_frequency,
+                                 screenshot_output_frequency=self.screenshot_output_frequency,
                                  output_dir=self.get_run_output_dir(run_idx),
                                  result_identifier_tag=run_idx,
                                  sim_input=sim_input)
@@ -106,9 +109,31 @@ def run_cov2_vtm_sims(cov2_vtm_sim_run: CoV2VTMSimRun) -> CoV2VTMSimRun:
     return cov2_vtm_sim_run
 
 
-if __name__ == '__main__':
-    cov2_vtm_sim_run = CoV2VTMSimRun(num_runs=10,
-                                     num_workers=5,
-                                     output_frequency=10,
-                                     screensht_output_frequency=10)
-    run_cov2_vtm_sims(cov2_vtm_sim_run)
+# Example of usage / convenience sequence to do intended overall workflow
+# if __name__ == '__main__':
+#     # Setup batch run
+#     _root_output_folder = generic_root_output_folder
+#     cov2_vtm_sim_run = CoV2VTMSimRun(num_runs=10,
+#                                      num_workers=5,
+#                                      output_frequency=10,
+#                                      screenshot_output_frequency=10,
+#                                      root_output_folder=_root_output_folder)
+#
+#     # Execute batch simulations
+#     cov2_vtm_sim_run = run_cov2_vtm_sims(cov2_vtm_sim_run)
+#
+#     # Export model parameters
+#     from Simulation import CoronavirusModelInputs
+#     export_file_abs = os.path.join(os.path.abspath(cov2_vtm_sim_run.output_dir_root), "CoronavirusModelParams.csv")
+#     nCoVUtils.export_parameters(CoronavirusModelInputs, export_file_abs)
+#
+#     # Post-process metrics
+#     cov2_vtm_sim_run_post = CoV2VTMSimRunPost(cov2_vtm_sim_run)
+#     cov2_vtm_sim_run_post.export_transient_plot_trials()
+#     cov2_vtm_sim_run_post.export_transient_plot_stat()
+#     cov2_vtm_sim_run_post.export_2var_plot_trials('MedViral', 'MedCyt')
+#     cov2_vtm_sim_run_post.export_2var_plot_stat('MedViral', 'MedCyt', plot_stdev=False)
+#
+#     # Render field data
+#     callable_cc3d_renderer = CallableCC3DRenderer(cov2_vtm_sim_run)
+#     callable_cc3d_renderer.render_results()
