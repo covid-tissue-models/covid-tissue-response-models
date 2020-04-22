@@ -472,8 +472,6 @@ def get_trial_vtk_mcs_list(cov2_vtm_sim_run, trial_idx):
 class GenericDrawerFree(GenericDrawer):
     """
     Removes dependency on persistent globals
-    :param drawing_params:
-    :return:
     """
     def __init__(self, parent=None, originating_widget=None):
         super().__init__(parent, originating_widget)
@@ -565,8 +563,10 @@ class CallableCC3DRenderer:
         self.scm.bsd.numberOfSteps = self.cml_results_reader.numberOfSteps
 
         # Overload static ScreenshotManagerCore.get_screenshot_dir_name, since it relies on persistent_globals
+        screenshot_dir_name = os.path.join(get_fig_spatial_dir(self.cov2_vtm_sim_run), f'run_{trial_idx}')
+
         def get_screenshot_dir_name():
-            return os.path.join(get_fig_spatial_dir(self.cov2_vtm_sim_run), f'run_{trial_idx}')
+            return screenshot_dir_name
 
         self.scm.get_screenshot_dir_name = get_screenshot_dir_name
         self.scm.read_screenshot_description_file(ss_desc_file)
