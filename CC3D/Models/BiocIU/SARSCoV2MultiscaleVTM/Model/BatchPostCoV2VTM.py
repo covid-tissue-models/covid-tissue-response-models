@@ -574,8 +574,11 @@ class CallableCC3DRenderer:
     def output_screenshots(self, mcs: int) -> None:
         self.scm.output_screenshots(mcs)
 
-    def render_results(self):
-
+    def __prep_output_dir(self):
+        """
+        Prep directory for output from rendering
+        :return: None
+        """
         fig_spatial_dir = get_fig_spatial_dir(self.cov2_vtm_sim_run)
         fig_dir = os.path.dirname(fig_spatial_dir)
 
@@ -585,24 +588,45 @@ class CallableCC3DRenderer:
         if not os.path.isdir(fig_spatial_dir):
             os.mkdir(fig_spatial_dir)
 
-        trial_dirs = self.cov2_vtm_sim_run.get_trial_dirs()
-        for trial_idx in range(len(trial_dirs)):
-            print('CallableCC3DRenderer rendering trial {}'.format(trial_idx))
-            self.load_trial_results(trial_idx)
+    def __render_trial(self, trial_idx):
+        """
+        Main routine to perform rendering for a trial from batch run
+        :param trial_idx: index of trial
+        :return: None
+        """
+        print('CallableCC3DRenderer rendering trial {}'.format(trial_idx))
+        self.load_trial_results(trial_idx)
 
-            if self.cml_results_reader is None:
-                print('No results loaded.')
-                continue
+        if self.cml_results_reader is None:
+            print('No results loaded.')
+            return
 
-            ss_dir = self.scm.get_screenshot_dir_name()
-            if not os.path.isdir(ss_dir):
-                os.mkdir(ss_dir)
+        ss_dir = self.scm.get_screenshot_dir_name()
+        if not os.path.isdir(ss_dir):
+            os.mkdir(ss_dir)
 
-            file_list = self.cml_results_reader.ldsFileList
-            for file_number, file_name in enumerate(file_list):
-                self.cml_results_reader.read_simulation_data_non_blocking(file_number)
-                sim_data_int_addr = extract_address_int_from_vtk_object(self.cml_results_reader.simulationData)
-                self.gd.field_extractor.setSimulationData(sim_data_int_addr)
-                mcs = self.cml_results_reader.extract_mcs_number_from_file_name(file_name)
-                print('...{}'.format(mcs))
-                self.output_screenshots(mcs)
+        file_list = self.cml_results_reader.ldsFileList
+        for file_number, file_name in enumerate(file_list):
+            self.cml_results_reader.read_simulation_data_non_blocking(file_number)
+            sim_data_int_addr = extract_address_int_from_vtk_object(self.cml_results_reader.simulationData)
+            self.gd.field_extractor.setSimulationData(sim_data_int_addr)
+            mcs = self.cml_results_reader.extract_mcs_number_from_file_name(file_name)
+            print('...{}'.format(mcs))
+            self.output_screenshots(mcs)
+
+    def render_results(self):
+        """
+        Render all trials from batch run
+        :return: None
+        """
+        self.__prep_output_dir()
+        [self.__render_trial(trial_idx) for trial_idx in range(len(self.cov2_vtm_sim_run.get_trial_dirs()))]
+
+    def render_trial_results(self, trial_idx):
+        """
+        Render a trial from batch run
+        :param trial_idx: index of trial
+        :return: None
+        """
+        self.__prep_output_dir()
+        self.__render_trial(trial_idx)
