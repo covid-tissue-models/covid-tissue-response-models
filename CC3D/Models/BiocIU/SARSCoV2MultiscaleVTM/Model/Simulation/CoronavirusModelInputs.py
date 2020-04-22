@@ -130,10 +130,6 @@ oxi_death_thr = 1.5
 # Threshold at which cell infection is evaluated
 cell_infection_threshold = 1.0
 
-# Threshold at which cell death is evaluated
-cell_death_threshold = 1.2
-# Probability of survival of infected cell once cell_death_threshold is reached
-survival_probability = 0.95
 # Hill equations coefficients for probability of viral-induced apoptosis
 # Measurements are taken w.r.t. the total amount of assembled viral particles in a cell's simulation subdomain
 # dissociationt constant
@@ -250,8 +246,7 @@ __param_desc__ = {
     'oxi_sec_thr': 'Immune cell cytokine concentration threshold for Oxidation Agent release',
     'max_oxi_secrete': 'Immune cell oxidation agent secretion rate',
     'oxi_death_thr': 'Tissue cell Oxidation Agent threshold for death',
-    'cell_infection_threshold': 'Threshold at which cell infection is evaluated',
-    'cell_death_threshold': 'Threshold at which cell death is evaluated',
+    'cell_infection_threshold': 'Threshold of assembled viral particles above which infected become infectedSecreting',
     'diss_coeff_uptake_apo': 'Dissociation coefficient for probability of viral-induced apoptosis',
     'hill_coeff_uptake_apo': 'Hill coefficient for probability of viral-induced apoptosis',
     'hill_coeff_uptake_pr': 'Dissociation coefficient for probability of viral particle uptake from the environment',
