@@ -97,14 +97,15 @@ def run_cov2_vtm_sims(cov2_vtm_sim_run: CoV2VTMSimRun) -> CoV2VTMSimRun:
     tasks.join()
 
     # Start printing results
-    while cov2_vtm_sim_run.num_runs:
+    num_runs = cov2_vtm_sim_run.num_runs
+    while num_runs:
         result = results.get()
         run_idx = result['tag']
         sim_output = result['result']
         cov2_vtm_sim_run.sim_output[run_idx] = sim_output
         cov2_vtm_sim_run.write_sim_inputs(run_idx)
-        cov2_vtm_sim_run.num_runs -= 1
-        print('{} runs remaining'.format(cov2_vtm_sim_run.num_runs))
+        num_runs -= 1
+        print('{} runs remaining'.format(num_runs))
 
     return cov2_vtm_sim_run
 
