@@ -6,13 +6,13 @@ write_vrm_data_freq = 0  # Write viral replication model data to simulation dire
 plot_vim_data_freq = 0  # Plot viral internalization model data frequency (disable with 0)
 write_vim_data_freq = 0  # Write viral internalization model data to simulation directory frequency (disable with 0)
 plot_pop_data_freq = 0  # Plot population data frequency (disable with 0)
-write_pop_data_freq = 10  # Write population data to simulation directory frequency (disable with 0)
+write_pop_data_freq = 0  # Write population data to simulation directory frequency (disable with 0)
 plot_med_diff_data_freq = 0  # Plot total diffusive field amount frequency (disable with 0)
-write_med_diff_data_freq = 10  # Write total diffusive field amount frequency (disable with 0)
+write_med_diff_data_freq = 0  # Write total diffusive field amount frequency (disable with 0)
 plot_ir_data_freq = 0  # Plot immune recruitment data frequency (disable with 0)
-write_ir_data_freq = 10  # Write immune recruitment data to simulation directory frequency (disable with 0)
+write_ir_data_freq = 0  # Write immune recruitment data to simulation directory frequency (disable with 0)
 plot_spat_data_freq = 0  # Plot spatial data frequency (disable with 0)
-write_spat_data_freq = 10  # Write spatial data to simulation directory frequency (disable with 0)
+write_spat_data_freq = 0  # Write spatial data to simulation directory frequency (disable with 0)
 
 # Conversion Factors
 s_to_mcs = 120.0  # s/mcs
@@ -66,7 +66,7 @@ exp_max_amount_viral_mRNA = 1000
 exp_oxi_dl = 3 * exp_cell_diameter  # [um]; guestimation; [.3,3]
 exp_oxi_dc_water = 1.2  # cm2/day; http://www.idc-online.com/technical_references/pdfs/chemical_engineering/Transport_Properties_of_Hydrogen_Peroxide_II.pdf
 exp_oxi_dc_water = exp_oxi_dc_water * 1e8 / 86400  # um2/s
-exp_oxi_dc_cyto = exp_oxi_dc_water * .16  # rescale by relative density; cyto ~ 6*water
+# exp_oxi_dc_cyto = exp_oxi_dc_water * .16  # rescale by relative density; cyto ~ 6*water
 # exp_oxi_dc_cyto = exp_cytokine_dc_cyto
 
 # the experimental values are WAY WAY too high for the simulation to behave properlly, so:
