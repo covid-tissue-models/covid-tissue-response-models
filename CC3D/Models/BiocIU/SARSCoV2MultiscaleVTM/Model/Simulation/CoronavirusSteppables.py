@@ -242,16 +242,6 @@ class ViralSecretionSteppable(CoronavirusSteppableBasePy):
                 uptake = secretor.uptakeInsideCellTotalCount(cell, 1E12, uptake_amount / cell.volume)
                 cell.dict['Uptake'] = abs(uptake.tot_amount)
                 self.vim_steppable.update_cell_receptors(cell=cell, receptors_increment=cell.dict['Uptake']*s_to_mcs)
-                if cell.type == self.UNINFECTED:
-                    cell.type = self.INFECTED
-                    cell.dict['ck_production'] = max_ck_secrete_infect
-                    self.load_viral_replication_model(cell=cell, vr_step_size=vr_step_size,
-                                                      unpacking_rate=unpacking_rate,
-                                                      replicating_rate=replicating_rate,
-                                                      r_half=r_half,
-                                                      translating_rate=translating_rate,
-                                                      packing_rate=packing_rate,
-                                                      secretion_rate=secretion_rate)
                 CoronavirusLib.set_viral_replication_cell_uptake(cell=cell, uptake=cell.dict['Uptake'])
 
             if cell.type == self.INFECTEDSECRETING:
