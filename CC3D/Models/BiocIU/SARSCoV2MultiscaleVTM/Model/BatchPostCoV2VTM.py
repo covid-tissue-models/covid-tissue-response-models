@@ -1,10 +1,10 @@
 # todo - document stuff for easier usage by others (for now, use the workflow demo in CallableCoV2VTM.py!)
 
 import os
+import shutil
 import csv
 import matplotlib.pyplot as plt
 import numpy as np
-import multiprocessing
 
 from PyQt5.QtCore import QObject
 
@@ -510,6 +510,27 @@ class CallableCC3DRenderer:
 
     def get_trial_vtk_dir(self, trial_idx):
         return get_trial_vtk_dir(self.cov2_vtm_sim_run, trial_idx)
+
+    def load_screenshot_specs(self, screenshot_spec, trial_idx=None):
+        """
+        Loads screenshot specifications for rendering
+        :param screenshot_spec: path to json screenshot specification (can be generated in Player)
+        :param trial_idx: trial for which to apply the specification; default is all runs of the loaded batch
+        :return: None
+        """
+        if trial_idx is None:
+            trial_vtk_dirs = [self.get_trial_vtk_dir(i) for i in range(self.cov2_vtm_sim_run.num_runs)]
+        else:
+            trial_vtk_dirs = [self.get_trial_vtk_dir(trial_idx)]
+
+        screenshot_spec = os.path.abspath(screenshot_spec)
+        for trial_vtk_dir in trial_vtk_dirs:
+            ss_dir = os.path.join(trial_vtk_dir, 'screenshot_data')
+            if not os.path.isdir(ss_dir):
+                os.mkdir(ss_dir)
+
+            screenshot_spec_copy = os.path.join(ss_dir, os.path.basename(screenshot_spec))
+            shutil.copyfile(screenshot_spec, screenshot_spec_copy)
 
     def load_trial_results(self, trial_idx):
 
