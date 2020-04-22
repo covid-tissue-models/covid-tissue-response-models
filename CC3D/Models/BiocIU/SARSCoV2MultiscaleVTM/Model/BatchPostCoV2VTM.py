@@ -506,6 +506,9 @@ class CallableCC3DRenderer:
 
         self.cml_results_reader = None
 
+        # Methods for modifying specification of GenericDrawer
+        self.__gd_manipulators = {}
+
     def get_trial_vtk_dir(self, trial_idx):
         """
         Returns path to directory where exported vtk files from simulation should be found
@@ -603,6 +606,28 @@ class CallableCC3DRenderer:
         if not os.path.isdir(fig_spatial_dir):
             os.mkdir(fig_spatial_dir)
 
+    # todo - add API for defining rendering specs so users don't have to search through the details of GenericDrawer;
+    #  API should include convenience function for retrieving current specs
+    def load_rendering_manipulator(self, gd_manipulator, trial_idx=0, mcs=0):
+        """
+        Loads a function for manipulating GenericDrawer rendering parameters at a simulation step of a trial
+        Manipulations are applied to all subsequent rendering processes
+        :param gd_manipulator: manipulator; signature should have argument of GenericDrawer object
+        :param trial_idx: trial at which to apply the manipulator
+        :param mcs: step at which to apply the manipulator
+        :return: None
+        """
+        if trial_idx not in self.__gd_manipulators.keys():
+            self.__gd_manipulators[trial_idx] = dict()
+
+        self.__gd_manipulators[trial_idx][mcs] = gd_manipulator
+
+    def __get_rendering_manipulator(self, trial_idx, mcs):
+        if trial_idx not in self.__gd_manipulators.keys() or mcs not in self.__gd_manipulators[trial_idx].keys():
+            return None
+        else:
+            return self.__gd_manipulators[trial_idx][mcs]
+
     def __render_trial(self, trial_idx):
         """
         Main routine to perform rendering for a trial from batch run
@@ -624,8 +649,11 @@ class CallableCC3DRenderer:
         for file_number, file_name in enumerate(file_list):
             self.cml_results_reader.read_simulation_data_non_blocking(file_number)
             sim_data_int_addr = extract_address_int_from_vtk_object(self.cml_results_reader.simulationData)
-            self.gd.field_extractor.setSimulationData(sim_data_int_addr)
             mcs = self.cml_results_reader.extract_mcs_number_from_file_name(file_name)
+            self.gd.field_extractor.setSimulationData(sim_data_int_addr)
+            gd_manipulator = self.__get_rendering_manipulator(trial_idx, mcs)
+            if gd_manipulator is not None:
+                gd_manipulator(self.gd)
             print('...{}'.format(mcs))
             self.output_screenshots(mcs)
 
