@@ -507,6 +507,11 @@ class CallableCC3DRenderer:
         self.cml_results_reader = None
 
     def get_trial_vtk_dir(self, trial_idx):
+        """
+        Returns path to directory where exported vtk files from simulation should be found
+        :param trial_idx: index of a trial
+        :return: path to directory containing exported vtk files from simulation
+        """
         return get_trial_vtk_dir(self.cov2_vtm_sim_run, trial_idx)
 
     def load_screenshot_specs(self, screenshot_spec, trial_idx=None):
@@ -531,6 +536,11 @@ class CallableCC3DRenderer:
             shutil.copyfile(screenshot_spec, screenshot_spec_copy)
 
     def load_trial_results(self, trial_idx):
+        """
+        Load results for a trial of a batch into memory; must be executed before manipulating rendering specs
+        :param trial_idx: index of trial
+        :return: None
+        """
 
         lds_loc = self.get_trial_vtk_dir(trial_idx)
 
@@ -572,9 +582,14 @@ class CallableCC3DRenderer:
         self.scm.read_screenshot_description_file(ss_desc_file)
 
     def output_screenshots(self, mcs: int) -> None:
+        """
+        Executes screenshot rendering and write to disk for a simulation step of a trial in memory
+        :param mcs: simulation step
+        :return: None
+        """
         self.scm.output_screenshots(mcs)
 
-    def __prep_output_dir(self):
+    def prep_output_dir(self):
         """
         Prep directory for output from rendering
         :return: None
@@ -619,7 +634,7 @@ class CallableCC3DRenderer:
         Render all trials from batch run
         :return: None
         """
-        self.__prep_output_dir()
+        self.prep_output_dir()
         [self.__render_trial(trial_idx) for trial_idx in range(len(self.cov2_vtm_sim_run.get_trial_dirs()))]
 
     def render_trial_results(self, trial_idx):
@@ -628,5 +643,5 @@ class CallableCC3DRenderer:
         :param trial_idx: index of trial
         :return: None
         """
-        self.__prep_output_dir()
+        self.prep_output_dir()
         self.__render_trial(trial_idx)
