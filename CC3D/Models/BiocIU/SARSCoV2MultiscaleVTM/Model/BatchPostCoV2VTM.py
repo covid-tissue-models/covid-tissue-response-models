@@ -126,10 +126,14 @@ def calculate_batch_data_stats(batch_data_summary):
         data_dict['batchStDev'] = stdev_data
 
 
-def generate_batch_data_summary(cov2_vtm_sim_run):
+def generate_batch_data_summary(cov2_vtm_sim_run, step_list=None):
     trial_dirs = [cov2_vtm_sim_run.get_run_output_dir(x) for x in range(cov2_vtm_sim_run.num_runs)]
     [convert_sim_data(trial_dir) for trial_dir in trial_dirs]
     batch_data_summary = {data_desc: collect_trial_data(data_desc, trial_dirs) for data_desc in export_data_desc.keys()}
+    if step_list is not None:
+        for data_desc, data_dict in batch_data_summary.items():
+            for trial_idx, trial_dict in data_dict.items():
+                batch_data_summary[data_desc][trial_idx] = {k: v for k, v in trial_dict.items() if k in step_list}
     calculate_batch_data_stats(batch_data_summary)
     return batch_data_summary
 
@@ -266,11 +270,11 @@ class CoV2VTMSimRunPost:
     """
     Renders simulation metrics data generated from executing a CallableCoV2VTM simulation batch
     """
-    def __init__(self, cov2_vtm_sim_run):
+    def __init__(self, cov2_vtm_sim_run, step_list=None):
         self.cov2_vtm_sim_run = cov2_vtm_sim_run
 
         # Structure is batch_data_summary[data_desc][trial_idx][this_mcs][param_name]
-        self.batch_data_summary = generate_batch_data_summary(cov2_vtm_sim_run)
+        self.batch_data_summary = generate_batch_data_summary(cov2_vtm_sim_run, step_list)
         self.__mcs_i = list(self.batch_data_summary[list(self.batch_data_summary.keys())[0]][0].keys())[0]
 
         self.__fig_suffix = '.png'
