@@ -138,4 +138,5 @@ def run_cov2_vtm_sims(cov2_vtm_sim_run: CoV2VTMSimRun) -> CoV2VTMSimRun:
 #     # Render field data
 #     callable_cc3d_renderer = CallableCC3DRenderer(cov2_vtm_sim_run)
 #     screenshot_specs = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'screenshots.json')
+#     callable_cc3d_renderer.load_screenshot_specs(screenshot_specs)
 #     callable_cc3d_renderer.render_results()
