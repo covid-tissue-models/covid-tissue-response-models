@@ -1,5 +1,7 @@
 import multiprocessing
 import os
+import time
+
 from cc3d.CompuCellSetup.CC3DCaller import CC3DCaller, CC3DCallerWorker
 
 from nCoVToolkit import nCoVUtils
@@ -77,35 +79,55 @@ class CoV2VTMSimRun:
 
 
 def run_cov2_vtm_sims(cov2_vtm_sim_run: CoV2VTMSimRun) -> CoV2VTMSimRun:
+    # Make complete list of jobs
+    run_list = [run_idx for run_idx in range(cov2_vtm_sim_run.num_runs)]
 
-    # Start workers
-    tasks = multiprocessing.JoinableQueue()
-    results = multiprocessing.Queue()
-    workers = [CC3DCallerWorker(tasks, results) for i in range(cov2_vtm_sim_run.num_workers)]
-    [w.start() for w in workers]
+    while True:
+        num_jobs_curr = len(run_list)
+        print('Doing CoV2VTMSimRun batch iteration with {} remaining jobs.'.format(num_jobs_curr))
 
-    # Enqueue jobs
-    for run_idx in range(cov2_vtm_sim_run.num_runs):
-        cc3d_callable = cov2_vtm_sim_run.generate_callable(run_idx)
-        tasks.put(cc3d_callable)
+        # Start workers
+        tasks = multiprocessing.JoinableQueue()
+        results = multiprocessing.Queue()
+        workers = [CC3DCallerWorker(tasks, results) for i in range(cov2_vtm_sim_run.num_workers)]
+        [w.start() for w in workers]
 
-    # Add a stop task for each of worker
-    for i in range(cov2_vtm_sim_run.num_workers):
-        tasks.put(None)
+        # Enqueue jobs
+        [tasks.put(cov2_vtm_sim_run.generate_callable(run_idx)) for run_idx in run_list]
 
-    # Wait for all of the tasks to finish
-    tasks.join()
+        # Add a stop task for each of worker
+        [tasks.put(None) for w in workers]
 
-    # Start printing results
-    num_runs = cov2_vtm_sim_run.num_runs
-    while num_runs:
-        result = results.get()
-        run_idx = result['tag']
-        sim_output = result['result']
-        cov2_vtm_sim_run.sim_output[run_idx] = sim_output
-        cov2_vtm_sim_run.write_sim_inputs(run_idx)
-        num_runs -= 1
-        print('{} runs remaining'.format(num_runs))
+        # Monitor worker state
+        monitor_rate = 1
+        while [w for w in workers if w.is_alive()]:
+            time.sleep(monitor_rate)
+
+        # Fetch available results
+        while True:
+            result = results.get()
+            run_idx = result['tag']
+            sim_output = result['result']
+
+            print('Got CoV2VTMSimRun batch result {}'.format(run_idx))
+
+            cov2_vtm_sim_run.sim_output[run_idx] = sim_output
+            cov2_vtm_sim_run.write_sim_inputs(run_idx)
+            run_list.remove(run_idx)
+
+            if results.empty():
+                break
+
+        num_jobs_next = len(run_list)
+        print('CoV2VTMSimRun batch results processed with {} remaining jobs.'.format(len(run_list)))
+        [print('CC3DCallerWorker {} finished with exit code {}'.format(w.name, w.exitcode)) for w in workers]
+
+        if not run_list:
+            print('CoV2VTMSimRun batch complete!')
+            break
+        elif num_jobs_next == num_jobs_curr:
+            print('CoV2VTMSimRun batch run failed! Terminating early.')
+            break
 
     return cov2_vtm_sim_run
 
