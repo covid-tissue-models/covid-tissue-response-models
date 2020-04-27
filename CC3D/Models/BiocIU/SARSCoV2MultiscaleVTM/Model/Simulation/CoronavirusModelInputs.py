@@ -173,7 +173,7 @@ initial_unbound_receptors = 200
 # Number of cell receptors at which the replication rate is half max (sets the steady state value of mRNA)
 r_half = exp_max_amount_viral_mRNA/(replicating_rate/translating_rate-1)
 
-kon = exp_kon * s_to_mcs * 1.0E15 * (1.0/(um_to_lat_width**3)) * (1.0/1.0E12) * (1.0/pmol_to_cc3d_au) * 100
+kon = exp_kon * s_to_mcs * 1.0E15 * (1.0/(um_to_lat_width**3)) * (1.0/1.0E12) * (1.0/pmol_to_cc3d_au)
 koff = exp_koff * s_to_mcs
 internalization_rate = exp_internalization_rate * s_to_mcs
 
@@ -198,7 +198,7 @@ ir_prob_scaling_factor = 1.0 / 100.0
 __param_desc__ = {
     's_to_mcs': 'Simulation step',
     'um_to_lat_width': 'Lattice width',
-    'pmol_to_cc3d_au': 'Arbitrary concentration',
+    'pmol_to_cc3d_au': 'Scale factor for concentration',
     'exp_cell_diameter': 'Cell diameter',
     'exp_unpacking_rate': 'Unpacking rate',
     'exp_replicating_rate': 'Replicating rate',
