@@ -66,12 +66,12 @@ exp_virus_dc = 10.0 / 100.0  # um^2/s
 # data from https://www.sciencedirect.com/science/article/pii/S1074761317300924 supplemental materials (A)
 # and
 # from https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3433682/ (B)
-cytoplasm_density = 6  # unit = [density of water](B)
+# cytoplasm_density = 6  # unit = [density of water](B)
 
-__param_desc__['exp_cytokine_dc_w'] = 'Cytokine extracellular diffusion coefficient'
-exp_cytokine_dc_w = 100  # um^2/s; diffusion constant in water (A,B)
+# __param_desc__['exp_cytokine_dc_w'] = 'Cytokine extracellular diffusion coefficient'
+# exp_cytokine_dc_w = 100  # um^2/s; diffusion constant in water (A,B)
 # the division by 10 is due to the small lattice size, as fiscussed with josh. we all should discuss this matter
-__param_desc__['exp_cytokine_dc_cyto'] = 'Cytokine intracellular diffusion coefficient'
+__param_desc__['exp_cytokine_dc_cyto'] = 'Cytokine diffusion coefficient'
 exp_cytokine_dc_cyto = 16 / 10  # um^2/s; estimated diffusion constant in cytoplasm (B)
 # ^ the  /10 is not experimental; added because of relative small area and because virus D is (or was) slowed down
 
@@ -97,24 +97,24 @@ exp_max_cytokine_immune_secretion_mol = 3.5e-3  # pM/s
 __param_desc__['exp_EC50_cytokine_immune'] = 'Immune cell cytokine activation'
 exp_EC50_cytokine_immune = 1  # pM from (B), it's a range from [1,50]pM
 # tbd: try to find experimental data
-__param_desc__['minimum_activated_time_seconds'] = 'Immune cell equilibrium bound cytokine'
+__param_desc__['minimum_activated_time_seconds'] = 'Immune cell activated time'
 minimum_activated_time_seconds = 60 * 60  # min * s/min
 
-__param_desc__['exp_max_amount_viral_mRNA'] = ''
+__param_desc__['exp_max_amount_viral_mRNA'] = 'Scale factor for number of mRNA per infected cell'
 exp_max_amount_viral_mRNA = 1000
 
 # oxidation agent
 
 __param_desc__['exp_oxi_dl'] = 'Oxidation Agent diffusion length'
 exp_oxi_dl = 3 * exp_cell_diameter  # [um]; guestimation; [.3,3]
-__param_desc__['exp_oxi_dc_water'] = 'Oxidation Agent extracellular diffusion coefficient'
-exp_oxi_dc_water = 1.2  # cm2/day; http://www.idc-online.com/technical_references/pdfs/chemical_engineering/Transport_Properties_of_Hydrogen_Peroxide_II.pdf
-exp_oxi_dc_water = exp_oxi_dc_water * 1e8 / 86400  # um2/s
+# __param_desc__['exp_oxi_dc_water'] = 'Oxidation Agent extracellular diffusion coefficient'
+# exp_oxi_dc_water = 1.2  # cm2/day; http://www.idc-online.com/technical_references/pdfs/chemical_engineering/Transport_Properties_of_Hydrogen_Peroxide_II.pdf
+# exp_oxi_dc_water = exp_oxi_dc_water * 1e8 / 86400  # um2/s
 # exp_oxi_dc_cyto = exp_oxi_dc_water * .16  # rescale by relative density; cyto ~ 6*water
 # exp_oxi_dc_cyto = exp_cytokine_dc_cyto
 
 # the experimental values are WAY WAY too high for the simulation to behave properlly, so:
-__param_desc__['exp_oxi_dc_cyto'] = 'Oxidation Agent intracellular diffusion coefficient'
+__param_desc__['exp_oxi_dc_cyto'] = 'Oxidation Agent diffusion coefficient'
 exp_oxi_dc_cyto = 4 * exp_cytokine_dc_cyto
 
 
@@ -168,7 +168,7 @@ ck_memory_immune = 1 - max_ck_consume/ck_equilibrium  # decay therm for "seen" c
 
 __param_desc__['max_ck_secrete_infect'] = 'Unitless maximum cytokine lung tissue secretion rate'
 max_ck_secrete_infect = 10*max_ck_secrete_im
-__param_desc__['minimum_activated_time'] = 'Unitless immune cell equilibrium bound cytokine'
+__param_desc__['minimum_activated_time'] = 'Unitless immune cell activated time'
 minimum_activated_time = minimum_activated_time_seconds/s_to_mcs  # mcs
 
 __param_desc__['ec50_infecte_ck_prod'] = 'Amount of internal assembled virus to be at 50% cytokine production'
@@ -225,10 +225,6 @@ relative_viral_uptake = 0.1
 # Leave as zero if running through CallableCC3D (bug in NeighborTracker)
 __param_desc__['initial_immune_seeding'] = 'Number of immune cells to seed at the beginning of the simulation'
 initial_immune_seeding = 0.0
-# Rate for seeding of immune cells (constant)
-immune_seeding_rate = 1.0 / 10.0
-# Max dying rate of immune cells (actual rate is proportional to fraction of infected cells)
-immunecell_dying_rate = 0.0 / 500.0
 # Bystander effect
 __param_desc__['bystander_effect'] = 'Probability rate of death due to the Bystander Effect'
 bystander_effect = 2.0/4.0
@@ -240,7 +236,6 @@ lamda_chemotaxis = 100.0/100.0
 # Antimony/SBML model step size
 __param_desc__['vr_step_size'] = 'Antimony/SBML model step size'
 vr_step_size = 1.0
-vi_step_size = vr_step_size
 
 # Viral Internalization parameters
 __param_desc__['exp_kon'] = 'Virus-receptors association affinity'
