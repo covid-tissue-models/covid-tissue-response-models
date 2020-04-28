@@ -97,6 +97,9 @@ def collect_trial_data(_export_name, _trial_dirs):
     for trial_idx in range(num_trials):
         trial_data[trial_idx] = dict()
         trial_file = os.path.join(_trial_dirs[trial_idx], _export_name + '.csv')
+        if not os.path.isfile(trial_file):
+            trial_data[trial_idx] = None
+            continue
         with open(trial_file) as csvfile:
             csv_reader = csv.reader(csvfile, delimiter=',')
             for row_data in csv_reader:
@@ -111,6 +114,8 @@ def collect_trial_data(_export_name, _trial_dirs):
 def calculate_batch_data_stats(batch_data_summary):
     for data_desc, data_dict in batch_data_summary.items():
         param_names = export_data_desc[data_desc]
+        if data_dict[list(data_dict.keys())[0]] is None:
+            continue
         sim_mcs = list(data_dict[list(data_dict.keys())[0]].keys())
         mean_data = dict()
         stdev_data = dict()
@@ -120,10 +125,12 @@ def calculate_batch_data_stats(batch_data_summary):
             for param in param_names:
                 this_data = []
                 for trial_data in data_dict.values():
-                    this_data.append(trial_data[this_mcs][param])
+                    if trial_data is not None:
+                        this_data.append(trial_data[this_mcs][param])
 
-                mean_data[this_mcs][param] = float(np.average(this_data))
-                stdev_data[this_mcs][param] = float(np.std(this_data))
+                if this_data:
+                    mean_data[this_mcs][param] = float(np.average(this_data))
+                    stdev_data[this_mcs][param] = float(np.std(this_data))
 
         data_dict['batchMean'] = mean_data
         data_dict['batchStDev'] = stdev_data
@@ -133,10 +140,20 @@ def generate_batch_data_summary(cov2_vtm_sim_run, step_list=None):
     trial_dirs = [cov2_vtm_sim_run.get_run_output_dir(x) for x in range(cov2_vtm_sim_run.num_runs)]
     [convert_sim_data(trial_dir) for trial_dir in trial_dirs]
     batch_data_summary = {data_desc: collect_trial_data(data_desc, trial_dirs) for data_desc in export_data_desc.keys()}
+    # Filter data that wasn't found at all
+    data_desc_found = {k: False for k in batch_data_summary.keys()}
+    for data_desc, data_dict in batch_data_summary.items():
+        for trial_dict in data_dict.values():
+            if trial_dict is not None:
+                data_desc_found[data_desc] = True
+                continue
+    batch_data_summary = {k: v for k, v in batch_data_summary.items() if data_desc_found[k]}
+    # Apply step filter
     if step_list is not None:
         for data_desc, data_dict in batch_data_summary.items():
             for trial_idx, trial_dict in data_dict.items():
-                batch_data_summary[data_desc][trial_idx] = {k: v for k, v in trial_dict.items() if k in step_list}
+                if trial_dict is not None:
+                    batch_data_summary[data_desc][trial_idx] = {k: v for k, v in trial_dict.items() if k in step_list}
     calculate_batch_data_stats(batch_data_summary)
     return batch_data_summary
 
