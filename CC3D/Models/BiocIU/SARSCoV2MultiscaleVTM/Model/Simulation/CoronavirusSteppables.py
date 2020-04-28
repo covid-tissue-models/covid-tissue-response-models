@@ -470,6 +470,7 @@ class SimDataSteppable(SteppableBasePy):
 
             self.med_diff_data_win.add_plot("MedViral", style='Dots', color='red', size=5)
             self.med_diff_data_win.add_plot("MedCyt", style='Dots', color='blue', size=5)
+            self.med_diff_data_win.add_plot("MedOxi", style='Dots', color='green', size=5)
 
         if self.plot_ir_data:
             self.ir_data_win = self.add_new_plot_window(title='Immune Response Model',
@@ -620,9 +621,11 @@ class SimDataSteppable(SteppableBasePy):
             # Gather total diffusive amounts
             med_viral_total = 0.0
             med_cyt_total = 0.0
+            med_oxi_total = 0.0
             for x, y, z in self.every_pixel():
                 med_viral_total += self.field.Virus[x, y, z]
                 med_cyt_total += self.field.cytokine[x, y, z]
+                med_oxi_total += self.field.oxidator[x, y, z]
 
             # Plot total diffusive viral amount if requested
             if plot_med_diff_data:
@@ -630,11 +633,13 @@ class SimDataSteppable(SteppableBasePy):
                     self.med_diff_data_win.add_data_point("MedViral", mcs, med_viral_total)
                 if med_cyt_total > 0:
                     self.med_diff_data_win.add_data_point("MedCyt", mcs, med_cyt_total)
+                if med_oxi_total > 0:
+                    self.med_diff_data_win.add_data_point("MedOxi", mcs, med_oxi_total)
 
             # Write total diffusive viral amount if requested
             if write_med_diff_data:
                 with open(self.med_diff_data_path, 'a') as fout:
-                    fout.write('{}, {}, {}\n'.format(mcs, med_viral_total, med_cyt_total))
+                    fout.write('{}, {}, {}, {}\n'.format(mcs, med_viral_total, med_cyt_total, med_oxi_total))
 
         if plot_ir_data or write_ir_data:
             if self.ir_steppable is None:
