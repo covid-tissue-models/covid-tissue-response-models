@@ -253,7 +253,7 @@ __param_desc__['r_half'] = 'Number of cell receptors at which the replication ra
 r_half = exp_max_amount_viral_mRNA/(replicating_rate/translating_rate-1)
 
 __param_desc__['kon'] = 'Unitless virus-receptors association affinity'
-kon = exp_kon * s_to_mcs * 1.0E15 * (1.0/(um_to_lat_width**3)) * (1.0/1.0E12) * (1.0/pmol_to_cc3d_au)
+kon = exp_kon * s_to_mcs * 1.0E15 * (1.0/(um_to_lat_width**3)) * (1.0/1.0E12) * (1.0/pmol_to_cc3d_au) * 100
 __param_desc__['koff'] = 'Unitless virus-receptors disassociation affinity'
 koff = exp_koff * s_to_mcs
 internalization_rate = exp_internalization_rate * s_to_mcs
