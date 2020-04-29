@@ -119,13 +119,49 @@ Submodels of immune response are implemented as follows. 
 Immune cell recruitment
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Immune cells are seeded into the simulation space at a rate determined
-by a prescribed seeding probability. At each simulation step the seeding
-probability is evaluated against a uniformly distributed random
-variable. To determine the seeding location, the simulation space is
-randomly sampled, and immune cells are seeded at the unoccupied location
-with the highest amount of the viral field. If no location is
-unoccupied, then the immune cell is not seeded. 
+The total immune cell population is governed by an ordinary differential
+equation of a state variable :math:`S` that represents immune response
+due to local conditions and long-distance signaling. Our convention is
+that when :math:`S > 0`, immune cells are recruited to the simulation
+domain; likewise, immune cells are removed from the simulation domain
+when :math:`S < 0`. We accomplish this by imposing probability functions
+describing the likelihood of immune cell seeding and removal, 
+
+.. math:: \Pr\left( \text{add immune cell} \right) = \text{erf}\left( \alpha_{\text{immune}}S \right),\ \ S > 0,
+
+.. math:: \Pr\left( \text{remove immune cell} \right) = \text{erf}\left( - \alpha_{\text{immune}}S \right),\ \ S < 0.
+
+Here the coefficient :math:`\alpha_{\text{immune}}` controls the
+sensitivity of immune cell addition and removal to the
+state variable :math:`S`. The dynamics of :math:`S` are cast such that,
+in a homeostatic condition, a typical number of immune cells can be
+found in the simulation domain, and production of cytokine in the
+simulation domain results in additional recruitment via long-distance
+signaling (i.e., with some delay). We accomplish this by using the
+feedback mechanisms of the total number of immune cells
+:math:`N_{\text{immune}}` in the simulation domain and a fraction of the
+total amount of decayed cytokine :math:`\alpha_{\text{sig}}\delta`. Here
+:math:`\delta` is the total amount of decayed cytokine in the simulation
+domain and :math:`0 < \alpha_{\text{sig}} < 1` models signaling by
+transmission of cytokine to some far-away source of immune cells. With
+these mechanisms, we write the rate of :math:`S` as such, 
+
+.. math:: \frac{\text{d}S}{\text{d}t} = \beta_{\text{add}} - \beta_{\text{sub}}N_{\text{immune}} + \beta_{\text{delay}}\alpha_{\text{sig}}\delta - \beta_{\text{decay}}S
+
+Here :math:`\beta_{\text{add}}` and :math:`\beta_{\text{sub}}` control
+the number of immune cells in the simulation domain under homeostatic
+conditions, :math:`\beta_{\text{delay}}` controls the delay between
+transmission of the cytokine and immune response, and
+:math:`\beta_{\text{decay}}` controls the return of :math:`S` to an
+unperturbed state (i.e., :math:`S = 0`).
+
+At each simulation step the seeding probability is evaluated against a
+uniformly distributed random variable. To determine the seeding
+location, the simulation space is randomly sampled, and immune cells are
+seeded at the unoccupied location with the highest amount of the viral
+field. If no location is unoccupied, then the immune cell is not seeded.
+The removal probability is evaluated against a uniformly distributed
+random variable for each immune cell at each simulation step.
 
 Immune cell chemotaxis
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -151,6 +187,15 @@ in an infected cell if it has an immune cell as one of its neighbors.
 The infected cell changes its cell type to dead cell and its instances
 of the viral internalization, replication and release models are
 disabled.
+
+
+Immune cell oxidative burst
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Immune cells when detecting a high cytokine concentration will release a
+short-range oxidative agent. The agent kills any tissue cells when in
+contact (there is a minimum concentration for death).
+
 
 Immune cell clearance
 ~~~~~~~~~~~~~~~~~~~~~

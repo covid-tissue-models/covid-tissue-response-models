@@ -34,7 +34,7 @@ and should not be used for patient diagnostics or predicting clinical
 outcomes. Rather, the model and its implementation can be used to
 develop and interrogate mechanistic hypotheses about the spread of a
 virus and how the interplay between viral spreading and immune response
-determine the outcome of the disease, such as:
+determine the outcome of the disease, such as: 
 
 -  Why does the progression of the disease seem to be dependent on the
    initial viral exposure level?
@@ -43,6 +43,18 @@ determine the outcome of the disease, such as:
 
 -  What is the role of cytokine signaling in explaining immune response
    variability?
+
+-  What are the specific factors determining early immune response? What
+   are the key players on early immune response?
+
+-  Does the collapse observed in individuals who develop complications
+   result from viral replication in a secondary location or is it
+   primarily a delayed hyper-inflammatory response? 
+
+-  Could we build a personalized model for immune response to predict
+   who is likely to develop immune complications and use it to design
+   a personalized immunosuppressive therapy to determine timing and
+   dosage of an immunosuppressive regime?
 
 Some factors to be included in future developments of the model are:
 
@@ -97,9 +109,12 @@ cells.
 -  **Immune cell clearance**: model of immune cell-accumulated damage,
    cell death and clearance from the tissue
 
+-  **Immune activation**: model of immune cells changing behaviour based
+   on lung tissue status (amount of cytokine in the environment).
+
 At the tissue level, the model accounts for the extracellular transport
-of viral particles and can be extended to incorporate cytokine transport
-and recovery by reepithelialization. 
+of viral particles, cytokine transport, and an oxidative burst agent. It
+can be extended to incorporate recovery by reepithelialization. 
 
 -  **Viral transport**: model of diffusion and spreading of viral
    particles in the extracellular environment
