@@ -1,0 +1,90 @@
+EC50_ck_immune,64.0,Unitless immune cell cytokine activation
+bystander_effect,0.5,Probability rate of death due to the Bystander Effect
+cell_diameter,3.0,Unitless cell diameter
+cell_infection_threshold,1.0,Threshold of assembled viral particles above which infected become infectedSecreting
+cell_volume,9.0,Unitless cell volume
+ck_equilibrium,134.4,equilibrium amount of ck in immune surface
+ck_memory_immune,0.98,1 - Immune cell bound cytokine memory
+cytokine_dc,12.0,Unitless cytokine diffusion coefficient
+cytokine_field_decay,0.01586776859504132,Unitless cytokine decay coefficient
+cytoplasm_density,6, 
+diss_coeff_uptake_apo,100.0,Dissociation coefficient for probability of viral-induced apoptosis
+ec50_infecte_ck_prod,0.1,Amount of internal assembled virus to be at 50% cytokine production
+exp_EC50_cytokine_immune,1,Immune cell cytokine activation
+exp_cell_diameter,12.0,Cell diameter
+exp_cytokine_dc_cyto,1.6,Cytokine intracellular diffusion coefficient
+exp_cytokine_dc_w,100,Cytokine extracellular diffusion coefficient
+exp_internalization_rate,0.1, 
+exp_koff,0.00014,Virus-receptors disassociation affinity
+exp_kon,140000.0,Virus-receptors association affinity
+exp_max_amount_viral_mRNA,1000,
+exp_max_ck_diff_len,100,Cytokine diffusion length
+exp_max_cytokine_consumption,1,Maximum cytokine consumption
+exp_max_cytokine_consumption_mol,0.00035,Cytokine immune uptake rate
+exp_max_cytokine_immune_secretion,10,Maximum cytokine immune secretion rate
+exp_max_cytokine_immune_secretion_mol,0.0035,Maximum cytokine lung tissue secretion rate
+exp_min_ck_decay,0.00013223140495867766,Cytokine decay coefficient
+exp_oxi_dc_cyto,6.4,Oxidation Agent intracellular diffusion coefficient
+exp_oxi_dc_water,1388.888888888889,Oxidation Agent extracellular diffusion coefficient
+exp_oxi_dl,36.0,Oxidation Agent diffusion length
+exp_packing_rate,0.0016666666666666668,Packing rate
+exp_replicating_rate,0.0008333333333333334,Replicating rate
+exp_secretion_rate,0.0016666666666666668,Secretion rate
+exp_translating_rate,0.0005555555555555556,Translating rate
+exp_unpacking_rate,0.0016666666666666668,Unpacking rate
+exp_virus_dc,0.1,Viral diffusion coefficient
+hill_coeff_uptake_apo,2.0,Hill coefficient for probability of viral-induced apoptosis
+hill_coeff_uptake_pr,2.0,Dissociation coefficient for probability of viral particle uptake from the environment
+immune_seeding_rate,0.1, 
+immunecell_dying_rate,0.0, 
+initial_immune_seeding,0.0,Number of immune cells to seed at the beginning of the simulation
+initial_unbound_receptors,200,Initial number of receptors on the cell surface
+internalization_rate,12.0, 
+ir_add_coeff,1.0,Immune response rate addition coefficient
+ir_decay_coeff,0.1,Immune response rate decay coefficient
+ir_delay_coeff,0.001,Immune response rate delay coefficient
+ir_prob_scaling_factor,0.01,Immune response probability scaling coefficient
+ir_subtract_coeff,0.2,Immune response rate subtraction coefficient
+ir_transmission_coeff,0.5,Immune response cytokine transmission coefficient
+koff,0.0168,Unitless virus-receptors disassociation affinity
+kon,2.625e-05,Unitless virus-receptors association affinity
+lamda_chemotaxis,1.0,Lambda chemotaxis (chemotactic sensitivity)
+max_ck_consume,2.688,Unitless maximum cytokine consumption
+max_ck_secrete_im,26.880000000000003,Unitless maximum cytokine immune secretion rate
+max_ck_secrete_infect,268.8,Unitless maximum cytokine lung tissue secretion rate
+max_oxi_secrete,268.8,Immune cell oxidation agent secretion rate
+minimum_activated_time,30.0,Unitless immune cell equilibrium bound cytokine
+minimum_activated_time_seconds,3600,Immune cell equilibrium bound cytokine
+oxi_dc,48.0,Unitless Oxidation Agent diffusion coefficient
+oxi_death_thr,1.5,Tissue cell Oxidation Agent threshold for death
+oxi_decay,1.6875,Unitless Oxidation Agent decay coefficient
+oxi_dl,9.0,Unitless Oxidation Agent diffusion length
+oxi_sec_thr,10,Immune cell cytokine concentration threshold for Oxidation Agent release
+packing_rate,0.2,Unitless packing rate
+plot_ir_data_freq,0, 
+plot_med_diff_data_freq,0, 
+plot_pop_data_freq,0, 
+plot_spat_data_freq,0, 
+plot_vim_data_freq,0, 
+plot_vrm_data_freq,0, 
+pmol_to_cc3d_au,1000000000000000.0,Arbitrary concentration
+r_half,2000.0,Number of cell receptors at which the replication rate is half of maximum
+relative_viral_uptake,0.1,Efficiency of viral uptake
+replicating_rate,0.1,Unitless replicating rate
+s_to_mcs,120.0,Simulation step
+secretion_rate,0.2,Unitless secretion rate
+track_model_variables,False, 
+translating_rate,0.06666666666666667,Unitless translating rate
+um_to_lat_width,4.0,Lattice width
+unpacking_rate,0.2,Unitless unpacking rate
+vi_step_size,1.0, 
+virus_dc,0.75,Unitless virus diffusion coefficient
+virus_decay,0.009259259259259259,Unitless virus decay coefficient
+virus_dl,9.0,Unitless virus diffusion length
+vr_step_size,1.0,Antimony/SBML model step size
+write_ir_data_freq,10, 
+write_med_diff_data_freq,10, 
+write_pop_data_freq,10, 
+write_spat_data_freq,10, 
+write_vim_data_freq,0, 
+write_vrm_data_freq,0, 

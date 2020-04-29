@@ -27,16 +27,16 @@ Viral internalization
 Uninfected and infected cells have the ability of absorbing diffusive
 viral particles from the extracellular viral field. The uptake
 probability
-:math:`\Pr\left( \text{Uptake}\left( \text{cell} \right) > 0 \right)`
-for each cell occurs according to a Hill equation of the total amount of
+:math:`P\left( \text{Uptake}\left( \text{cell} \right) > 0 \right)` for each
+cell occurs according to a Hill equation of the total amount of
 diffusive viral particles in the domain of the cell
 :math:`V\left( \text{cell} \right)`. 
 
-.. math:: \Pr\left( \text{Uptake} > 0 \right) = \frac{V\left( \text{cell} \right)^{h}}{V\left( \text{cell} \right)^{h} + V_{\text{half}}}
+.. math:: P\left( \text{Uptake} > 0 \right) = \frac{V\left( \text{cell} \right)^{h}}{V\left( \text{cell} \right)^{h} + V_{\text{half}}}
 
 Where :math:`h` is a Hill coefficient and :math:`V_{\text{half}}` is the
 local amount of the viral field at which
-:math:`\Pr\left( \text{Uptake} > 0 \right) = 0.50`. When uptake occurs, the
+:math:`P\left( \text{Uptake} > 0 \right) = 0.50`. When uptake occurs, the
 uptake rate is proportional to the local amount of the viral field and a
 prescribed uptake efficiency :math:`r_{e}`, and saturates at a
 prescribed threshold :math:`U_{\text{threshold}}`, 
@@ -59,23 +59,23 @@ A system of ordinary differential equations modeling the viral
 replication process is assigned to each uninfected and infected cell.
 The model contains four variables representing different states of the
 viral replication process: unpacking :math:`U`, replicating :math:`R`,
-packing :math:`P`, and assembly of new virion capsids :math:`A`. 
+packing :math:`P`,  and assembly of new virion capsids :math:`A`. 
 
-.. math:: \frac{\text{d}U}{\text{d}t} = \text{Uptake}  - r_{u}U
+.. math:: \frac{\text{d}U}{\text{d}t} = \text{Uptake} - r_{u}U
 
-.. math:: \frac{\text{d}R}{\text{d}t} = r_{u}U + r_{\max}\frac{R}{R\  + r_{\text{half}}} - r_{t}R
+.. math:: \frac{\text{d}R}{\text{d}t} = r_{u}U + r_{\text{max}}\frac{R}{R + r_{\text{half}}} - r_{t}R
 
 .. math:: \frac{\text{d}P}{\text{d}t} = r_{t}U - r_{p}P
 
 .. math:: \frac{\text{d}A}{\text{d}t} = r_{p}P - \text{Secretion}
 
-Here :math:`r_{u}` is the unpacking rate, :math:`r_{\max}` is the
+Here :math:`r_{u}` is the unpacking rate, :math:`r_{\text{max}}` is the
 maximum replication rate, :math:`r_{t}` is the translation rate and
 :math:`r_{p}` is the packing rate. The regulation of replication is
 represented by a Michaelis-Menten function of the amount of replicating
 viral material :math:`\frac{R}{R\  + r_{\text{half}}}`, where
 :math:`r_{\text{half}}` is the amount of :math:`R` at which the
-replicating rate is :math:`\frac{r_{\max}}{2}`. The viral replication
+replicating rate is :math:`\frac{r_{\text{max}}}{2}`. The viral replication
 model is specified as a readily sharable Antimony string that can be
 implemented as a standalone using the Tellurium package. The number of
 newly assembled virion capsids is passed to the cell’s instance of the
@@ -188,12 +188,14 @@ The infected cell changes its cell type to dead cell and its instances
 of the viral internalization, replication and release models are
 disabled.
 
+
 Immune cell oxidative burst
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Immune cells when detecting a high cytokine concentration will release a
 short-range oxidative agent. The agent kills any tissue cells when in
 contact (there is a minimum concentration for death).
+
 
 Immune cell clearance
 ~~~~~~~~~~~~~~~~~~~~~
