@@ -9,9 +9,9 @@ Model of Viral Tissue Infection
 
     To cite this model please use the following:
 
-    Josua Aponte-Serrano, T.J. Sego, Juliano F. Gianlupi, James A. Glazier,
-    "Model of Viral Tissue Infection",
-    https://github.com/covid-tissue-models/covid-tissue-response-models/tree/master/CC3D/Models/BiocIU/SARSCoV2MultiscaleVTM
+    T.J. Sego, Josua O. Aponte-Serrano, Juliano Ferrari Gianlupi, Samuel Heaps, Ellen M. Quardokus, James A. Glazier,
+    "A Modular Framework for Multiscale Spatial Modeling of Viral Infection and Immune Response in Epithelial Tissue",
+    bioRxiv 2020.04.27.064139; doi: https://doi.org/10.1101/2020.04.27.064139
 
 .. _title_end:
 
