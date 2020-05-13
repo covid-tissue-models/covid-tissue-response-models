@@ -1,9 +1,11 @@
 ###############################################################################################################
 # To cite this model please use the following:
 #
-# Josua Aponte-Serrano, T.J. Sego, Juliano F. Gianlupi, James A. Glazier,
-# "Model of Viral Tissue Infection"
-# https://github.com/covid-tissue-models/covid-tissue-response-models/tree/master/CC3D/Models/BiocIU/SARSCoV2MultiscaleVTM
+# T.J. Sego, Josua O. Aponte-Serrano, Juliano Ferrari Gianlupi, Samuel R. Heaps, Kira Breithaupt, Lutz Brusch,
+# James M. Osborne, Ellen M. Quardokus, James A. Glazier,
+# "A modular framework for multiscale multicellular spatial modeling of viral infection, immune response and drug
+# therapy timing and efficacy in epithelial tissues",
+# bioR𝟀iv 2020.04.27.064139
 ###############################################################################################################
 
 import os
@@ -188,7 +190,7 @@ class ViralInternalizationSteppable(CoronavirusSteppableBasePy):
                                                      hill_coeff_uptake_pr)
 
         cell_does_uptake = np.random.rand() < uptake_probability
-        uptake_amount = uptake_probability
+        uptake_amount = s_to_mcs / rate_coeff_uptake_pr * uptake_probability
 
         if cell_does_uptake and cell.type == self.UNINFECTED:
             cell.type = self.INFECTED

@@ -37,30 +37,30 @@ write_spat_data_freq = 0  # Write spatial data to simulation directory frequency
 
 # Conversion Factors
 __param_desc__['s_to_mcs'] = 'Simulation step'
-s_to_mcs = 120.0  # s/mcs
+s_to_mcs = 1200.0  # s/mcs
 __param_desc__['um_to_lat_width'] = 'Lattice width'
 um_to_lat_width = 4.0  # um/lattice_length
 
 __param_desc__['pmol_to_cc3d_au'] = 'Scale factor for concentration'
-pmol_to_cc3d_au = 1e15  # 1e15au/1pmol
+pmol_to_cc3d_au = 1e14  # 1e15au/1pmol
 
 # Experimental Parameters
 __param_desc__['exp_cell_diameter'] = 'Cell diameter'
 exp_cell_diameter = 12.0  # um
 
 __param_desc__['exp_unpacking_rate'] = 'Unpacking rate'
-exp_unpacking_rate = 1.0 / 10.0 * 1.0 / 60.0
+exp_unpacking_rate = 1.0 / 100.0 * 1.0 / 60.0
 __param_desc__['exp_replicating_rate'] = 'Replicating rate'
-exp_replicating_rate = 1.0 / 20.0 * 1.0 / 60.0  # 1.0/20.0min * 1.0min/60.0s = 1.0/1200.0s
+exp_replicating_rate = 1.0 / 200.0 * 1.0 / 60.0  # 1.0/20.0min * 1.0min/60.0s = 1.0/1200.0s
 __param_desc__['exp_translating_rate'] = 'Translating rate'
-exp_translating_rate = 1.0 / 30.0 * 1.0 / 60.0
+exp_translating_rate = 1.0 / 300.0 * 1.0 / 60.0
 __param_desc__['exp_packing_rate'] = 'Packing rate'
-exp_packing_rate = 1.0 / 10.0 * 1.0 / 60.0
+exp_packing_rate = 1.0 / 100.0 * 1.0 / 60.0
 __param_desc__['exp_secretion_rate'] = 'Secretion rate'
-exp_secretion_rate = 1.0 / 10.0 * 1.0 / 60.0
+exp_secretion_rate = 1.0 / 100.0 * 1.0 / 60.0
 
 __param_desc__['exp_virus_dc'] = 'Viral diffusion coefficient'
-exp_virus_dc = 10.0 / 100.0  # um^2/s
+exp_virus_dc = 10.0 / 1000.0  # um^2/s
 
 # cytokines:
 # data from https://www.sciencedirect.com/science/article/pii/S1074761317300924 supplemental materials (A)
@@ -72,7 +72,7 @@ exp_virus_dc = 10.0 / 100.0  # um^2/s
 # exp_cytokine_dc_w = 100  # um^2/s; diffusion constant in water (A,B)
 # the division by 10 is due to the small lattice size, as fiscussed with josh. we all should discuss this matter
 __param_desc__['exp_cytokine_dc_cyto'] = 'Cytokine diffusion coefficient'
-exp_cytokine_dc_cyto = 16 / 10  # um^2/s; estimated diffusion constant in cytoplasm (B)
+exp_cytokine_dc_cyto = 16 / 100  # um^2/s; estimated diffusion constant in cytoplasm (B)
 # ^ the  /10 is not experimental; added because of relative small area and because virus D is (or was) slowed down
 
 __param_desc__['exp_max_ck_diff_len'] = 'Cytokine diffusion length'
@@ -95,10 +95,10 @@ __param_desc__['exp_max_cytokine_immune_secretion_mol'] = 'Maximum cytokine lung
 exp_max_cytokine_immune_secretion_mol = 3.5e-3  # pM/s
 
 __param_desc__['exp_EC50_cytokine_immune'] = 'Immune cell cytokine activation'
-exp_EC50_cytokine_immune = 1  # pM from (B), it's a range from [1,50]pM
+exp_EC50_cytokine_immune = 10  # pM from (B), it's a range from [1,50]pM
 # tbd: try to find experimental data
 __param_desc__['minimum_activated_time_seconds'] = 'Immune cell activated time'
-minimum_activated_time_seconds = 60 * 60  # min * s/min
+minimum_activated_time_seconds = 600 * 60  # min * s/min
 
 __param_desc__['exp_max_amount_viral_mRNA'] = 'Scale factor for number of mRNA per infected cell'
 exp_max_amount_viral_mRNA = 1000
@@ -214,8 +214,11 @@ hill_coeff_uptake_apo = 2.0
 # Hill equation coefficients for probability of viral particle uptake from the environment
 # Measurements are taken w.r.t. the total amount of viral particles in a cell's simulation subdomain
 # Hill coefficient
-__param_desc__['hill_coeff_uptake_pr'] = 'Dissociation coefficient for probability of viral particle uptake from the environment'
+__param_desc__['hill_coeff_uptake_pr'] = 'Hill coefficient for probability of viral particle uptake from the environment'
 hill_coeff_uptake_pr = 2.0
+# Rate coefficient
+__param_desc__['rate_coeff_uptake_pr'] = 'Rate coefficient for probability of viral particle uptake from the environment'
+rate_coeff_uptake_pr = 1200.0
 
 # Efficiency of viral uptake
 __param_desc__['relative_viral_uptake'] = 'Efficiency of viral uptake'
@@ -226,7 +229,7 @@ relative_viral_uptake = 0.1
 __param_desc__['initial_immune_seeding'] = 'Number of immune cells to seed at the beginning of the simulation'
 initial_immune_seeding = 0.0
 # Bystander effect
-__param_desc__['bystander_effect'] = 'Probability rate of death due to the Bystander Effect'
+__param_desc__['bystander_effect'] = 'Probability rate of death due to the Bystander Effect per MCS'
 bystander_effect = 2.0/4.0
 # Lambda Chemotaxis
 __param_desc__['lamda_chemotaxis'] = 'Lambda chemotaxis (chemotactic sensitivity)'
@@ -239,10 +242,9 @@ vr_step_size = 1.0
 
 # Viral Internalization parameters
 __param_desc__['exp_kon'] = 'Virus-receptors association affinity'
-exp_kon = 1.4E5  # 1/(M * s)
+exp_kon = 1.4E4  # 1/(M * s)
 __param_desc__['exp_koff'] = 'Virus-receptors disassociation affinity'
 exp_koff = 1.4E-4  # 1/s
-exp_internalization_rate = 1.0/10.0  # 1/s
 
 # Initial number of receptors on the cell surface
 __param_desc__['initial_unbound_receptors'] = 'Initial number of receptors on the cell surface'
@@ -256,7 +258,6 @@ __param_desc__['kon'] = 'Unitless virus-receptors association affinity'
 kon = exp_kon * s_to_mcs * 1.0E15 * (1.0/(um_to_lat_width**3)) * (1.0/1.0E12) * (1.0/pmol_to_cc3d_au) * 100
 __param_desc__['koff'] = 'Unitless virus-receptors disassociation affinity'
 koff = exp_koff * s_to_mcs
-internalization_rate = exp_internalization_rate * s_to_mcs
 
 # Imunne recruitment parameters
 
@@ -271,7 +272,7 @@ else:
     ir_subtract_coeff = ir_add_coeff / initial_immune_seeding
 # State variable rate delay coefficient
 __param_desc__['ir_delay_coeff'] = 'Immune response rate delay coefficient'
-ir_delay_coeff = 1*1E-3
+ir_delay_coeff = 1*1E3
 # State variable rate decay coefficient
 __param_desc__['ir_decay_coeff'] = 'Immune response rate decay coefficient'
 ir_decay_coeff = 1E-1
