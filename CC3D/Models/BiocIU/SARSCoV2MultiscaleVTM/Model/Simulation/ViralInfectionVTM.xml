@@ -4,16 +4,16 @@
 <!--James M. Osborne, Ellen M. Quardokus, James A. Glazier,-->
 <!--"A modular framework for multiscale multicellular spatial modeling of viral infection, immune response and drug -->
 <!--therapy timing and efficacy in epithelial tissues",-->
-<!--bioR𝟀iv 2020.04.27.064139-->
+<!--bioRxiv 2020.04.27.064139-->
 
 <CompuCell3D Revision="20200118" Version="4.1.1">
-   
+
     <Metadata>
         <!-- Basic properties simulation -->
         <NumberOfProcessors>1</NumberOfProcessors>
         <DebugOutputFrequency>100</DebugOutputFrequency>
     </Metadata>
-   
+
     <Potts>
         <!-- Basic properties of CPM (GGH) algorithm -->
         <Dimensions x="90" y="90" z="2"/>
@@ -23,7 +23,7 @@
         <Boundary_x>Periodic</Boundary_x>
         <Boundary_y>Periodic</Boundary_y>
     </Potts>
-    
+
     <Plugin Name="CellType">
     <!-- Listing all cell types in the simulation -->
         <CellType TypeId="0" TypeName="Medium"/>
@@ -67,17 +67,17 @@
         <Energy Type1="Immunecell" Type2="Immunecell">25.0</Energy>
         <NeighborOrder>3</NeighborOrder>
     </Plugin>
-   
+
    <Plugin Name="Chemotaxis">
         <ChemicalField Name="Virus">
         </ChemicalField>
         <ChemicalField Name="cytokine">
         </ChemicalField>
    </Plugin>
-   
+
    <Plugin Name="Secretion">
    </Plugin>
-   
+
    <Steppable Type="DiffusionSolverFE">
       <DiffusionField Name="Virus">
          <DiffusionData>
@@ -138,8 +138,4 @@
          </BoundaryConditions>
       </DiffusionField>
    </Steppable>
-    
-    
-   
-   
 </CompuCell3D>

@@ -1,38 +1,20 @@
-# This is a library of steppable classes for the coronavirus viral infection modeling project using CompuCell3D
+# This is a library of steppable classes for the viral infection modeling project using CompuCell3D
 # by the Biocomplexity Institute at Indiana University using CompuCell3D
 
 import os
 import sys
 
-from cc3d.cpp import CompuCell
-import numpy as np
+# Import project libraries
+sys.path.append(os.path.dirname(__file__))
+import ViralInfectionVTMLib
 
-# Set this to True for local references when developing; False when running
-__dev_mode__ = False
-
-# This is just a gentle reminder to turn off debug mode
-assert not __dev_mode__, "Don't forget to set to run!"
-
-if __dev_mode__:
-    # Import project libraries
-    from . import CoronavirusLib
-
-    # Import toolkit
-    from ..nCoVToolkit.nCoVSteppableBase import nCoVSteppableBase
-    from ..nCoVToolkit import nCoVUtils
-
-else:
-    # Import project libraries
-    sys.path.append(os.path.dirname(__file__))
-    import CoronavirusLib
-
-    # Import toolkit
-    sys.path.append(os.path.dirname(os.path.dirname(__file__)))
-    from nCoVToolkit.nCoVSteppableBase import nCoVSteppableBase
-    from nCoVToolkit import nCoVUtils
+# Import toolkit
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+from nCoVToolkit.nCoVSteppableBase import nCoVSteppableBase
+from nCoVToolkit import nCoVUtils
 
 
-class CoronavirusSteppableBasePy(nCoVSteppableBase):
+class ViralInfectionVTMSteppableBasePy(nCoVSteppableBase):
 
     def __init__(self, frequency=1):
         nCoVSteppableBase.__init__(self, frequency)
@@ -60,20 +42,20 @@ class CoronavirusSteppableBasePy(nCoVSteppableBase):
         :param secretion_rate: model secretion rate
         :return: None
         """
-        if cell.dict[CoronavirusLib.vrl_key]:
-            self.delete_sbml_from_cell(CoronavirusLib.vr_model_name, cell)
+        if cell.dict[ViralInfectionVTMLib.vrl_key]:
+            self.delete_sbml_from_cell(ViralInfectionVTMLib.vr_model_name, cell)
 
         # Generate Antimony model string
-        model_string = CoronavirusLib.viral_replication_model_string(
+        model_string = ViralInfectionVTMLib.viral_replication_model_string(
             unpacking_rate, replicating_rate, r_half, translating_rate, packing_rate, secretion_rate,
             cell.dict['Unpacking'], cell.dict['Replicating'], cell.dict['Packing'], cell.dict['Assembled'],
             cell.dict['Uptake'])
         self.add_antimony_to_cell(model_string=model_string,
-                                  model_name=CoronavirusLib.vr_model_name,
+                                  model_name=ViralInfectionVTMLib.vr_model_name,
                                   cell=cell,
                                   step_size=vr_step_size)
-        cell.dict[CoronavirusLib.vrl_key] = True
-        CoronavirusLib.enable_viral_secretion(cell, cell.type == self.INFECTEDSECRETING)
+        cell.dict[ViralInfectionVTMLib.vrl_key] = True
+        ViralInfectionVTMLib.enable_viral_secretion(cell, cell.type == self.INFECTEDSECRETING)
 
     def new_cell_in_time(self, cell_type, mcs=None):
         """
@@ -89,7 +71,7 @@ class CoronavirusSteppableBasePy(nCoVSteppableBase):
             else:
                 mcs = self.mcs
 
-        cell.dict[CoronavirusLib.new_cell_mcs_key] = mcs
+        cell.dict[ViralInfectionVTMLib.new_cell_mcs_key] = mcs
         return cell
 
     def new_uninfected_cell_in_time(self, mcs=None):
@@ -99,8 +81,8 @@ class CoronavirusSteppableBasePy(nCoVSteppableBase):
         :return: new cell instance of immune cell type
         """
         cell = self.new_cell_in_time(self.UNINFECTED, mcs)
-        cell.dict[CoronavirusLib.vrl_key] = False
-        CoronavirusLib.reset_viral_replication_variables(cell=cell)
+        cell.dict[ViralInfectionVTMLib.vrl_key] = False
+        ViralInfectionVTMLib.reset_viral_replication_variables(cell=cell)
         cell.dict['Survived'] = False
         return cell
 
@@ -125,9 +107,9 @@ class CoronavirusSteppableBasePy(nCoVSteppableBase):
         """
         Calculates total value of field in the cell.
         :param field: the field to be looked
-        :param cell: the cell 
-        :param estimate: when true assumes homogeneous field. false is slower 
-        :return: calculated total field value 
+        :param cell: the cell
+        :param estimate: when true assumes homogeneous field. false is slower
+        :return: calculated total field value
         """
         if estimate:
             tot_field = field[cell.xCOM, cell.yCOM, cell.zCOM] * cell.volume
@@ -135,7 +117,7 @@ class CoronavirusSteppableBasePy(nCoVSteppableBase):
             tot_field = 0
             for ptd in self.get_cell_pixel_list(cell):
                 tot_field += field[ptd.pixel.x, ptd.pixel.y, ptd.pixel.z]
-        
+
         return tot_field
 
     def kill_cell(self, cell):
@@ -147,7 +129,7 @@ class CoronavirusSteppableBasePy(nCoVSteppableBase):
         cell.type = self.DYING
 
         # Remove viral replication model: no model for dead cell type
-        CoronavirusLib.reset_viral_replication_variables(cell=cell)
+        ViralInfectionVTMLib.reset_viral_replication_variables(cell=cell)
         self.remove_viral_replication_model(cell=cell)
 
     def remove_viral_replication_model(self, cell):
@@ -156,6 +138,6 @@ class CoronavirusSteppableBasePy(nCoVSteppableBase):
         :param cell: cell for which to remove the viral replication model
         :return: None
         """
-        if cell.dict[CoronavirusLib.vrl_key]:
-            self.delete_sbml_from_cell(CoronavirusLib.vr_model_name, cell)
-            cell.dict[CoronavirusLib.vrl_key] = False
+        if cell.dict[ViralInfectionVTMLib.vrl_key]:
+            self.delete_sbml_from_cell(ViralInfectionVTMLib.vr_model_name, cell)
+            cell.dict[ViralInfectionVTMLib.vrl_key] = False

@@ -1,11 +1,7 @@
-# This is a library for the coronavirus viral infection modeling project using CompuCell3D
+# This is a library for the viral infection modeling project using CompuCell3D
 # by the Biocomplexity Institute at Indiana University
 
-import os
-import sys
-
 from cc3d.cpp import CompuCell
-import numpy as np
 
 # Key to mcs value when a cell was created
 new_cell_mcs_key = 'new_cell_mcs'
