@@ -159,6 +159,9 @@ class ViralInternalizationSteppable(ViralInfectionVTMSteppableBasePy):
         pass
 
     def do_cell_internalization(self, cell, viral_amount_com):
+        if cell.dict['Receptors'] == 0:
+            return False, 0.0
+
         _k = kon * cell.volume / koff
         diss_coeff_uptake_pr = math.sqrt(initial_unbound_receptors / 2.0 / _k / cell.dict['Receptors'])
         uptake_probability = nCoVUtils.hill_equation(viral_amount_com,
@@ -220,7 +223,7 @@ class ViralSecretionSteppable(ViralInfectionVTMSteppableBasePy):
             if cell_does_uptake:
                 uptake = secretor.uptakeInsideCellTotalCount(cell, 1E12, uptake_amount / cell.volume)
                 cell.dict['Uptake'] = abs(uptake.tot_amount)
-                self.vim_steppable.update_cell_receptors(cell=cell, receptors_increment=cell.dict['Uptake'] * s_to_mcs)
+                self.vim_steppable.update_cell_receptors(cell=cell, receptors_increment=-cell.dict['Uptake'] * s_to_mcs)
                 ViralInfectionVTMLib.set_viral_replication_cell_uptake(cell=cell, uptake=cell.dict['Uptake'])
 
             if cell.type == self.INFECTEDSECRETING:
