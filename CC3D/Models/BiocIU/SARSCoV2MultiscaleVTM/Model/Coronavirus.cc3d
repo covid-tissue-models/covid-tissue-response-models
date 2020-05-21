@@ -1,9 +1,0 @@
-<Simulation version="4.1.1">
-   <XMLScript Type="XMLScript">Simulation/Coronavirus.xml</XMLScript>
-   <PythonScript Type="PythonScript">Simulation/Coronavirus.py</PythonScript>
-   <Resource Type="Python">Simulation/CoronavirusSteppables.py</Resource>
-   <Resource Type="Python">Simulation/CoronavirusModelInputs.py</Resource>
-   <Resource Type="Python">Simulation/CoronavirusLib.py</Resource>
-   <Resource Type="Python">Simulation/CoronavirusSteppableBasePy.py</Resource>
-   <Resource Type="Python">nCoVToolkit/nCoVUtils.py</Resource>
-</Simulation>

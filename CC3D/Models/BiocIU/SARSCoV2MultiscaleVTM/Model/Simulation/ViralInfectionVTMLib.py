@@ -1,11 +1,7 @@
-# This is a library for the coronavirus viral infection modeling project using CompuCell3D
+# This is a library for the viral infection modeling project using CompuCell3D
 # by the Biocomplexity Institute at Indiana University
 
-import os
-import sys
-
 from cc3d.cpp import CompuCell
-import numpy as np
 
 # Key to mcs value when a cell was created
 new_cell_mcs_key = 'new_cell_mcs'
@@ -87,7 +83,7 @@ def viral_replication_model_string(_unpacking_rate, _replicating_rate, _r_half, 
 
 def immune_recruitment_model_string(_add_rate, _sub_rate, _delay_rate, _decay_rate, _total_ck=0, _num_imm=0, _s_ini=0):
     """
-    dS/dt = addRate - subRate * numImmuneCells + delayRate * totalCytokine - decayRate * S
+    dS/dt = addRate - subRate * numImmuneCells + totalCytokine / delayRate - decayRate * S
     The probability of adding an immume cell is non-zero for S > 0
     The probabiilty of removing an immune cell is non-zero for S < 0
     Derived in part thanks to J. Toledo
@@ -101,7 +97,7 @@ def immune_recruitment_model_string(_add_rate, _sub_rate, _delay_rate, _decay_ra
     :return: None
     """
     model_string = """model {}()
-          -> S ; addRate + delayRate * totalCytokine;
+          -> S ; addRate + totalCytokine / delayRate;
         S ->   ; subRate * numImmuneCells + decayRate * S;
         addRate = {};
         subRate = {};
