@@ -9,7 +9,7 @@ Model of Viral Tissue Infection
 
     To cite this model please use the following:
 
-    T.J. Sego, Josua O. Aponte-Serrano, Juliano Ferrari Gianlupi, Samuel Heaps, Ellen M. Quardokus, James A. Glazier,
+    T.J. Sego, Josua O. Aponte-Serrano, Juliano Ferrari Gianlupi, Samuel R. Heaps, Kira Breithaupt, Lutz Brusch, James M. Osborne, Ellen M. Quardokus, James A. Glazier,
     "A Modular Framework for Multiscale Spatial Modeling of Viral Infection and Immune Response in Epithelial Tissue",
     bioRxiv 2020.04.27.064139; doi: https://doi.org/10.1101/2020.04.27.064139
 
