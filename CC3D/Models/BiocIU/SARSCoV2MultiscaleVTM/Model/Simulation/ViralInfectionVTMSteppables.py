@@ -45,6 +45,10 @@ class CellsInitializerSteppable(ViralInfectionVTMSteppableBasePy):
             for y in range(0, self.dim.y, int(cell_diameter)):
                 cell = self.new_uninfected_cell_in_time()
                 self.cellField[x:x + int(cell_diameter), y:y + int(cell_diameter), 0] = cell
+
+                cell.targetVolume = cell_volume
+                cell.lambdaVolume = volume_lm
+
                 cell.dict[ViralInfectionVTMLib.vrl_key] = False
                 ViralInfectionVTMLib.reset_viral_replication_variables(cell=cell)
                 cell.dict['Receptors'] = initial_unbound_receptors
@@ -83,7 +87,7 @@ class CellsInitializerSteppable(ViralInfectionVTMSteppableBasePy):
             cell = self.new_immune_cell_in_time(ck_production=max_ck_secrete_im, ck_consumption=max_ck_consume)
             self.cell_field[x:x + int(cell_diameter), y:y + int(cell_diameter), 1] = cell
             cell.targetVolume = cell_volume
-            cell.lambdaVolume = cell_volume
+            cell.lambdaVolume = volume_lm
             cell.dict['activated'] = False  # flag for immune cell being naive or activated
             # cyttokine params
             cell.dict['ck_production'] = max_ck_secrete_im
@@ -355,7 +359,7 @@ class ImmuneCellSeedingSteppable(ViralInfectionVTMSteppableBasePy):
 
                 cd.assignChemotactTowardsVectorTypes([self.MEDIUM])
                 cell.targetVolume = cell_volume
-                cell.lambdaVolume = cell_volume
+                cell.lambdaVolume = volume_lm
 
 
 class SimDataSteppable(SteppableBasePy):
