@@ -41,6 +41,10 @@ class CellsInitializerSteppable(ViralInfectionVTMSteppableBasePy):
         self.get_xml_element('virus_dc').cdata = virus_dc
         self.get_xml_element('virus_decay').cdata = virus_decay
 
+        # Enforce compatible lattice dimensions with epithelial cell size
+        assert self.dim.x % cell_diameter == 0 and self.dim.y % cell_diameter == 0, \
+            f'Lattice dimensions must be multiples of the unitless cell diameter (currently cell_diameter = {cell_diameter})'
+
         for x in range(0, self.dim.x, int(cell_diameter)):
             for y in range(0, self.dim.y, int(cell_diameter)):
                 cell = self.new_uninfected_cell_in_time()
