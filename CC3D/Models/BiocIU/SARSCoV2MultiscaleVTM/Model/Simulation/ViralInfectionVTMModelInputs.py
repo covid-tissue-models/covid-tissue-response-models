@@ -34,6 +34,10 @@ __param_desc__['plot_spat_data_freq'] = 'Plot spatial data frequency'
 plot_spat_data_freq = 0  # Plot spatial data frequency (disable with 0)
 __param_desc__['write_spat_data_freq'] = 'Write spatial data to simulation directory frequency'
 write_spat_data_freq = 0  # Write spatial data to simulation directory frequency (disable with 0)
+__param_desc__['plot_death_data_freq'] = 'Plot death data frequency'
+plot_death_data_freq = 0  # Plot death data frequency (disable with 0)
+__param_desc__['write_death_data_freq'] = 'Write death data to simulation directory frequency'
+write_death_data_freq = 0  # Write death data to simulation directory frequency (disable with 0)
 
 # Conversion Factors
 __param_desc__['s_to_mcs'] = 'Simulation step'
@@ -125,6 +129,8 @@ __param_desc__['cell_diameter'] = 'Unitless cell diameter'
 cell_diameter = exp_cell_diameter * 1.0 / um_to_lat_width
 __param_desc__['cell_volume'] = 'Unitless cell volume'
 cell_volume = cell_diameter ** 2
+__param_desc__['volume_lm'] = 'Volume constraint LM'
+volume_lm = 9
 # virus diffusion
 __param_desc__['virus_dc'] = 'Unitless virus diffusion coefficient'
 virus_dc = exp_virus_dc * s_to_mcs / (um_to_lat_width ** 2)  # virus diffusion constant
