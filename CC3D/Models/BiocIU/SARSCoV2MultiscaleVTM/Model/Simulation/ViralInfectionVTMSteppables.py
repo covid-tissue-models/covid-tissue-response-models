@@ -141,6 +141,7 @@ class ViralReplicationSteppable(ViralInfectionVTMSteppableBasePy):
                                                                  diss_coeff_uptake_apo,
                                                                  hill_coeff_uptake_apo):
                 self.kill_cell(cell=cell)
+                self.simdata_steppable.track_death_viral()
 
 
 class ViralInternalizationSteppable(ViralInfectionVTMSteppableBasePy):
@@ -235,8 +236,17 @@ class ImmuneCellKillingSteppable(ViralInfectionVTMSteppableBasePy):
     """
     Implements immune cell direct cytotoxicity and bystander effect module
     """
+    def __init__(self, frequency=1):
+        ViralInfectionVTMSteppableBasePy.__init__(self, frequency)
+
+        # Reference to SimDataSteppable
+        self.simdata_steppable = None
 
     def step(self, mcs):
+        if self.simdata_steppable is None:
+            self.simdata_steppable: SimDataSteppable = \
+                self.shared_steppable_vars[ViralInfectionVTMLib.simdata_steppable_key]
+
         killed_cells = []
         for cell in self.cell_list_by_type(self.INFECTED, self.INFECTEDSECRETING):
             for neighbor, common_surface_area in self.get_cell_neighbor_data_list(cell):
@@ -244,6 +254,7 @@ class ImmuneCellKillingSteppable(ViralInfectionVTMSteppableBasePy):
                     if neighbor.type == self.IMMUNECELL:
                         self.kill_cell(cell=cell)
                         killed_cells.append(cell)
+                        self.simdata_steppable.track_death_contact()
 
         # Bystander Effect
         for cell in killed_cells:
@@ -253,6 +264,7 @@ class ImmuneCellKillingSteppable(ViralInfectionVTMSteppableBasePy):
                         p_bystander_effect = np.random.random()
                         if p_bystander_effect < bystander_effect:
                             self.kill_cell(cell=neighbor)
+                            self.simdata_steppable.track_death_bystander()
 
 
 class ChemotaxisSteppable(ViralInfectionVTMSteppableBasePy):
@@ -374,6 +386,9 @@ class SimDataSteppable(SteppableBasePy):
         self.spat_data_win = None
         self.spat_data_path = None
 
+        self.death_data_win = None
+        self.death_data_path = None
+
         self.plot_vrm_data = plot_vrm_data_freq > 0
         self.write_vrm_data = write_vrm_data_freq > 0
 
@@ -395,10 +410,19 @@ class SimDataSteppable(SteppableBasePy):
         self.plot_spat_data = plot_spat_data_freq > 0
         self.write_spat_data = write_spat_data_freq > 0
 
+        self.plot_death_data = plot_death_data_freq > 0
+        self.write_death_data = write_death_data_freq > 0
+
         # Origin of infection point; if more than one cell is first detected, then measure the mean COM
         # If first infection is far from center of domain, then measurements of infection front probably won't
         # be very useful
         self.init_infect_pt = None
+
+        # Cell death mechanism tracking
+        self.__death_mech = {'viral': 0,
+                             'oxi': 0,
+                             'contact': 0,
+                             'bystander': 0}
 
     def start(self):
         # Post reference to self
@@ -481,6 +505,20 @@ class SimDataSteppable(SteppableBasePy):
             self.spat_data_win.add_plot("DeathComp", style='Dots', color='red', size=5)
             self.spat_data_win.add_plot("InfectDist", style='Dots', color='blue', size=5)
 
+        if self.plot_death_data:
+            self.death_data_win = self.add_new_plot_window(title='Death data',
+                                                           x_axis_title='MCS',
+                                                           y_axis_title='Numer of cells',
+                                                           x_scale_type='linear',
+                                                           y_scale_type='log',
+                                                           grid=True,
+                                                           config_options={'legend': True})
+
+            self.death_data_win.add_plot("Viral", style='Dots', color='blue', size=5)
+            self.death_data_win.add_plot("OxiField", style='Dots', color='red', size=5)
+            self.death_data_win.add_plot("Contact", style='Dots', color='green', size=5)
+            self.death_data_win.add_plot("Bystander", style='Dots', color='yellow', size=5)
+
         # Check that output directory is available
         if self.output_dir is not None:
             from pathlib import Path
@@ -514,6 +552,11 @@ class SimDataSteppable(SteppableBasePy):
                 with open(self.spat_data_path, 'w'):
                     pass
 
+            if self.write_death_data:
+                self.death_data_path = Path(self.output_dir).joinpath('death_data.dat')
+                with open(self.death_data_path, 'w'):
+                    pass
+
     def step(self, mcs):
 
         plot_pop_data = self.plot_pop_data and mcs % plot_pop_data_freq == 0
@@ -522,6 +565,7 @@ class SimDataSteppable(SteppableBasePy):
         plot_vrm_data = self.plot_vrm_data and mcs % plot_vrm_data_freq == 0
         plot_vim_data = self.plot_vim_data and mcs % plot_vim_data_freq == 0
         plot_spat_data = self.plot_spat_data and mcs % plot_spat_data_freq == 0
+        plot_death_data = self.plot_death_data and mcs % plot_death_data_freq == 0
         if self.output_dir is not None:
             write_pop_data = self.write_pop_data and mcs % write_pop_data_freq == 0
             write_med_diff_data = self.write_med_diff_data and mcs % write_med_diff_data_freq == 0
@@ -529,6 +573,7 @@ class SimDataSteppable(SteppableBasePy):
             write_vrm_data = self.write_vrm_data and mcs % write_vrm_data_freq == 0
             write_vim_data = self.write_vim_data and mcs % write_vim_data_freq == 0
             write_spat_data = self.write_spat_data and mcs % write_spat_data_freq == 0
+            write_death_data = self.write_death_data and mcs % write_death_data_freq == 0
         else:
             write_pop_data = False
             write_med_diff_data = False
@@ -536,6 +581,7 @@ class SimDataSteppable(SteppableBasePy):
             write_vrm_data = False
             write_vim_data = False
             write_spat_data = False
+            write_death_data = False
 
         if self.vrm_tracked_cell is not None and (plot_vrm_data or write_vrm_data):
             if plot_vrm_data:
@@ -698,8 +744,42 @@ class SimDataSteppable(SteppableBasePy):
                 with open(self.spat_data_path, 'a') as fout:
                     fout.write('{}, {}, {}\n'.format(mcs, dead_comp, max_infect_dist))
 
+        if plot_death_data or write_death_data:
+            num_viral = self.__death_mech['viral']
+            num_oxi = self.__death_mech['oxi']
+            num_contact = self.__death_mech['contact']
+            num_bystander = self.__death_mech['bystander']
+
+            # Plot death data if requested
+            if plot_death_data:
+                if num_viral > 0:
+                    self.death_data_win.add_data_point("Viral", mcs, num_viral)
+                if num_oxi > 0:
+                    self.death_data_win.add_data_point("OxiField", mcs, num_oxi)
+                if num_contact > 0:
+                    self.death_data_win.add_data_point("Contact", mcs, num_contact)
+                if num_bystander > 0:
+                    self.death_data_win.add_data_point("Bystander", mcs, num_bystander)
+
+            # Write death data if requested
+            if write_death_data:
+                with open(self.death_data_path, 'a') as fout:
+                    fout.write('{}, {}, {}, {}, {}\n'.format(mcs, num_viral, num_oxi, num_contact, num_bystander))
+
     def set_vrm_tracked_cell(self, cell):
         self.vrm_tracked_cell = cell
+
+    def track_death_viral(self):
+        self.__death_mech['viral'] += 1
+
+    def track_death_oxi_field(self):
+        self.__death_mech['oxi'] += 1
+
+    def track_death_contact(self):
+        self.__death_mech['contact'] += 1
+
+    def track_death_bystander(self):
+        self.__death_mech['bystander'] += 1
 
 
 class CytokineProductionAbsorptionSteppable(ViralInfectionVTMSteppableBasePy):
@@ -896,6 +976,9 @@ class oxidationAgentModelSteppable(ViralInfectionVTMSteppableBasePy):
             self.track_cell_level_scalar_attribute(field_name='oxi_killed', attribute_name='oxi_killed')
         self.oxi_secretor = None
 
+        # Reference to SimDataSteppable
+        self.simdata_steppable = None
+
     def start(self):
         self.get_xml_element('oxi_dc').cdata = oxi_dc
         self.get_xml_element('oxi_decay').cdata = oxi_decay
@@ -903,6 +986,9 @@ class oxidationAgentModelSteppable(ViralInfectionVTMSteppableBasePy):
         self.oxi_secretor = self.get_field_secretor("oxidator")
 
     def step(self, mcs):
+        if self.simdata_steppable is None:
+            self.simdata_steppable: SimDataSteppable = \
+                self.shared_steppable_vars[ViralInfectionVTMLib.simdata_steppable_key]
 
         for cell in self.cell_list_by_type(self.IMMUNECELL):
             if cell.dict['activated']:
@@ -916,6 +1002,7 @@ class oxidationAgentModelSteppable(ViralInfectionVTMSteppableBasePy):
             if seen_field >= oxi_death_thr:
                 self.kill_cell(cell=cell)
                 cell.dict['oxi_killed'] = True
+                self.simdata_steppable.track_death_oxi_field()
 
     def finish(self):
         # this function may be called at the end of simulation - used very infrequently though
