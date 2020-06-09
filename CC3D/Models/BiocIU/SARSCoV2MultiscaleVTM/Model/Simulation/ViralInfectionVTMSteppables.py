@@ -178,7 +178,7 @@ class ViralInternalizationSteppable(ViralInfectionVTMSteppableBasePy):
                                                      hill_coeff_uptake_pr)
 
         cell_does_uptake = np.random.rand() < uptake_probability
-        uptake_amount = s_to_mcs / rate_coeff_uptake_pr * uptake_probability
+        uptake_amount = 1 / rate_coeff_uptake_pr * uptake_probability
 
         if cell_does_uptake and cell.type == self.UNINFECTED:
             cell.type = self.INFECTED
