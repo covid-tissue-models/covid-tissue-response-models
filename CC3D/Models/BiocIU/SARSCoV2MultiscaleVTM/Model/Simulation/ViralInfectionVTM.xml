@@ -1,9 +1,9 @@
 <!--To cite this model please use the following:-->
 
 <!--T.J. Sego, Josua O. Aponte-Serrano, Juliano Ferrari Gianlupi, Samuel R. Heaps, Kira Breithaupt, Lutz Brusch, -->
-<!--James M. Osborne, Ellen M. Quardokus, James A. Glazier,-->
-<!--"A modular framework for multiscale multicellular spatial modeling of viral infection, immune response and drug -->
-<!--therapy timing and efficacy in epithelial tissues",-->
+<!--James M. Osborne, Ellen M. Quardokus, Richard K. Plemper, James A. Glazier,-->
+<!--"A modular framework for multiscale, multicellular, spatiotemporal modeling of acute primary viral infection and -->
+<!--immune response in epithelial tissues and its application to drug therapy timing and effectiveness",-->
 <!--bioRxiv 2020.04.27.064139-->
 
 <CompuCell3D Revision="20200118" Version="4.1.1">
@@ -29,7 +29,7 @@
         <CellType TypeId="0" TypeName="Medium"/>
         <CellType Freeze="" TypeId="1" TypeName="Uninfected"/>
         <CellType Freeze="" TypeId="2" TypeName="Infected"/>
-        <CellType Freeze="" TypeId="3" TypeName="InfectedSecreting"/>
+        <CellType Freeze="" TypeId="3" TypeName="VirusReleasing"/>
         <CellType Freeze="" TypeId="4" TypeName="Dying"/>
         <CellType TypeId="5" TypeName="Immunecell"/>
     </Plugin>
@@ -47,21 +47,21 @@
         <Energy Type1="Medium" Type2="Medium">10.0</Energy>
         <Energy Type1="Medium" Type2="Uninfected">10.0</Energy>
         <Energy Type1="Medium" Type2="Infected">10.0</Energy>
-        <Energy Type1="Medium" Type2="InfectedSecreting">10.0</Energy>
+        <Energy Type1="Medium" Type2="VirusReleasing">10.0</Energy>
         <Energy Type1="Medium" Type2="Dying">10.0</Energy>
         <Energy Type1="Medium" Type2="Immunecell">10.0</Energy>
         <Energy Type1="Uninfected" Type2="Uninfected">10.0</Energy>
         <Energy Type1="Uninfected" Type2="Infected">10.0</Energy>
-        <Energy Type1="Uninfected" Type2="InfectedSecreting">10.0</Energy>
+        <Energy Type1="Uninfected" Type2="VirusReleasing">10.0</Energy>
         <Energy Type1="Uninfected" Type2="Dying">10.0</Energy>
         <Energy Type1="Uninfected" Type2="Immunecell">10.0</Energy>
         <Energy Type1="Infected" Type2="Infected">10.0</Energy>
-        <Energy Type1="Infected" Type2="InfectedSecreting">10.0</Energy>
+        <Energy Type1="Infected" Type2="VirusReleasing">10.0</Energy>
         <Energy Type1="Infected" Type2="Dying">10.0</Energy>
         <Energy Type1="Infected" Type2="Immunecell">10.0</Energy>
-        <Energy Type1="InfectedSecreting" Type2="InfectedSecreting">10.0</Energy>
-        <Energy Type1="InfectedSecreting" Type2="Dying">10.0</Energy>
-        <Energy Type1="InfectedSecreting" Type2="Immunecell">10.0</Energy>
+        <Energy Type1="VirusReleasing" Type2="VirusReleasing">10.0</Energy>
+        <Energy Type1="VirusReleasing" Type2="Dying">10.0</Energy>
+        <Energy Type1="VirusReleasing" Type2="Immunecell">10.0</Energy>
         <Energy Type1="Dying" Type2="Dying">10.0</Energy>
         <Energy Type1="Dying" Type2="Immunecell">10.0</Energy>
         <Energy Type1="Immunecell" Type2="Immunecell">25.0</Energy>
@@ -131,9 +131,7 @@
                <Periodic/>
             </Plane>
             <Plane Axis="Z">
-                <Periodic/> <!-- constant flux = 0 was miss behaving in this field -->
-<!--                <ConstantDerivative PlanePosition="Min" Value="0.0"/> -->
-<!--                <ConstantDerivative PlanePosition="Max" Value="0.0"/> -->
+                <Periodic/>
             </Plane>
          </BoundaryConditions>
       </DiffusionField>

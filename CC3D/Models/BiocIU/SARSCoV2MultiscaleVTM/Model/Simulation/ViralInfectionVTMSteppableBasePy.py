@@ -55,7 +55,7 @@ class ViralInfectionVTMSteppableBasePy(nCoVSteppableBase):
                                   cell=cell,
                                   step_size=vr_step_size)
         cell.dict[ViralInfectionVTMLib.vrl_key] = True
-        ViralInfectionVTMLib.enable_viral_secretion(cell, cell.type == self.INFECTEDSECRETING)
+        ViralInfectionVTMLib.enable_viral_secretion(cell, cell.type == self.VIRUSRELEASING)
 
     def new_cell_in_time(self, cell_type, mcs=None):
         """
