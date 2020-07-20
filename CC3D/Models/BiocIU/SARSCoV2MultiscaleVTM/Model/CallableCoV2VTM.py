@@ -7,7 +7,7 @@ from cc3d.CompuCellSetup.CC3DCaller import CC3DCaller, CC3DCallerWorker
 from nCoVToolkit import nCoVUtils
 from BatchPostCoV2VTM import CallableCC3DRenderer, CoV2VTMSimRunPost
 
-simulation_fname = os.path.join(os.path.dirname(__file__), 'Coronavirus.cc3d')
+simulation_fname = os.path.join(os.path.dirname(__file__), 'ViralInfectionVTM.cc3d')
 generic_root_output_folder = os.path.abspath(os.path.join(os.path.splitdrive(os.getcwd())[0], '/CallableCoV2VTM'))
 
 
@@ -146,9 +146,10 @@ def run_cov2_vtm_sims(cov2_vtm_sim_run: CoV2VTMSimRun) -> CoV2VTMSimRun:
 #     cov2_vtm_sim_run = run_cov2_vtm_sims(cov2_vtm_sim_run)
 #
 #     # Export model parameters
-#     from Simulation import CoronavirusModelInputs
-#     export_file_abs = os.path.join(os.path.abspath(cov2_vtm_sim_run.output_dir_root), "CoronavirusModelParams.csv")
-#     nCoVUtils.export_parameters(CoronavirusModelInputs, export_file_abs)
+#     from Simulation import ViralInfectionVTMModelInputs
+#     export_file_abs = os.path.join(os.path.abspath(cov2_vtm_sim_run.output_dir_root),
+#                                    "ViralInfectionVTMModelParams.csv")
+#     nCoVUtils.export_parameters(ViralInfectionVTMModelInputs, export_file_abs)
 #
 #     # Post-process metrics
 #     cov2_vtm_sim_run_post = CoV2VTMSimRunPost(cov2_vtm_sim_run)
