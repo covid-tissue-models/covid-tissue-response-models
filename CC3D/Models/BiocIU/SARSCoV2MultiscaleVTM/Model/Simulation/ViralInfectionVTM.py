@@ -8,6 +8,10 @@
 # bioRxiv 2020.04.27.064139
 ###############################################################################################################
 
+import os
+from ViralInfectionVTMSteppables import __file__ as main_step_file
+sys.path.append(os.path.dirname(os.path.dirname(main_step_file)))
+
 from cc3d import CompuCellSetup
 
 from ViralInfectionVTMSteppables import CellsInitializerSteppable
