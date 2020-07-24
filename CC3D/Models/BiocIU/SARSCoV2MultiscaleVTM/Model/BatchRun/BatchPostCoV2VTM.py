@@ -1,14 +1,22 @@
-# todo - document stuff for easier usage by others (for now, use the workflow demo in CallableCoV2VTM.py!)
-
+# todo - document stuff for easier usage by others
 import os
+import sys
+sys.path.append(os.environ['PYTHONPATH'])
+
 import shutil
 import csv
-import matplotlib.pyplot as plt
+try:
+    import matplotlib.pyplot as plt
+except ModuleNotFoundError:
+    import subprocess
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "matplotlib"])
+    import matplotlib.pyplot as plt
+
 import numpy as np
+import vtk
 
 from PyQt5.QtCore import QObject
 
-from cc3d.CompuCellSetup.CC3DCaller import CC3DCallerWorker
 from cc3d.core import XMLUtils
 from cc3d.core.BasicSimulationData import BasicSimulationData
 from cc3d.core.GraphicsOffScreen.GenericDrawer import GenericDrawer
@@ -30,7 +38,11 @@ export_data_desc = {'ir_data': ['ImmuneResp'],
                                  'ImmuneCell',
                                  'ImmuneCellActivated'],
                     'spat_data': ['DeathComp',
-                                  'InfectDist']}
+                                  'InfectDist'],
+                    'death_data': ['Viral',
+                                   'OxiField',
+                                   'Contact',
+                                   'Bystander']}
 
 x_label_str_transient = "Simulation time (MCS)"
 
@@ -45,7 +57,12 @@ y_label_str = {'ir_data': {'ImmuneResp': 'Immune response state variable'},
                             'ImmuneCell': 'Number of immune cells',
                             'ImmuneCellActivated': 'Number of activated immune cells'},
                'spat_data': {'DeathComp': 'Cell death compactness (ul)',
-                             'InfectDist': 'Infection distance (px)'}}
+                             'InfectDist': 'Infection distance (px)'},
+               'death_data': {'Viral': 'Number of virally-induced apoptosis deaths',
+                              'OxiField': 'Number of oxidative deaths',
+                              'Contact': 'Number of cytotoxic kill deaths',
+                              'Bystander': 'Number of bystander effect deaths'}
+               }
 
 fig_save_names = {'ir_data': {'ImmuneResp': 'metric_immune_response_svar'},
                   'med_diff_data': {'MedViral': 'metric_diffusive_virus',
@@ -58,7 +75,12 @@ fig_save_names = {'ir_data': {'ImmuneResp': 'metric_immune_response_svar'},
                                'ImmuneCell': 'metric_num_immune',
                                'ImmuneCellActivated': 'metric_num_immuneActivated'},
                   'spat_data': {'DeathComp': 'metric_death_compact',
-                                'InfectDist': 'metric_infection_distance'}}
+                                'InfectDist': 'metric_infection_distance'},
+                  'death_data': {'Viral': 'metric_death_viral',
+                                 'OxiField': 'metric_death_oxi',
+                                 'Contact': 'metric_death_contact',
+                                 'Bystander': 'metric_death_bystander'}
+                  }
 
 
 fig_suffix_trials = '_trials'
@@ -533,6 +555,9 @@ class CallableCC3DRenderer:
         # Methods for modifying specification of GenericDrawer
         self.__gd_manipulators = {}
 
+        # Methods for modifying specification of ScreenshotData
+        self.__sc_manipulators = {}
+
     def get_trial_vtk_dir(self, trial_idx):
         """
         Returns path to directory where exported vtk files from simulation should be found
@@ -646,11 +671,108 @@ class CallableCC3DRenderer:
 
         self.__gd_manipulators[trial_idx][mcs] = gd_manipulator
 
+    # todo - add API for defining rendering specs so users don't have to search through the details of GenericDrawer;
+    #  API should include convenience function for retrieving current specs
+    def load_screenshot_manipulator(self, sc_manipulator, trial_idx=0, mcs=0):
+        """
+        Loads a function for manipulating ScreenshotManagerCore rendering parameters at a simulation step of a trial
+        Manipulations are applied to all subsequent rendering processes
+        :param sc_manipulator: manipulator; signature should have argument of ScreenshotManagerCore object
+        :param trial_idx: trial at which to apply the manipulator
+        :param mcs: step at which to apply the manipulator
+        :return: None
+        """
+        if trial_idx not in self.__sc_manipulators.keys():
+            self.__sc_manipulators[trial_idx] = dict()
+
+        self.__sc_manipulators[trial_idx][mcs] = sc_manipulator
+
+    def get_results_min_max(self, trial_idx):
+        """
+        Gets minimum and maximum over all simulation time for all available results
+        :return: {dict} range per available field
+        """
+        min_max_dict = dict()
+
+        self.load_trial_results(trial_idx)
+
+        if self.cml_results_reader is None:
+            print('No results loaded for trial {}.'.format(trial_idx))
+            return None
+
+        file_list = self.cml_results_reader.ldsFileList
+        for file_number, file_name in enumerate(file_list):
+            self.cml_results_reader.read_simulation_data_non_blocking(file_number)
+            sim_data_int_addr = extract_address_int_from_vtk_object(self.cml_results_reader.simulationData)
+            self.gd.field_extractor.setSimulationData(sim_data_int_addr)
+
+            for field_name, screenshot_data in self.scm.screenshotDataDict.items():
+                min_max = self.__get_field_min_max(screenshot_data)
+                if min_max is not None:
+                    if field_name not in min_max_dict.keys():
+                        min_max_dict[field_name] = min_max
+                    else:
+                        if min_max[0] < min_max_dict[field_name][0]:
+                            min_max_dict[field_name][0] = min_max[0]
+                        if min_max[1] > min_max_dict[field_name][1]:
+                            min_max_dict[field_name][1] = min_max[1]
+
+        return min_max_dict
+
+    def __get_field_min_max(self, screenshot_data):
+        """
+        Gets minimum and maximum of field described in screenshot data; returns None if unavailable
+        :param screenshot_data: screenshot data for a field
+        :return: minimum and maximum
+        """
+
+        field_name = screenshot_data.plotData[0]
+        fieldType = screenshot_data.plotData[1]
+        plane = screenshot_data.projection
+        planePos = screenshot_data.projectionPosition
+
+        con_array = vtk.vtkDoubleArray()
+        con_array.SetName("concentration")
+        con_array_int_addr = extract_address_int_from_vtk_object(vtkObj=con_array)
+
+        field_type = fieldType.lower()
+        if field_type == 'confield':
+            fill_successful = self.gd.field_extractor.fillConFieldData2D(con_array_int_addr,
+                                                                         field_name,
+                                                                         plane,
+                                                                         planePos)
+        elif field_type == 'scalarfield':
+            fill_successful = self.gd.field_extractor.fillScalarFieldData2D(con_array_int_addr,
+                                                                            field_name,
+                                                                            plane,
+                                                                            planePos)
+        elif field_type == 'scalarfieldcelllevel':
+            fill_successful = self.gd.field_extractor.fillScalarFieldCellLevelData2D(con_array_int_addr,
+                                                                                     field_name,
+                                                                                     plane,
+                                                                                     planePos)
+
+        else:
+            return None
+
+        if not fill_successful:
+            return None
+
+        con_array_range = con_array.GetRange()
+        min_max = [con_array_range[0], con_array_range[1]]
+        return min_max
+
     def __get_rendering_manipulator(self, trial_idx, mcs):
         if trial_idx not in self.__gd_manipulators.keys() or mcs not in self.__gd_manipulators[trial_idx].keys():
             return None
         else:
             return self.__gd_manipulators[trial_idx][mcs]
+
+    def __get_screenshot_manipulator(self, trial_idx, mcs):
+        if trial_idx not in self.__sc_manipulators.keys() or mcs not in self.__sc_manipulators[trial_idx].keys():
+            return None
+        else:
+            return self.__sc_manipulators[trial_idx][mcs]
 
     def __render_trial(self, trial_idx):
         """

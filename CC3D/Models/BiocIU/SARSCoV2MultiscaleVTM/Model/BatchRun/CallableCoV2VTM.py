@@ -1,13 +1,17 @@
 import multiprocessing
 import os
+import sys
 import time
 
 from cc3d.CompuCellSetup.CC3DCaller import CC3DCaller, CC3DCallerWorker
 
-from nCoVToolkit import nCoVUtils
-from BatchPostCoV2VTM import CallableCC3DRenderer, CoV2VTMSimRunPost
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+sys.path.append(os.path.dirname(__file__))
 
-simulation_fname = os.path.join(os.path.dirname(__file__), 'ViralInfectionVTM.cc3d')
+from nCoVToolkit import nCoVUtils
+from BatchRunLib import cc3d_input_key
+
+simulation_fname = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'ViralInfectionVTM.cc3d')
 generic_root_output_folder = os.path.abspath(os.path.join(os.path.splitdrive(os.getcwd())[0], '/CallableCoV2VTM'))
 
 
@@ -65,16 +69,16 @@ class CoV2VTMSimRun:
 
     def generate_callable(self, run_idx=0):
         if self.__sim_input is not None:
-            sim_input = self.__sim_input[run_idx]
+            _sim_input = {cc3d_input_key: self.__sim_input[run_idx]}
         else:
-            sim_input = None
+            _sim_input = None
 
         cc3d_caller = CC3DCaller(cc3d_sim_fname=simulation_fname,
                                  output_frequency=self.output_frequency,
                                  screenshot_output_frequency=self.screenshot_output_frequency,
                                  output_dir=self.get_run_output_dir(run_idx),
                                  result_identifier_tag=run_idx,
-                                 sim_input=sim_input)
+                                 sim_input=_sim_input)
         return cc3d_caller
 
 
@@ -89,14 +93,14 @@ def run_cov2_vtm_sims(cov2_vtm_sim_run: CoV2VTMSimRun) -> CoV2VTMSimRun:
         # Start workers
         tasks = multiprocessing.JoinableQueue()
         results = multiprocessing.Queue()
-        workers = [CC3DCallerWorker(tasks, results) for i in range(cov2_vtm_sim_run.num_workers)]
+        workers = [CC3DCallerWorker(tasks, results) for _ in range(cov2_vtm_sim_run.num_workers)]
         [w.start() for w in workers]
 
         # Enqueue jobs
         [tasks.put(cov2_vtm_sim_run.generate_callable(run_idx)) for run_idx in run_list]
 
         # Add a stop task for each of worker
-        [tasks.put(None) for w in workers]
+        [tasks.put(None) for _ in workers]
 
         # Monitor worker state
         monitor_rate = 1
@@ -130,36 +134,3 @@ def run_cov2_vtm_sims(cov2_vtm_sim_run: CoV2VTMSimRun) -> CoV2VTMSimRun:
             break
 
     return cov2_vtm_sim_run
-
-
-# Example of usage / convenience sequence to do intended overall workflow
-# if __name__ == '__main__':
-#     # Setup batch run
-#     _root_output_folder = generic_root_output_folder
-#     cov2_vtm_sim_run = CoV2VTMSimRun(num_runs=10,
-#                                      num_workers=5,
-#                                      output_frequency=10,
-#                                      screenshot_output_frequency=10,
-#                                      root_output_folder=_root_output_folder)
-#
-#     # Execute batch simulations
-#     cov2_vtm_sim_run = run_cov2_vtm_sims(cov2_vtm_sim_run)
-#
-#     # Export model parameters
-#     from Simulation import ViralInfectionVTMModelInputs
-#     export_file_abs = os.path.join(os.path.abspath(cov2_vtm_sim_run.output_dir_root),
-#                                    "ViralInfectionVTMModelParams.csv")
-#     nCoVUtils.export_parameters(ViralInfectionVTMModelInputs, export_file_abs)
-#
-#     # Post-process metrics
-#     cov2_vtm_sim_run_post = CoV2VTMSimRunPost(cov2_vtm_sim_run)
-#     cov2_vtm_sim_run_post.export_transient_plot_trials()
-#     cov2_vtm_sim_run_post.export_transient_plot_stat()
-#     cov2_vtm_sim_run_post.export_2var_plot_trials('MedViral', 'MedCyt')
-#     cov2_vtm_sim_run_post.export_2var_plot_stat('MedViral', 'MedCyt', plot_stdev=False)
-#
-#     # Render field data
-#     callable_cc3d_renderer = CallableCC3DRenderer(cov2_vtm_sim_run)
-#     screenshot_specs = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'screenshots.json')
-#     callable_cc3d_renderer.load_screenshot_specs(screenshot_specs)
-#     callable_cc3d_renderer.render_results()
