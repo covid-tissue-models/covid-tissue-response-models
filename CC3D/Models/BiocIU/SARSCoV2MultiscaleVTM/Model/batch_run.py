@@ -13,10 +13,14 @@
 #   specified in this script
 #       For Windows, use batch_run_win64.bat
 #       For OSX, use batch_run_osx.command (not yet implemented)
-#       For Linux, use batch_run_linux.sh (not yet implemented)
+#       For Linux, use batch_run_linux.sh (not completely tested)
 #   Whatever the script, the following step completes setup for execution of this script
 #   Step 2.1. In the script that corresponds to your operating system, ensure that Line 4 that sets "PREFIX_CC3D" is
 #       the correct path to the root directory of your local CC3D installation
+#   If you are using Linux and built from source, then the Python distribution for CC3D may not be at the path specified
+#   in batch_run_linux.sh. You can check by verifying that the CC3D installation directory contains the directory
+#   "Python37". If it doesn't, locate where Python37 is installed and make the appropriate modifications to
+#   batch_run_linux.sh for the variable "PYTHON_INSTALL_PATH".
 # You can now execute the script described in Step 2 to run the parameter sweep defined in this script!
 
 # ----------------------------- Script inputs ----------------------------- #
