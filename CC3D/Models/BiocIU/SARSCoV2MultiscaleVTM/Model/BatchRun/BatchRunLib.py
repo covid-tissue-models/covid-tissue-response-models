@@ -1,3 +1,5 @@
+import multiprocessing
+import shutil
 import sys
 
 # Key where Python API input dictionary is stored
@@ -71,3 +73,23 @@ def apply_external_multipliers(calling_module_str, input_module):
             if input_module.__name__ in mod_write_vars.keys():
                 for w in mod_write_vars[input_module.__name__]:
                     setattr(sys.modules[calling_module_str], w, out_freq)
+
+
+class _MoveDirProcess(multiprocessing.Process):
+    def __init__(self, _src_dir, _tgt_dir):
+        """
+        Process to asynchronously move one directory to another
+        :param _src_dir: directory to move
+        :param _tgt_dir: location of resulting move
+        """
+        super().__init__()
+        self._src_dir = _src_dir
+        self._tgt_dir = _tgt_dir
+
+    def run(self):
+        shutil.move(self._src_dir, self._tgt_dir)
+
+
+def move_dir_async(_src_dir, _tgt_dir) -> None:
+    p = _MoveDirProcess(_src_dir, _tgt_dir)
+    p.start()

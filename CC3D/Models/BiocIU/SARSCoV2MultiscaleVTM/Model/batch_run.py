@@ -68,6 +68,10 @@ opt_render_stat = True
 # Option to render spatial results
 #   Set to False to not generate spatial figures
 opt_render_spat = True
+# Optional dump folder
+#   Once all local work is done on a parameter set, the set directory is moved to this location
+#   Set to None to leave results where they are first generated
+dump_folder = None
 
 # ----------------------------- Begin computer work ----------------------------- #
 import logging
@@ -78,7 +82,7 @@ import shutil
 from nCoVToolkit import nCoVUtils
 from BatchRun.CallableCoV2VTM import simulation_fname, generic_root_output_folder, CoV2VTMSimRun, run_cov2_vtm_sims
 from BatchRun.BatchPostCoV2VTM import CallableCC3DRenderer, CoV2VTMSimRunPost
-from BatchRun.BatchRunLib import cc3d_batch_key
+from BatchRun.BatchRunLib import cc3d_batch_key, move_dir_async
 
 
 def get_param_descr():
@@ -137,6 +141,8 @@ if __name__ == '__main__':
     assert out_freq > 0, 'Output frequency (out_freq) must be greater than zero'
     if sweep_output_folder is not None:
         assert os.path.isdir(sweep_output_folder), 'Output directory (sweep_output_folder) does not exist'
+    if dump_folder is not None:
+        assert os.path.isdir(dump_folder), 'Dump directory (dump_folder) does not exist'
 
     # Setup batch run
     if sweep_output_folder is not None:
@@ -228,3 +234,8 @@ if __name__ == '__main__':
         cts_src = [x for x in os.listdir(_root_output_folder) if not x.startswith('set_')]
         for ct_src in cts_src:
             shutil.move(os.path.join(_root_output_folder, ct_src), _set_dir)
+
+        # Dump results to local directory
+        if dump_folder is not None:
+            print(f'Dumping set {set_idx}: {dump_folder}')
+            move_dir_async(_set_dir, dump_folder)
