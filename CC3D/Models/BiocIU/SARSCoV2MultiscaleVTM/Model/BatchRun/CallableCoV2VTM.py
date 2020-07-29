@@ -2,6 +2,7 @@ import multiprocessing
 import os
 import sys
 import time
+sys.path.append(os.environ['PYTHONPATH'])  # Apparently necessary for Linux
 
 from cc3d.CompuCellSetup.CC3DCaller import CC3DCaller, CC3DCallerWorker
 
