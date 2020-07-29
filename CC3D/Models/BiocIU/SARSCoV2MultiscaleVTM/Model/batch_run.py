@@ -193,35 +193,9 @@ if __name__ == '__main__':
             try:
                 callable_cc3d_renderer = CallableCC3DRenderer(_cov2_vtm_sim_run)
                 screenshot_specs = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'screenshots.json')
-
-                for run_oi in range(_cov2_vtm_sim_run.num_runs):
-                    callable_cc3d_renderer.load_screenshot_specs(screenshot_specs, run_oi)
-                    callable_cc3d_renderer.load_trial_results(run_oi)
-
-                    # Get results extrema for each field
-                    min_max_dict = callable_cc3d_renderer.get_results_min_max(run_oi)
-
-                    print(min_max_dict)
-
-                    # Apply log scale to all field renders
-                    def gd_manipulator(gd):
-                        gd.draw_model_2D.clut.SetScaleToLog10()
-
-                    callable_cc3d_renderer.load_rendering_manipulator(gd_manipulator, run_oi)
-
-                    # Apply fixed legends to all field renders
-                    def sc_manipulator(scm):
-                        for field_name, min_max in min_max_dict.items():
-                            scm.screenshotDataDict[field_name].metadata['MinRangeFixed'] = True
-                            scm.screenshotDataDict[field_name].metadata['MinRange'] = math.ceil(
-                                min_max[1] * 10) / 10 / 1E6
-                            scm.screenshotDataDict[field_name].metadata['MaxRangeFixed'] = True
-                            scm.screenshotDataDict[field_name].metadata['MaxRange'] = math.ceil(min_max[1] * 10) / 10
-
-                    callable_cc3d_renderer.load_screenshot_manipulator(sc_manipulator, run_oi)
-
-                    # Render
-                    callable_cc3d_renderer.render_trial_results(run_oi)
+                callable_cc3d_renderer.load_screenshot_specs(screenshot_specs)
+                callable_cc3d_renderer.render_trial_results_par(opts={'log_scale': True,
+                                                                      'fixed_caxes': True})
             except Exception as err:
                 logging.exception('Error during spatial plot rendering.')
                 opt_render_spat = False

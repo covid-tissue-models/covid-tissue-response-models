@@ -819,3 +819,68 @@ class CallableCC3DRenderer:
         """
         self.prep_output_dir()
         self.__render_trial(trial_idx)
+
+    def render_trial_results_par(self, opts=None):
+        """
+        Render all trials in parallel
+        :return: None
+        """
+        import multiprocessing
+        from cc3d.CompuCellSetup.CC3DCaller import CC3DCallerWorker
+
+        # Start workers
+        tasks = multiprocessing.JoinableQueue()
+        results = multiprocessing.Queue()
+        workers = [CC3DCallerWorker(tasks, results) for _ in range(self.cov2_vtm_sim_run.num_workers)]
+        [w.start() for w in workers]
+
+        # Enqueue jobs
+        num_runs = len(self.cov2_vtm_sim_run.get_trial_dirs())
+        [tasks.put(_RenderJob(self.cov2_vtm_sim_run, run_idx, opts)) for run_idx in range(num_runs)]
+
+        # Add a stop task for each of worker
+        [tasks.put(None) for _ in workers]
+
+        tasks.join()
+
+
+class _RenderJob:
+    def __init__(self, _cov2_vtm_sim_run, _run_idx, opts=None):
+        super().__init__()
+        self._cov2_vtm_sim_run = _cov2_vtm_sim_run
+        self._run_idx = _run_idx
+        if opts is not None:
+            self._opts = opts
+        else:
+            self._opts = dict()
+
+    def run(self):
+        print(f'Rendering job: Run {self._run_idx}')
+        try:
+            _renderer = CallableCC3DRenderer(self._cov2_vtm_sim_run)
+            _renderer.load_trial_results(self._run_idx)
+
+            if 'log_scale' in self._opts.keys() and self._opts['log_scale']:
+                # Apply log scale to all field renders
+                def gd_manipulator(gd):
+                    gd.draw_model_2D.clut.SetScaleToLog10()
+                _renderer.load_rendering_manipulator(gd_manipulator)
+
+            if 'fixed_caxes' in self._opts.keys() and self._opts['fixed_caxes']:
+                # Apply fixed legends to all field renders
+                min_max_dict = _renderer.get_results_min_max(self._run_idx)
+
+                def sc_manipulator(scm):
+                    for field_name, min_max in min_max_dict.items():
+                        scm.screenshotDataDict[field_name].metadata['MinRangeFixed'] = True
+                        scm.screenshotDataDict[field_name].metadata['MinRange'] = math.ceil(
+                            min_max[1] * 10) / 10 / 1E6
+                        scm.screenshotDataDict[field_name].metadata['MaxRangeFixed'] = True
+                        scm.screenshotDataDict[field_name].metadata['MaxRange'] = math.ceil(min_max[1] * 10) / 10
+
+                _renderer.load_screenshot_manipulator(sc_manipulator)
+
+            _renderer.render_trial_results(self._run_idx)
+            return True
+        except Exception:
+            return False
