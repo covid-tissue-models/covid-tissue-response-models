@@ -584,7 +584,7 @@ class CallableCC3DRenderer:
             if not os.path.isdir(ss_dir):
                 os.mkdir(ss_dir)
 
-            screenshot_spec_copy = os.path.join(ss_dir, os.path.basename(screenshot_spec))
+            screenshot_spec_copy = os.path.join(ss_dir, 'screenshots.json')
             shutil.copyfile(screenshot_spec, screenshot_spec_copy)
 
     def load_trial_results(self, trial_idx):
