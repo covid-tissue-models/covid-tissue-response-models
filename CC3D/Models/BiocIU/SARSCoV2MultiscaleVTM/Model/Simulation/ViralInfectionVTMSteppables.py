@@ -779,6 +779,9 @@ class SimDataSteppable(SteppableBasePy):
                 with open(self.death_data_path, 'a') as fout:
                     fout.write('{}, {}, {}, {}, {}\n'.format(mcs, num_viral, num_oxi, num_contact, num_bystander))
 
+    def on_stop(self):
+        self.finish()
+
     def set_vrm_tracked_cell(self, cell):
         self.vrm_tracked_cell = cell
 
