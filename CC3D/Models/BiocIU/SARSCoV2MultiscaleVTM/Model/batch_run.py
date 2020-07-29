@@ -70,6 +70,8 @@ opt_render_stat = True
 opt_render_spat = True
 
 # ----------------------------- Begin computer work ----------------------------- #
+import logging
+import math
 import os
 import shutil
 
@@ -172,43 +174,52 @@ if __name__ == '__main__':
 
         # Post-process metrics
         if opt_render_stat:
-            cov2_vtm_sim_run_post = CoV2VTMSimRunPost(_cov2_vtm_sim_run)
-            cov2_vtm_sim_run_post.export_transient_plot_trials()
+            try:
+                cov2_vtm_sim_run_post = CoV2VTMSimRunPost(_cov2_vtm_sim_run)
+                cov2_vtm_sim_run_post.export_transient_plot_trials()
+            except Exception as err:
+                logging.exception('Error during transient plot rendering.')
+                opt_render_stat = False
+                print('Disabling transient plot rendering')
 
         # Render field data
-        if not opt_render_spat:
-            continue
+        if opt_render_spat:
+            try:
+                callable_cc3d_renderer = CallableCC3DRenderer(_cov2_vtm_sim_run)
+                screenshot_specs = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'screenshots.json')
 
-        callable_cc3d_renderer = CallableCC3DRenderer(_cov2_vtm_sim_run)
-        screenshot_specs = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'screenshots.json')
+                for run_oi in range(_cov2_vtm_sim_run.num_runs):
+                    callable_cc3d_renderer.load_screenshot_specs(screenshot_specs, run_oi)
+                    callable_cc3d_renderer.load_trial_results(run_oi)
 
-        for run_oi in range(_cov2_vtm_sim_run.num_runs):
-            callable_cc3d_renderer.load_screenshot_specs(screenshot_specs, run_oi)
-            callable_cc3d_renderer.load_trial_results(run_oi)
+                    # Get results extrema for each field
+                    min_max_dict = callable_cc3d_renderer.get_results_min_max(run_oi)
 
-            # Get results extrema for each field
-            min_max_dict = callable_cc3d_renderer.get_results_min_max(run_oi)
+                    print(min_max_dict)
 
-            print(min_max_dict)
+                    # Apply log scale to all field renders
+                    def gd_manipulator(gd):
+                        gd.draw_model_2D.clut.SetScaleToLog10()
 
-            # Apply log scale to all field renders
-            def gd_manipulator(gd):
-                gd.draw_model_2D.clut.SetScaleToLog10()
+                    callable_cc3d_renderer.load_rendering_manipulator(gd_manipulator, run_oi)
 
-            callable_cc3d_renderer.load_rendering_manipulator(gd_manipulator, run_oi)
+                    # Apply fixed legends to all field renders
+                    def sc_manipulator(scm):
+                        for field_name, min_max in min_max_dict.items():
+                            scm.screenshotDataDict[field_name].metadata['MinRangeFixed'] = True
+                            scm.screenshotDataDict[field_name].metadata['MinRange'] = math.ceil(
+                                min_max[1] * 10) / 10 / 1E6
+                            scm.screenshotDataDict[field_name].metadata['MaxRangeFixed'] = True
+                            scm.screenshotDataDict[field_name].metadata['MaxRange'] = math.ceil(min_max[1] * 10) / 10
 
-            # Apply fixed legends to all field renders
-            def sc_manipulator(scm):
-                for field_name, min_max in min_max_dict.items():
-                    scm.screenshotDataDict[field_name].metadata['MinRangeFixed'] = True
-                    scm.screenshotDataDict[field_name].metadata['MinRange'] = math.ceil(min_max[1] * 10) / 10 / 1E6
-                    scm.screenshotDataDict[field_name].metadata['MaxRangeFixed'] = True
-                    scm.screenshotDataDict[field_name].metadata['MaxRange'] = math.ceil(min_max[1] * 10) / 10
+                    callable_cc3d_renderer.load_screenshot_manipulator(sc_manipulator, run_oi)
 
-            callable_cc3d_renderer.load_screenshot_manipulator(sc_manipulator, run_oi)
-
-            # Render
-            callable_cc3d_renderer.render_trial_results(run_oi)
+                    # Render
+                    callable_cc3d_renderer.render_trial_results(run_oi)
+            except Exception as err:
+                logging.exception('Error during spatial plot rendering.')
+                opt_render_spat = False
+                print('Diasbling spatial plot rendering.')
 
         # Move run results to parameter set subdirectory
         _set_dir = os.path.join(_root_output_folder, f'set_{set_idx}')
