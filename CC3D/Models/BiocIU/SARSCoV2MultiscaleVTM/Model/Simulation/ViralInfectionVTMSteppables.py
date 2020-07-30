@@ -786,7 +786,7 @@ class SimDataSteppable(SteppableBasePy):
                                         num_bystander]
 
         # Flush outputs at quarter simulation lengths
-        if mcs >= int(self.simulator().getNumSteps() / 4 * self.__flush_counter):
+        if mcs >= int(self.simulator.getNumSteps() / 4 * self.__flush_counter):
             self.flush_stored_outputs()
             self.__flush_counter += 1
 
