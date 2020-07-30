@@ -439,6 +439,9 @@ class SimDataSteppable(SteppableBasePy):
                              'contact': 0,
                              'bystander': 0}
 
+        # For flushing outputs every quarter simulation length
+        self.__flush_counter = 1
+
     def start(self):
         # Post reference to self
         self.shared_steppable_vars[ViralInfectionVTMLib.simdata_steppable_key] = self
@@ -782,24 +785,16 @@ class SimDataSteppable(SteppableBasePy):
                                         num_contact,
                                         num_bystander]
 
+        # Flush outputs at quarter simulation lengths
+        if mcs >= int(self.simulator().getNumSteps() / 4 * self.__flush_counter):
+            self.flush_stored_outputs()
+            self.__flush_counter += 1
+
     def on_stop(self):
         self.finish()
 
     def finish(self):
-        # Each tuple contains the necessary information for writing a set of data to file
-        #   1. Boolean for whether we're writing to file at all
-        #   2. The path to write the data to
-        #   3. The data to write
-        output_info = [(self.write_vrm_data, self.vrm_data_path, self.vrm_data),
-                       (self.write_vim_data, self.vim_data_path, self.vim_data),
-                       (self.write_pop_data, self.pop_data_path, self.pop_data),
-                       (self.write_med_diff_data, self.med_diff_data_path, self.med_diff_data),
-                       (self.write_ir_data, self.ir_data_path, self.ir_data),
-                       (self.write_death_data, self.death_data_path, self.death_data)]
-        for write_data, data_path, data in output_info:
-            if write_data:
-                with open(data_path, 'a') as fout:
-                    fout.write(self.data_output_string(data))
+        self.flush_stored_outputs()
 
     def data_output_string(self, _data: dict):
         """
@@ -816,6 +811,23 @@ class SimDataSteppable(SteppableBasePy):
                 f_str += f', {v}'
             f_str += '\n'
         return f_str
+
+    def flush_stored_outputs(self):
+        # Each tuple contains the necessary information for writing a set of data to file
+        #   1. Boolean for whether we're writing to file at all
+        #   2. The path to write the data to
+        #   3. The data to write
+        output_info = [(self.write_vrm_data, self.vrm_data_path, self.vrm_data),
+                       (self.write_vim_data, self.vim_data_path, self.vim_data),
+                       (self.write_pop_data, self.pop_data_path, self.pop_data),
+                       (self.write_med_diff_data, self.med_diff_data_path, self.med_diff_data),
+                       (self.write_ir_data, self.ir_data_path, self.ir_data),
+                       (self.write_death_data, self.death_data_path, self.death_data)]
+        for write_data, data_path, data in output_info:
+            if write_data:
+                with open(data_path, 'a') as fout:
+                    fout.write(self.data_output_string(data))
+                    data.clear()
 
     def set_vrm_tracked_cell(self, cell):
         self.vrm_tracked_cell = cell
