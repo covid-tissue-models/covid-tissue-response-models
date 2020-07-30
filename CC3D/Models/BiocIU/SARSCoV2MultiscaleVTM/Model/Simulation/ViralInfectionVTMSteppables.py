@@ -813,6 +813,10 @@ class SimDataSteppable(SteppableBasePy):
         return f_str
 
     def flush_stored_outputs(self):
+        """
+        Write stored outputs to file and clear output storage
+        :return: None
+        """
         # Each tuple contains the necessary information for writing a set of data to file
         #   1. Boolean for whether we're writing to file at all
         #   2. The path to write the data to
