@@ -87,6 +87,42 @@ fig_suffix_trials = '_trials'
 fig_suffix_stat = '_stat'
 
 
+def modify_data_desc(_file_root_name: str, _var_str_list: list) -> None:
+    """
+    Add or modify simulation data description in registry
+    :param _file_root_name: root name of .dat file exported by simulation
+    :param _var_str_list: list of strings of unique keys for each datum exported by simulation
+    :return: None
+    """
+    export_data_desc[_file_root_name] = _var_str_list
+
+
+def modify_y_label_str(_file_root_name: str, _var: str, _lab: str) -> None:
+    """
+    Add or modify y-axis labels in batch post-processing
+    :param _file_root_name: root name of .dat file exported by simulation
+    :param _var: key of datum
+    :param _lab: new label
+    :return: None
+    """
+    if _file_root_name not in y_label_str.keys():
+        y_label_str[_file_root_name] = dict()
+    y_label_str[_file_root_name][_var] = _lab
+
+
+def modify_fig_save_names(_file_root_name: str, _var: str, _save_name) -> None:
+    """
+    Add or modify base name of saved figure for a datum in batch post-processing
+    :param _file_root_name: root name of .dat file exported by simulation
+    :param _var: key of datum
+    :param _save_name: new figure base name
+    :return: None
+    """
+    if _file_root_name not in fig_save_names:
+        fig_save_names[_file_root_name] = dict()
+    fig_save_names[_file_root_name][_var] = _save_name
+
+
 def find_named_files(name: str, loc=os.path.dirname(__file__)) -> list:
     res_files = list()
     for root, dirs, names in os.walk(loc):
