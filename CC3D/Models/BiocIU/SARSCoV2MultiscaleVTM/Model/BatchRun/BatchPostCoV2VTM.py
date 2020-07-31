@@ -222,10 +222,10 @@ def generate_transient_plot_trials(batch_data_summary, data_desc, var_name):
     ax.grid()
 
     data_dict = batch_data_summary[data_desc]
-    sim_mcs = list(data_dict[list(data_dict.keys())[0]].keys())
     for trial_idx in data_dict.keys():
         if trial_idx in ['batchMean', 'batchStDev']:
             continue
+        sim_mcs = list(data_dict[trial_idx].keys())
         y_data = [data_dict[trial_idx][this_mcs][var_name] for this_mcs in sim_mcs]
         ax.plot(sim_mcs, y_data, label='Trial {}'.format(trial_idx), marker='.')
 
