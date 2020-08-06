@@ -25,7 +25,7 @@ import sys
 
 sys.path.append(os.path.join(os.environ["ViralInfectionVTM"], "Simulation"))
 import ViralInfectionVTMLib
-from ViralInfectionVTMModelInputs import s_to_mcs, pmol_to_cc3d_au
+from ViralInfectionVTMModelInputs import s_to_mcs
 from ViralInfectionVTMSteppables import SimDataSteppable
 from ViralInfectionVTMSteppableBasePy import ViralInfectionVTMSteppableBasePy
 
@@ -75,7 +75,7 @@ def hcv_viral_replication_model_string(_unpacking_rate, _replicating_rate, _r_ha
     // Integrated HCV
 
     // Conversion factors
-    s_n = {pmol_to_cc3d_au} ;
+    s_n = {HCVInputs.virus_from_ul} ;
     s_t = {s_to_mcs / 60 / 60} ;
 
     // Equations

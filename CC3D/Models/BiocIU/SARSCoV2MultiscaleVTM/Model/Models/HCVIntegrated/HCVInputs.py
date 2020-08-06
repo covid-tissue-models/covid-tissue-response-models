@@ -46,3 +46,7 @@ uecyt = 0.06
 # Initial conditions
 __param_desc__["RIBOTOT"] = ""
 RIBOTOT = 500.0
+
+# Conversion factor
+__param_desc__["virus_from_ul"] = "Conversion from unitless original model quantities to HCV model units"
+virus_from_ul = 1.0
