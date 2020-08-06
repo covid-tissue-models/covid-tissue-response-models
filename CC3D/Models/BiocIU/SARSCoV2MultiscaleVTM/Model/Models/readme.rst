@@ -34,7 +34,7 @@ root directory of the simulation framework. So, for example, to import the varia
 
 The same can be done for importing model modules defined in this collection (*e.g.*, for using or extending
 add-on models). For example, if you would like to build a new steppable from ``SimpleRecoverySteppable`` defined
-in the model module ``Models.SimpleRecovery``, you can import ``SimpleRecoverySteppable`` with the following
+in the model module ``Models.RecoverySimple``, you can import ``SimpleRecoverySteppable`` with the following
 basic Python procedures,
 
 .. code-block:: python
