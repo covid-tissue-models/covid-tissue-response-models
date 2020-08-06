@@ -1,3 +1,25 @@
+# Integrated model of hepatitis c virus
+# Written by T.J. Sego, Ph.D.
+# Genomic replication from the main framework is replaced by a model of hepatitis c virus replication from
+#
+#   Dahari, Harel, et al. "Mathematical modeling of subgenomic hepatitis C virus replication in Huh-7 cells."
+#   Journal of virology 81.2 (2007): 750-760.
+#
+# Model parameters of the hepatitis c virus model are specified in HCVInputs.py
+#
+# HCVIntegrator
+#   Description: implements integrated model
+#   Usage:
+#       In ViralInfectionVTM.py, add the following
+#           from Models.HCVIntegrated.HCVSteppables import HCVIntegrator
+#           CompuCellSetup.register_steppable(steppable=HCVIntegrator(frequency=1))
+# HCVDataSteppable
+#   Description: performs data tracking
+#   Usage:
+#       In ViralInfectionVTM.py, add the following
+#           from Models.HCVIntegrated.HCVSteppables import HCVDataSteppable
+#           CompuCellSetup.register_steppable(steppable=HCVDataSteppable(frequency=1))
+
 import os
 import sys
 
