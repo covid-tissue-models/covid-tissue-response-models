@@ -1,7 +1,7 @@
 __param_desc__ = {}
 
 __param_desc__['plot_ihcv_data_freq'] = 'Plot integrated HCV viral replication model data frequency'
-plot_ihcv_data_freq = 10
+plot_ihcv_data_freq = 0
 __param_desc__['write_ihcv_data_freq'] = \
     'Write integrated HCV viral replication model data to simulation directory frequency'
 write_ihcv_data_freq = 0
@@ -49,4 +49,4 @@ RIBOTOT = 500.0
 
 # Conversion factor
 __param_desc__["virus_from_ul"] = "Conversion from unitless original model quantities to HCV model units"
-virus_from_ul = 1.0
+virus_from_ul = 10
