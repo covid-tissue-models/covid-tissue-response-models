@@ -77,6 +77,16 @@ opt_render_spat = True
 #   Set to None to leave results where they are first generated
 dump_folder = None
 
+# ----------------------------- Advanced inputs ----------------------------- #
+
+# Statistics plot manipulators
+#   Set to None to pass nothing
+#   Manipulators are specified by the items in BatchRun.BatchPostCoV2VTM.export_data_desc
+#   Each manipulator is directly called on the returned fig, ax from matplotlib.pyplot.plot()
+#   For example, the following sets the vertical limits of the plot for uninfected cells to [0, 900],
+#       stat_plot_manips = {'Uninfected': lambda fig, ax: ax.axes.set_ylim(bottom=0, top=900)}
+stat_plot_manips = None
+
 # ----------------------------- Begin computer work ----------------------------- #
 import logging
 import math
@@ -186,7 +196,7 @@ if __name__ == '__main__':
         if opt_render_stat:
             try:
                 cov2_vtm_sim_run_post = CoV2VTMSimRunPost(_cov2_vtm_sim_run)
-                cov2_vtm_sim_run_post.export_transient_plot_trials()
+                cov2_vtm_sim_run_post.export_transient_plot_trials(manipulators=stat_plot_manips)
             except Exception as err:
                 logging.exception('Error during transient plot rendering.')
                 opt_render_stat = False
