@@ -455,17 +455,20 @@ class CoV2VTMSimRunPost:
                 fig.savefig(self.generate_transient_plot_trials_filename(data_desc, param_name, fig_dir=fig_dir))
                 plt.close(fig)
 
-    def export_transient_plot_stat(self, loc=None, plot_stdev=True):
+    def export_transient_plot_stat(self, loc=None, plot_stdev=True, manipulators=None):
         if loc is None:
             loc = self.cov2_vtm_sim_run.output_dir_root
 
         assert os.path.isdir(loc), "Results directory must be defined before rendering dump."
+        assert manipulators is None or isinstance(manipulators, dict), "manipulators must be None or a dictionary of manipulator functions"
 
         fig_dir = self.get_fig_root_dir(loc, auto_make_dir=True)
 
         for data_desc in self.get_data_descs():
             for param_name in self.return_param_names(data_desc):
-                fig, _ = self.generate_transient_plot_stat(data_desc, param_name, plot_stdev)
+                fig, ax = self.generate_transient_plot_stat(data_desc, param_name, plot_stdev)
+                if manipulators is not None and param_name in manipulators.keys():
+                    manipulators[param_name](fig, ax)
                 fig.savefig(self.generate_transient_plot_stat_filename(data_desc, param_name, fig_dir=fig_dir))
                 plt.close(fig)
 
