@@ -50,6 +50,19 @@ def register_auto_inputs(input_module_name: str, plot_var_names=None, write_var_
                 mod_write_vars[input_module_name].append(w)
 
 
+def reset_auto_inputs(_input_module_name: str):
+    """
+    Clears currently registered plot and writing variables
+    Can be used to customize pre-defined automatic tasks in distribution
+    :param _input_module_name: string name of input module
+    :return: None
+    """
+    if _input_module_name in mod_plot_vars.keys():
+        mod_plot_vars[_input_module_name] = []
+    if _input_module_name in mod_write_vars.keys():
+        mod_write_vars[_input_module_name] = []
+
+
 def apply_external_multipliers(calling_module_str, input_module):
     """
     Applies external input multipliers to model inputs
