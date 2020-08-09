@@ -1,3 +1,6 @@
+import os
+os.environ["ViralInfectionVTM"] = os.path.dirname(__file__)
+
 # ----------------------------- Setup Instructions ----------------------------- #
 # Using this batch script requires three setup steps
 # Step 1. CC3D Simulation setup
@@ -76,6 +79,11 @@ opt_render_spat = True
 #   Once all local work is done on a parameter set, the set directory is moved to this location
 #   Set to None to leave results where they are first generated
 dump_folder = None
+# Input modules to export
+#   Format input_modules as a list with input modules to export their parameter values as csv
+#   Set input_modules to None to not export anything
+from Simulation import ViralInfectionVTMModelInputs
+input_modules = [ViralInfectionVTMModelInputs]
 
 # ----------------------------- Advanced inputs ----------------------------- #
 
@@ -137,9 +145,14 @@ if __name__ == '__main__':
         assert isinstance(mult_dict, dict), 'mult_dict must be a dictionary or None'
 
         def check_multipliers(m: dict):
-            from Simulation import ViralInfectionVTMModelInputs
             for var, mults in m.items():
-                assert var in ViralInfectionVTMModelInputs.__dict__.keys(), f'{var} in mult_dict is not a model input'
+                in_module = False
+                for mod in input_modules:
+                    if var in mod.__dict__.keys():
+                        in_module = True
+                        print(f'Found {var} in {mod.__name__}')
+                        break
+                assert in_module, f'{var} in mult_dict was not found in an input module'
                 assert isinstance(mults, list), f'Multipliers for {var} must be specified in a list'
                 for x in range(len(mults)):
                     try:
@@ -187,10 +200,11 @@ if __name__ == '__main__':
         _cov2_vtm_sim_run = run_cov2_vtm_sims(_cov2_vtm_sim_run)
 
         # Export model parameters
-        from Simulation import ViralInfectionVTMModelInputs
-        export_file_abs = os.path.join(os.path.abspath(_cov2_vtm_sim_run.output_dir_root),
-                                       "ViralInfectionVTMModelParams.csv")
-        nCoVUtils.export_parameters(ViralInfectionVTMModelInputs, export_file_abs)
+        if input_modules is not None and isinstance(input_modules, list):
+            for x in input_modules:
+                export_file_rel = x.__name__.split('.')[-1] + "Params.csv"
+                export_file_abs = os.path.join(os.path.abspath(_cov2_vtm_sim_run.output_dir_root), export_file_rel)
+                nCoVUtils.export_parameters(x, export_file_abs)
 
         # Post-process metrics
         if opt_render_stat:
