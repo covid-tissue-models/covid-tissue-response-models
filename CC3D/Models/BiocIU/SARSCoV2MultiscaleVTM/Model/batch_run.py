@@ -207,7 +207,10 @@ if __name__ == '__main__':
             if not cts_src:
                 continue
             for ct_src in cts_src:
-                shutil.move(os.path.join(_set_dir, ct_src), _root_output_folder)
+                moved_filename = os.path.join(_set_dir, ct_src)
+                if os.path.exists(moved_filename):
+                    os.remove(moved_filename)
+                shutil.move(os.path.join(_root_output_folder, ct_src), _set_dir)
 
         # Export model parameters
         if input_modules is not None and isinstance(input_modules, list):
