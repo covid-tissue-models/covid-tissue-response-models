@@ -33,7 +33,7 @@ rec_steppable_key = "sprec_steppable"
 
 class SimpleRecoverySteppable(SteppableBasePy):
     """
-    Implements neighbor-dependent recovery
+    Implements simple recovery
     """
     def __init__(self, frequency=1):
         super().__init__(self, frequency)
