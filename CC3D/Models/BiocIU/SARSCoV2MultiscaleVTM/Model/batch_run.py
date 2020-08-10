@@ -69,6 +69,9 @@ out_freq = 10
 #           set_1/
 #           ...
 sweep_output_folder = None
+# Option to execute sweep simulations
+#   Set to False to not run simulations
+opt_run_sims = True
 # Option to render statistics results
 #   Set to False to not generate statistics figures
 opt_render_stat = True
@@ -196,8 +199,15 @@ if __name__ == '__main__':
                                           root_output_folder=_root_output_folder,
                                           sim_input=sim_input)
 
-        # Execute batch simulations
-        _cov2_vtm_sim_run = run_cov2_vtm_sims(_cov2_vtm_sim_run)
+        if opt_run_sims:  # Execute batch simulations
+            _cov2_vtm_sim_run = run_cov2_vtm_sims(_cov2_vtm_sim_run)
+        else:  # Assume post-processing previously executed results
+            _set_dir = os.path.join(_root_output_folder, f'set_{set_idx}')
+            cts_src = [x for x in os.listdir(_set_dir) if x.startswith('run_')]
+            if not cts_src:
+                continue
+            for ct_src in cts_src:
+                shutil.move(os.path.join(_set_dir, ct_src), _root_output_folder)
 
         # Export model parameters
         if input_modules is not None and isinstance(input_modules, list):
