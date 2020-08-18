@@ -46,6 +46,8 @@ uecyt = 0.06
 # Initial conditions
 __param_desc__["RIBOTOT"] = ""
 RIBOTOT = 700.0
+__param_desc__["init_rna"] = "Initial number of RNA molecules in initially infected cells"
+init_rna = 500
 
 # Conversion factor
 __param_desc__["virus_from_ul"] = "Conversion from unitless original model quantities to HCV model units"

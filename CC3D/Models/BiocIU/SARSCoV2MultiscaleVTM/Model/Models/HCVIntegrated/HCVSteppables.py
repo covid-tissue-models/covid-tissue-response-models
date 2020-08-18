@@ -19,6 +19,13 @@
 #       In ViralInfectionVTM.py, add the following
 #           from Models.HCVIntegrated.HCVSteppables import HCVDataSteppable
 #           CompuCellSetup.register_steppable(steppable=HCVDataSteppable(frequency=1))
+# HCVCellsInitializerSteppable
+#   Description: changes all initially infected cells' intracellular state to conditions described in Dahari, Harel,
+#                et. al., where infection begins with cytoplasmic viral RNA molecules
+#   Usage:
+#       In ViralInfectionVTM.py, add the following
+#           from Models.HCVIntegrated.HCVSteppables import HCVCellsInitializerSteppable
+#           CompuCellSetup.register_steppable(steppable=HCVCellsInitializerSteppable(frequency=1))
 
 import os
 import sys
@@ -26,7 +33,9 @@ import sys
 sys.path.append(os.path.join(os.environ["ViralInfectionVTM"], "Simulation"))
 import ViralInfectionVTMLib
 from ViralInfectionVTMModelInputs import s_to_mcs
-from ViralInfectionVTMSteppables import SimDataSteppable
+from ViralInfectionVTMModelInputs import vr_step_size, unpacking_rate, replicating_rate, r_half, translating_rate, \
+    packing_rate, secretion_rate
+from ViralInfectionVTMSteppables import SimDataSteppable, CellsInitializerSteppable
 from ViralInfectionVTMSteppableBasePy import ViralInfectionVTMSteppableBasePy
 
 from . import HCVInputs
@@ -210,3 +219,21 @@ class HCVDataSteppable(ViralInfectionVTMSteppableBasePy):
             with open(self.ihcv_data_path, 'a') as fout:
                 fout.write(SimDataSteppable.data_output_string(self.ihcv_data))
                 self.ihcv_data.clear()
+
+
+class HCVCellsInitializerSteppable(CellsInitializerSteppable):
+    def __init__(self, frequency=1):
+        super().__init__(frequency)
+
+    def start(self):
+        super().start()
+        for cell in self.cell_list_by_type(self.INFECTED):
+            cell.dict['Unpacking'] = 0
+            cell.dict['Replicating'] = HCVInputs.init_rna / HCVInputs.virus_from_ul
+            self.load_viral_replication_model(cell=cell, vr_step_size=vr_step_size,
+                                              unpacking_rate=unpacking_rate,
+                                              replicating_rate=replicating_rate,
+                                              r_half=r_half,
+                                              translating_rate=translating_rate,
+                                              packing_rate=packing_rate,
+                                              secretion_rate=secretion_rate)
