@@ -17,7 +17,7 @@ kpin = 0.2
 __param_desc__["kpout"] = "RP transport into cytoplasm (1/h)"
 kpout = 0.2
 __param_desc__["kein"] = "ECYT transport into VMS (1/h)"
-kein = 1.3 * 10E-5
+kein = 1.3E-5
 __param_desc__["k3"] = "RIP formation (1/h)"
 k3 = 0.02
 __param_desc__["k4p"] = "RP synthesis (1/h)"
@@ -45,7 +45,7 @@ uecyt = 0.06
 
 # Initial conditions
 __param_desc__["RIBOTOT"] = ""
-RIBOTOT = 500.0
+RIBOTOT = 700.0
 
 # Conversion factor
 __param_desc__["virus_from_ul"] = "Conversion from unitless original model quantities to HCV model units"
