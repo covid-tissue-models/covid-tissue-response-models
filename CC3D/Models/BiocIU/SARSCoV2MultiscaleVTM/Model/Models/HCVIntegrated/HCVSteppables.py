@@ -179,13 +179,16 @@ class HCVDataSteppable(ViralInfectionVTMSteppableBasePy):
 
         vrm_tracked_cell = self.simdata_steppable.vrm_tracked_cell
         if vrm_tracked_cell is not None and (plot_ihcv_data or write_ihcv_data):
-            cell_sbml = getattr(vrm_tracked_cell.sbml, self.vr_model_name)
-            if plot_ihcv_data:
-                [self.ihcv_data_win.add_data_point(x, mcs, cell_sbml[x]) for x in ihcv_model_vars]
+            try:
+                cell_sbml = getattr(vrm_tracked_cell.sbml, self.vr_model_name)
+                if plot_ihcv_data:
+                    [self.ihcv_data_win.add_data_point(x, mcs, cell_sbml[x]) for x in ihcv_model_vars]
 
-            if write_ihcv_data:
-                self.ihcv_data[mcs] = [vrm_tracked_cell.id]
-                [self.ihcv_data[mcs].append(cell_sbml[x] for x in ihcv_model_vars)]
+                if write_ihcv_data:
+                    self.ihcv_data[mcs] = [vrm_tracked_cell.id]
+                    [self.ihcv_data[mcs].append(cell_sbml[x]) for x in ihcv_model_vars]
+            except KeyError:
+                pass
 
         # Flush outputs at quarter simulation lengths
         if mcs >= int(self.simulator.getNumSteps() / 4 * self.__flush_counter):
