@@ -100,12 +100,10 @@ stat_plot_manips = None
 
 # ----------------------------- Begin computer work ----------------------------- #
 import logging
-import math
-import os
 import shutil
 
 from nCoVToolkit import nCoVUtils
-from BatchRun.CallableCoV2VTM import simulation_fname, generic_root_output_folder, CoV2VTMSimRun, run_cov2_vtm_sims
+from BatchRun.CallableCoV2VTM import generic_root_output_folder, CoV2VTMSimRun, run_cov2_vtm_sims
 from BatchRun.BatchPostCoV2VTM import CallableCC3DRenderer, CoV2VTMSimRunPost
 from BatchRun.BatchRunLib import cc3d_batch_key, move_dir_async
 
