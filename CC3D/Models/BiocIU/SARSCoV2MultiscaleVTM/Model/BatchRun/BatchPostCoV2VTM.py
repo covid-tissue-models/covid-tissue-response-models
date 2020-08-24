@@ -3,6 +3,7 @@ import os
 import sys
 sys.path.append(os.environ['PYTHONPATH'])
 
+import math
 import shutil
 import csv
 try:
@@ -184,7 +185,8 @@ def calculate_batch_data_stats(batch_data_summary):
                 this_data = []
                 for trial_data in data_dict.values():
                     if trial_data is not None:
-                        this_data.append(trial_data[this_mcs][param])
+                        if this_mcs in trial_data.keys():
+                            this_data.append(trial_data[this_mcs][param])
 
                 if this_data:
                     mean_data[this_mcs][param] = float(np.average(this_data))
@@ -222,6 +224,7 @@ def generate_transient_plot_trials(batch_data_summary, data_desc, var_name):
     ax.grid()
 
     data_dict = batch_data_summary[data_desc]
+    # sim_mcs = list(data_dict[list(data_dict.keys())[0]].keys())
     for trial_idx in data_dict.keys():
         if trial_idx in ['batchMean', 'batchStDev']:
             continue
@@ -455,20 +458,17 @@ class CoV2VTMSimRunPost:
                 fig.savefig(self.generate_transient_plot_trials_filename(data_desc, param_name, fig_dir=fig_dir))
                 plt.close(fig)
 
-    def export_transient_plot_stat(self, loc=None, plot_stdev=True, manipulators=None):
+    def export_transient_plot_stat(self, loc=None, plot_stdev=True):
         if loc is None:
             loc = self.cov2_vtm_sim_run.output_dir_root
 
         assert os.path.isdir(loc), "Results directory must be defined before rendering dump."
-        assert manipulators is None or isinstance(manipulators, dict), "manipulators must be None or a dictionary of manipulator functions"
 
         fig_dir = self.get_fig_root_dir(loc, auto_make_dir=True)
 
         for data_desc in self.get_data_descs():
             for param_name in self.return_param_names(data_desc):
-                fig, ax = self.generate_transient_plot_stat(data_desc, param_name, plot_stdev)
-                if manipulators is not None and param_name in manipulators.keys():
-                    manipulators[param_name](fig, ax)
+                fig, _ = self.generate_transient_plot_stat(data_desc, param_name, plot_stdev)
                 fig.savefig(self.generate_transient_plot_stat_filename(data_desc, param_name, fig_dir=fig_dir))
                 plt.close(fig)
 
@@ -580,7 +580,6 @@ class GenericDrawerFree(GenericDrawer):
         return model, view
 
 
-# todo - add parallel rendering
 class CallableCC3DRenderer:
     """
     Performs CC3D rendering of data generated from executing a CallableCoV2VTM simulation batch without launching Player
@@ -595,10 +594,10 @@ class CallableCC3DRenderer:
         self.cml_results_reader = None
 
         # Methods for modifying specification of GenericDrawer
-        self.__gd_manipulators = {}
+        self._gd_manipulators = {}
 
         # Methods for modifying specification of ScreenshotData
-        self.__sc_manipulators = {}
+        self._sc_manipulators = {}
 
     def get_trial_vtk_dir(self, trial_idx):
         """
@@ -708,10 +707,10 @@ class CallableCC3DRenderer:
         :param mcs: step at which to apply the manipulator
         :return: None
         """
-        if trial_idx not in self.__gd_manipulators.keys():
-            self.__gd_manipulators[trial_idx] = dict()
+        if trial_idx not in self._gd_manipulators.keys():
+            self._gd_manipulators[trial_idx] = dict()
 
-        self.__gd_manipulators[trial_idx][mcs] = gd_manipulator
+        self._gd_manipulators[trial_idx][mcs] = gd_manipulator
 
     # todo - add API for defining rendering specs so users don't have to search through the details of GenericDrawer;
     #  API should include convenience function for retrieving current specs
@@ -724,10 +723,10 @@ class CallableCC3DRenderer:
         :param mcs: step at which to apply the manipulator
         :return: None
         """
-        if trial_idx not in self.__sc_manipulators.keys():
-            self.__sc_manipulators[trial_idx] = dict()
+        if trial_idx not in self._sc_manipulators.keys():
+            self._sc_manipulators[trial_idx] = dict()
 
-        self.__sc_manipulators[trial_idx][mcs] = sc_manipulator
+        self._sc_manipulators[trial_idx][mcs] = sc_manipulator
 
     def get_results_min_max(self, trial_idx):
         """
@@ -749,7 +748,7 @@ class CallableCC3DRenderer:
             self.gd.field_extractor.setSimulationData(sim_data_int_addr)
 
             for field_name, screenshot_data in self.scm.screenshotDataDict.items():
-                min_max = self.__get_field_min_max(screenshot_data)
+                min_max = self._get_field_min_max(screenshot_data)
                 if min_max is not None:
                     if field_name not in min_max_dict.keys():
                         min_max_dict[field_name] = min_max
@@ -761,7 +760,7 @@ class CallableCC3DRenderer:
 
         return min_max_dict
 
-    def __get_field_min_max(self, screenshot_data):
+    def _get_field_min_max(self, screenshot_data):
         """
         Gets minimum and maximum of field described in screenshot data; returns None if unavailable
         :param screenshot_data: screenshot data for a field
@@ -804,19 +803,19 @@ class CallableCC3DRenderer:
         min_max = [con_array_range[0], con_array_range[1]]
         return min_max
 
-    def __get_rendering_manipulator(self, trial_idx, mcs):
-        if trial_idx not in self.__gd_manipulators.keys() or mcs not in self.__gd_manipulators[trial_idx].keys():
+    def _get_rendering_manipulator(self, trial_idx, mcs):
+        if trial_idx not in self._gd_manipulators.keys() or mcs not in self._gd_manipulators[trial_idx].keys():
             return None
         else:
-            return self.__gd_manipulators[trial_idx][mcs]
+            return self._gd_manipulators[trial_idx][mcs]
 
-    def __get_screenshot_manipulator(self, trial_idx, mcs):
-        if trial_idx not in self.__sc_manipulators.keys() or mcs not in self.__sc_manipulators[trial_idx].keys():
+    def _get_screenshot_manipulator(self, trial_idx, mcs):
+        if trial_idx not in self._sc_manipulators.keys() or mcs not in self._sc_manipulators[trial_idx].keys():
             return None
         else:
-            return self.__sc_manipulators[trial_idx][mcs]
+            return self._sc_manipulators[trial_idx][mcs]
 
-    def __render_trial(self, trial_idx):
+    def _render_trial(self, trial_idx):
         """
         Main routine to perform rendering for a trial from batch run
         :param trial_idx: index of trial
@@ -839,7 +838,7 @@ class CallableCC3DRenderer:
             sim_data_int_addr = extract_address_int_from_vtk_object(self.cml_results_reader.simulationData)
             mcs = self.cml_results_reader.extract_mcs_number_from_file_name(file_name)
             self.gd.field_extractor.setSimulationData(sim_data_int_addr)
-            gd_manipulator = self.__get_rendering_manipulator(trial_idx, mcs)
+            gd_manipulator = self._get_rendering_manipulator(trial_idx, mcs)
             if gd_manipulator is not None:
                 gd_manipulator(self.gd)
             print('...{}'.format(mcs))
@@ -851,7 +850,7 @@ class CallableCC3DRenderer:
         :return: None
         """
         self.prep_output_dir()
-        [self.__render_trial(trial_idx) for trial_idx in range(len(self.cov2_vtm_sim_run.get_trial_dirs()))]
+        [self._render_trial(trial_idx) for trial_idx in range(len(self.cov2_vtm_sim_run.get_trial_dirs()))]
 
     def render_trial_results(self, trial_idx):
         """
@@ -860,7 +859,7 @@ class CallableCC3DRenderer:
         :return: None
         """
         self.prep_output_dir()
-        self.__render_trial(trial_idx)
+        self._render_trial(trial_idx)
 
     def render_trial_results_par(self, opts=None):
         """
@@ -923,6 +922,265 @@ class _RenderJob:
                 _renderer.load_screenshot_manipulator(sc_manipulator)
 
             _renderer.render_trial_results(self._run_idx)
+            return True
+        except Exception:
+            return False
+
+
+class CallableCC3DDataRenderer(CallableCC3DRenderer):
+    """
+    Performs CC3D rendering of data generated from executing a CallableCoV2VTM simulation batch without launching Player
+    Like CallableCC3DRenderer, but works on individual directories of data instead of a CallableCoV2VTM instance
+    """
+    def __init__(self, data_dirs, out_dirs, set_labs=None, run_labs=None, num_workers=1):
+        super().__init__(None)
+
+        self.data_dirs = data_dirs
+        self.out_dirs = out_dirs
+        if set_labs is not None:
+            self.set_labs = set_labs
+        else:
+            self.set_labs = [0] * len(self.data_dirs)
+        if run_labs is not None:
+            self.run_labs = run_labs
+        else:
+            self.run_labs = [0] * len(self.data_dirs)
+        self.num_workers = num_workers
+
+    def get_trial_vtk_dir(self, trial_idx):
+        """
+        Returns path to directory where exported vtk files from simulation should be found
+        :param trial_idx: index of a trial
+        :return: path to directory containing exported vtk files from simulation
+        """
+        return os.path.join(self.data_dirs[trial_idx], 'LatticeData')
+
+    def get_fig_spatial_dir(self, trial_idx):
+        return os.path.join(self.out_dirs[trial_idx], f'set_{self.set_labs[trial_idx]}', 'Figs', 'Spatial')
+
+    def load_screenshot_specs(self, screenshot_spec, trial_idx=None):
+        """
+        Loads screenshot specifications for rendering
+        :param screenshot_spec: path to json screenshot specification (can be generated in Player)
+        :param trial_idx: trial for which to apply the specification; default is all runs of the loaded batch
+        :return: None
+        """
+        if trial_idx is None:
+            trial_vtk_dirs = [self.get_trial_vtk_dir(i) for i in range(len(self.data_dirs))]
+        else:
+            trial_vtk_dirs = [self.get_trial_vtk_dir(trial_idx)]
+
+        screenshot_spec = os.path.abspath(screenshot_spec)
+        for trial_vtk_dir in trial_vtk_dirs:
+            ss_dir = os.path.join(trial_vtk_dir, 'screenshot_data')
+            if not os.path.isdir(ss_dir):
+                os.mkdir(ss_dir)
+
+            screenshot_spec_copy = os.path.join(ss_dir, 'screenshots.json')
+            shutil.copyfile(screenshot_spec, screenshot_spec_copy)
+
+    def load_trial_results(self, trial_idx):
+        """
+        Load results for a trial of a batch into memory; must be executed before manipulating rendering specs
+        :param trial_idx: index of trial
+        :return: None
+        """
+
+        lds_loc = self.get_trial_vtk_dir(trial_idx)
+
+        lds_file = get_lattice_description_file(lds_loc)
+
+        if lds_file is None:
+            return
+
+        self.cml_results_reader, ui_dummy = get_results_reader_no_ui(lds_file)
+
+        if self.cml_results_reader is None:
+            return
+
+        self.gd.set_field_extractor(ui_dummy.fieldExtractor)
+        self.cml_results_reader.extract_lattice_description_info(lds_file)
+
+        ss_desc_file = None
+        for root, dirs, names in os.walk(lds_loc):
+            for name in names:
+                if name == 'screenshots.json':
+                    ss_desc_file = os.path.join(root, name)
+                    break
+
+        if ss_desc_file is None:
+            print('No screenshot description found.')
+            return
+
+        self.scm.bsd = BasicSimulationData()
+        self.scm.bsd.fieldDim = self.cml_results_reader.fieldDim
+        self.scm.bsd.numberOfSteps = self.cml_results_reader.numberOfSteps
+
+        # Overload static ScreenshotManagerCore.get_screenshot_dir_name, since it relies on persistent_globals
+        screenshot_dir_name = os.path.join(self.get_fig_spatial_dir(trial_idx), f'run_{self.run_labs[trial_idx]}')
+
+        def get_screenshot_dir_name():
+            return screenshot_dir_name
+
+        self.scm.get_screenshot_dir_name = get_screenshot_dir_name
+        self.scm.read_screenshot_description_file(ss_desc_file)
+
+    def prep_output_dir(self):
+        """
+        Prep directory for output from rendering
+        :return: None
+        """
+        [os.makedirs(self.get_fig_spatial_dir(t))
+         for t in range(len(self.out_dirs)) if not os.path.isdir(self.get_fig_spatial_dir(t))]
+
+    def get_results_min_max(self, trial_idx):
+        """
+        Gets minimum and maximum over all simulation time for all available results
+        :return: {dict} range per available field
+        """
+        min_max_dict = dict()
+
+        self.load_trial_results(trial_idx)
+
+        if self.cml_results_reader is None:
+            print('No results loaded for trial {}.'.format(trial_idx))
+            return None
+
+        file_list = self.cml_results_reader.ldsFileList
+        for file_number, file_name in enumerate(file_list):
+            self.cml_results_reader.read_simulation_data_non_blocking(file_number)
+            sim_data_int_addr = extract_address_int_from_vtk_object(self.cml_results_reader.simulationData)
+            self.gd.field_extractor.setSimulationData(sim_data_int_addr)
+
+            for field_name, screenshot_data in self.scm.screenshotDataDict.items():
+                min_max = self._get_field_min_max(screenshot_data)
+                if min_max is not None:
+                    if field_name not in min_max_dict.keys():
+                        min_max_dict[field_name] = min_max
+                    else:
+                        if min_max[0] < min_max_dict[field_name][0]:
+                            min_max_dict[field_name][0] = min_max[0]
+                        if min_max[1] > min_max_dict[field_name][1]:
+                            min_max_dict[field_name][1] = min_max[1]
+
+        return min_max_dict
+
+    def _render_trial(self, trial_idx):
+        """
+        Main routine to perform rendering for a trial from batch run
+        :param trial_idx: index of trial
+        :return: None
+        """
+        print('CallableCC3DRenderer rendering trial {}'.format(trial_idx))
+        self.load_trial_results(trial_idx)
+
+        if self.cml_results_reader is None:
+            print('No results loaded.')
+            return
+
+        ss_dir = self.scm.get_screenshot_dir_name()
+        if not os.path.isdir(ss_dir):
+            os.mkdir(ss_dir)
+
+        file_list = self.cml_results_reader.ldsFileList
+        for file_number, file_name in enumerate(file_list):
+            self.cml_results_reader.read_simulation_data_non_blocking(file_number)
+            sim_data_int_addr = extract_address_int_from_vtk_object(self.cml_results_reader.simulationData)
+            mcs = self.cml_results_reader.extract_mcs_number_from_file_name(file_name)
+            self.gd.field_extractor.setSimulationData(sim_data_int_addr)
+            gd_manipulator = self._get_rendering_manipulator(trial_idx, mcs)
+            if gd_manipulator is not None:
+                gd_manipulator(self.gd)
+            print('...{}'.format(mcs))
+            self.output_screenshots(mcs)
+
+    def render_results(self):
+        """
+        Render all trials from batch run
+        :return: None
+        """
+        self.prep_output_dir()
+        [self._render_trial(trial_idx) for trial_idx in range(len(self.data_dirs))]
+
+    def render_trial_results(self, trial_idx):
+        """
+        Render a trial from batch run
+        :param trial_idx: index of trial
+        :return: None
+        """
+        self.prep_output_dir()
+        self._render_trial(trial_idx)
+
+    def render_trial_results_par(self, opts=None):
+        """
+        Render all trials in parallel
+        :return: None
+        """
+        import multiprocessing
+        from cc3d.CompuCellSetup.CC3DCaller import CC3DCallerWorker
+
+        # Start workers
+        tasks = multiprocessing.JoinableQueue()
+        results = multiprocessing.Queue()
+        workers = [CC3DCallerWorker(tasks, results) for _ in range(self.num_workers)]
+        [w.start() for w in workers]
+
+        # Enqueue jobs
+        import time
+        for r in range(len(self.data_dirs)):
+            while tasks.full():
+                time.sleep(1)
+            tasks.put(_RenderDataJob(self.data_dirs[r], self.out_dirs[r], self.set_labs[r], self.run_labs[r], opts))
+
+        # Add a stop task for each of worker
+        for _ in workers:
+            while tasks.full():
+                time.sleep(1)
+            tasks.put(None)
+
+        tasks.join()
+
+
+class _RenderDataJob:
+    def __init__(self, _data_dir, _out_dir, _set_lab, _run_lab, opts=None):
+        self._data_dir = _data_dir
+        self._out_dir = _out_dir
+        self._set_lab = _set_lab
+        self._run_lab = _run_lab
+        if opts is not None:
+            self._opts = opts
+        else:
+            self._opts = dict()
+
+    def run(self):
+        try:
+            _renderer = CallableCC3DDataRenderer(data_dirs=[self._data_dir],
+                                                 out_dirs=[self._out_dir],
+                                                 set_labs=[self._set_lab],
+                                                 run_labs=[self._run_lab])
+            _renderer.load_trial_results(0)
+
+            if 'log_scale' in self._opts.keys() and self._opts['log_scale']:
+                # Apply log scale to all field renders
+                def gd_manipulator(gd):
+                    gd.draw_model_2D.clut.SetScaleToLog10()
+                _renderer.load_rendering_manipulator(gd_manipulator)
+
+            if 'fixed_caxes' in self._opts.keys() and self._opts['fixed_caxes']:
+                # Apply fixed legends to all field renders
+                min_max_dict = _renderer.get_results_min_max(0)
+
+                def sc_manipulator(scm):
+                    for field_name, min_max in min_max_dict.items():
+                        scm.screenshotDataDict[field_name].metadata['MinRangeFixed'] = True
+                        scm.screenshotDataDict[field_name].metadata['MinRange'] = math.ceil(
+                            min_max[1] * 10) / 10 / 1E6
+                        scm.screenshotDataDict[field_name].metadata['MaxRangeFixed'] = True
+                        scm.screenshotDataDict[field_name].metadata['MaxRange'] = math.ceil(min_max[1] * 10) / 10
+
+                _renderer.load_screenshot_manipulator(sc_manipulator)
+
+            _renderer.render_trial_results(0)
             return True
         except Exception:
             return False

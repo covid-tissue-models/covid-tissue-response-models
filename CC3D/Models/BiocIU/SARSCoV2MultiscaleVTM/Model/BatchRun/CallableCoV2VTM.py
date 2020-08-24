@@ -1,5 +1,7 @@
+import json
 import multiprocessing
 import os
+import shutil
 import sys
 import time
 sys.path.append(os.environ['PYTHONPATH'])  # Apparently necessary for Linux
@@ -135,3 +137,326 @@ def run_cov2_vtm_sims(cov2_vtm_sim_run: CoV2VTMSimRun) -> CoV2VTMSimRun:
             break
 
     return cov2_vtm_sim_run
+
+
+class CoV2VTMSimRunAsync(CoV2VTMSimRun):
+    def __init__(self, root_output_folder=generic_root_output_folder, output_frequency=0, screenshot_output_frequency=0,
+                 num_runs=1, sim_input=None):
+        super().__init__(root_output_folder=root_output_folder, output_frequency=output_frequency,
+                         screenshot_output_frequency=screenshot_output_frequency, num_workers=1, num_runs=num_runs,
+                         sim_input=sim_input)
+
+        # 0: not yet run; 1: running; 2: done; -1: failed
+        self.run_status = multiprocessing.Array('i', [0] * num_runs)
+
+    @property
+    def has_more_runs(self) -> bool:
+        return any([x == -1 or x == 0 for x in self.run_status])
+
+    @property
+    def num_running(self):
+        return len([x for x in self.run_status if x == 1])
+
+    @property
+    def is_done(self) -> bool:
+        return not any([x == -1 or x == 0 or x == 1 for x in self.run_status])
+
+    def set_status(self, _run_idx, _status):
+        self.run_status[_run_idx] = _status
+
+    def get_status(self):
+        return list(self.run_status)
+
+    def run_next_async(self, no_purge=False):
+        if not no_purge:
+            self.purge_failed()
+
+        if not self.has_more_runs:
+            return False
+
+        run_idx = self.get_status().index(0, )
+        self.run_status[run_idx] = 1
+        p = multiprocessing.Process(target=sim_run_single, args=(self, run_idx, self.run_status))
+        p.start()
+        return True
+
+    def purge_failed(self):
+        for run_idx in range(len(self.run_status)):
+            if self.run_status[run_idx] == -1:
+                run_dir = self.get_run_output_dir(run_idx)
+                if os.path.isdir(run_dir):
+                    shutil.rmtree(run_dir, ignore_errors=True)
+                self.run_status[run_idx] = 0
+
+
+def sim_run_single(cov2_vtm_sim_run: CoV2VTMSimRunAsync, run_idx=0, status: multiprocessing.Array = None):
+    # Start worker
+    tasks = multiprocessing.JoinableQueue()
+    results = multiprocessing.Queue()
+    worker = CC3DCallerWorker(tasks, results)
+    worker.start()
+
+    # Enqueue jobs
+    tasks.put(cov2_vtm_sim_run.generate_callable(run_idx))
+
+    print(f'CC3DCallerWorker {worker.name} launched')
+
+    # Add a stop task for each of worker
+    tasks.put(None)
+
+    # Monitor worker state
+    monitor_rate = 1
+    while worker.is_alive():
+        time.sleep(monitor_rate)
+
+    print(f'CC3DCallerWorker {worker.name} finished with exit code {worker.exitcode}')
+
+    if worker.exitcode == 0:
+        # Fetch available results
+        try:
+            result = results.get(block=True, timeout=10)
+            sim_output = result['result']
+        except:
+            print(f'CC3DCallerWorker {worker.name} returned no async result {run_idx}')
+
+            if status is not None:
+                status[run_idx] = -1
+            return False
+
+        print(f'CC3DCallerWorker {worker.name} returned async result {run_idx}')
+
+        cov2_vtm_sim_run.sim_output[run_idx] = sim_output
+        cov2_vtm_sim_run.write_sim_inputs(run_idx)
+
+        if status is not None:
+            status[run_idx] = 2
+
+        return True
+    else:
+        if status is not None:
+            status[run_idx] = -1
+
+        return False
+
+
+class CallableCoV2VTMScheduler:
+    def __init__(self, root_output_folder=generic_root_output_folder, output_frequency=0, screenshot_output_frequency=0,
+                 num_workers=1, num_runs=1, sim_input=None, dump_dir=None):
+        self.output_dir_root = root_output_folder
+        self.status_file = os.path.join(self.output_dir_root, "batch_status.json")
+        if os.path.exists(self.status_file):
+            print('Importing from status file: ', self.status_file)
+
+            with open(self.status_file, 'r') as sf:
+                status_dict = json.load(sf)
+            output_frequency = status_dict['output_frequency']
+            screenshot_output_frequency = status_dict['screenshot_output_frequency']
+            num_runs = status_dict['num_runs']
+            sim_input = status_dict['sim_input']
+            run_status = status_dict['run_status']
+            dump_dir = status_dict['dump_dir']
+            set_status = status_dict['set_status']
+        else:
+            run_status = None
+            set_status = None
+
+        assert output_frequency >= 0
+        assert screenshot_output_frequency >= 0
+        if isinstance(num_runs, list):
+            assert len(num_runs) > 0
+        else:
+            assert num_runs > 0
+        assert num_workers > 0
+
+        self.output_frequency = output_frequency
+        self.screenshot_output_frequency = screenshot_output_frequency
+        self.num_workers = num_workers
+        self.dump_dir = dump_dir
+
+        # Do version check; simulation inputs via CallableCC3D is an experimental feature as of CompuCell3D v 4.1.0
+        def check_callable_cc3d_compat():
+            from cc3d.CompuCellSetup import persistent_globals as pg
+            assert 'return_object' in dir(pg), "Support for simulation inputs via CallableCC3D not found!"
+
+        if sim_input is not None:
+            check_callable_cc3d_compat()
+
+        if sim_input is None:
+            self.__sim_input = [sim_input]
+        elif isinstance(sim_input, list):
+            assert not any(not isinstance(x, dict) for x in sim_input)
+            self.__sim_input = sim_input
+        elif isinstance(sim_input, dict):
+            self.__sim_input = [sim_input]
+        else:
+            raise ValueError('Incompatible sim inputs')
+
+        self.num_sets = len(self.__sim_input)
+
+        if isinstance(num_runs, list):
+            assert not any(not isinstance(x, int) for x in num_runs) and len(num_runs) == self.num_sets
+            self.num_runs = num_runs
+        elif isinstance(num_runs, int):
+            self.num_runs = [num_runs] * self.num_sets
+        else:
+            raise ValueError('Incompatible number of runs')
+
+        if run_status is None:
+            run_status = list()
+            [run_status.append([0] * x) for x in self.num_runs]
+        self.run_status = run_status
+        if set_status is None:
+            set_status = [0] * self.num_sets
+        # 0: working; 1: complete; 2: dumped
+        self.set_status = set_status
+        self.dump_status()
+
+    def run_instance(self, _set_idx):
+        return CoV2VTMSimRunAsync(root_output_folder=self.output_set_directory(_set_idx),
+                                  output_frequency=self.output_frequency,
+                                  screenshot_output_frequency=self.screenshot_output_frequency,
+                                  num_runs=self.num_runs[_set_idx],
+                                  sim_input=self.__sim_input[_set_idx])
+
+    def dump_status(self):
+        status_dict = dict()
+        status_dict['output_frequency'] = self.output_frequency
+        status_dict['screenshot_output_frequency'] = self.screenshot_output_frequency
+        status_dict['num_runs'] = self.num_runs
+        status_dict['sim_input'] = self.__sim_input
+        status_dict['run_status'] = self.run_status
+        status_dict['dump_dir'] = self.dump_dir
+        status_dict['set_status'] = self.set_status
+        with open(self.status_file, 'w') as sf:
+            json.dump(status_dict, sf)
+
+    def output_set_directory(self, _set_idx):
+        return os.path.join(self.output_dir_root, f"set_{_set_idx}")
+
+    def output_run_directory(self, _set_idx, _run_idx):
+        return os.path.join(self.output_set_directory(_set_idx), f"run_{_run_idx}")
+
+    def dump_set_directory(self, _set_idx):
+        if self.is_dumping:
+            return os.path.join(self.dump_dir, f"set_{_set_idx}")
+        else:
+            return None
+
+    def dump_run_directory(self, _set_idx, _run_idx):
+        if self.is_dumping:
+            return os.path.join(self.dump_set_directory(_set_idx), f"run_{_run_idx}")
+        else:
+            return None
+
+    def prep(self):
+        # Create root output directory if necessary
+        if not os.path.isdir(self.output_dir_root):
+            print('Creating output directory: ', self.output_dir_root)
+            os.makedirs(self.output_dir_root)
+
+        # Create set subdirectories if necessary
+        for s in range(self.num_sets):
+            if self.set_status[s] == 0 and not os.path.isdir(self.output_set_directory(s)):
+                os.mkdir(self.output_set_directory(s))
+
+        # Purge unfinished runs
+        for s in range(self.num_sets):
+            if self.set_status[s] != 0:
+                continue
+            for r in range(self.num_runs[s]):
+                r_status = self.run_status[s][r]
+                r_dir = self.output_run_directory(s, r)
+                if os.path.isdir(r_dir) and r_status != 2:
+                    shutil.rmtree(r_dir)
+                    self.run_status[s][r] = 0
+
+        # Create dump directory if necessary
+        if self.is_dumping and not os.path.isdir(self.dump_dir):
+            print('Creating dump directory: ', self.dump_dir)
+            os.makedirs(self.dump_dir)
+
+    @property
+    def fin_key(self) -> int:
+        if self.dump_dir is not None:
+            return 2
+        else:
+            return 1
+
+    @property
+    def is_dumping(self) -> bool:
+        return self.fin_key == 2
+
+    def run(self):
+        self.prep()
+        set_runners = [self.run_instance(s) for s in range(self.num_sets)]
+        for s in range(self.num_sets):
+            for r in range(len(self.run_status[s])):
+                set_runners[s].set_status(r, self.run_status[s][r])
+
+        # Run block
+        import time
+        while True:
+            if not any([s != self.fin_key for s in self.set_status]):
+                if self.is_dumping:
+                    self.check_dumps()
+                self.dump_status()
+                return
+
+            # Check status of every set runner
+            for s in range(self.num_sets):
+                if self.set_status[s] != 0:
+                    if self.is_dumping and self.set_status[s] == 1 and not os.path.isdir(self.output_set_directory(s)):
+                        self.set_status[s] = 2
+                    continue
+
+                set_runner = set_runners[s]
+                if set_runner.is_done:
+                    self.set_status[s] = 1
+                    if self.is_dumping:
+                        move_dir_async(self.output_set_directory(s), self.dump_set_directory(s))
+
+            num_running = sum([sr.num_running for sr in set_runners])
+            num_to_add = self.num_workers - num_running
+            num_added = 0
+            for s in range(self.num_sets):
+                while set_runners[s].has_more_runs and num_added < num_to_add:
+                    if set_runners[s].run_next_async():
+                        num_added += 1
+                self.run_status[s] = set_runners[s].get_status()
+
+            # Update status file and then wait a little bit
+            self.dump_status()
+            time.sleep(10)
+
+    def check_dumps(self):
+        # Hold until dumping is complete
+        if not self.is_dumping:
+            return
+
+        import time
+        while any([self.set_status[s] != 2 for s in range(self.num_sets)]):
+            for s in range(self.num_sets):
+                if self.set_status[s] == 1 and not os.path.isdir(self.output_set_directory(s)):
+                    self.set_status[s] = 2
+                    self.dump_status()
+            time.sleep(10)
+
+
+class _MoveDirProcess(multiprocessing.Process):
+    def __init__(self, _src_dir, _tgt_dir):
+        """
+        Process to asynchronously move one directory to another
+        :param _src_dir: directory to move
+        :param _tgt_dir: location of resulting move
+        """
+        super().__init__()
+        self._src_dir = _src_dir
+        self._tgt_dir = _tgt_dir
+
+    def run(self):
+        shutil.move(self._src_dir, self._tgt_dir)
+
+
+def move_dir_async(_src_dir, _tgt_dir) -> None:
+    p = _MoveDirProcess(_src_dir, _tgt_dir)
+    p.start()
