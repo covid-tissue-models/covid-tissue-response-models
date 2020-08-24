@@ -21,6 +21,7 @@ from .SusceptibilityModelInputs import *
 
 vs_state_key = 'vs_susc'
 
+
 class RandomSusceptibilitySteppable(ViralInfectionVTMSteppableBasePy):
     """
     Implements randomly varying viral susceptibility in space
