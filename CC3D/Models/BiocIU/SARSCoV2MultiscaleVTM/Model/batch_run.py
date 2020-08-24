@@ -100,12 +100,11 @@ stat_plot_manips = None
 
 # ----------------------------- Begin computer work ----------------------------- #
 import logging
-import shutil
 
 from nCoVToolkit import nCoVUtils
-from BatchRun.CallableCoV2VTM import generic_root_output_folder, CoV2VTMSimRun, run_cov2_vtm_sims
-from BatchRun.BatchPostCoV2VTM import CallableCC3DRenderer, CoV2VTMSimRunPost
-from BatchRun.BatchRunLib import cc3d_batch_key, move_dir_async
+from BatchRun.CallableCoV2VTM import generic_root_output_folder, CallableCoV2VTMScheduler
+from BatchRun.BatchPostCoV2VTM import CoV2VTMSimRunPost, CallableCC3DDataRenderer
+from BatchRun.BatchRunLib import cc3d_batch_key
 
 
 def get_param_descr():
@@ -183,72 +182,83 @@ if __name__ == '__main__':
         for v in mult_dict.values():
             num_sets *= len(v)
 
+    sim_input = list()
     for set_idx in range(num_sets):
-        # Get model inputs
-        sim_input = sim_input_generator(set_idx)
-        sim_input['__param_desc__'] = get_param_descr()
+        si = sim_input_generator(set_idx)
+        si['__param_desc__'] = get_param_descr()
         # Append system configuration inputs
-        sim_input[cc3d_batch_key] = {'out_freq': out_freq}
+        si[cc3d_batch_key] = {'out_freq': out_freq}
+        sim_input.append(si)
 
-        _cov2_vtm_sim_run = CoV2VTMSimRun(num_runs=num_rep,
-                                          num_workers=num_par,
-                                          output_frequency=out_freq,
-                                          screenshot_output_frequency=out_freq,
-                                          root_output_folder=_root_output_folder,
-                                          sim_input=sim_input)
+    sim_run_sch = CallableCoV2VTMScheduler(root_output_folder=_root_output_folder,
+                                           output_frequency=out_freq,
+                                           screenshot_output_frequency=out_freq,
+                                           num_workers=num_par,
+                                           num_runs=num_rep,
+                                           sim_input=sim_input,
+                                           dump_dir=dump_folder)
+    if opt_run_sims:
+        sim_run_sch.run()
 
-        if opt_run_sims:  # Execute batch simulations
-            _cov2_vtm_sim_run = run_cov2_vtm_sims(_cov2_vtm_sim_run)
-        else:  # Assume post-processing previously executed results
-            _set_dir = os.path.join(_root_output_folder, f'set_{set_idx}')
-            cts_src = [x for x in os.listdir(_set_dir) if x.startswith('run_')]
-            if not cts_src:
-                continue
-            for ct_src in cts_src:
-                moved_filename = os.path.join(_set_dir, ct_src)
-                if os.path.exists(moved_filename):
-                    os.remove(moved_filename)
-                shutil.move(os.path.join(_root_output_folder, ct_src), _set_dir)
+    # Export model parameters
+    if input_modules is not None and isinstance(input_modules, list):
+        for set_idx in range(num_sets):
+            if sim_run_sch.is_dumping:
+                o = sim_run_sch.dump_set_directory(set_idx)
+            else:
+                o = sim_run_sch.output_set_directory(set_idx)
 
-        # Export model parameters
-        if input_modules is not None and isinstance(input_modules, list):
             for x in input_modules:
                 export_file_rel = x.__name__.split('.')[-1] + "Params.csv"
-                export_file_abs = os.path.join(os.path.abspath(_cov2_vtm_sim_run.output_dir_root), export_file_rel)
+                export_file_abs = os.path.join(o, export_file_rel)
                 nCoVUtils.export_parameters(x, export_file_abs)
 
-        # Post-process metrics
-        if opt_render_stat:
-            try:
+    if opt_render_stat:
+        try:
+            for set_idx in range(num_sets):
+                _cov2_vtm_sim_run = sim_run_sch.run_instance(set_idx)
+                if sim_run_sch.is_dumping:
+                    _cov2_vtm_sim_run.output_dir_root = sim_run_sch.dump_set_directory(set_idx)
+                else:
+                    _cov2_vtm_sim_run.output_dir_root = sim_run_sch.output_set_directory(set_idx)
                 cov2_vtm_sim_run_post = CoV2VTMSimRunPost(_cov2_vtm_sim_run)
                 cov2_vtm_sim_run_post.export_transient_plot_trials(manipulators=stat_plot_manips)
-            except Exception as err:
-                logging.exception('Error during transient plot rendering.')
-                opt_render_stat = False
-                print('Disabling transient plot rendering')
+        except Exception as err:
+            logging.exception('Error during transient plot rendering.')
+            opt_render_stat = False
+            print('Disabling transient plot rendering')
 
-        # Render field data
-        if opt_render_spat:
-            try:
-                callable_cc3d_renderer = CallableCC3DRenderer(_cov2_vtm_sim_run)
-                screenshot_specs = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'screenshots.json')
-                callable_cc3d_renderer.load_screenshot_specs(screenshot_specs)
-                callable_cc3d_renderer.render_trial_results_par(opts={'log_scale': True,
-                                                                      'fixed_caxes': True})
-            except Exception as err:
-                logging.exception('Error during spatial plot rendering.')
-                opt_render_spat = False
-                print('Diasbling spatial plot rendering.')
+    if opt_render_spat:
+        data_dirs = []
+        out_dirs = []
+        set_labs = []
+        run_labs = []
+        for set_idx in range(num_sets):
+            if sim_run_sch.is_dumping:
+                set_directory = sim_run_sch.dump_set_directory(set_idx)
+                get_run_directory = sim_run_sch.dump_run_directory
+            else:
+                set_directory = sim_run_sch.output_set_directory(set_idx)
+                get_run_directory = sim_run_sch.output_run_directory
+            fig_directory = os.path.dirname(set_directory)
 
-        # Move run results to parameter set subdirectory
-        _set_dir = os.path.join(_root_output_folder, f'set_{set_idx}')
-        if not os.path.isdir(_set_dir):
-            os.mkdir(_set_dir)
-        cts_src = [x for x in os.listdir(_root_output_folder) if not x.startswith('set_')]
-        for ct_src in cts_src:
-            shutil.move(os.path.join(_root_output_folder, ct_src), _set_dir)
+            for run_idx in range(sim_run_sch.num_runs[set_idx]):
+                data_dirs.append(get_run_directory(set_idx, run_idx))
+                out_dirs.append(fig_directory)
+                set_labs.append(set_idx)
+                run_labs.append(run_idx)
 
-        # Dump results to local directory
-        if dump_folder is not None:
-            print(f'Dumping set {set_idx}: {dump_folder}')
-            move_dir_async(_set_dir, dump_folder)
+        try:
+            callable_cc3d_renderer = CallableCC3DDataRenderer(data_dirs=data_dirs,
+                                                              out_dirs=out_dirs,
+                                                              set_labs=set_labs,
+                                                              run_labs=run_labs,
+                                                              num_workers=num_par)
+            screenshot_specs = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'screenshots.json')
+            callable_cc3d_renderer.load_screenshot_specs(screenshot_specs)
+            callable_cc3d_renderer.render_trial_results_par(opts={'log_scale': True,
+                                                                  'fixed_caxes': True})
+        except Exception as err:
+            logging.exception('Error during spatial plot rendering.')
+            opt_render_spat = False
+            print('Diasbling spatial plot rendering.')
