@@ -64,7 +64,7 @@ def hcv_viral_replication_model_string(_unpacking_rate, _replicating_rate, _r_ha
       -> U ; Uptake
     U -> R ; unpacking_rate * U;
     #  -> R ; replicating_rate * r_half * R / (r_half + R);  // Genomic replication from base model; replaced by E1
-    R -> P ; translating_rate * R;
+     -> P ; {HCVInputs.translating_rate} * R;
     P -> A ; packing_rate * P;
     A -> Secretion ; secretion_rate * A;
 
@@ -215,7 +215,7 @@ class HCVDataSteppable(ViralInfectionVTMSteppableBasePy):
         Write stored outputs to file and clear output storage
         :return: None
         """
-        if self.write_ihcv_data:
+        if self.write_ihcv_data and self.ihcv_data:
             with open(self.ihcv_data_path, 'a') as fout:
                 fout.write(SimDataSteppable.data_output_string(self, self.ihcv_data))
                 self.ihcv_data.clear()

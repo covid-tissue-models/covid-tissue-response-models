@@ -51,4 +51,6 @@ init_rna = 500
 
 # Conversion factor
 __param_desc__["virus_from_ul"] = "Conversion from unitless original model quantities to HCV model units"
-virus_from_ul = 10
+virus_from_ul = 100
+__param_desc__["translating_rate"] = "Production of VRM model *P* from *R*"
+translating_rate = 100
