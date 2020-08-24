@@ -217,7 +217,7 @@ class HCVDataSteppable(ViralInfectionVTMSteppableBasePy):
         """
         if self.write_ihcv_data:
             with open(self.ihcv_data_path, 'a') as fout:
-                fout.write(SimDataSteppable.data_output_string(self.ihcv_data))
+                fout.write(SimDataSteppable.data_output_string(self, self.ihcv_data))
                 self.ihcv_data.clear()
 
 
