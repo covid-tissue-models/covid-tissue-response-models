@@ -78,17 +78,26 @@ def apply_external_multipliers(calling_module_str, input_module):
     for k, v in input_object[cc3d_input_key].items():
         if k != '__param_desc__' and k != cc3d_batch_key:
             try:
-                setattr(sys.modules[calling_module_str], k, v * getattr(input_module, k))
+                _set_imported_var(calling_module_str, k, v * getattr(input_module, k))
             except AttributeError:
                 pass
         elif k == cc3d_batch_key:
             out_freq = v['out_freq']
             if input_module.__name__ in mod_plot_vars.keys():
                 for p in mod_plot_vars[input_module.__name__]:
-                    setattr(sys.modules[calling_module_str], p, 0)
+                    _set_imported_var(calling_module_str, p, 0)
             if input_module.__name__ in mod_write_vars.keys():
                 for w in mod_write_vars[input_module.__name__]:
-                    setattr(sys.modules[calling_module_str], w, out_freq)
+                    _set_imported_var(calling_module_str, w, out_freq)
+
+
+def _set_imported_var(calling_module, var_name, var_val):
+    if isinstance(var_name, str):
+        return _set_imported_var(sys.modules[calling_module], var_name.split('.'), var_val)
+    if len(var_name) == 1:
+        setattr(calling_module, var_name[0], var_val)
+        return
+    return _set_imported_var(getattr(calling_module, var_name[0]), var_name[1:], var_val)
 
 
 class _MoveDirProcess(multiprocessing.Process):
