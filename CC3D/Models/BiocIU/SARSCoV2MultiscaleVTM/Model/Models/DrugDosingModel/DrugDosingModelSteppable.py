@@ -23,7 +23,7 @@ class DrugDosingModelSteppable(SteppableBasePy):
         self.drug_dosing_model_key = drug_dosing_model_key
 
         self.plot_ddm_data = plot_ddm_data_freq > 0
-        self.plot_ddm_data = write_ddm_data_freq > 0
+        self.write_ddm_data = write_ddm_data_freq > 0
 
     def set_drug_model_string(self, _init_drug, _init_avail1, _init_avail2, _init_avail3, _init_avail4,
                               _k0_rate, _d0_rate, _k1_rate, _d1_rate, _k2_rate, _d2_rate, _k3_rate, _d3_rate,
@@ -120,7 +120,7 @@ class DrugDosingModelSteppable(SteppableBasePy):
 
     def step(self, mcs):
 
-        if self.plot_ddm_data:
+        if self.plot_ddm_data and mcs % plot_ddm_data_freq == 0:
             [self.ddm_data_win.add_data_point(x, mcs, self.sbml.drug_dosing_model[x]) for x in self.ddm_vars]
 
         self.timestep_sbml()
