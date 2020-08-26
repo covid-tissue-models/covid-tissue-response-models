@@ -11,6 +11,7 @@ from .DrugDosingInputs import *
 
 drug_dosing_model_key = "drug_dose_steppable"
 
+days_2_mcs = s_to_mcs / 60 / 60 / 24
 
 class DrugDosingModelSteppable(SteppableBasePy):
     """
@@ -59,13 +60,13 @@ class DrugDosingModelSteppable(SteppableBasePy):
         Available3 = {};
         Available4 = {};
 
-        k0 = {}; // bioavailability rate, units /day = 15 minutes
+        k0 = {}; // bioavailability rate, units /day
         d0 = {} ; // clearance time, units /day 
-        k1 = {} ; // metabolism of primary drug rate, units /day = 1 hour
+        k1 = {} ; // metabolism of primary drug rate, units /day
         d1 = {} ; // clearance time, units /day = 4 hours
-        k2 = {} ; // metabolism of secondary product, units /day = 1 hour
+        k2 = {} ; // metabolism of secondary product, units /day
         d2 = {} ; // clearance time, units /day = 4 hours
-        k3 = {} ; // metabolism of tertiary product, units /day = 1 hour
+        k3 = {} ; // metabolism of tertiary product, units /day
         d3 = {} ; // clearance time, units /day = 4 hours
         d4 = {} ; // clearance time, units /day = 4 hours
 
@@ -95,14 +96,13 @@ class DrugDosingModelSteppable(SteppableBasePy):
                                                                            initial_dose, dose_interval, dose)
 
         # init sbml
-        self.add_free_floating_antimony(model_string=self.drug_model_string, step_size=vr_step_size,
+        self.add_free_floating_antimony(model_string=self.drug_model_string, step_size=days_2_mcs,
                                         model_name='drug_dosing_model')
 
-        # todo: init plots
         # init plots
         if self.plot_ddm_data:
             self.ddm_data_win = self.add_new_plot_window(title='Drug dosing model',
-                                                         x_axis_title='MCS',
+                                                         x_axis_title='Time (hours)',
                                                          y_axis_title='Variables',
                                                          x_scale_type='linear',
                                                          y_scale_type='linear',
@@ -121,7 +121,12 @@ class DrugDosingModelSteppable(SteppableBasePy):
     def step(self, mcs):
 
         if self.plot_ddm_data and mcs % plot_ddm_data_freq == 0:
-            [self.ddm_data_win.add_data_point(x, mcs, self.sbml.drug_dosing_model[x]) for x in self.ddm_vars]
+            [self.ddm_data_win.add_data_point(x, s_to_mcs * mcs / 60 / 60, self.sbml.drug_dosing_model[x])
+             for x in self.ddm_vars]
+
+        # todo: modify rmax -> n=2 diminishing hill function
+        # todo plot rmax
+        # todo do map investigation of max value of avail4 to EC50; ie max(avail4) = [.25, .5, .75, 1, 1.5, 2, 5] EC50
 
         self.timestep_sbml()
 
