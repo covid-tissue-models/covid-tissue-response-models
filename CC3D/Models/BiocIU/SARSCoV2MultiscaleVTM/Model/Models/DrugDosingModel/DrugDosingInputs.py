@@ -2,12 +2,13 @@ __param_desc__ = {}
 
 # Data control options
 __param_desc__['plot_drug_data_freq'] = 'Plot drug model data frequency'
-plot_ddm_data_freq = 10  # Plot recovery model data frequency (disable with 0)
+plot_ddm_data_freq = 1  # Plot recovery model data frequency (disable with 0)
 __param_desc__['write_drug_data_freq'] = 'Write drug model data to simulation directory frequency'
 write_ddm_data_freq = 0  # Write recovery model data to simulation directory frequency (disable with 0)
 
 # parameters
 
+# DDM SBML model
 # initial drug concentrations
 __param_desc__['Initial_Drug'] = 'Amount of Drug already in the system'
 Drug = 0
@@ -64,3 +65,12 @@ dose_interval = 0.25
 
 __param_desc__['dose'] = 'dose of subsequent treatments (arbitrary units)'
 dose = 10
+
+
+# rate reduction parameters
+
+__param_desc__['rel_avail4_EC50'] = 'EC50 value for available 4 in therms of max available 4'
+rel_avail4_EC50 = .5
+
+__param_desc__['hill_coef'] = 'Hill coeficient for diminishing hill function of rmax'
+hill_coef = 2
