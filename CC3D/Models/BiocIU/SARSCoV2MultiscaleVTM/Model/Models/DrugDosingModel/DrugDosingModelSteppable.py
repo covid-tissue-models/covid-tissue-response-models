@@ -3,15 +3,27 @@ import os
 from cc3d.core.PySteppables import *
 
 sys.path.append(os.path.join(os.environ["ViralInfectionVTM"], "Simulation"))
-from ViralInfectionVTMModelInputs import s_to_mcs, vr_step_size
+from ViralInfectionVTMModelInputs import s_to_mcs, vr_step_size, replicating_rate
 import ViralInfectionVTMLib
+# ViralInfectionVTMSteppableBasePy.vr_model_name
+# from ViralInfectionVTMSteppableBasePy import vr_model_name
+
 from ViralInfectionVTMSteppables import SimDataSteppable
+from nCoVToolkit import nCoVUtils
 
 from .DrugDosingInputs import *
 
 drug_dosing_model_key = "drug_dose_steppable"
 
 days_2_mcs = s_to_mcs / 60 / 60 / 24
+
+'''
+with the default parameters (k0 = 100.0; d0 = 1.0; k1 = 25.0; d1 = 6.0; k2 = 25.0; d2 = 6.0; k3 = 25.0; d3 = 6.0; 
+d4 = 6.0) max(Available4) is a linear function of dose following:
+
+max(Available4) ~= 4.14360796e-01 x dose -1.65564741e-08
+'''
+
 
 class DrugDosingModelSteppable(SteppableBasePy):
     """
@@ -25,6 +37,13 @@ class DrugDosingModelSteppable(SteppableBasePy):
 
         self.plot_ddm_data = plot_ddm_data_freq > 0
         self.write_ddm_data = write_ddm_data_freq > 0
+
+        self.max_avail4 = 4.14360796e-01 * dose  # see comment just before steppable definition
+
+        self.vr_model_name = ViralInfectionVTMLib.vr_model_name
+
+        if self.write_ddm_data:
+            self.data_files = {'ddm_data': 'ddm_data.dat', 'ddm_rmax_data': 'ddm_rmax_data.dat'}
 
     def set_drug_model_string(self, _init_drug, _init_avail1, _init_avail2, _init_avail3, _init_avail4,
                               _k0_rate, _d0_rate, _k1_rate, _d1_rate, _k2_rate, _d2_rate, _k3_rate, _d3_rate,
@@ -86,6 +105,28 @@ class DrugDosingModelSteppable(SteppableBasePy):
 
         return dosingmodel_str, drug_dosig_model_vars
 
+    def init_plots(self):
+        self.ddm_data_win = self.add_new_plot_window(title='Drug dosing model',
+                                                     x_axis_title='Time (hours)',
+                                                     y_axis_title='Variables',
+                                                     x_scale_type='linear',
+                                                     y_scale_type='linear',
+                                                     grid=True,
+                                                     config_options={'legend': True})
+        colors = ['blue', 'red', 'green', 'yellow', 'white']
+        for c, var in zip(colors, self.ddm_vars):
+            self.ddm_data_win.add_plot(var, style='Dots', color=c, size=5)
+
+        self.rmax_data_win = self.add_new_plot_window(title='r_max vs Time',
+                                                      x_axis_title='Time (hours)',
+                                                      y_axis_title='r_max',
+                                                      x_scale_type='linear',
+                                                      y_scale_type='linear',
+                                                      grid=True,
+                                                      config_options={'legend': True})
+
+        self.rmax_data_win.add_plot('rmax', style='Dots', color='red', size=5)
+
     def start(self):
 
         # set model string
@@ -101,28 +142,41 @@ class DrugDosingModelSteppable(SteppableBasePy):
 
         # init plots
         if self.plot_ddm_data:
-            self.ddm_data_win = self.add_new_plot_window(title='Drug dosing model',
-                                                         x_axis_title='Time (hours)',
-                                                         y_axis_title='Variables',
-                                                         x_scale_type='linear',
-                                                         y_scale_type='linear',
-                                                         grid=True,
-                                                         config_options={'legend': True})
-            colors = ['blue', 'red', 'green', 'yellow', 'white']
-            for c, var in zip(colors, self.ddm_vars):
-                self.ddm_data_win.add_plot(var, style='Dots', color=c, size=5)
+            self.init_plots()
 
-        # todo: init data save
-        # save data
+        # init save data
+        if self.write_ddm_data:
+            from pathlib import Path
+            for key, rel_path in self.data_files.items():
+                self.data_files[key] = Path(self.output_dir).joinpath(rel_path)
+                with open(self.data_files[key], 'w'):
+                    pass
 
         # Post reference to self
         self.shared_steppable_vars[self.drug_dosing_model_key] = self
 
+    def get_rmax(self, avail4):
+        return (1 - nCoVUtils.hill_equation(avail4, rel_avail4_EC50 * self.max_avail4, 2)) * replicating_rate
+
     def step(self, mcs):
+        rmax = self.get_rmax(self.sbml.drug_dosing_model['Available4'])
+        print(rmax)
+        for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING):
+            # print(self.vr_model_name)
+            # vr_model_name = self.vr_model_name
+            # todo: grab sbml from variable
+            # vr_model = cell.sbml.vr_model_name.__str__()
+            vr_model = cell.sbml.viralReplication
+            vr_model.replicating_rate = rmax
 
         if self.plot_ddm_data and mcs % plot_ddm_data_freq == 0:
             [self.ddm_data_win.add_data_point(x, s_to_mcs * mcs / 60 / 60, self.sbml.drug_dosing_model[x])
              for x in self.ddm_vars]
+            if mcs > first_dose / days_2_mcs:
+                self.rmax_data_win.add_data_point('rmax', s_to_mcs * mcs / 60 / 60, rmax)
+
+        if self.write_ddm_data and mcs % write_ddm_data_freq == 0:
+            pass
 
         # todo: modify rmax -> n=2 diminishing hill function
         # todo plot rmax
