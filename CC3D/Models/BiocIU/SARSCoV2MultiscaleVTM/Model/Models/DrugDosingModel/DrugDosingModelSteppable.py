@@ -42,8 +42,11 @@ class DrugDosingModelSteppable(SteppableBasePy):
 
         self.vr_model_name = ViralInfectionVTMLib.vr_model_name
 
+        self.__flush_counter = 1
+
         if self.write_ddm_data:
             self.data_files = {'ddm_data': 'ddm_data.dat', 'ddm_rmax_data': 'ddm_rmax_data.dat'}
+            self.ddm_data = {'ddm_data': {}, 'ddm_rmax_data': {}}
 
     def set_drug_model_string(self, _init_drug, _init_avail1, _init_avail2, _init_avail3, _init_avail4,
                               _k0_rate, _d0_rate, _k1_rate, _d1_rate, _k2_rate, _d2_rate, _k3_rate, _d3_rate,
@@ -176,17 +179,37 @@ class DrugDosingModelSteppable(SteppableBasePy):
                 self.rmax_data_win.add_data_point('rmax', s_to_mcs * mcs / 60 / 60, rmax)
 
         if self.write_ddm_data and mcs % write_ddm_data_freq == 0:
-            pass
+            self.ddm_data['ddm_rmax_data'][mcs] = [rmax]
 
-        # todo: modify rmax -> n=2 diminishing hill function
-        # todo plot rmax
+            self.ddm_data['ddm_data'][mcs] = [self.sbml.drug_dosing_model[x] for x in self.ddm_vars]
+
         # todo do map investigation of max value of avail4 to EC50; ie max(avail4) = [.25, .5, .75, 1, 1.5, 2, 5] EC50
 
+        if mcs >= int(self.simulator.getNumSteps() / 4 * self.__flush_counter):
+            self.flush_stored_outputs()
+            self.__flush_counter += 1
+
         self.timestep_sbml()
+
+    def flush_stored_outputs(self):
+        """
+        Write stored outputs to file and clear output storage
+        :return: None
+        """
+        # Each tuple contains the necessary information for writing a set of data to file
+        #   1. Boolean for whether we're writing to file at all
+        #   2. The path to write the data to
+        #   3. The data to write
+        out_info = [(self.write_ddm_data, self.data_files[x], self.ddm_data[x]) for x in self.ddm_data.keys()]
+
+        for write_data, data_path, data in out_info:
+            if write_data:
+                with open(data_path, 'a') as fout:
+                    fout.write(SimDataSteppable.data_output_string(self, data))
+                    data.clear()
 
     def on_stop(self):
         self.finish()
 
     def finish(self):
-        # todo: call flush function
-        return
+        self.flush_stored_outputs()
