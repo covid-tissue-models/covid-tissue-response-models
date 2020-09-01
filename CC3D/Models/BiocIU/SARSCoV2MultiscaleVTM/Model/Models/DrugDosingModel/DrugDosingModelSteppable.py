@@ -3,8 +3,11 @@ import os
 from cc3d.core.PySteppables import *
 
 sys.path.append(os.path.join(os.environ["ViralInfectionVTM"], "Simulation"))
-from ViralInfectionVTMModelInputs import s_to_mcs, vr_step_size, replicating_rate
+from ViralInfectionVTMModelInputs import s_to_mcs, vr_step_size, replicating_rate, kon, koff, \
+    initial_unbound_receptors, hill_coeff_uptake_pr, rate_coeff_uptake_pr, max_ck_secrete_infect, unpacking_rate, \
+    r_half, translating_rate, packing_rate, secretion_rate
 import ViralInfectionVTMLib
+from ViralInfectionVTMSteppableBasePy import *
 # ViralInfectionVTMSteppableBasePy.vr_model_name
 # from ViralInfectionVTMSteppableBasePy import vr_model_name
 
@@ -25,13 +28,13 @@ max(Available4) ~= 4.14360796e-01 x dose -1.65564741e-08
 '''
 
 
-class DrugDosingModelSteppable(SteppableBasePy):
+class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
     """
     Implements drug dosing regimen
     """
 
     def __init__(self, frequency=1):
-        super().__init__(self, frequency)
+        ViralInfectionVTMSteppableBasePy.__init__(self, frequency)
 
         self.drug_dosing_model_key = drug_dosing_model_key
 
@@ -142,6 +145,12 @@ class DrugDosingModelSteppable(SteppableBasePy):
         # init sbml
         self.add_free_floating_antimony(model_string=self.drug_model_string, step_size=days_2_mcs,
                                         model_name='drug_dosing_model')
+        self.rmax = self.get_rmax(self.sbml.drug_dosing_model['Available4'])
+
+        # replace viral uptake function
+        vim_steppable = self.shared_steppable_vars[ViralInfectionVTMLib.vim_steppable_key]
+
+        vim_steppable.do_cell_internalization = self.do_cell_internalization_w_rmax
 
         # init plots
         if self.plot_ddm_data:
@@ -162,20 +171,20 @@ class DrugDosingModelSteppable(SteppableBasePy):
         return (1 - nCoVUtils.hill_equation(avail4, rel_avail4_EC50 * self.max_avail4, 2)) * replicating_rate
 
     def step(self, mcs):
-        rmax = self.get_rmax(self.sbml.drug_dosing_model['Available4'])
-        print(rmax)
+        self.rmax = self.get_rmax(self.sbml.drug_dosing_model['Available4'])
+        # print(rmax)
         for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING):
             vr_model = getattr(cell.sbml, self.vr_model_name)
-            vr_model.replicating_rate = rmax
+            vr_model.replicating_rate = self.rmax
 
         if self.plot_ddm_data and mcs % plot_ddm_data_freq == 0:
             [self.ddm_data_win.add_data_point(x, s_to_mcs * mcs / 60 / 60, self.sbml.drug_dosing_model[x])
              for x in self.ddm_vars]
             if mcs > first_dose / days_2_mcs:
-                self.rmax_data_win.add_data_point('rmax', s_to_mcs * mcs / 60 / 60, rmax)
+                self.rmax_data_win.add_data_point('rmax', s_to_mcs * mcs / 60 / 60, self.rmax)
 
         if self.write_ddm_data and mcs % write_ddm_data_freq == 0:
-            self.ddm_data['ddm_rmax_data'][mcs] = [rmax]
+            self.ddm_data['ddm_rmax_data'][mcs] = [self.rmax]
 
             self.ddm_data['ddm_data'][mcs] = [self.sbml.drug_dosing_model[x] for x in self.ddm_vars]
 
@@ -186,6 +195,34 @@ class DrugDosingModelSteppable(SteppableBasePy):
             self.__flush_counter += 1
 
         self.timestep_sbml()
+
+    def do_cell_internalization_w_rmax(self, cell, viral_amount_com):
+        if cell.dict['Receptors'] == 0:
+            return False, 0.0
+
+        _k = kon * cell.volume / koff
+        diss_coeff_uptake_pr = (initial_unbound_receptors / 2.0 / _k / cell.dict['Receptors']) ** \
+                               (1.0 / hill_coeff_uptake_pr)
+        uptake_probability = nCoVUtils.hill_equation(viral_amount_com,
+                                                     diss_coeff_uptake_pr,
+                                                     hill_coeff_uptake_pr)
+
+        cell_does_uptake = np.random.rand() < uptake_probability
+        uptake_amount = s_to_mcs / rate_coeff_uptake_pr * uptake_probability
+
+        if cell_does_uptake and cell.type == self.UNINFECTED:
+            cell.type = self.INFECTED
+            cell.dict['ck_production'] = max_ck_secrete_infect
+            self.load_viral_replication_model(cell=cell, vr_step_size=vr_step_size,
+                                              unpacking_rate=unpacking_rate,
+                                              # replicating_rate=replicating_rate,
+                                              replicating_rate=self.rmax,
+                                              r_half=r_half,
+                                              translating_rate=translating_rate,
+                                              packing_rate=packing_rate,
+                                              secretion_rate=secretion_rate)
+
+        return cell_does_uptake, uptake_amount
 
     def flush_stored_outputs(self):
         """
