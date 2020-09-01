@@ -165,11 +165,7 @@ class DrugDosingModelSteppable(SteppableBasePy):
         rmax = self.get_rmax(self.sbml.drug_dosing_model['Available4'])
         print(rmax)
         for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING):
-            # print(self.vr_model_name)
-            # vr_model_name = self.vr_model_name
-            # todo: grab sbml from variable
-            # vr_model = cell.sbml.vr_model_name.__str__()
-            vr_model = cell.sbml.viralReplication
+            vr_model = getattr(cell.sbml, self.vr_model_name)
             vr_model.replicating_rate = rmax
 
         if self.plot_ddm_data and mcs % plot_ddm_data_freq == 0:
