@@ -60,7 +60,7 @@ __param_desc__['exp_translating_rate'] = 'Translating rate'
 exp_translating_rate = 1.0 / 300.0 * 1.0 / 60.0
 __param_desc__['exp_packing_rate'] = 'Packing rate'
 exp_packing_rate = 1.0 / 100.0 * 1.0 / 60.0
-__param_desc__['exp_secretion_rate'] = 'Secretion rate'
+__param_desc__['exp_secretion_rate'] = 'Secretion rate'  # of? assembled virus
 exp_secretion_rate = 1.0 / 100.0 * 1.0 / 60.0
 
 __param_desc__['exp_virus_dc'] = 'Viral diffusion coefficient'
@@ -85,7 +85,7 @@ exp_min_ck_decay = exp_cytokine_dc_cyto/(1.1*exp_max_ck_diff_len)**2
 # molecule / (cell second); maximum consumption of cytokine; actually a range [0.3,1] molecule / (cell second) (A)
 __param_desc__['exp_max_cytokine_consumption_mol'] = 'Cytokine immune uptake rate'
 exp_max_cytokine_consumption_mol = 3.5e-4  # pM/s (B) -- they also have it in 1 molecule / (cell second)
-__param_desc__['exp_max_cytokine_immune_secretion_mol'] = 'Maximum cytokine lung tissue secretion rate'
+__param_desc__['exp_max_cytokine_immune_secretion_mol'] = 'Maximum cytokine immune cell secretion rate'
 exp_max_cytokine_immune_secretion_mol = 3.5e-3  # pM/s (B) -- they also have it in 10 molecule / (cell second)
 
 __param_desc__['exp_EC50_cytokine_immune'] = 'Immune cell cytokine activation'
@@ -96,6 +96,10 @@ minimum_activated_time_seconds = 600 * 60  # min * s/min
 
 __param_desc__['exp_max_amount_viral_mRNA'] = 'Scale factor for number of mRNA per infected cell'
 exp_max_amount_viral_mRNA = 1000
+
+# 10^5 ~ 10^7 /mL RNA
+# ~ 2000 um^3 cell volume -> 2e-9 mL/cell
+#
 
 # oxidation agent
 
@@ -173,7 +177,7 @@ minimum_activated_time = minimum_activated_time_seconds/s_to_mcs  # mcs
 
 __param_desc__['ec50_infecte_ck_prod'] = 'Amount of internal assembled virus to be at 50% cytokine production'
 ec50_infecte_ck_prod = 0.1  # amount of 'internal assembled virus' to be at 50% ck production; chosen from
-# tipical simulation values of cell.dict['Uptake'] + cell.dict['Assembled']. they stay around .1 and go up as the
+# typical simulation values of cell.dict['Uptake'] + cell.dict['Assembled']. they stay around .1 and go up as the
 # simulation progresses
 
 # oxidation agent
