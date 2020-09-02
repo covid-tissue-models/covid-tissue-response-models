@@ -921,7 +921,7 @@ class CytokineProductionAbsorptionSteppable(ViralInfectionVTMSteppableBasePy):
 
             if cell.dict['activated']:
                 seen_field = self.total_seen_field(self.field.cytokine, cell)
-                produced = cell.dict['ck_production'] * nCoVUtils.hill_equation(seen_field, 100, 1)
+                produced = cell.dict['ck_production'] * nCoVUtils.hill_equation(seen_field, ec50_immune_ck_prod, 1)
                 sec_res = self.ck_secretor.secreteInsideCellTotalCount(cell, produced / cell.volume)
 
                 total_ck_inc += sec_res.tot_amount
