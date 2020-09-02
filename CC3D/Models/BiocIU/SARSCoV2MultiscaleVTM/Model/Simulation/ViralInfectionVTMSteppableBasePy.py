@@ -33,8 +33,8 @@ class ViralInfectionVTMSteppableBasePy(nCoVSteppableBase):
 
     def viral_replication_model_string(self, *args, **kwargs):
         """
-        Antimony model string generator for viral replication model; can be overloaded in sublcasses or set with
-        set_viral_replication_model()
+        Antimony model string generator for viral replication model; can be set with set_viral_replication_model(), and
+        subclasses can override
         :param args:
         :param kwargs:
         :return {str}: Antimony model string for viral replication model
@@ -54,7 +54,7 @@ class ViralInfectionVTMSteppableBasePy(nCoVSteppableBase):
 
     def load_viral_replication_model(self, *args, **kwargs):
         """
-        Loads viral replication model for a cell; can be overloaded in subclasses
+        Loads viral replication model for a cell; subclasses can override
         :param args:
         :param kwargs:
         :return: None

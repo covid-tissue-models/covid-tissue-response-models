@@ -32,6 +32,9 @@ root directory of the simulation framework. So, for example, to import the varia
     sys.path.append(os.path.join(os.environ["ViralInfectionVTM"], "Simulation"))
     from ViralInfectionVTMModelInputs import s_to_mcs
 
+
+For a demonstration of this, see ``RecoverySteppables.py`` in the module ``Models.RecoverySimple``.
+
 The same can be done for importing model modules defined in this collection (*e.g.*, for using or extending
 add-on models). For example, if you would like to build a new steppable from ``SimpleRecoverySteppable`` defined
 in the model module ``Models.RecoverySimple``, you can import ``SimpleRecoverySteppable`` with the following
@@ -46,4 +49,5 @@ basic Python procedures,
 
 Like any other Python class, steppables (and other code) defined in one model module can be extended by, or
 integrated into, other modules. As such, the components of the overall simulation framework are not only
-interchangable and shareable, but also *extensible*.
+interchangable and shareable, but also *extensible*. For a demonstration of this, see ``RecoverySteppables.py``
+in the module ``Models.RecoveryNeighbor``.
