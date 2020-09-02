@@ -67,40 +67,31 @@ __param_desc__['exp_virus_dc'] = 'Viral diffusion coefficient'
 exp_virus_dc = 10.0 / 1000.0  # um^2/s
 
 # cytokines:
-# data from https://www.sciencedirect.com/science/article/pii/S1074761317300924 supplemental materials (A)
-# and
+# data from https://www.sciencedirect.com/science/article/pii/S1074761317300924 supplemental materials (A) and
 # from https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3433682/ (B)
 # cytoplasm_density = 6  # unit = [density of water](B)
+# 100  um^2/s; diffusion constant in water (A,B)
+# the division by 10 is due to the small lattice size, as discussed with josh. we all should discuss this matter
 
-# __param_desc__['exp_cytokine_dc_w'] = 'Cytokine extracellular diffusion coefficient'
-# exp_cytokine_dc_w = 100  # um^2/s; diffusion constant in water (A,B)
-# the division by 10 is due to the small lattice size, as fiscussed with josh. we all should discuss this matter
 __param_desc__['exp_cytokine_dc_cyto'] = 'Cytokine diffusion coefficient'
 exp_cytokine_dc_cyto = 16 / 100  # um^2/s; estimated diffusion constant in cytoplasm (B)
-# ^ the  /10 is not experimental; added because of relative small area and because virus D is (or was) slowed down
 
 __param_desc__['exp_max_ck_diff_len'] = 'Cytokine diffusion length'
 exp_max_ck_diff_len = 100  # um  from (A); this diffusion length is due to uptake, I'm using it as a base
-# for the decay due to ck leakage outside of the simulatted lattice.
+# for the decay due to ck leakage outside of the simulated lattice.
 # dl = sqrt(D/g) -> g = D/dl**2
 __param_desc__['exp_min_ck_decay'] = 'Cytokine decay coefficient'
 exp_min_ck_decay = exp_cytokine_dc_cyto/(1.1*exp_max_ck_diff_len)**2
 
 # molecule / (cell second); maximum consumption of cytokine; actually a range [0.3,1] molecule / (cell second) (A)
-# __param_desc__['exp_max_cytokine_consumption'] = 'Maximum cytokine consumption'
-# exp_max_cytokine_consumption = 1
-# molecule / (cell second) (B)
-# __param_desc__['exp_max_cytokine_immune_secretion'] = 'Maximum cytokine immune secretion rate'
-# exp_max_cytokine_immune_secretion = 10
-
 __param_desc__['exp_max_cytokine_consumption_mol'] = 'Cytokine immune uptake rate'
-exp_max_cytokine_consumption_mol = 3.5e-4  # pM/s
+exp_max_cytokine_consumption_mol = 3.5e-4  # pM/s (B) -- they also have it in 1 molecule / (cell second)
 __param_desc__['exp_max_cytokine_immune_secretion_mol'] = 'Maximum cytokine lung tissue secretion rate'
-exp_max_cytokine_immune_secretion_mol = 3.5e-3  # pM/s
+exp_max_cytokine_immune_secretion_mol = 3.5e-3  # pM/s (B) -- they also have it in 10 molecule / (cell second)
 
 __param_desc__['exp_EC50_cytokine_immune'] = 'Immune cell cytokine activation'
 exp_EC50_cytokine_immune = 10  # pM from (B), it's a range from [1,50]pM
-# tbd: try to find experimental data
+
 __param_desc__['minimum_activated_time_seconds'] = 'Immune cell activated time'
 minimum_activated_time_seconds = 600 * 60  # min * s/min
 
@@ -116,9 +107,8 @@ exp_oxi_dl = 3 * exp_cell_diameter  # [um]; guestimation; [.3,3]
 # http://www.idc-online.com/technical_references/pdfs/chemical_engineering/Transport_Properties_of_Hydrogen_Peroxide_II.pdf
 # exp_oxi_dc_water = exp_oxi_dc_water * 1e8 / 86400  # um2/s
 # exp_oxi_dc_cyto = exp_oxi_dc_water * .16  # rescale by relative density; cyto ~ 6*water
-# exp_oxi_dc_cyto = exp_cytokine_dc_cyto
 
-# the experimental values are WAY WAY too high for the simulation to behave properlly, so:
+# the experimental values are WAY WAY too high for the simulation to behave properly, so:
 __param_desc__['exp_oxi_dc_cyto'] = 'Oxidation Agent diffusion coefficient'
 exp_oxi_dc_cyto = 4 * exp_cytokine_dc_cyto
 
@@ -173,7 +163,6 @@ __param_desc__['ec50_immune_ck_prod'] = 'Amount of seen cytokine at 50% cytokine
 # todo: backtrack ec50_immune_ck_prod to the unitfull parameter
 ec50_immune_ck_prod = 100  # amount of seen cytokine at 50% ck production by immune cells
 __param_desc__['ck_equilibrium'] = 'equilibrium amount of ck in immune surface'
-# ck_equilibrium = 1.5*EC50_ck_immune # equilibrium amount of ck in immune surface
 ck_equilibrium = 2.1*EC50_ck_immune  # equilibrium amount of ck in immune surface
 __param_desc__['ck_memory_immune'] = '1 - Immune cell bound cytokine memory'
 ck_memory_immune = 1 - max_ck_consume/ck_equilibrium  # decay therm for "seen" ck by immune
@@ -201,13 +190,20 @@ __param_desc__['oxi_decay'] = 'Unitless Oxidation Agent decay coefficient'
 oxi_decay = oxi_dl**2/oxi_dc
 
 __param_desc__['oxi_sec_thr'] = 'Immune cell cytokine concentration threshold for Oxidation Agent release'
-oxi_sec_thr = 10  # todo: backtrck to unitfull -> 1.5625 pM
+oxi_sec_thr = 10  # backtracked to unitfull -> 1.5625 pM
+
+__param_desc__['oxi_sec_thr_unitfull'] = 'Immune cell cytokine concentration (with units) threshold for Oxidation ' \
+                                         'Agent release '
+oxi_sec_thr_unitfull = oxi_sec_thr / (um_to_lat_width ** 3 * 1e-15 * pmol_to_cc3d_au)
 
 __param_desc__['max_oxi_secrete'] = 'Immune cell oxidation agent secretion rate'
 max_oxi_secrete = max_ck_secrete_infect
 
 __param_desc__['oxi_death_thr'] = 'Tissue cell Oxidation Agent threshold for death'
-oxi_death_thr = 1.5  # todo: backtrck to unitfull -> 0.234375 pM
+oxi_death_thr = 1.5  # backtracked to unitfull -> 0.234375 pM
+
+__param_desc__['oxi_death_thr_unitfull'] = 'Tissue cell Oxidation Agent (with units) threshold for death'
+oxi_death_thr_unitfull = oxi_death_thr / (um_to_lat_width ** 3 * 1e-15 * pmol_to_cc3d_au)
 
 # Threshold at which cell infection is evaluated
 __param_desc__['cell_infection_threshold'] = 'Threshold of assembled viral particles above which infected become ' \
