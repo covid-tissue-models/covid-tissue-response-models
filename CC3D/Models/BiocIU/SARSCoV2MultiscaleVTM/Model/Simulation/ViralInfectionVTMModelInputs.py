@@ -71,7 +71,6 @@ exp_virus_dc = 10.0 / 1000.0  # um^2/s
 # from https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3433682/ (B)
 # cytoplasm_density = 6  # unit = [density of water](B)
 # 100  um^2/s; diffusion constant in water (A,B)
-# the division by 10 is due to the small lattice size, as discussed with josh. we all should discuss this matter
 
 __param_desc__['exp_cytokine_dc_cyto'] = 'Cytokine diffusion coefficient'
 exp_cytokine_dc_cyto = 16 / 100  # um^2/s; estimated diffusion constant in cytoplasm (B)
