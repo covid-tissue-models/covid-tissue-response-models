@@ -40,13 +40,16 @@ os.environ["ViralInfectionVTM"] = os.path.dirname(__file__)
 #     Parameter set 2: {kon *= 0.1, ir_delay_coeff *= 1}
 #     Parameter set 3: {kon *= 1  , ir_delay_coeff *= 1}
 mult_dict = None
+mult_dict = {'rel_avail4_EC50': [0.01, 0.1, .25, .5, .75, 1, 1.5, 2, 5, 10]}
+mult_dict = {'rel_avail4_EC50': [1000]}  # for testing
+
 # Number of replicas to run per parameter set
 num_rep = 10
 # Number of simulations to run in parallel per parameter set
 #   Simulations are implemented in parallel per set of replicas of each parameter set
 #   E.g., if running 10 replicas of 2 sets of parameters, then this will run each set of 10 replicas <num_par> at a time
 #   You can start by setting this to the number of cores of your machine's CPU
-num_par = 1
+num_par = 5
 # Output frequency of simulation data per simulation replica
 out_freq = 10
 # Sweep output directory
@@ -68,7 +71,8 @@ out_freq = 10
 #               ...
 #           set_1/
 #           ...
-sweep_output_folder = None
+sweep_output_folder = os.path.abspath(os.path.join(os.path.splitdrive(os.getcwd())[0], '/DrugDosing_test'))
+
 # Option to execute sweep simulations
 #   Set to False to not run simulations
 opt_run_sims = True
@@ -85,8 +89,11 @@ dump_folder = None
 # Input modules to export
 #   Format input_modules as a list with input modules to export their parameter values as csv
 #   Set input_modules to None to not export anything
+
 from Simulation import ViralInfectionVTMModelInputs
-input_modules = [ViralInfectionVTMModelInputs]
+from Models.DrugDosingModel import DrugDosingInputs
+
+input_modules = [ViralInfectionVTMModelInputs, DrugDosingInputs]
 
 # ----------------------------- Advanced inputs ----------------------------- #
 
