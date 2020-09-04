@@ -62,7 +62,7 @@ __param_desc__['exp_translating_rate'] = 'Translating rate'
 exp_translating_rate = 1.0 / 300.0 * 1.0 / 60.0
 __param_desc__['exp_packing_rate'] = 'Packing rate'
 exp_packing_rate = 1.0 / 100.0 * 1.0 / 60.0
-__param_desc__['exp_secretion_rate'] = 'Secretion rate'  # of? assembled virus
+__param_desc__['exp_secretion_rate'] = 'Secretion rate of assembled virus'
 exp_secretion_rate = 1.0 / 100.0 * 1.0 / 60.0
 
 __param_desc__['exp_virus_dc'] = 'Viral diffusion coefficient'
