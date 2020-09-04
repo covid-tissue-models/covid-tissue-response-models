@@ -44,6 +44,8 @@ __param_desc__['s_to_mcs'] = 'Simulation step'
 s_to_mcs = 1200.0  # s/mcs
 __param_desc__['um_to_lat_width'] = 'Lattice width'
 um_to_lat_width = 4.0  # um/lattice_length
+__param_desc__['mol_p_L_2_mol_p_um3'] = 'Conversion from mol/L to mol/um^3'
+mol_p_L_2_mol_p_um3 = 1e-15
 
 __param_desc__['pmol_to_cc3d_au'] = 'Scale factor for concentration'
 pmol_to_cc3d_au = 1e14  # 1e15au/1pmol
@@ -155,19 +157,22 @@ cytokine_field_decay = exp_min_ck_decay * s_to_mcs
 # pM = pmol/L = pmol/(10^15 um^3) = 10^-15 pmol/(um^3) = 10^-15 * um_to_lat_width^3 pmol/pixel
 # pM/s = pM * s_to_mcs / MCS
 __param_desc__['max_ck_consume'] = 'Unitless maximum cytokine consumption'
-max_ck_consume = exp_max_cytokine_consumption_mol * um_to_lat_width ** 3 * s_to_mcs * 1e-15 * pmol_to_cc3d_au  #
-# cc3d_au/(pixel seconds)
+max_ck_consume = exp_max_cytokine_consumption_mol * um_to_lat_width ** 3 * s_to_mcs * mol_p_L_2_mol_p_um3 * \
+                 pmol_to_cc3d_au  # cc3d_au/(pixel seconds)
+
 __param_desc__['max_ck_secrete_im'] = 'Unitless maximum cytokine immune secretion rate'
-max_ck_secrete_im = exp_max_cytokine_immune_secretion_mol * um_to_lat_width ** 3 * s_to_mcs * 1e-15 * pmol_to_cc3d_au  #
-# cc3d_au/(pixel seconds)
+max_ck_secrete_im = exp_max_cytokine_immune_secretion_mol * um_to_lat_width ** 3 * s_to_mcs * mol_p_L_2_mol_p_um3 * \
+                    pmol_to_cc3d_au  # cc3d_au/(pixel seconds)
+
 __param_desc__['EC50_ck_immune'] = 'Unitless immune cell cytokine activation'
-EC50_ck_immune = exp_EC50_cytokine_immune * um_to_lat_width ** 3 * 1e-15 * pmol_to_cc3d_au  # * cc3d_au/pixel
+EC50_ck_immune = exp_EC50_cytokine_immune * um_to_lat_width ** 3 * mol_p_L_2_mol_p_um3 * \
+                 pmol_to_cc3d_au  # * cc3d_au/pixel
 __param_desc__['ec50_immune_ck_prod'] = 'Amount of seen cytokine at 50% cytokine production by immune cells'
 
 ec50_immune_ck_prod = 100  # amount of seen cytokine at 50% ck production by immune cells
 __param_desc__['unitfull_ec50_immune_ck_prod'] = 'Amount of seen cytokine at 50% cytokine production by immune cells ' \
                                                  'with units'
-unitfull_ec50_immune_ck_prod = ec50_immune_ck_prod / (um_to_lat_width ** 3 * 1e-15 * pmol_to_cc3d_au)
+unitfull_ec50_immune_ck_prod = ec50_immune_ck_prod / (um_to_lat_width ** 3 * mol_p_L_2_mol_p_um3 * pmol_to_cc3d_au)
 __param_desc__['ck_equilibrium'] = 'equilibrium amount of ck in immune surface'
 ck_equilibrium = 2.1*EC50_ck_immune  # equilibrium amount of ck in immune surface
 __param_desc__['ck_memory_immune'] = '1 - Immune cell bound cytokine memory'
@@ -200,7 +205,7 @@ oxi_sec_thr = 10  # backtracked to unitfull -> 1.5625 pM
 
 __param_desc__['oxi_sec_thr_unitfull'] = 'Immune cell cytokine concentration (with units) threshold for Oxidation ' \
                                          'Agent release '
-oxi_sec_thr_unitfull = oxi_sec_thr / (um_to_lat_width ** 3 * 1e-15 * pmol_to_cc3d_au)
+oxi_sec_thr_unitfull = oxi_sec_thr / (um_to_lat_width ** 3 * mol_p_L_2_mol_p_um3 * pmol_to_cc3d_au)
 
 __param_desc__['max_oxi_secrete'] = 'Immune cell oxidation agent secretion rate'
 max_oxi_secrete = max_ck_secrete_infect
@@ -209,7 +214,7 @@ __param_desc__['oxi_death_thr'] = 'Tissue cell Oxidation Agent threshold for dea
 oxi_death_thr = 1.5  # backtracked to unitfull -> 0.234375 pM
 
 __param_desc__['oxi_death_thr_unitfull'] = 'Tissue cell Oxidation Agent (with units) threshold for death'
-oxi_death_thr_unitfull = oxi_death_thr / (um_to_lat_width ** 3 * 1e-15 * pmol_to_cc3d_au)
+oxi_death_thr_unitfull = oxi_death_thr / (um_to_lat_width ** 3 * mol_p_L_2_mol_p_um3 * pmol_to_cc3d_au)
 
 # Threshold at which cell infection is evaluated
 __param_desc__['cell_infection_threshold'] = 'Threshold of assembled viral particles above which infected become ' \
