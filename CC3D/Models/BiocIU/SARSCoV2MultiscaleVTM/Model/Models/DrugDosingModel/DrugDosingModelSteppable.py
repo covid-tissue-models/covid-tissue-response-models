@@ -37,7 +37,7 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
 
     def __init__(self, frequency=1):
         ViralInfectionVTMSteppableBasePy.__init__(self, frequency)
-        import DrugDosingInputs
+        import Models.DrugDosingModel.DrugDosingInputs as DrugDosingInputs
         BatchRunLib.apply_external_multipliers(__name__, DrugDosingInputs)
         self.drug_dosing_model_key = drug_dosing_model_key
 
