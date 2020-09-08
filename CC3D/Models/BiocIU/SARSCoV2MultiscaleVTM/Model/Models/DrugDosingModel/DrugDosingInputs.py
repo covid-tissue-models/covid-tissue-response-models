@@ -1,28 +1,28 @@
 __param_desc__ = {}
 
 # Data control options
-__param_desc__['plot_drug_data_freq'] = 'Plot drug model data frequency'
+__param_desc__['plot_ddm_data_freq'] = 'Plot drug model data frequency'
 plot_ddm_data_freq = 1  # Plot recovery model data frequency (disable with 0)
-__param_desc__['write_drug_data_freq'] = 'Write drug model data to simulation directory frequency'
+__param_desc__['write_ddm_data_freq'] = 'Write drug model data to simulation directory frequency'
 write_ddm_data_freq = 0  # Write recovery model data to simulation directory frequency (disable with 0)
 
 # parameters
 
 # DDM SBML model
 # initial drug concentrations
-__param_desc__['Initial_Drug'] = 'Amount of Drug already in the system'
+__param_desc__['Drug'] = 'Amount of Drug already in the system'
 Drug = 0
 
-__param_desc__['Initial_Available1'] = 'Bioavailable drug already in the system'
+__param_desc__['Available1'] = 'Bioavailable drug already in the system'
 Available1 = 0
 
-__param_desc__['Initial_Available2'] = 'bioavailable metabolite 2 already in the system'
+__param_desc__['Available2'] = 'bioavailable metabolite 2 already in the system'
 Available2 = 0
 
-__param_desc__['Initial_Available3'] = 'bioavailable metabolite 3 already in the system'
+__param_desc__['Available3'] = 'bioavailable metabolite 3 already in the system'
 Available3 = 0
 
-__param_desc__['Initial_Available4'] = 'bioavailable metabolite 4 already in the system'
+__param_desc__['Available4'] = 'bioavailable metabolite 4 already in the system'
 Available4 = 0
 
 # rates
