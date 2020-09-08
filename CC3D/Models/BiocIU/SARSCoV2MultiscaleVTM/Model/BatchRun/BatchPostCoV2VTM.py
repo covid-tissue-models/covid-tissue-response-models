@@ -43,7 +43,8 @@ export_data_desc = {'ir_data': ['ImmuneResp'],
                     'death_data': ['Viral',
                                    'OxiField',
                                    'Contact',
-                                   'Bystander']}
+                                   'Bystander'],
+                    'ddm_rmax_data': ['r_max']}
 
 x_label_str_transient = "Simulation time (MCS)"
 
@@ -62,7 +63,8 @@ y_label_str = {'ir_data': {'ImmuneResp': 'Immune response state variable'},
                'death_data': {'Viral': 'Number of virally-induced apoptosis deaths',
                               'OxiField': 'Number of oxidative deaths',
                               'Contact': 'Number of cytotoxic kill deaths',
-                              'Bystander': 'Number of bystander effect deaths'}
+                              'Bystander': 'Number of bystander effect deaths'},
+                'ddm_rmax_data': {'r_max': 'r_max value'}
                }
 
 fig_save_names = {'ir_data': {'ImmuneResp': 'metric_immune_response_svar'},
@@ -80,7 +82,8 @@ fig_save_names = {'ir_data': {'ImmuneResp': 'metric_immune_response_svar'},
                   'death_data': {'Viral': 'metric_death_viral',
                                  'OxiField': 'metric_death_oxi',
                                  'Contact': 'metric_death_contact',
-                                 'Bystander': 'metric_death_bystander'}
+                                 'Bystander': 'metric_death_bystander'},
+                  'ddm_rmax_data': {'r_max': 'metric_rmax'}
                   }
 
 
