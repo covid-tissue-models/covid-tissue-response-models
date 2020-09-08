@@ -3,6 +3,7 @@ import os
 from cc3d.core.PySteppables import *
 
 sys.path.append(os.path.join(os.environ["ViralInfectionVTM"], "Simulation"))
+sys.path.append(os.environ["ViralInfectionVTM"])
 from ViralInfectionVTMModelInputs import s_to_mcs, vr_step_size, replicating_rate, kon, koff, \
     initial_unbound_receptors, hill_coeff_uptake_pr, rate_coeff_uptake_pr, max_ck_secrete_infect, unpacking_rate, \
     r_half, translating_rate, packing_rate, secretion_rate
@@ -21,6 +22,9 @@ from BatchRun import BatchRunLib
 drug_dosing_model_key = "drug_dose_steppable"
 
 days_2_mcs = s_to_mcs / 60 / 60 / 24
+
+# todo: make the target of the drug a model input; i.e. pass the name of the variable to be affected by the drug as
+#  input
 
 '''
 with the default parameters (k0 = 100.0; d0 = 1.0; k1 = 25.0; d1 = 6.0; k2 = 25.0; d2 = 6.0; k3 = 25.0; d3 = 6.0; 
@@ -200,6 +204,7 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
         self.timestep_sbml()
 
     def do_cell_internalization_w_rmax(self, cell, viral_amount_com):
+        # WARNING!! OVERWRITES STEPPABLE FUNCTION OF MAIN MODEL
         if cell.dict['Receptors'] == 0:
             return False, 0.0
 
