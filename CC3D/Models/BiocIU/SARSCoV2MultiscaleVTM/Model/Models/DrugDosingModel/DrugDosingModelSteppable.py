@@ -1,3 +1,17 @@
+# Model effect of Drug Dosing in viral replication
+# Written by J. F. Gianlupi, M.S.
+# #todo write some more
+# Model parameters are specified in DrugDosingInputs.py
+#
+# RandomSusceptibilitySteppable
+#   Description: implements drug dosing and viral replication rate reduction
+#   Usage:
+#       In ViralInfectionVTM.py, add the following
+#
+#           from Models.DrugDosingModel.DrugDosingModelSteppable import DrugDosingModelSteppable
+#           CompuCellSetup.register_steppable(steppable=DrugDosingModelSteppable(frequency=1))
+
+
 import sys
 import os
 from cc3d.core.PySteppables import *
@@ -195,7 +209,7 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
 
             self.ddm_data['ddm_data'][mcs] = [self.sbml.drug_dosing_model[x] for x in self.ddm_vars]
 
-        # todo do map investigation of max value of avail4 to EC50; ie max(avail4) = [.25, .5, .75, 1, 1.5, 2, 5] EC50
+        # todo do map investigation of max value of avail4 to EC50; ie EC50 = [.25, .5, .75, 1, 1.5, 2, 5] max(avail4)
 
         if mcs >= int(self.simulator.getNumSteps() / 4 * self.__flush_counter):
             self.flush_stored_outputs()
