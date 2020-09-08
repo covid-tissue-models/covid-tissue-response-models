@@ -69,7 +69,8 @@ dose = 10
 
 # rate reduction parameters
 
-__param_desc__['rel_avail4_EC50'] = 'EC50 value for available 4 in therms of max available 4'
+__param_desc__['rel_avail4_EC50'] = 'EC50 value for rmax reduction in therms of max available 4,' \
+                                    ' ie EC50 = rel_avail4_EC50 * max(available 4)'
 rel_avail4_EC50 = 1
 
 __param_desc__['hill_coef'] = 'Hill coeficient for diminishing hill function of rmax'
