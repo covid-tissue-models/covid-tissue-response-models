@@ -18,11 +18,14 @@ import numpy as np
 
 rng = np.random  # alias for random number generators (rng)
 
+sys.path.append(os.path.join(os.environ["ViralInfectionVTM"], "Simulation"))
+
 # Import project libraries and classes
 sys.path.append(os.path.dirname(__file__))
 from ViralInfectionVTMSteppableBasePy import *
 import ViralInfectionVTMLib
 from ViralInfectionVTMModelInputs import *
+from BatchRun import BatchRunLib
 
 # Import toolkit
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
@@ -36,6 +39,8 @@ class CellsInitializerSteppable(ViralInfectionVTMSteppableBasePy):
 
     def __init__(self, frequency=1):
         ViralInfectionVTMSteppableBasePy.__init__(self, frequency)
+        import ViralInfectionVTMModelInputs as ViralInfectionVTMModelInputs
+        BatchRunLib.apply_external_multipliers(__name__, ViralInfectionVTMModelInputs)
 
     def start(self):
         self.get_xml_element('virus_dc').cdata = virus_dc
