@@ -214,11 +214,7 @@ if __name__ == '__main__':
 
     if opt_render_stat:
         try:
-            for set_idx in range(num_sets):
-                _cov2_vtm_sim_run = sim_run_sch.run_instance(set_idx)
-                _cov2_vtm_sim_run.output_dir_root = sim_run_sch.final_set_directory(set_idx)
-                cov2_vtm_sim_run_post = CoV2VTMSimRunPost(_cov2_vtm_sim_run)
-                cov2_vtm_sim_run_post.export_transient_plot_trials(manipulators=stat_plot_manips)
+            sim_run_sch.export_transient_plot_trials(manipulators=stat_plot_manips)
         except Exception as err:
             logging.exception('Error during transient plot rendering.')
             opt_render_stat = False
