@@ -207,24 +207,16 @@ if __name__ == '__main__':
     # Export model parameters
     if input_modules is not None and isinstance(input_modules, list):
         for set_idx in range(num_sets):
-            if sim_run_sch.is_dumping:
-                o = sim_run_sch.dump_set_directory(set_idx)
-            else:
-                o = sim_run_sch.output_set_directory(set_idx)
-
             for x in input_modules:
                 export_file_rel = x.__name__.split('.')[-1] + "Params.csv"
-                export_file_abs = os.path.join(o, export_file_rel)
+                export_file_abs = os.path.join(sim_run_sch.final_set_directory(set_idx), export_file_rel)
                 nCoVUtils.export_parameters(x, export_file_abs)
 
     if opt_render_stat:
         try:
             for set_idx in range(num_sets):
                 _cov2_vtm_sim_run = sim_run_sch.run_instance(set_idx)
-                if sim_run_sch.is_dumping:
-                    _cov2_vtm_sim_run.output_dir_root = sim_run_sch.dump_set_directory(set_idx)
-                else:
-                    _cov2_vtm_sim_run.output_dir_root = sim_run_sch.output_set_directory(set_idx)
+                _cov2_vtm_sim_run.output_dir_root = sim_run_sch.final_set_directory(set_idx)
                 cov2_vtm_sim_run_post = CoV2VTMSimRunPost(_cov2_vtm_sim_run)
                 cov2_vtm_sim_run_post.export_transient_plot_trials(manipulators=stat_plot_manips)
         except Exception as err:
@@ -238,16 +230,9 @@ if __name__ == '__main__':
         set_labs = []
         run_labs = []
         for set_idx in range(num_sets):
-            if sim_run_sch.is_dumping:
-                set_directory = sim_run_sch.dump_set_directory(set_idx)
-                get_run_directory = sim_run_sch.dump_run_directory
-            else:
-                set_directory = sim_run_sch.output_set_directory(set_idx)
-                get_run_directory = sim_run_sch.output_run_directory
-            fig_directory = os.path.dirname(set_directory)
-
+            fig_directory = os.path.dirname(sim_run_sch.final_set_directory(set_idx))
             for run_idx in range(sim_run_sch.num_runs[set_idx]):
-                data_dirs.append(get_run_directory(set_idx, run_idx))
+                data_dirs.append(sim_run_sch.final_run_directory(set_idx, run_idx))
                 out_dirs.append(fig_directory)
                 set_labs.append(set_idx)
                 run_labs.append(run_idx)
