@@ -207,14 +207,9 @@ if __name__ == '__main__':
     # Export model parameters
     if input_modules is not None and isinstance(input_modules, list):
         for set_idx in range(num_sets):
-            if sim_run_sch.is_dumping:
-                o = sim_run_sch.dump_set_directory(set_idx)
-            else:
-                o = sim_run_sch.output_set_directory(set_idx)
-
             for x in input_modules:
                 export_file_rel = x.__name__.split('.')[-1] + "Params.csv"
-                export_file_abs = os.path.join(o, export_file_rel)
+                export_file_abs = os.path.join(sim_run_sch.final_set_directory(set_idx), export_file_rel)
                 nCoVUtils.export_parameters(x, export_file_abs)
 
     if opt_render_stat:

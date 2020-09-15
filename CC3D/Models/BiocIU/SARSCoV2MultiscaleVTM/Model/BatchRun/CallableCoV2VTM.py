@@ -348,6 +348,18 @@ class CallableCoV2VTMScheduler:
         else:
             return None
 
+    def final_set_directory(self, _set_idx):
+        if self.is_dumping:
+            return self.dump_set_directory(_set_idx)
+        else:
+            return self.output_set_directory(_set_idx)
+
+    def final_run_directory(self, _set_idx, _run_idx):
+        if self.is_dumping:
+            return self.dump_run_directory(_set_idx, _run_idx)
+        else:
+            return self.output_run_directory(_set_idx, _run_idx)
+
     def prep(self):
         # Create root output directory if necessary
         if not os.path.isdir(self.output_dir_root):
