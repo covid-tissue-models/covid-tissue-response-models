@@ -280,11 +280,48 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
         # import Models.DrugDosingModel.DrugDosingInputs as DrugDosingInputs
         self.track_cell_level_scalar_attribute(field_name='internal_viral_RNA', attribute_name='Replicating')
 
+        self.plot_ddm_data = plot_ddm_data_freq > 0
+
+        self.total_rna_plot = None
+        self.mean_rna_plot = None
+
     def start(self):
-        pass
+        if self.plot_ddm_data:
+            self.init_plots()
+
+    def init_plots(self):
+        self.total_rna_plot = self.add_new_plot_window(title='Total internal viral RNA',
+                                                       x_axis_title='Time (hours)',
+                                                       y_axis_title='Variables',
+                                                       x_scale_type='linear',
+                                                       y_scale_type='linear',
+                                                       grid=True,
+                                                       config_options={'legend': True})
+        self.total_rna_plot.add_plot('RNA_tot', style='Dots', color='red', size=5)
+        self.mean_rna_plot = self.add_new_plot_window(title='Mean internal viral RNA',
+                                                      x_axis_title='Time (hours)',
+                                                      y_axis_title='Variables',
+                                                      x_scale_type='linear',
+                                                      y_scale_type='linear',
+                                                      grid=True,
+                                                      config_options={'legend': True})
+        self.mean_rna_plot.add_plot('RNA_mean', style='Dots', color='red', size=5)
+
+    def do_plots(self, mcs):
+        """
+        :parameter mcs
+        :return None
+        """
+        rna_list = np.array([cell.dict['Replicating'] for cell in self.cell_list_by_type(
+            self.INFECTED, self.VIRUSRELEASING, self.UNINFECTED)])
+
+        self.total_rna_plot.add_data_point('RNA_tot', mcs, np.sum(rna_list))
+        self.mean_rna_plot.add_data_point('RNA_mean', mcs, np.mean(rna_list))
 
     def step(self, mcs):
-        pass
+
+        if self.plot_ddm_data and mcs % plot_ddm_data_freq == 0:
+            self.do_plots(mcs)
 
     def finish(self):
         pass
