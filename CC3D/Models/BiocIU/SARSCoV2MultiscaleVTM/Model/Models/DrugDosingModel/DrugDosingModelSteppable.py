@@ -272,7 +272,8 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
         self.finish()
 
     def finish(self):
-        self.flush_stored_outputs()
+        if self.write_ddm_data:
+            self.flush_stored_outputs()
 
 
 class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
