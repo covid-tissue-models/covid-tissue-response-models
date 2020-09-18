@@ -2,11 +2,16 @@ __param_desc__ = {}
 
 # Data control options
 __param_desc__['plot_ddm_data_freq'] = 'Plot drug model data frequency'
-plot_ddm_data_freq = 1  # Plot recovery model data frequency (disable with 0)
+plot_ddm_data_freq = 10  # Plot recovery model data frequency (disable with 0)
 __param_desc__['write_ddm_data_freq'] = 'Write drug model data to simulation directory frequency'
 write_ddm_data_freq = 0  # Write recovery model data to simulation directory frequency (disable with 0)
 
 # parameters
+__param_desc__['auto_ec50'] = 'bool for auto scaling of EC50 by max(avail4) and rel_avail4_EC50'
+auto_ec50 = False
+
+__param_desc__['ec50'] = 'value for ec50 in the hill equation, only used if auto_ec50 is false'
+ec50 = 4.14360796
 
 # DDM SBML model
 # initial drug concentrations
@@ -55,7 +60,7 @@ d4 = 6.0
 
 # dosing
 __param_desc__['first_dose'] = 'time of first dose in days'
-first_dose = 0.5
+first_dose = 0.5/24
 
 __param_desc__['initial_dose'] = 'initial dose (arbitrary amount)'
 initial_dose = 10

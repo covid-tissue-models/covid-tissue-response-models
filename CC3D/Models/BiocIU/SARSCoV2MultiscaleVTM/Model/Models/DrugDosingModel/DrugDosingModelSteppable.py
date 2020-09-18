@@ -64,6 +64,11 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
 
         self.max_avail4 = 4.14360796e-01 * dose  # see comment just before steppable definition
 
+        if auto_ec50:
+            self.ec50 = self.max_avail4 * rel_avail4_EC50
+        else:
+            self.ec50 = ec50
+
         self.vr_model_name = ViralInfectionVTMLib.vr_model_name
 
         self.__flush_counter = 1
@@ -189,7 +194,7 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
         self.shared_steppable_vars[self.drug_dosing_model_key] = self
 
     def get_rmax(self, avail4):
-        return (1 - nCoVUtils.hill_equation(avail4, rel_avail4_EC50 * self.max_avail4, 2)) * replicating_rate
+        return (1 - nCoVUtils.hill_equation(avail4, self.ec50, 2)) * replicating_rate
 
     def step(self, mcs):
         self.rmax = self.get_rmax(self.sbml.drug_dosing_model['Available4'])
