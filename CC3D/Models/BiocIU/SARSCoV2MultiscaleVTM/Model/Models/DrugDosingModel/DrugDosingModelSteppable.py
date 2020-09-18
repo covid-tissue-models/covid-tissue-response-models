@@ -268,3 +268,23 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
 
     def finish(self):
         self.flush_stored_outputs()
+
+
+class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
+    """
+    Responsible for plots, extra fields and data handling
+    """
+
+    def __init__(self, frequency=1):
+        ViralInfectionVTMSteppableBasePy.__init__(self, frequency)
+        # import Models.DrugDosingModel.DrugDosingInputs as DrugDosingInputs
+        self.track_cell_level_scalar_attribute(field_name='internal_viral_RNA', attribute_name='Replicating')
+
+    def start(self):
+        pass
+
+    def step(self, mcs):
+        pass
+
+    def finish(self):
+        pass
