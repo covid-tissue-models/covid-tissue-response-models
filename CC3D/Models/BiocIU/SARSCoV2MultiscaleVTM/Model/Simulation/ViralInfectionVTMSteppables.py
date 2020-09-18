@@ -18,8 +18,6 @@ import numpy as np
 
 rng = np.random  # alias for random number generators (rng)
 
-sys.path.append(os.path.join(os.environ["ViralInfectionVTM"], "Simulation"))
-
 # Import project libraries and classes
 sys.path.append(os.path.dirname(__file__))
 from ViralInfectionVTMSteppableBasePy import *
