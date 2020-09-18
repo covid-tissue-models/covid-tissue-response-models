@@ -313,7 +313,7 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
         :return None
         """
         rna_list = np.array([cell.dict['Replicating'] for cell in self.cell_list_by_type(
-            self.INFECTED, self.VIRUSRELEASING, self.UNINFECTED)])
+            self.INFECTED, self.VIRUSRELEASING, self.UNINFECTED, self.DYING)])
 
         self.total_rna_plot.add_data_point('RNA_tot', mcs, np.sum(rna_list))
         self.mean_rna_plot.add_data_point('RNA_mean', mcs, np.mean(rna_list))
