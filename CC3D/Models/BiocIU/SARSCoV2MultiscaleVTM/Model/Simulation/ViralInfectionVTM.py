@@ -11,6 +11,7 @@
 import os
 from ViralInfectionVTMSteppables import __file__ as main_step_file
 sys.path.append(os.path.dirname(os.path.dirname(main_step_file)))
+os.environ["ViralInfectionVTM"] = os.path.dirname(os.path.dirname(main_step_file))
 
 from cc3d import CompuCellSetup
 
@@ -57,5 +58,12 @@ CompuCellSetup.register_steppable(steppable=ImmuneRecruitmentSteppable(frequency
 from ViralInfectionVTMSteppables import oxidationAgentModelSteppable
 
 CompuCellSetup.register_steppable(steppable=oxidationAgentModelSteppable(frequency=1))
+
+from Models.DrugDosingModel.DrugDosingModelSteppable import DrugDosingModelSteppable
+
+CompuCellSetup.register_steppable(steppable=DrugDosingModelSteppable(frequency=1))
+
+from Models.DrugDosingModel.DrugDosingModelSteppable import DrugDosingDataFieldsPlots
+CompuCellSetup.register_steppable(steppable=DrugDosingDataFieldsPlots(frequency=1))
 
 CompuCellSetup.run()

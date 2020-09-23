@@ -23,6 +23,7 @@ sys.path.append(os.path.dirname(__file__))
 from ViralInfectionVTMSteppableBasePy import *
 import ViralInfectionVTMLib
 from ViralInfectionVTMModelInputs import *
+from BatchRun import BatchRunLib
 
 # Import toolkit
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
@@ -36,6 +37,8 @@ class CellsInitializerSteppable(ViralInfectionVTMSteppableBasePy):
 
     def __init__(self, frequency=1):
         ViralInfectionVTMSteppableBasePy.__init__(self, frequency)
+        import ViralInfectionVTMModelInputs as ViralInfectionVTMModelInputs
+        BatchRunLib.apply_external_multipliers(__name__, ViralInfectionVTMModelInputs)
 
     def start(self):
         self.get_xml_element('virus_dc').cdata = virus_dc
@@ -376,26 +379,33 @@ class SimDataSteppable(SteppableBasePy):
 
         self.vrm_data_win = None
         self.vrm_data_path = None
+        self.vrm_data = dict()
         # The viral replication model of this cell is tracked and plotted/recorded
         self.vrm_tracked_cell = None
 
         self.vim_data_win = None
         self.vim_data_path = None
+        self.vim_data = dict()
 
         self.pop_data_win = None
         self.pop_data_path = None
+        self.pop_data = dict()
 
         self.med_diff_data_win = None
         self.med_diff_data_path = None
+        self.med_diff_data = dict()
 
         self.ir_data_win = None
         self.ir_data_path = None
+        self.ir_data = dict()
 
         self.spat_data_win = None
         self.spat_data_path = None
+        self.spat_data = dict()
 
         self.death_data_win = None
         self.death_data_path = None
+        self.death_data = dict()
 
         self.plot_vrm_data = plot_vrm_data_freq > 0
         self.write_vrm_data = write_vrm_data_freq > 0
@@ -431,6 +441,9 @@ class SimDataSteppable(SteppableBasePy):
                              'oxi': 0,
                              'contact': 0,
                              'bystander': 0}
+
+        # For flushing outputs every quarter simulation length
+        self.__flush_counter = 1
 
     def start(self):
         # Post reference to self
@@ -601,25 +614,21 @@ class SimDataSteppable(SteppableBasePy):
                 self.vrm_data_win.add_data_point("Secretion", mcs, self.vrm_tracked_cell.dict['Secretion'])
 
             if write_vrm_data:
-                with open(self.vrm_data_path, 'a') as fout:
-                    fout.write('{}, {}, {}, {}, {}, {}, {}, {}\n'.format(mcs,
-                                                                         self.vrm_tracked_cell.id,
-                                                                         self.vrm_tracked_cell.dict['Unpacking'],
-                                                                         self.vrm_tracked_cell.dict['Replicating'],
-                                                                         self.vrm_tracked_cell.dict['Packing'],
-                                                                         self.vrm_tracked_cell.dict['Assembled'],
-                                                                         self.vrm_tracked_cell.dict['Uptake'],
-                                                                         self.vrm_tracked_cell.dict['Secretion']))
+                self.vrm_data[mcs] = [self.vrm_tracked_cell.id,
+                                      self.vrm_tracked_cell.dict['Unpacking'],
+                                      self.vrm_tracked_cell.dict['Replicating'],
+                                      self.vrm_tracked_cell.dict['Packing'],
+                                      self.vrm_tracked_cell.dict['Assembled'],
+                                      self.vrm_tracked_cell.dict['Uptake'],
+                                      self.vrm_tracked_cell.dict['Secretion']]
 
         if self.vrm_tracked_cell is not None and (plot_vim_data or write_vim_data):
             if plot_vim_data:
                 self.vim_data_win.add_data_point("R", mcs, self.vrm_tracked_cell.dict['Receptors'])
 
             if write_vim_data:
-                with open(self.vim_data_path, 'a') as fout:
-                    fout.write('{}, {}, {}\n'.format(mcs,
-                                                     self.vrm_tracked_cell.id,
-                                                     self.vrm_tracked_cell.dict['Receptors']))
+                self.vim_data[mcs] = [self.vrm_tracked_cell.id,
+                                      self.vrm_tracked_cell.dict['Receptors']]
 
         if plot_pop_data or write_pop_data:
 
@@ -648,14 +657,12 @@ class SimDataSteppable(SteppableBasePy):
 
             # Write population data to file if requested
             if write_pop_data:
-                with open(self.pop_data_path, 'a') as fout:
-                    fout.write('{}, {}, {}, {}, {}, {}, {}\n'.format(mcs,
-                                                                     num_cells_uninfected,
-                                                                     num_cells_infected,
-                                                                     num_cells_virusreleasing,
-                                                                     num_cells_dying,
-                                                                     num_cells_immune,
-                                                                     num_cells_immune_act))
+                self.pop_data[mcs] = [num_cells_uninfected,
+                                      num_cells_infected,
+                                      num_cells_virusreleasing,
+                                      num_cells_dying,
+                                      num_cells_immune,
+                                      num_cells_immune_act]
 
         if plot_med_diff_data or write_med_diff_data:
 
@@ -684,8 +691,9 @@ class SimDataSteppable(SteppableBasePy):
 
             # Write total diffusive viral amount if requested
             if write_med_diff_data:
-                with open(self.med_diff_data_path, 'a') as fout:
-                    fout.write('{}, {}, {}, {}\n'.format(mcs, med_viral_total, med_cyt_total, med_oxi_total))
+                self.med_diff_data[mcs] = [med_viral_total,
+                                           med_cyt_total,
+                                           med_oxi_total]
 
         if plot_ir_data or write_ir_data:
             if self.ir_steppable is None:
@@ -701,8 +709,7 @@ class SimDataSteppable(SteppableBasePy):
 
             # Write state variable S if requested
             if write_ir_data:
-                with open(self.ir_data_path, 'a') as fout:
-                    fout.write('{}, {}\n'.format(mcs, s_val))
+                self.ir_data[mcs] = [s_val]
 
         if plot_spat_data or write_spat_data:
             # Calculate compactness of dead cell area as total surface area of intefaces between dying and non-dying
@@ -754,8 +761,8 @@ class SimDataSteppable(SteppableBasePy):
 
             # Write spatial data if requested
             if write_spat_data:
-                with open(self.spat_data_path, 'a') as fout:
-                    fout.write('{}, {}, {}\n'.format(mcs, dead_comp, max_infect_dist))
+                self.spat_data[mcs] = [dead_comp,
+                                       max_infect_dist]
 
         if plot_death_data or write_death_data:
             num_viral = self.__death_mech['viral']
@@ -776,8 +783,58 @@ class SimDataSteppable(SteppableBasePy):
 
             # Write death data if requested
             if write_death_data:
-                with open(self.death_data_path, 'a') as fout:
-                    fout.write('{}, {}, {}, {}, {}\n'.format(mcs, num_viral, num_oxi, num_contact, num_bystander))
+                self.death_data[mcs] = [num_viral,
+                                        num_oxi,
+                                        num_contact,
+                                        num_bystander]
+
+        # Flush outputs at quarter simulation lengths
+        if mcs >= int(self.simulator.getNumSteps() / 4 * self.__flush_counter):
+            self.flush_stored_outputs()
+            self.__flush_counter += 1
+
+    def on_stop(self):
+        self.finish()
+
+    def finish(self):
+        self.flush_stored_outputs()
+
+    def data_output_string(self, _data: dict):
+        """
+        Generate string for data output to file from data dictionary
+        :param _data: data dictionary; keys are steps, values are lists of data
+        :return: output string to write to file
+        """
+        mcs_list = list(_data.keys())
+        mcs_list.sort()
+        f_str = ''
+        for mcs in mcs_list:
+            f_str += f'{mcs}'
+            for v in _data[mcs]:
+                f_str += f', {v}'
+            f_str += '\n'
+        return f_str
+
+    def flush_stored_outputs(self):
+        """
+        Write stored outputs to file and clear output storage
+        :return: None
+        """
+        # Each tuple contains the necessary information for writing a set of data to file
+        #   1. Boolean for whether we're writing to file at all
+        #   2. The path to write the data to
+        #   3. The data to write
+        output_info = [(self.write_vrm_data, self.vrm_data_path, self.vrm_data),
+                       (self.write_vim_data, self.vim_data_path, self.vim_data),
+                       (self.write_pop_data, self.pop_data_path, self.pop_data),
+                       (self.write_med_diff_data, self.med_diff_data_path, self.med_diff_data),
+                       (self.write_ir_data, self.ir_data_path, self.ir_data),
+                       (self.write_death_data, self.death_data_path, self.death_data)]
+        for write_data, data_path, data in output_info:
+            if write_data:
+                with open(data_path, 'a') as fout:
+                    fout.write(self.data_output_string(data))
+                    data.clear()
 
     def set_vrm_tracked_cell(self, cell):
         self.vrm_tracked_cell = cell

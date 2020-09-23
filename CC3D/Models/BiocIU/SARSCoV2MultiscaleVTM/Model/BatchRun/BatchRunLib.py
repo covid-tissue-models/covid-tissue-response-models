@@ -26,6 +26,7 @@ mod_plot_vars = {'ViralInfectionVTMModelInputs': ['plot_vrm_data_freq', 'plot_vr
                  'Models.RecoveryNeighbor.RecoveryInputs': ['plot_rec_data_freq'],
                  'Models.RecoverySimple.RecoveryInputs': ['plot_rec_data_freq']}
 
+
 #   Write variables by module
 #       These are automatically enabled when running in batch mode and assigned the same frequency as specified through
 #       the Python API, so the user doesn't have to modify any simulation scripts when running a batch
@@ -35,6 +36,7 @@ mod_write_vars = {'ViralInfectionVTMModelInputs': ['write_pop_data_freq', 'write
                   'Models.HCVIntegrated.HCVInputs': ['write_ihcv_data_freq'],
                   'Models.RecoveryNeighbor.RecoveryInputs': ['write_rec_data_freq'],
                   'Models.RecoverySimple.RecoveryInputs': ['write_rec_data_freq']}
+
 
 
 # todo - test registering unknown input modules with batch workflow

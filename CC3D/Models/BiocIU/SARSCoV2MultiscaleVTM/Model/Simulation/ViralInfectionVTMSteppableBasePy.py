@@ -16,6 +16,9 @@ from nCoVToolkit import nCoVUtils
 
 class ViralInfectionVTMSteppableBasePy(nCoVSteppableBase):
 
+    vr_model_name = ViralInfectionVTMLib.vr_model_name
+    _viral_replication_model_string_gen = ViralInfectionVTMLib.viral_replication_model_string
+
     def __init__(self, frequency=1):
         nCoVSteppableBase.__init__(self, frequency)
 
@@ -28,8 +31,40 @@ class ViralInfectionVTMSteppableBasePy(nCoVSteppableBase):
     def finish(self):
         pass
 
-    def load_viral_replication_model(self, cell, vr_step_size, unpacking_rate=0, replicating_rate=0, r_half=0,
-                                     translating_rate=0, packing_rate=0, secretion_rate=0):
+    def viral_replication_model_string(self, *args, **kwargs):
+        """
+        Antimony model string generator for viral replication model; can be set with set_viral_replication_model(), and
+        subclasses can override
+        :param args:
+        :param kwargs:
+        :return {str}: Antimony model string for viral replication model
+        """
+        return ViralInfectionVTMSteppableBasePy._viral_replication_model_string_gen(*args, **kwargs)
+
+    @staticmethod
+    def set_viral_replication_model(_fnc, _name: str = ViralInfectionVTMLib.vr_model_name):
+        """
+        Sets the viral replication model
+        :param _fnc: Antimony model string generator
+        :param _name: name of Antimony model
+        :return: None
+        """
+        ViralInfectionVTMSteppableBasePy._viral_replication_model_string_gen = _fnc
+        ViralInfectionVTMSteppableBasePy.vr_model_name = _name
+
+    def load_viral_replication_model(self, *args, **kwargs):
+        """
+        Loads viral replication model for a cell; subclasses can override
+        :param args:
+        :param kwargs:
+        :return: None
+        """
+        assert 'cell' in kwargs, 'Specify viral replication model cell with keyword cell'
+        assert 'vr_step_size' in kwargs, 'Specify viral replication model step size with keyword vr_step_size'
+        return self._load_viral_replication_model(**kwargs)
+
+    def _load_viral_replication_model(self, cell, vr_step_size, unpacking_rate=0, replicating_rate=0, r_half=0,
+                                      translating_rate=0, packing_rate=0, secretion_rate=0):
         """
         Loads viral replication model for a cell; initial values of state model are extract from cell.dict
         :param cell: cell for which the viral replication model is loaded
@@ -43,15 +78,15 @@ class ViralInfectionVTMSteppableBasePy(nCoVSteppableBase):
         :return: None
         """
         if cell.dict[ViralInfectionVTMLib.vrl_key]:
-            self.delete_sbml_from_cell(ViralInfectionVTMLib.vr_model_name, cell)
+            self.delete_sbml_from_cell(ViralInfectionVTMSteppableBasePy.vr_model_name, cell)
 
         # Generate Antimony model string
-        model_string = ViralInfectionVTMLib.viral_replication_model_string(
+        model_string = self.viral_replication_model_string(
             unpacking_rate, replicating_rate, r_half, translating_rate, packing_rate, secretion_rate,
             cell.dict['Unpacking'], cell.dict['Replicating'], cell.dict['Packing'], cell.dict['Assembled'],
             cell.dict['Uptake'])
         self.add_antimony_to_cell(model_string=model_string,
-                                  model_name=ViralInfectionVTMLib.vr_model_name,
+                                  model_name=ViralInfectionVTMSteppableBasePy.vr_model_name,
                                   cell=cell,
                                   step_size=vr_step_size)
         cell.dict[ViralInfectionVTMLib.vrl_key] = True
@@ -139,5 +174,5 @@ class ViralInfectionVTMSteppableBasePy(nCoVSteppableBase):
         :return: None
         """
         if cell.dict[ViralInfectionVTMLib.vrl_key]:
-            self.delete_sbml_from_cell(ViralInfectionVTMLib.vr_model_name, cell)
+            self.delete_sbml_from_cell(ViralInfectionVTMSteppableBasePy.vr_model_name, cell)
             cell.dict[ViralInfectionVTMLib.vrl_key] = False

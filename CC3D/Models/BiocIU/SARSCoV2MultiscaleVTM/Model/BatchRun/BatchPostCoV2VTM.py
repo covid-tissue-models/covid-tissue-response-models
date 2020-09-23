@@ -1,15 +1,18 @@
 # todo - document stuff for easier usage by others
 import os
 import sys
+
 sys.path.append(os.environ['PYTHONPATH'])
 
 import math
 import shutil
 import csv
+
 try:
     import matplotlib.pyplot as plt
 except ModuleNotFoundError:
     import subprocess
+
     subprocess.check_call([sys.executable, "-m", "pip", "install", "matplotlib"])
     import matplotlib.pyplot as plt
 
@@ -43,7 +46,13 @@ export_data_desc = {'ir_data': ['ImmuneResp'],
                     'death_data': ['Viral',
                                    'OxiField',
                                    'Contact',
-                                   'Bystander']}
+                                   'Bystander'],
+                    'ddm_rmax_data': ['r_max'],
+                    'ddm_data':['Drug',
+                                'Metabolite1',
+                                'Metabolite2',
+                                'Metabolite3',
+                                'Metabolite4']}
 
 x_label_str_transient = "Simulation time (MCS)"
 
@@ -62,7 +71,13 @@ y_label_str = {'ir_data': {'ImmuneResp': 'Immune response state variable'},
                'death_data': {'Viral': 'Number of virally-induced apoptosis deaths',
                               'OxiField': 'Number of oxidative deaths',
                               'Contact': 'Number of cytotoxic kill deaths',
-                              'Bystander': 'Number of bystander effect deaths'}
+                              'Bystander': 'Number of bystander effect deaths'},
+               'ddm_rmax_data': {'r_max': 'r_max value'},
+                'ddm_data': {'Drug': 'Drug concentration',
+                               'Metabolite1': 'Metabolite1 concentration',
+                               'Metabolite2': 'Metabolite2 concentration',
+                               'Metabolite3': 'Metabolite3 concentration',
+                               'Metabolite4': 'Metabolite4 concentration'}
                }
 
 fig_save_names = {'ir_data': {'ImmuneResp': 'metric_immune_response_svar'},
@@ -80,9 +95,14 @@ fig_save_names = {'ir_data': {'ImmuneResp': 'metric_immune_response_svar'},
                   'death_data': {'Viral': 'metric_death_viral',
                                  'OxiField': 'metric_death_oxi',
                                  'Contact': 'metric_death_contact',
-                                 'Bystander': 'metric_death_bystander'}
+                                 'Bystander': 'metric_death_bystander'},
+                  'ddm_rmax_data': {'r_max': 'metric_rmax'},
+                  'ddm_data': {'Drug': 'metric_drug_concentration',
+                               'Metabolite1': 'metric_metabolite1_concentration',
+                               'Metabolite2': 'metric_metabolite2_concentration',
+                               'Metabolite3': 'metric_metabolite3_concentration',
+                               'Metabolite4': 'metric_metabolite4_concentration'}
                   }
-
 
 fig_suffix_trials = '_trials'
 fig_suffix_stat = '_stat'
@@ -266,7 +286,6 @@ def generate_transient_plot_stat(batch_data_summary, data_desc, var_name, plot_s
 
 
 def generate_2var_plot_trials(batch_data_summary, var_name_hor, var_name_ver):
-
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.grid()
@@ -302,7 +321,6 @@ def generate_2var_plot_trials(batch_data_summary, var_name_hor, var_name_ver):
 
 
 def generate_2var_plot_stat(batch_data_summary, var_name_hor, var_name_ver, plot_stdev=True):
-
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.grid()
@@ -351,6 +369,7 @@ class CoV2VTMSimRunPost:
     """
     Renders simulation metrics data generated from executing a CallableCoV2VTM simulation batch
     """
+
     def __init__(self, cov2_vtm_sim_run, step_list=None):
         self.cov2_vtm_sim_run = cov2_vtm_sim_run
 
@@ -446,7 +465,8 @@ class CoV2VTMSimRunPost:
             loc = self.cov2_vtm_sim_run.output_dir_root
 
         assert os.path.isdir(loc), "Results directory must be defined before rendering dump."
-        assert manipulators is None or isinstance(manipulators, dict), "manipulators must be None or a dictionary of manipulator functions"
+        assert manipulators is None or isinstance(manipulators,
+                                                  dict), "manipulators must be None or a dictionary of manipulator functions"
 
         fig_dir = self.get_fig_root_dir(loc, auto_make_dir=True)
 
@@ -501,6 +521,7 @@ class CC3DUIDummy(QObject):
     """
     Some trickery to fake the launching of Player
     """
+
     def __init__(self, field_dim: Dim3D):
         super().__init__()
         self.fieldExtractor = PlayerPython.FieldExtractorCML()
@@ -561,6 +582,7 @@ class GenericDrawerFree(GenericDrawer):
     """
     Removes dependency on persistent globals
     """
+
     def __init__(self, parent=None, originating_widget=None):
         super().__init__(parent, originating_widget)
 
@@ -584,6 +606,7 @@ class CallableCC3DRenderer:
     """
     Performs CC3D rendering of data generated from executing a CallableCoV2VTM simulation batch without launching Player
     """
+
     def __init__(self, cov2_vtm_sim_run):
         self.cov2_vtm_sim_run = cov2_vtm_sim_run
 
@@ -905,6 +928,7 @@ class _RenderJob:
                 # Apply log scale to all field renders
                 def gd_manipulator(gd):
                     gd.draw_model_2D.clut.SetScaleToLog10()
+
                 _renderer.load_rendering_manipulator(gd_manipulator)
 
             if 'fixed_caxes' in self._opts.keys() and self._opts['fixed_caxes']:
@@ -932,6 +956,7 @@ class CallableCC3DDataRenderer(CallableCC3DRenderer):
     Performs CC3D rendering of data generated from executing a CallableCoV2VTM simulation batch without launching Player
     Like CallableCC3DRenderer, but works on individual directories of data instead of a CallableCoV2VTM instance
     """
+
     def __init__(self, data_dirs, out_dirs, set_labs=None, run_labs=None, num_workers=1):
         super().__init__(None)
 
@@ -1164,6 +1189,7 @@ class _RenderDataJob:
                 # Apply log scale to all field renders
                 def gd_manipulator(gd):
                     gd.draw_model_2D.clut.SetScaleToLog10()
+
                 _renderer.load_rendering_manipulator(gd_manipulator)
 
             if 'fixed_caxes' in self._opts.keys() and self._opts['fixed_caxes']:
