@@ -9,6 +9,11 @@ cc3d_input_key = '__input_dict__'
 cc3d_batch_key = '__cc3d_batch__'
 
 # Automatic tasks
+#   Current add-on modules with built-in support are
+#       DrugDosingModel: Models.DrugDosingModel.DrugDosingInputs
+#       HCVIntegrated: Models.HCVIntegrated.HCVInputs
+#       RecoveryNeighbor: Models.RecoveryNeighbor.RecoveryInputs
+#       RecoverySimple: Models.RecoverySimple.RecoveryInputs
 
 #   Plot variables by module
 #       These are automatically disabled when running in batch mode, so the user doesn't have to modify any simulation
@@ -16,14 +21,22 @@ cc3d_batch_key = '__cc3d_batch__'
 mod_plot_vars = {'ViralInfectionVTMModelInputs': ['plot_vrm_data_freq', 'plot_vrm_data_freq', 'plot_vim_data_freq',
                                                   'plot_pop_data_freq', 'plot_ir_data_freq', 'plot_med_diff_data_freq',
                                                   'plot_spat_data_freq', 'plot_death_data_freq'],
-                 'Models.DrugDosingModel.DrugDosingInputs': ['plot_ddm_data_freq']}
+                 'Models.DrugDosingModel.DrugDosingInputs': ['plot_ddm_data_freq'],
+                 'Models.HCVIntegrated.HCVInputs': ['plot_ihcv_data_freq'],
+                 'Models.RecoveryNeighbor.RecoveryInputs': ['plot_rec_data_freq'],
+                 'Models.RecoverySimple.RecoveryInputs': ['plot_rec_data_freq']}
+
 
 #   Write variables by module
 #       These are automatically enabled when running in batch mode and assigned the same frequency as specified through
 #       the Python API, so the user doesn't have to modify any simulation scripts when running a batch
 mod_write_vars = {'ViralInfectionVTMModelInputs': ['write_pop_data_freq', 'write_med_diff_data_freq',
                                                    'write_ir_data_freq', 'write_death_data_freq'],
-                  'Models.DrugDosingModel.DrugDosingInputs': ['write_ddm_data_freq']}
+                  'Models.DrugDosingModel.DrugDosingInputs': ['write_ddm_data_freq'],
+                  'Models.HCVIntegrated.HCVInputs': ['write_ihcv_data_freq'],
+                  'Models.RecoveryNeighbor.RecoveryInputs': ['write_rec_data_freq'],
+                  'Models.RecoverySimple.RecoveryInputs': ['write_rec_data_freq']}
+
 
 
 # todo - test registering unknown input modules with batch workflow
