@@ -77,7 +77,8 @@ out_freq = 50
 #               ...
 #           set_1/
 #           ...
-sweep_output_folder = os.path.abspath(os.path.join(os.path.splitdrive(os.getcwd())[0], '/DrugDosing_test'))
+# sweep_output_folder = os.path.abspath(os.path.join(os.path.splitdrive(os.getcwd())[0], '/DrugDosing_test'))
+sweep_output_folder = r'/N/u/jferrari/Carbonate/ddm_batch_1'  # replace with slate later
 
 # Option to execute sweep simulations
 #   Set to False to not run simulations
