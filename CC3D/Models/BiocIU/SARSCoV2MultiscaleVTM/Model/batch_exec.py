@@ -1,28 +1,52 @@
 # Model inputs
-mult_dict = {'lamda_chemotaxis': [1E4, 5E4, 1E5, 5E5, 1E6],
-             'local_sample_frac': [0.000025, 0.0001, 0.001, 0.01, 0.1, 1.0]}
-num_rep = 10
+full_mult_dit = {'first_dose': [0, 6 / 24, 12 / 24, 48 / 24, 72 / 24],  # missing profilaxis. time of 1st dose in days
+                 'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
+                 # missing continuous dosing. dose interval in days
+                 'rel_avail4_EC50': [0.01, 0.1, .5, .75, 1, 1.25],
+                 'kon': [1 / 4, 1 / 2, 1]}
+
+ddm_batch_1 = {'first_dose': [0, 6 / 24],
+               'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
+               'rel_avail4_EC50': [0.01, 0.1, .5, .75, 1, 1.25],
+               'kon': [1]}
+ddm_batch_2 = {'first_dose': [12 / 24, 48 / 24],
+               'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
+               'rel_avail4_EC50': [0.01, 0.1, .5, .75, 1, 1.25],
+               'kon': [1]}
+ddm_batch_3 = {'first_dose': [72 / 24],
+               'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
+               'rel_avail4_EC50': [0.01, 0.1, .5, .75, 1, 1.25],
+               'kon': [1]}
+
+mult_dict = ddm_batch_1
+num_rep = 5
 # Model output frequency
-model_out_freq = 10
+model_out_freq = 1
 # Output frequency of simulation data per simulation replica
-out_freq = 1E6
+out_freq = 50
 # Root output directory
-sweep_output_folder = r'/N/slate/tjsego/cc3d_projects/ode_spatialization/Manuscript/calibration_immune2/Results'
+sweep_output_folder = r'/N/slate/jferrari/ddm_batch_1'
 # Input modules
-from Simulation import GlazierModelInputs
-input_modules = [GlazierModelInputs]
+from Simulation import ViralInfectionVTMModelInputs
+from Models.DrugDosingModel import DrugDosingInputs
+
+input_modules = [ViralInfectionVTMModelInputs, DrugDosingInputs]
 # Automatic inputs
 from BatchRun import BatchRunLib
-BatchRunLib.register_auto_inputs(input_module_name='GlazierModelInputs',
-                                 plot_var_names=['plot_pop_data_freq',
-                                                 'plot_med_diff_data_freq',
-                                                 'plot_spat_data_freq',
-                                                 'plot_death_data_freq'],
-                                 write_var_names=['write_pop_data_freq',
-                                                  'write_med_diff_data_freq',
-                                                  'write_death_data_freq'])
+
+BatchRunLib.register_auto_inputs(input_module_name='ViralInfectionVTMModelInputs',
+                                 plot_var_names=['plot_vrm_data_freq', 'plot_vrm_data_freq', 'plot_vim_data_freq',
+                                                 'plot_pop_data_freq', 'plot_ir_data_freq', 'plot_med_diff_data_freq',
+                                                 'plot_spat_data_freq', 'plot_death_data_freq'],
+                                 write_var_names=['write_pop_data_freq', 'write_med_diff_data_freq',
+                                                  'write_ir_data_freq', 'write_death_data_freq'])
+BatchRunLib.register_auto_inputs(input_module_name='Models.DrugDosingModel.DrugDosingInputs',
+                                 plot_var_names=['plot_ddm_data_freq'],
+                                 write_var_names=['write_ddm_data_freq'])
+
 # Carbonate configuration
 from BatchRun.BatchRunPrototyping import carbonate_config_template
+
 carbonate_config_template = carbonate_config_template()
 carbonate_config_template['jn'] = 'ode_cal_imm2'
 carbonate_config_template['wh'] = 2
@@ -33,7 +57,8 @@ carbonate_config_template['vmem'] = 10
 import os
 from nCoVToolkit import nCoVUtils
 from BatchRun import BatchRunPrototyping
-BatchRunPrototyping.simulation_fname = os.path.join(os.path.dirname(__file__), 'GlazierModel.cc3d')
+
+BatchRunPrototyping.simulation_fname = os.path.join(os.path.dirname(__file__), 'ViralInfectionVTM.cc3d')
 
 from BatchRun.BatchRunLib import cc3d_batch_key
 
@@ -67,10 +92,10 @@ def sim_input_generator(_set_idx):
             recur_vals[sweep_var] = _set_idx
             sweep_idx[sweep_var] = _set_idx % len_mults[sweep_var]
         elif k == len(sweep_vars) - 1:
-            sweep_var_o = sweep_vars[k-1]
+            sweep_var_o = sweep_vars[k - 1]
             sweep_idx[sweep_var] = int((recur_vals[sweep_var_o] - sweep_idx[sweep_var_o]) / len_mults[sweep_var_o])
         else:
-            sweep_var_o = sweep_vars[k-1]
+            sweep_var_o = sweep_vars[k - 1]
             recur_vals[sweep_var] = int((recur_vals[sweep_var_o] - sweep_idx[sweep_var_o]) / len_mults[sweep_var_o])
             sweep_idx[sweep_var] = recur_vals[sweep_var] % len_mults[sweep_var]
 
@@ -78,7 +103,6 @@ def sim_input_generator(_set_idx):
 
 
 def main():
-
     num_sets = get_num_sets()
 
     # Add set labels to job names; scheduler adds run labels
