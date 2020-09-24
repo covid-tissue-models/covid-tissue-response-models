@@ -5,6 +5,7 @@ full_mult_dit = {'first_dose': [0, 6 / 24, 12 / 24, 48 / 24, 72 / 24],  # missin
                  'rel_avail4_EC50': [0.01, 0.1, .5, .75, 1, 1.25],
                  'kon': [1 / 4, 1 / 2, 1]}
 
+# NOTE! each batch should be ran twice, as I'm setting numb of rep to 5
 ddm_batch_1 = {'first_dose': [0, 6 / 24],
                'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
                'rel_avail4_EC50': [0.01, 0.1, .5, .75, 1, 1.25],
@@ -17,6 +18,36 @@ ddm_batch_3 = {'first_dose': [72 / 24],
                'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
                'rel_avail4_EC50': [0.01, 0.1, .5, .75, 1, 1.25],
                'kon': [1]}
+
+# ______________________________________________
+
+ddm_batch_4 = {'first_dose': [0, 6 / 24],
+               'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
+               'rel_avail4_EC50': [0.01, 0.1, .5, .75, 1, 1.25],
+               'kon': [1 / 2]}
+ddm_batch_5 = {'first_dose': [12 / 24, 48 / 24],
+               'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
+               'rel_avail4_EC50': [0.01, 0.1, .5, .75, 1, 1.25],
+               'kon': [1 / 2]}
+ddm_batch_6 = {'first_dose': [72 / 24],
+               'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
+               'rel_avail4_EC50': [0.01, 0.1, .5, .75, 1, 1.25],
+               'kon': [1 / 2]}
+
+# ______________________________________________
+
+ddm_batch_7 = {'first_dose': [0, 6 / 24],
+               'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
+               'rel_avail4_EC50': [0.01, 0.1, .5, .75, 1, 1.25],
+               'kon': [1 / 4]}
+ddm_batch_8 = {'first_dose': [12 / 24, 48 / 24],
+               'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
+               'rel_avail4_EC50': [0.01, 0.1, .5, .75, 1, 1.25],
+               'kon': [1 / 4]}
+ddm_batch_9 = {'first_dose': [72 / 24],
+               'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
+               'rel_avail4_EC50': [0.01, 0.1, .5, .75, 1, 1.25],
+               'kon': [1 / 4]}
 
 mult_dict = ddm_batch_1
 num_rep = 5
