@@ -22,9 +22,9 @@ active_met_name = 'GS-443902'
 
 # Data control options
 __param_desc__['plot_ddm_data_freq'] = 'Plot drug model data frequency'
-plot_ddm_data_freq = 10  # Plot recovery model data frequency (disable with 0)
+plot_ddm_data_freq = 0  # Plot recovery model data frequency (disable with 0)
 __param_desc__['write_ddm_data_freq'] = 'Write drug model data to simulation directory frequency'
-write_ddm_data_freq = 0  # Write recovery model data to simulation directory frequency (disable with 0)
+write_ddm_data_freq = 1  # Write recovery model data to simulation directory frequency (disable with 0)
 
 # parameters
 __param_desc__['auto_ec50'] = 'bool for auto scaling of EC50 by max(avail4) and rel_avail4_EC50'
