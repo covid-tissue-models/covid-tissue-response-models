@@ -1,4 +1,24 @@
+from numpy import  log
+
 __param_desc__ = {}
+
+# remdesivir metabolites names
+
+__param_desc__['remdesivir_name'] = 'proper molecular name, from https://doi.org/10.1111/cts.12840 '
+
+remdesivir_name = 'RDV;  GS-5734'
+
+__param_desc__['intermediary_metabolite_1'] = 'proper molecular name for intermediary metabolite, ' \
+                                              'from https://doi.org/10.1111/cts.12840 '
+intermediary_metabolite_1 = 'GS-704277'
+
+__param_desc__['intermediary_metabolite_2'] = 'proper molecular name for intermediary metabolite, ' \
+                                              'from https://doi.org/10.1111/cts.12840 '
+intermediary_metabolite_2 = 'GS-441524'
+
+__param_desc__['active_met_name'] = 'proper molecular name for active metabolite (tri-phosphate)'
+active_met_name = 'GS-443902'
+
 
 # Data control options
 __param_desc__['plot_ddm_data_freq'] = 'Plot drug model data frequency'
@@ -55,8 +75,13 @@ k3 = 25.0
 __param_desc__['d3'] = 'clearance time of avail3, units /day'
 d3 = 6.0
 
+__param_desc__['active_metabolite_half_life'] = 'half life of active metabolite, available 4, in days. from ' \
+                                               'https://doi.org/10.1111/cts.12840 '
+active_metabolite_half_life = 22/24  # range from 17.2 to 26.9h
+
 __param_desc__['d4'] = 'clearance time of avail4, units /day'
 d4 = 6.0
+# d4 = log(2)/active_metabolite_half_life  # way smaller than 6/day
 
 # dosing
 __param_desc__['first_dose'] = 'time of first dose in days'
