@@ -48,11 +48,12 @@ export_data_desc = {'ir_data': ['ImmuneResp'],
                                    'Contact',
                                    'Bystander'],
                     'ddm_rmax_data': ['r_max'],
-                    'ddm_data':['Drug',
-                                'Metabolite1',
-                                'Metabolite2',
-                                'Metabolite3',
-                                'Metabolite4']}
+                    'ddm_data': ['Drug',
+                                 'Metabolite1',
+                                 'Metabolite2',
+                                 'Metabolite3',
+                                 'Metabolite4'],
+                    'ddm_tot_RNA_data': ['Total_viral_RNA_in_cells']}
 
 x_label_str_transient = "Simulation time (MCS)"
 
@@ -73,11 +74,12 @@ y_label_str = {'ir_data': {'ImmuneResp': 'Immune response state variable'},
                               'Contact': 'Number of cytotoxic kill deaths',
                               'Bystander': 'Number of bystander effect deaths'},
                'ddm_rmax_data': {'r_max': 'r_max value'},
-                'ddm_data': {'Drug': 'Drug concentration',
-                               'Metabolite1': 'Metabolite1 concentration',
-                               'Metabolite2': 'Metabolite2 concentration',
-                               'Metabolite3': 'Metabolite3 concentration',
-                               'Metabolite4': 'Metabolite4 concentration'}
+               'ddm_data': {'Drug': 'Drug concentration',
+                            'Metabolite1': 'Metabolite1 concentration',
+                            'Metabolite2': 'Metabolite2 concentration',
+                            'Metabolite3': 'Metabolite3 concentration',
+                            'Metabolite4': 'Metabolite4 concentration'},
+               'ddm_tot_RNA_data': {'Total_viral_RNA_in_cells': 'Total viral RNA in cells'}
                }
 
 fig_save_names = {'ir_data': {'ImmuneResp': 'metric_immune_response_svar'},
@@ -101,7 +103,8 @@ fig_save_names = {'ir_data': {'ImmuneResp': 'metric_immune_response_svar'},
                                'Metabolite1': 'metric_metabolite1_concentration',
                                'Metabolite2': 'metric_metabolite2_concentration',
                                'Metabolite3': 'metric_metabolite3_concentration',
-                               'Metabolite4': 'metric_metabolite4_concentration'}
+                               'Metabolite4': 'metric_metabolite4_concentration'},
+                  'ddm_tot_RNA_data': {'Total_viral_RNA_in_cells': 'total_viral_RNA_in_cells'}
                   }
 
 fig_suffix_trials = '_trials'
