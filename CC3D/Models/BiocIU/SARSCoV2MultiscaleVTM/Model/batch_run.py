@@ -1,4 +1,5 @@
 import os
+
 os.environ["ViralInfectionVTM"] = os.path.dirname(__file__)
 
 # ----------------------------- Setup Instructions ----------------------------- #
@@ -41,10 +42,31 @@ os.environ["ViralInfectionVTM"] = os.path.dirname(__file__)
 #     Parameter set 3: {kon *= 1  , ir_delay_coeff *= 1}
 mult_dict = None
 # mult_dict = {'rel_avail4_EC50': [0.01, 0.1, .25, .5, .75, 1, 1.5, 2, 5, 10]}
-mult_dict = {'rel_avail4_EC50': [1000]}  # for testing
+# mult_dict = {'rel_avail4_EC50': [1000]}  # for testing
+
+full_mult_dit = {'first_dose': [0, 6 / 24, 12 / 24, 48 / 24, 72 / 24],  # missing profilaxis. time of 1st dose in days
+                 'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
+                 # missing continuous dosing. dose interval in days
+                 'rel_avail4_EC50': [0.01, 0.1, .5, .75, 1, 1.25],
+                 'kon': [1 / 4, 1 / 2, 1]}
+
+ddm_batch_1 = {'first_dose': [0, 6 / 24],
+               'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
+               'rel_avail4_EC50': [0.01, 0.1, .5, .75, 1, 1.25],
+               'kon': [1]}
+ddm_batch_2 = {'first_dose': [12 / 24, 48 / 24],
+               'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
+               'rel_avail4_EC50': [0.01, 0.1, .5, .75, 1, 1.25],
+               'kon': [1]}
+ddm_batch_3 = {'first_dose': [72 / 24],
+               'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
+               'rel_avail4_EC50': [0.01, 0.1, .5, .75, 1, 1.25],
+               'kon': [1]}
+
+mult_dict = ddm_batch_1
 
 # Number of replicas to run per parameter set
-num_rep = 1
+num_rep = 5
 # Number of simulations to run in parallel per parameter set
 #   Simulations are implemented in parallel per set of replicas of each parameter set
 #   E.g., if running 10 replicas of 2 sets of parameters, then this will run each set of 10 replicas <num_par> at a time
@@ -78,7 +100,7 @@ out_freq = 50
 #           set_1/
 #           ...
 # sweep_output_folder = os.path.abspath(os.path.join(os.path.splitdrive(os.getcwd())[0], '/DrugDosing_test'))
-sweep_output_folder = r'/N/u/jferrari/Carbonate/ddm_batch_1'  # replace with slate later
+sweep_output_folder = r'/N/slate/jferrari/ddm_batch_1'
 
 # Option to execute sweep simulations
 #   Set to False to not run simulations
@@ -142,10 +164,10 @@ def sim_input_generator(_set_idx):
             recur_vals[sweep_var] = _set_idx
             sweep_idx[sweep_var] = _set_idx % len_mults[sweep_var]
         elif k == len(sweep_vars) - 1:
-            sweep_var_o = sweep_vars[k-1]
+            sweep_var_o = sweep_vars[k - 1]
             sweep_idx[sweep_var] = int((recur_vals[sweep_var_o] - sweep_idx[sweep_var_o]) / len_mults[sweep_var_o])
         else:
-            sweep_var_o = sweep_vars[k-1]
+            sweep_var_o = sweep_vars[k - 1]
             recur_vals[sweep_var] = int((recur_vals[sweep_var_o] - sweep_idx[sweep_var_o]) / len_mults[sweep_var_o])
             sweep_idx[sweep_var] = recur_vals[sweep_var] % len_mults[sweep_var]
 
@@ -157,6 +179,7 @@ if __name__ == '__main__':
     # Check inputs
     if mult_dict is not None:
         assert isinstance(mult_dict, dict), 'mult_dict must be a dictionary or None'
+
 
         def check_multipliers(m: dict):
             for var, mults in m.items():
@@ -173,6 +196,7 @@ if __name__ == '__main__':
                         mults[x] = float(mults[x])
                     except ValueError:
                         raise ValueError(f'Multiplier {mults[x]} for {var} is not a number')
+
 
         check_multipliers(mult_dict)
 
