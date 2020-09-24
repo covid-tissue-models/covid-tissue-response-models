@@ -40,11 +40,11 @@ os.environ["ViralInfectionVTM"] = os.path.dirname(__file__)
 #     Parameter set 2: {kon *= 0.1, ir_delay_coeff *= 1}
 #     Parameter set 3: {kon *= 1  , ir_delay_coeff *= 1}
 mult_dict = None
-mult_dict = {'rel_avail4_EC50': [0.01, 0.1, .25, .5, .75, 1, 1.5, 2, 5, 10]}
+# mult_dict = {'rel_avail4_EC50': [0.01, 0.1, .25, .5, .75, 1, 1.5, 2, 5, 10]}
 mult_dict = {'rel_avail4_EC50': [1000]}  # for testing
 
 # Number of replicas to run per parameter set
-num_rep = 10
+num_rep = 1
 # Number of simulations to run in parallel per parameter set
 #   Simulations are implemented in parallel per set of replicas of each parameter set
 #   E.g., if running 10 replicas of 2 sets of parameters, then this will run each set of 10 replicas <num_par> at a time
