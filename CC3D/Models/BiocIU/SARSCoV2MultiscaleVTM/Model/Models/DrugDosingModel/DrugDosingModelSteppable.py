@@ -74,8 +74,9 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
         self.__flush_counter = 1
 
         if self.write_ddm_data:
-            self.data_files = {'ddm_data': 'ddm_data.dat', 'ddm_rmax_data': 'ddm_rmax_data.dat'}
-            self.ddm_data = {'ddm_data': {}, 'ddm_rmax_data': {}}
+            self.data_files = {'ddm_data': 'ddm_data.dat', 'ddm_rmax_data': 'ddm_rmax_data.dat',
+                               'ddm_RNA_data': 'ddm_RNA_data.dat'}
+            self.ddm_data = {'ddm_data': {}, 'ddm_rmax_data': {}, 'ddm_RNA_data': {}}
 
     def set_drug_model_string(self, _init_drug, _init_avail1, _init_avail2, _init_avail3, _init_avail4,
                               _k0_rate, _d0_rate, _k1_rate, _d1_rate, _k2_rate, _d2_rate, _k3_rate, _d3_rate,
@@ -199,6 +200,12 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
     def step(self, mcs):
         self.rmax = self.get_rmax(self.sbml.drug_dosing_model['Available4'])
         # print(rmax)
+        if self.plot_ddm_data or self.write_ddm_data:
+            rna_list = np.array([cell.dict['Replicating'] for cell in self.cell_list_by_type(self.INFECTED,
+                                                                                             self.VIRUSRELEASING,
+                                                                                             self.UNINFECTED,
+                                                                                             self.DYING)])
+
         for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING):
             vr_model = getattr(cell.sbml, self.vr_model_name)
             vr_model.replicating_rate = self.rmax
@@ -213,6 +220,8 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
             self.ddm_data['ddm_rmax_data'][mcs] = [self.rmax]
 
             self.ddm_data['ddm_data'][mcs] = [self.sbml.drug_dosing_model[x] for x in self.ddm_vars]
+
+            self.ddm_data['ddm_RNA_data'][mcs] = [np.sum(rna_list), np.mean(rna_list)]
 
         if mcs >= int(self.simulator.getNumSteps() / 4 * self.__flush_counter):
             self.flush_stored_outputs()
