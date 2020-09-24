@@ -85,13 +85,13 @@ d4 = 6.0
 
 # dosing
 __param_desc__['first_dose'] = 'time of first dose in days'
-first_dose = 0.5/24
+first_dose = 1
 
 __param_desc__['initial_dose'] = 'initial dose (arbitrary amount)'
 initial_dose = 10
 
 __param_desc__['dose_interval'] = 'time interval between doses in days'
-dose_interval = 0.25
+dose_interval = 1
 
 __param_desc__['dose'] = 'dose of subsequent treatments (arbitrary units)'
 dose = 10
