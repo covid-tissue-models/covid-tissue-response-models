@@ -214,8 +214,6 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
 
             self.ddm_data['ddm_data'][mcs] = [self.sbml.drug_dosing_model[x] for x in self.ddm_vars]
 
-        # todo do map investigation of max value of avail4 to EC50; ie EC50 = [.25, .5, .75, 1, 1.5, 2, 5] max(avail4)
-
         if mcs >= int(self.simulator.getNumSteps() / 4 * self.__flush_counter):
             self.flush_stored_outputs()
             self.__flush_counter += 1
@@ -286,16 +284,41 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
         # import Models.DrugDosingModel.DrugDosingInputs as DrugDosingInputs
         self.track_cell_level_scalar_attribute(field_name='internal_viral_RNA', attribute_name='Replicating')
 
+        self.main_ddm_steppable_vars = None
+
         self.plot_ddm_data = plot_ddm_data_freq > 0
 
         self.total_rna_plot = None
         self.mean_rna_plot = None
 
     def start(self):
+        self.main_ddm_steppable_vars = self.shared_steppable_vars[drug_dosing_model_key]
+
         if self.plot_ddm_data:
             self.init_plots()
 
     def init_plots(self):
+        self.ddm_data_win = self.add_new_plot_window(title='Drug dosing model',
+                                                     x_axis_title='Time (hours)',
+                                                     y_axis_title='Variables',
+                                                     x_scale_type='linear',
+                                                     y_scale_type='linear',
+                                                     grid=True,
+                                                     config_options={'legend': True})
+        colors = ['blue', 'red', 'green', 'yellow', 'white']
+        ddm_vars = self.main_ddm_steppable_vars.ddm_vars
+        for c, var in zip(colors, ddm_vars):
+            self.ddm_data_win.add_plot(var, style='Dots', color=c, size=5)
+
+        self.rmax_data_win = self.add_new_plot_window(title='r_max vs Time',
+                                                      x_axis_title='Time (hours)',
+                                                      y_axis_title='r_max',
+                                                      x_scale_type='linear',
+                                                      y_scale_type='linear',
+                                                      grid=True,
+                                                      config_options={'legend': True})
+
+        self.rmax_data_win.add_plot('rmax', style='Dots', color='red', size=5)
         self.total_rna_plot = self.add_new_plot_window(title='Total internal viral RNA',
                                                        x_axis_title='Time (hours)',
                                                        y_axis_title='Variables',
@@ -318,6 +341,13 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
         :parameter mcs
         :return None
         """
+        # ddm_vars = self.main_ddm_steppable_vars.ddm_vars
+        # [self.ddm_data_win.add_data_point(x, s_to_mcs * mcs / 60 / 60, self.sbml.drug_dosing_model[x])
+        #  for x in ddm_vars]
+        #
+        # if mcs > first_dose / days_2_mcs:
+        #     self.rmax_data_win.add_data_point('rmax', s_to_mcs * mcs / 60 / 60, self.rmax)
+
         rna_list = np.array([cell.dict['Replicating'] for cell in self.cell_list_by_type(
             self.INFECTED, self.VIRUSRELEASING, self.UNINFECTED, self.DYING)])
 
