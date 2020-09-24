@@ -75,8 +75,8 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
 
         if self.write_ddm_data:
             self.data_files = {'ddm_data': 'ddm_data.dat', 'ddm_rmax_data': 'ddm_rmax_data.dat',
-                               'ddm_RNA_data': 'ddm_RNA_data.dat'}
-            self.ddm_data = {'ddm_data': {}, 'ddm_rmax_data': {}, 'ddm_RNA_data': {}}
+                               'ddm_tot_RNA_data': 'ddm_tot_RNA_data.dat', 'ddm_mean_RNA_data': 'ddm_mean_RNA_data.dat'}
+            self.ddm_data = {'ddm_data': {}, 'ddm_rmax_data': {}, 'ddm_tot_RNA_data': {}, 'ddm_mean_RNA_data': {}}
 
     def set_drug_model_string(self, _init_drug, _init_avail1, _init_avail2, _init_avail3, _init_avail4,
                               _k0_rate, _d0_rate, _k1_rate, _d1_rate, _k2_rate, _d2_rate, _k3_rate, _d3_rate,
@@ -221,9 +221,10 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
 
             self.ddm_data['ddm_data'][mcs] = [self.sbml.drug_dosing_model[x] for x in self.ddm_vars]
 
-            self.ddm_data['ddm_RNA_data'][mcs] = [np.sum(rna_list), np.mean(rna_list)]
+            self.ddm_data['ddm_tot_RNA_data'][mcs] = [np.sum(rna_list)]
+            self.ddm_data['ddm_mean_RNA_data'][mcs] = [np.mean(rna_list)]
 
-        if mcs >= int(self.simulator.getNumSteps() / 4 * self.__flush_counter):
+        if mcs >= int(self.simulator.getNumSteps() / 4 * self.__flush_counter) and self.write_ddm_data:
             self.flush_stored_outputs()
             self.__flush_counter += 1
 
