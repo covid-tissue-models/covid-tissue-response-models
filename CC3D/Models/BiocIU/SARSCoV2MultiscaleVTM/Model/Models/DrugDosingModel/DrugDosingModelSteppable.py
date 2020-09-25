@@ -159,7 +159,7 @@ def set_cst_drug_ddm_string(_init_drug, _init_avail1, _init_avail2, _init_avail3
             dose_interval = {} ; // time interval between doses in days
             dose = {} ; //dose of subsequent treatments
             
-            const Drug := first_dose;
+            const Drug := initial_dose;
             
             //E1: at (time - first_dose > 0): Drug=Drug+initial_dose ;
             //E2: at ( (time-first_dose > dose_interval) && sin((((time-first_dose)/dose_interval))*2*pi)>0): Drug=Drug+dose
@@ -276,7 +276,7 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
         if self.plot_ddm_data and mcs % plot_ddm_data_freq == 0:
             [self.ddm_data_win.add_data_point(x, s_to_mcs * mcs / 60 / 60, self.sbml.drug_dosing_model[x])
              for x in self.ddm_vars]
-            if mcs > first_dose / days_2_mcs:
+            if mcs > first_dose / days_2_mcs or constant_drug_concentration:
                 self.rmax_data_win.add_data_point('rmax', s_to_mcs * mcs / 60 / 60, self.rmax)
 
         if self.write_ddm_data and mcs % write_ddm_data_freq == 0:
