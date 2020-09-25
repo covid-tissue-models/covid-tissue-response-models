@@ -1,23 +1,8 @@
-# Model effect of Drug Dosing in viral replication
-# Written by J. F. Gianlupi, M.S.
-# #todo write some more
-# Model parameters are specified in DrugDosingInputs.py
-#
-# RandomSusceptibilitySteppable
-#   Description: implements drug dosing and viral replication rate reduction
-#   Usage:
-#       In ViralInfectionVTM.py, add the following
-#
-#           from Models.DrugDosingModel.DrugDosingModelSteppable import DrugDosingModelSteppable
-#           CompuCellSetup.register_steppable(steppable=DrugDosingModelSteppable(frequency=1))
-
-
 import sys
 import os
 from cc3d.core.PySteppables import *
 
 sys.path.append(os.path.join(os.environ["ViralInfectionVTM"], "Simulation"))
-sys.path.append(os.environ["ViralInfectionVTM"])
 from ViralInfectionVTMModelInputs import s_to_mcs, vr_step_size, replicating_rate, kon, koff, \
     initial_unbound_receptors, hill_coeff_uptake_pr, rate_coeff_uptake_pr, max_ck_secrete_infect, unpacking_rate, \
     r_half, translating_rate, packing_rate, secretion_rate
@@ -36,9 +21,6 @@ from BatchRun import BatchRunLib
 drug_dosing_model_key = "drug_dose_steppable"
 
 days_2_mcs = s_to_mcs / 60 / 60 / 24
-
-# todo: make the target of the drug a model input; i.e. pass the name of the variable to be affected by the drug as
-#  input
 
 '''
 with the default parameters (k0 = 100.0; d0 = 1.0; k1 = 25.0; d1 = 6.0; k2 = 25.0; d2 = 6.0; k3 = 25.0; d3 = 6.0; 
@@ -63,11 +45,6 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
         self.write_ddm_data = write_ddm_data_freq > 0
 
         self.max_avail4 = 4.14360796e-01 * dose  # see comment just before steppable definition
-
-        if auto_ec50:
-            self.ec50 = self.max_avail4 * rel_avail4_EC50
-        else:
-            self.ec50 = ec50
 
         self.vr_model_name = ViralInfectionVTMLib.vr_model_name
 
@@ -194,7 +171,7 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
         self.shared_steppable_vars[self.drug_dosing_model_key] = self
 
     def get_rmax(self, avail4):
-        return (1 - nCoVUtils.hill_equation(avail4, self.ec50, 2)) * replicating_rate
+        return (1 - nCoVUtils.hill_equation(avail4, rel_avail4_EC50 * self.max_avail4, 2)) * replicating_rate
 
     def step(self, mcs):
         self.rmax = self.get_rmax(self.sbml.drug_dosing_model['Available4'])
@@ -214,7 +191,7 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
 
             self.ddm_data['ddm_data'][mcs] = [self.sbml.drug_dosing_model[x] for x in self.ddm_vars]
 
-        # todo do map investigation of max value of avail4 to EC50; ie EC50 = [.25, .5, .75, 1, 1.5, 2, 5] max(avail4)
+        # todo do map investigation of max value of avail4 to EC50; ie max(avail4) = [.25, .5, .75, 1, 1.5, 2, 5] EC50
 
         if mcs >= int(self.simulator.getNumSteps() / 4 * self.__flush_counter):
             self.flush_stored_outputs()
@@ -223,7 +200,6 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
         self.timestep_sbml()
 
     def do_cell_internalization_w_rmax(self, cell, viral_amount_com):
-        # WARNING!! OVERWRITES STEPPABLE FUNCTION OF MAIN MODEL
         if cell.dict['Receptors'] == 0:
             return False, 0.0
 
@@ -272,62 +248,4 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
         self.finish()
 
     def finish(self):
-        if self.write_ddm_data:
-            self.flush_stored_outputs()
-
-
-class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
-    """
-    Responsible for plots, extra fields and data handling
-    """
-
-    def __init__(self, frequency=1):
-        ViralInfectionVTMSteppableBasePy.__init__(self, frequency)
-        # import Models.DrugDosingModel.DrugDosingInputs as DrugDosingInputs
-        self.track_cell_level_scalar_attribute(field_name='internal_viral_RNA', attribute_name='Replicating')
-
-        self.plot_ddm_data = plot_ddm_data_freq > 0
-
-        self.total_rna_plot = None
-        self.mean_rna_plot = None
-
-    def start(self):
-        if self.plot_ddm_data:
-            self.init_plots()
-
-    def init_plots(self):
-        self.total_rna_plot = self.add_new_plot_window(title='Total internal viral RNA',
-                                                       x_axis_title='Time (hours)',
-                                                       y_axis_title='Variables',
-                                                       x_scale_type='linear',
-                                                       y_scale_type='linear',
-                                                       grid=True,
-                                                       config_options={'legend': True})
-        self.total_rna_plot.add_plot('RNA_tot', style='Dots', color='red', size=5)
-        self.mean_rna_plot = self.add_new_plot_window(title='Mean internal viral RNA',
-                                                      x_axis_title='Time (hours)',
-                                                      y_axis_title='Variables',
-                                                      x_scale_type='linear',
-                                                      y_scale_type='linear',
-                                                      grid=True,
-                                                      config_options={'legend': True})
-        self.mean_rna_plot.add_plot('RNA_mean', style='Dots', color='red', size=5)
-
-    def do_plots(self, mcs):
-        """
-        :parameter mcs
-        :return None
-        """
-        rna_list = np.array([cell.dict['Replicating'] for cell in self.cell_list_by_type(
-            self.INFECTED, self.VIRUSRELEASING, self.UNINFECTED, self.DYING)])
-
-        self.total_rna_plot.add_data_point('RNA_tot', mcs, np.sum(rna_list))
-        self.mean_rna_plot.add_data_point('RNA_mean', mcs, np.mean(rna_list))
-
-    def step(self, mcs):
-
-        if self.plot_ddm_data and mcs % plot_ddm_data_freq == 0:
-            self.do_plots(mcs)
-
-    def finish(self):
-        pass
+        self.flush_stored_outputs()
