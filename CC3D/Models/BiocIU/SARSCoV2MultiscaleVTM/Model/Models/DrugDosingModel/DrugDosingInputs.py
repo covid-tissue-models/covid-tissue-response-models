@@ -1,4 +1,4 @@
-from numpy import  log
+from numpy import log
 
 __param_desc__ = {}
 
@@ -18,7 +18,6 @@ intermediary_metabolite_2 = 'GS-441524'
 
 __param_desc__['active_met_name'] = 'proper molecular name for active metabolite (tri-phosphate)'
 active_met_name = 'GS-443902'
-
 
 # Data control options
 __param_desc__['plot_ddm_data_freq'] = 'Plot drug model data frequency'
@@ -76,8 +75,8 @@ __param_desc__['d3'] = 'clearance time of avail3, units /day'
 d3 = 6.0
 
 __param_desc__['active_metabolite_half_life'] = 'half life of active metabolite, available 4, in days. from ' \
-                                               'https://doi.org/10.1111/cts.12840 '
-active_metabolite_half_life = 22/24  # range from 17.2 to 26.9h
+                                                'https://doi.org/10.1111/cts.12840 '
+active_metabolite_half_life = 22 / 24  # range from 17.2 to 26.9h
 
 __param_desc__['d4'] = 'clearance time of avail4, units /day'
 d4 = 6.0
@@ -95,7 +94,6 @@ dose_interval = 1
 
 __param_desc__['dose'] = 'dose of subsequent treatments (arbitrary units)'
 dose = 10
-
 
 # rate reduction parameters
 
