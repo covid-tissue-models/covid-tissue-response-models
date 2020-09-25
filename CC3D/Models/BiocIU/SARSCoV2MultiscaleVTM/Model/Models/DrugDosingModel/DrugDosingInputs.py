@@ -39,7 +39,7 @@ ec50 = 4.14360796
 
 constant_drug_concentration = False
 
-profilactic_treatment = True
+profilactic_treatment = False
 
 # initial drug concentrations
 __param_desc__['Drug'] = 'Amount of Drug already in the system'
