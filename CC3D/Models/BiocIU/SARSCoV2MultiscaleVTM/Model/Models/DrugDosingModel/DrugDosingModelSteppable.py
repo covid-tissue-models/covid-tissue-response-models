@@ -100,8 +100,8 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
         dose_interval = {} ; // time interval between doses in days
         dose = {} ; //dose of subsequent treatments
 
-        E1: at (time - first_dose > 0): Drug=Drug+initial_dose ;
-        E2: at ( (time-first_dose > dose_interval) && sin((((time-first_dose)/dose_interval))*2*pi)>0): Drug=Drug+dose
+        E1: at (time>first_dose): Drug=Drug+initial_dose ;
+        E2: at ( (time-first_dose > 0) && sin((((time-first_dose)/dose_interval))*2*pi)>0): Drug=Drug+dose
         end
         '''.format(_init_drug, _init_avail1, _init_avail2, _init_avail3, _init_avail4, _k0_rate, _d0_rate, _k1_rate,
                    _d1_rate, _k2_rate, _d2_rate, _k3_rate, _d3_rate, _d4_rate, _first_dose, _initial_dose,
