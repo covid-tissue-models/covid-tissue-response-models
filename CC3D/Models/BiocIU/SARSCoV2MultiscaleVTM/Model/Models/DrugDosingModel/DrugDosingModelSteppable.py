@@ -284,7 +284,7 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
 
             self.ddm_data['ddm_data'][mcs] = [self.sbml.drug_dosing_model[x] for x in self.ddm_vars]
 
-        if mcs >= int(self.simulator.getNumSteps() / 4 * self.__flush_counter):
+        if mcs >= int(self.simulator.getNumSteps() / 4 * self.__flush_counter) and self.write_ddm_data:
             self.flush_stored_outputs()
             self.__flush_counter += 1
 
