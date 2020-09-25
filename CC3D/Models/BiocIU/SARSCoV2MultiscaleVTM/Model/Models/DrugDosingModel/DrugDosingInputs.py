@@ -39,6 +39,8 @@ ec50 = 4.14360796
 
 constant_drug_concentration = False
 
+profilactic_treatment = True
+
 # initial drug concentrations
 __param_desc__['Drug'] = 'Amount of Drug already in the system'
 Drug = 0
@@ -91,6 +93,8 @@ d4 = 6.0
 # dosing
 __param_desc__['first_dose'] = 'time of first dose in days'
 first_dose = 0.5/24
+if profilactic_treatment:
+    first_dose = 0
 
 __param_desc__['initial_dose'] = 'initial dose (arbitrary amount)'
 initial_dose = 10
