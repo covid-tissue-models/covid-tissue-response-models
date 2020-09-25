@@ -243,10 +243,10 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
                                         model_name='drug_dosing_model')
         if profilactic_treatment:
             pass
-            # for i in range(int(10/days_2_mcs)):  # let it run for 10 days
-            # WARNING, self.timestep_sbml() steps all sbml!!
-            # TODO find a way to only step this sbml
-            #     self.timestep_sbml()
+            # for i in range(int(10 / days_2_mcs)):  # let it run for 10 days
+                # WARNING, self.timestep_sbml() steps all sbml!!
+                # TODO find a way to only step this sbml
+                # self.timestep_sbml()
 
         self.rmax = self.get_rmax(self.sbml.drug_dosing_model['Available4'])
 
