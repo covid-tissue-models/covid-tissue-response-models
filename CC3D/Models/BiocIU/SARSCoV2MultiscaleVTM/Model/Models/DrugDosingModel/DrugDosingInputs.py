@@ -22,7 +22,7 @@ active_met_name = 'GS-443902'
 
 # Data control options
 __param_desc__['plot_ddm_data_freq'] = 'Plot drug model data frequency'
-plot_ddm_data_freq = 0  # Plot recovery model data frequency (disable with 0)
+plot_ddm_data_freq = 1  # Plot recovery model data frequency (disable with 0)
 __param_desc__['write_ddm_data_freq'] = 'Write drug model data to simulation directory frequency'
 write_ddm_data_freq = 0  # Write recovery model data to simulation directory frequency (disable with 0)
 
@@ -37,7 +37,7 @@ ec50 = 4.14360796
 
 # Treatment options
 
-constant_drug_concentration = True
+constant_drug_concentration = False
 
 # initial drug concentrations
 __param_desc__['Drug'] = 'Amount of Drug already in the system'
