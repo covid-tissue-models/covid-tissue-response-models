@@ -80,7 +80,7 @@ from BatchRun.BatchRunPrototyping import carbonate_config_template
 
 carbonate_config_template = carbonate_config_template()
 carbonate_config_template['jn'] = 'ddm_model_batch1'
-carbonate_config_template['wh'] = 4
+carbonate_config_template['wh'] = 15
 carbonate_config_template['wm'] = 0
 carbonate_config_template['vmem'] = 10
 
