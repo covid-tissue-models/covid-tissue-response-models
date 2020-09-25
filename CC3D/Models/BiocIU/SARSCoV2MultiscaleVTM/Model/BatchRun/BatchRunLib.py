@@ -29,10 +29,12 @@ mod_plot_vars = {'ViralInfectionVTMModelInputs': ['plot_vrm_data_freq', 'plot_vr
 
 
 
+
 #   Write variables by module
 #       These are automatically enabled when running in batch mode and assigned the same frequency as specified through
 #       the Python API, so the user doesn't have to modify any simulation scripts when running a batch
 mod_write_vars = {'ViralInfectionVTMModelInputs': ['write_pop_data_freq', 'write_med_diff_data_freq',
+
                                                    'write_ir_data_freq', 'write_death_data_freq'],
 
                   'Models.DrugDosingModel.DrugDosingInputs': ['write_ddm_data_freq'],

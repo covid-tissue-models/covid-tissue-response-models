@@ -16,8 +16,6 @@ from nCoVToolkit import nCoVUtils
 
 from .DrugDosingInputs import *
 
-from BatchRun import BatchRunLib
-
 drug_dosing_model_key = "drug_dose_steppable"
 
 days_2_mcs = s_to_mcs / 60 / 60 / 24
@@ -37,8 +35,7 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
 
     def __init__(self, frequency=1):
         ViralInfectionVTMSteppableBasePy.__init__(self, frequency)
-        import Models.DrugDosingModel.DrugDosingInputs as DrugDosingInputs
-        BatchRunLib.apply_external_multipliers(__name__, DrugDosingInputs)
+
         self.drug_dosing_model_key = drug_dosing_model_key
 
         self.plot_ddm_data = plot_ddm_data_freq > 0
