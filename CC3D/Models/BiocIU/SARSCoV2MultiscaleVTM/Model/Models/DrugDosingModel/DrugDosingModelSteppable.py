@@ -206,8 +206,9 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
         self.__flush_counter = 1
 
         if self.write_ddm_data:
-            self.data_files = {'ddm_data': 'ddm_data.dat', 'ddm_rmax_data': 'ddm_rmax_data.dat'}
-            self.ddm_data = {'ddm_data': {}, 'ddm_rmax_data': {}}
+            self.data_files = {'ddm_data': 'ddm_data.dat', 'ddm_rmax_data': 'ddm_rmax_data.dat',
+                               'ddm_tot_RNA_data': 'ddm_tot_RNA_data.dat', 'ddm_mean_RNA_data': 'ddm_mean_RNA_data.dat'}
+            self.ddm_data = {'ddm_data': {}, 'ddm_rmax_data': {}, 'ddm_tot_RNA_data': {}, 'ddm_mean_RNA_data': {}}
 
     def init_plots(self):
         self.ddm_data_win = self.add_new_plot_window(title='Drug dosing model',
@@ -280,26 +281,40 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
         self.rmax = self.get_rmax(self.sbml.drug_dosing_model['Available4'])
         self.shared_steppable_vars['rmax'] = self.rmax
         # print(rmax)
+        if self.plot_ddm_data or self.write_ddm_data:
+            rna_list = np.array([cell.dict['Replicating'] for cell in self.cell_list_by_type(self.INFECTED,
+                                                                                             self.VIRUSRELEASING,
+                                                                                             self.UNINFECTED,
+                                                                                             self.DYING)])
+
         for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING):
             vr_model = getattr(cell.sbml, self.vr_model_name)
             vr_model.replicating_rate = self.rmax
 
         if self.plot_ddm_data and mcs % plot_ddm_data_freq == 0:
-            [self.ddm_data_win.add_data_point(x, s_to_mcs * mcs / 60 / 60, self.sbml.drug_dosing_model[x])
-             for x in self.ddm_vars]
-            if mcs > first_dose / days_2_mcs or constant_drug_concentration:
-                self.rmax_data_win.add_data_point('rmax', s_to_mcs * mcs / 60 / 60, self.rmax)
+            pass
+            # [self.ddm_data_win.add_data_point(x, s_to_mcs * mcs / 60 / 60, self.sbml.drug_dosing_model[x])
+            #  for x in self.ddm_vars]
+            # if mcs > first_dose / days_2_mcs or constant_drug_concentration:
+            #     self.rmax_data_win.add_data_point('rmax', s_to_mcs * mcs / 60 / 60, self.rmax)
 
         if self.write_ddm_data and mcs % write_ddm_data_freq == 0:
             self.ddm_data['ddm_rmax_data'][mcs] = [self.rmax]
 
             self.ddm_data['ddm_data'][mcs] = [self.sbml.drug_dosing_model[x] for x in self.ddm_vars]
 
+            self.ddm_data['ddm_tot_RNA_data'][mcs] = [np.sum(rna_list)]
+            self.ddm_data['ddm_mean_RNA_data'][mcs] = [np.mean(rna_list)]
+
         if mcs >= int(self.simulator.getNumSteps() / 4 * self.__flush_counter) and self.write_ddm_data:
             self.flush_stored_outputs()
             self.__flush_counter += 1
 
         self.timestep_sbml()
+
+    def get_rna_array(self):
+        return np.array([cell.dict['Replicating'] for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING,
+                                                                                     self.UNINFECTED, self.DYING)])
 
     def do_cell_internalization_w_rmax(self, cell, viral_amount_com):
         # WARNING!! OVERWRITES STEPPABLE FUNCTION OF MAIN MODEL
@@ -367,7 +382,10 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
 
         self.mvars = None
 
+        self.get_rna_array = None
+
         self.plot_ddm_data = plot_ddm_data_freq > 0
+        self.write_ddm_data = write_ddm_data_freq > 0
 
         self.ddm_data_win = None
 
@@ -376,9 +394,16 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
         self.total_rna_plot = None
         self.mean_rna_plot = None
 
+        self.__flush_counter = 1
+
+        if self.write_ddm_data:
+            self.data_files = {'ddm_data': 'ddm_data.dat', 'ddm_rmax_data': 'ddm_rmax_data.dat',
+                               'ddm_tot_RNA_data': 'ddm_tot_RNA_data.dat', 'ddm_mean_RNA_data': 'ddm_mean_RNA_data.dat'}
+            self.ddm_data = {'ddm_data': {}, 'ddm_rmax_data': {}, 'ddm_tot_RNA_data': {}, 'ddm_mean_RNA_data': {}}
+
     def start(self):
         self.mvars = self.shared_steppable_vars[drug_dosing_model_key]  # main ddm class vars
-
+        self.get_rna_array = self.mvars.get_rna_array
         if self.plot_ddm_data:
             self.init_plots()
 
@@ -433,19 +458,24 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
         # if mcs > first_dose / days_2_mcs:
         #     self.rmax_data_win.add_data_point('rmax', s_to_mcs * mcs / 60 / 60, self.rmax)
 
+        [self.ddm_data_win.add_data_point(x, s_to_mcs * mcs / 60 / 60, self.sbml.drug_dosing_model[x])
+         for x in self.mvars.ddm_vars]
+        if mcs > first_dose / days_2_mcs or constant_drug_concentration:
+            self.rmax_data_win.add_data_point('rmax', s_to_mcs * mcs / 60 / 60, self.shared_steppable_vars['rmax'])
+
         rna_list = self.get_rna_array()
 
         self.total_rna_plot.add_data_point('RNA_tot', mcs, np.sum(rna_list))
         self.mean_rna_plot.add_data_point('RNA_mean', mcs, np.mean(rna_list))
 
     def step(self, mcs):
-
+        self.do_plots(mcs)
         if self.plot_ddm_data and mcs % plot_ddm_data_freq == 0:
             self.do_plots(mcs)
 
-    def get_rna_array(self):
-        return np.array([cell.dict['Replicating'] for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING,
-                                                                                     self.UNINFECTED, self.DYING)])
+    # def get_rna_array(self):
+    #     return np.array([cell.dict['Replicating'] for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING,
+    #                                                                                  self.UNINFECTED, self.DYING)])
 
     def finish(self):
         pass
