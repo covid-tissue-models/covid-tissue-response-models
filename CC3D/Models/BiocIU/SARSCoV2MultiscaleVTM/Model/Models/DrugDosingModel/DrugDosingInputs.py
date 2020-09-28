@@ -57,6 +57,7 @@ __param_desc__['Available4'] = 'bioavailable metabolite 4 already in the system'
 Available4 = 0
 
 # rates
+# rates derived from https://doi.org/10.1111/cts.12840
 __param_desc__['k0'] = 'bioavailability rate, units /day. 100/day <-> 15 minutes'
 k0 = 10.0
 
