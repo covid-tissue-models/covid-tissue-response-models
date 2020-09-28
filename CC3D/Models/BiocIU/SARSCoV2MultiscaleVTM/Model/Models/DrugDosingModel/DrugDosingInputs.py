@@ -40,6 +40,8 @@ constant_drug_concentration = False
 
 profilactic_treatment = False
 
+treatment_ends = False
+
 # initial drug concentrations
 __param_desc__['Drug'] = 'Amount of Drug already in the system'
 Drug = 0
@@ -84,7 +86,7 @@ d3 = 0.693
 
 __param_desc__['active_metabolite_half_life'] = 'half life of active metabolite, available 4, in days. from ' \
                                                 'https://doi.org/10.1111/cts.12840 '
-active_metabolite_half_life = 22 / 24  # NOT USED range from 17.2 to 26.9h
+active_metabolite_half_life = 22 / 24  # NOT USED. range from 17.2 to 26.9h
 
 __param_desc__['d4'] = 'clearance time of avail4, units /day'
 d4 = 0.693
@@ -103,6 +105,11 @@ dose_interval = 0.25
 
 __param_desc__['dose'] = 'dose of subsequent treatments (arbitrary units)'
 dose = 10
+
+__param_desc__['dose_end'] = 'time of end of treatment in days'
+dose_end = 1
+if not treatment_ends:
+    dose_end = 1e99
 
 # rate reduction parameters
 
