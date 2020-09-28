@@ -56,7 +56,7 @@ model_out_freq = 1
 # Output frequency of simulation data per simulation replica
 out_freq = 50
 # Root output directory
-sweep_output_folder = r'/N/slate/jferrari/ddm_batch_1'
+sweep_output_folder = r'/N/slate/jferrari/new_pk/ddm_batch_1'
 # Input modules
 from Simulation import ViralInfectionVTMModelInputs
 from Models.DrugDosingModel import DrugDosingInputs
@@ -80,7 +80,7 @@ from BatchRun.BatchRunPrototyping import carbonate_config_template
 
 carbonate_config_template = carbonate_config_template()
 carbonate_config_template['jn'] = 'ddm_model_batch1'
-carbonate_config_template['wh'] = 15
+carbonate_config_template['wh'] = 7
 carbonate_config_template['wm'] = 0
 carbonate_config_template['vmem'] = 10
 
