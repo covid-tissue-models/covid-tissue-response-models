@@ -251,6 +251,7 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
             # self.timestep_sbml()
 
         self.rmax = self.get_rmax(self.sbml.drug_dosing_model['Available4'])
+        self.shared_steppable_vars['rmax'] = self.rmax
 
         # replace viral uptake function
         vim_steppable = self.shared_steppable_vars[ViralInfectionVTMLib.vim_steppable_key]
@@ -277,6 +278,7 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
 
     def step(self, mcs):
         self.rmax = self.get_rmax(self.sbml.drug_dosing_model['Available4'])
+        self.shared_steppable_vars['rmax'] = self.rmax
         # print(rmax)
         for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING):
             vr_model = getattr(cell.sbml, self.vr_model_name)
@@ -363,15 +365,19 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
         # import Models.DrugDosingModel.DrugDosingInputs as DrugDosingInputs
         self.track_cell_level_scalar_attribute(field_name='internal_viral_RNA', attribute_name='Replicating')
 
-        self.main_ddm_steppable_vars = None
+        self.mvars = None
 
         self.plot_ddm_data = plot_ddm_data_freq > 0
+
+        self.ddm_data_win = None
+
+        self.rmax_data_win = None
 
         self.total_rna_plot = None
         self.mean_rna_plot = None
 
     def start(self):
-        self.main_ddm_steppable_vars = self.shared_steppable_vars[drug_dosing_model_key]
+        self.mvars = self.shared_steppable_vars[drug_dosing_model_key]  # main ddm class vars
 
         if self.plot_ddm_data:
             self.init_plots()
@@ -385,7 +391,7 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
                                                      grid=True,
                                                      config_options={'legend': True})
         colors = ['blue', 'red', 'green', 'yellow', 'white']
-        ddm_vars = self.main_ddm_steppable_vars.ddm_vars
+        ddm_vars = self.mvars.ddm_vars
         for c, var in zip(colors, ddm_vars):
             self.ddm_data_win.add_plot(var, style='Dots', color=c, size=5)
 
@@ -427,8 +433,7 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
         # if mcs > first_dose / days_2_mcs:
         #     self.rmax_data_win.add_data_point('rmax', s_to_mcs * mcs / 60 / 60, self.rmax)
 
-        rna_list = np.array([cell.dict['Replicating'] for cell in self.cell_list_by_type(
-            self.INFECTED, self.VIRUSRELEASING, self.UNINFECTED, self.DYING)])
+        rna_list = self.get_rna_array()
 
         self.total_rna_plot.add_data_point('RNA_tot', mcs, np.sum(rna_list))
         self.mean_rna_plot.add_data_point('RNA_mean', mcs, np.mean(rna_list))
@@ -437,6 +442,10 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
 
         if self.plot_ddm_data and mcs % plot_ddm_data_freq == 0:
             self.do_plots(mcs)
+
+    def get_rna_array(self):
+        return np.array([cell.dict['Replicating'] for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING,
+                                                                                     self.UNINFECTED, self.DYING)])
 
     def finish(self):
         pass
