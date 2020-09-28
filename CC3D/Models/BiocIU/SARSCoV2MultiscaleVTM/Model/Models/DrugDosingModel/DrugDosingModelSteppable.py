@@ -51,7 +51,7 @@ max(Available4) ~= 4.14360796e-01 x dose -1.65564741e-08
 # @staticmethod
 def set_default_ddm_string(_init_drug, _init_avail1, _init_avail2, _init_avail3, _init_avail4,
                            _k0_rate, _d0_rate, _k1_rate, _d1_rate, _k2_rate, _d2_rate, _k3_rate, _d3_rate,
-                           _d4_rate, _first_dose, _initial_dose, _dose_interval, _dose, _eot=1e99):
+                           _d4_rate, _first_dose, _initial_dose, _dose_interval, _dose, _eot):
     """
     Antimony model string generator for this steppable.
     To change parameters do so on the DrugDosingInputs
@@ -113,7 +113,7 @@ def set_default_ddm_string(_init_drug, _init_avail1, _init_avail2, _init_avail3,
 
 def set_cst_drug_ddm_string(_init_drug, _init_avail1, _init_avail2, _init_avail3, _init_avail4,
                             _k0_rate, _d0_rate, _k1_rate, _d1_rate, _k2_rate, _d2_rate, _k3_rate, _d3_rate,
-                            _d4_rate, _first_dose, _initial_dose, _dose_interval, _dose, _eot=1e99):
+                            _d4_rate, _first_dose, _initial_dose, _dose_interval, _dose, _eot):
     """
     Antimony model string generator for this steppable.
     To change parameters do so on the DrugDosingInputs
@@ -238,7 +238,7 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
                                                                            Available4,
                                                                            k0, d0, k1, d1, k2, d2, k3, d3, d4,
                                                                            first_dose,
-                                                                           initial_dose, dose_interval, dose)
+                                                                           initial_dose, dose_interval, dose, dose_end)
 
         # init sbml
         self.add_free_floating_antimony(model_string=self.drug_model_string, step_size=days_2_mcs,
@@ -246,7 +246,7 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
         if profilactic_treatment:
             pass
             # for i in range(int(10 / days_2_mcs)):  # let it run for 10 days
-            # WARNING, self.timestep_sbml() steps all sbml!!
+            # WARNING, self.timestep_sbml() steps all sbml!! But not when in the step function(?!)
             # TODO find a way to only step this sbml
             # self.timestep_sbml()
 
