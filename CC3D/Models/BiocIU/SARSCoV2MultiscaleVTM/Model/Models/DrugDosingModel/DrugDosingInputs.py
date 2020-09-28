@@ -1,4 +1,4 @@
-from numpy import  log
+from numpy import log
 
 __param_desc__ = {}
 
@@ -18,7 +18,6 @@ intermediary_metabolite_2 = 'GS-441524'
 
 __param_desc__['active_met_name'] = 'proper molecular name for active metabolite (tri-phosphate)'
 active_met_name = 'GS-443902'
-
 
 # Data control options
 __param_desc__['plot_ddm_data_freq'] = 'Plot drug model data frequency'
@@ -59,40 +58,39 @@ Available4 = 0
 
 # rates
 __param_desc__['k0'] = 'bioavailability rate, units /day. 100/day <-> 15 minutes'
-k0 = 100.0
+k0 = 10.0
 
 __param_desc__['d0'] = 'clearance time of drug, units /day'
-d0 = 1.0
+d0 = 16.635
 
 __param_desc__['k1'] = 'metabolism of primary drug rate, units /day'
-k1 = 25.0
+k1 = 1.0
 
 __param_desc__['d1'] = 'clearance time of avail1, units /day'
-d1 = 6.0
+d1 = 8.317
 
 __param_desc__['k2'] = 'metabolism of secondary product, units /day'
-k2 = 25.0
+k2 = 989.6
 
 __param_desc__['d2'] = 'clearance time of avail2, units /day'
-d2 = 6.0
+d2 = 8.317
 
 __param_desc__['k3'] = 'metabolism of tertiary product, units /day'
-k3 = 25.0
+k3 = 158.4
 
 __param_desc__['d3'] = 'clearance time of avail3, units /day'
-d3 = 6.0
+d3 = 0.693
 
 __param_desc__['active_metabolite_half_life'] = 'half life of active metabolite, available 4, in days. from ' \
-                                               'https://doi.org/10.1111/cts.12840 '
-active_metabolite_half_life = 22/24  # range from 17.2 to 26.9h
+                                                'https://doi.org/10.1111/cts.12840 '
+active_metabolite_half_life = 22 / 24  # NOT USED range from 17.2 to 26.9h
 
 __param_desc__['d4'] = 'clearance time of avail4, units /day'
-d4 = 6.0
-# d4 = log(2)/active_metabolite_half_life  # way smaller than 6/day
+d4 = 0.693
 
 # dosing
 __param_desc__['first_dose'] = 'time of first dose in days'
-first_dose = 0.5/24
+first_dose = 0.5 / 24
 if profilactic_treatment:
     first_dose = 0
 
@@ -104,7 +102,6 @@ dose_interval = 0.25
 
 __param_desc__['dose'] = 'dose of subsequent treatments (arbitrary units)'
 dose = 10
-
 
 # rate reduction parameters
 
