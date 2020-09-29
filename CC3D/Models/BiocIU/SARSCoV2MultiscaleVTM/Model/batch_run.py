@@ -132,7 +132,7 @@ input_modules = [ViralInfectionVTMModelInputs, DrugDosingInputs]
 #   For example, the following sets the vertical limits of the plot for uninfected cells to [0, 900],
 #       stat_plot_manips = {'Uninfected': lambda fig, ax: ax.axes.set_ylim(bottom=0, top=900)}
 stat_plot_manips = None
-
+stat_plot_manips = {'Uninfected': lambda fig, ax: ax.axes.set_ylim(bottom=0, top=900)}
 # ----------------------------- Begin computer work ----------------------------- #
 import logging
 
