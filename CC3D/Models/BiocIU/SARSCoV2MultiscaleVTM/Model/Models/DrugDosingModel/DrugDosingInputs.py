@@ -36,9 +36,14 @@ ec50 = 4.14360796
 
 # Treatment options
 
+__param_desc__['constant_drug_concentration'] = 'bool flag for constant prodrug'
 constant_drug_concentration = False
 
+__param_desc__['prophylactic_treatment'] = 'bool flag for prophylactic treatment'
 profilactic_treatment = False
+
+__param_desc__['treatment_ends'] = 'bool flag for setting a end time for treatment or not'
+treatment_ends = True
 
 # initial drug concentrations
 __param_desc__['Drug'] = 'Amount of Drug already in the system'
@@ -103,6 +108,11 @@ dose_interval = 1
 
 __param_desc__['dose'] = 'dose of subsequent treatments (arbitrary units)'
 dose = 10
+
+__param_desc__['dose_end'] = 'time of end of treatment in days'
+dose_end = 1
+if not treatment_ends:
+    dose_end = 1e99
 
 # rate reduction parameters
 
