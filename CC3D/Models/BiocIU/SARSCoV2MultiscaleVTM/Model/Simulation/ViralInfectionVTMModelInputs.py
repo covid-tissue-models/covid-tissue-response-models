@@ -41,7 +41,7 @@ write_death_data_freq = 0  # Write death data to simulation directory frequency 
 
 # Conversion Factors
 __param_desc__['s_to_mcs'] = 'Simulation step'
-s_to_mcs = 1200.0  # s/mcs
+s_to_mcs = 300.0  # s/mcs
 __param_desc__['um_to_lat_width'] = 'Lattice width'
 um_to_lat_width = 4.0  # um/lattice_length
 
