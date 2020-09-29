@@ -42,7 +42,7 @@ export_data_desc = {'ir_data': ['ImmuneResp'],
                     'ddm_data': ['Prodrug', 'Metabolite1', 'Metabolite2', 'Metabolite3', 'Metabolite4'],
                     'ddm_tot_RNA_data': ['tot_RNA']}
 
-x_label_str_transient = "Simulation time (MCS)"
+x_label_str_transient = "Simulation time (Days)"
 
 y_label_str = {'ir_data': {'ImmuneResp': 'Immune response state variable'},
                'med_diff_data': {'MedViral': 'Total diffusive virus',
@@ -239,9 +239,10 @@ def generate_transient_plot_trials(batch_data_summary, data_desc, var_name):
         if trial_idx in ['batchMean', 'batchStDev']:
             continue
         sim_mcs = list(data_dict[trial_idx].keys())
+        # sim_hours = float(sim_mcs[:]) * s_to_mcs / 60 / 60
+        sim_days = [this_mcs*s_to_mcs/60/60/24 for this_mcs in sim_mcs]
         y_data = [data_dict[trial_idx][this_mcs][var_name] for this_mcs in sim_mcs]
-        ax.plot(sim_mcs, y_data, label='Trial {}'.format(trial_idx), marker='.')
-
+        ax.plot(sim_days, y_data, label='Trial {}'.format(trial_idx), marker='.')
     ax.set_xlabel(x_label_str_transient)
     ax.set_ylabel(y_label_str[data_desc][var_name])
     # ax.legend()
