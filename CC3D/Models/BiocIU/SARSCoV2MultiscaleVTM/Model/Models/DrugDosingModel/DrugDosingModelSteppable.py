@@ -244,7 +244,7 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
         # init sbml
         self.add_free_floating_antimony(model_string=self.drug_model_string, step_size=days_2_mcs,
                                         model_name='drug_dosing_model')
-        if profilactic_treatment:
+        if prophylactic_treatment:
             pass
             # for i in range(int(10 / days_2_mcs)):  # let it run for 10 days
             # WARNING, self.timestep_sbml() steps all sbml!! But not when in the step function(?!)
