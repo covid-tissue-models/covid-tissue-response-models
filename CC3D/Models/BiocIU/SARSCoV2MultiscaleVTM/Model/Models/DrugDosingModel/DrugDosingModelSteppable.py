@@ -80,7 +80,7 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
 
     def set_drug_model_string(self, _init_drug, _init_avail1, _init_avail2, _init_avail3, _init_avail4,
                               _k0_rate, _d0_rate, _k1_rate, _d1_rate, _k2_rate, _d2_rate, _k3_rate, _d3_rate,
-                              _d4_rate, _first_dose, _initial_dose, _dose_interval, _dose):
+                              _d4_rate, _first_dose, _initial_dose, _dose_interval, _dose, _eot):
         """
         Antimony model string generator for this steppable.
         To change parameters do so on the DrugDosingInputs
@@ -126,13 +126,14 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
         initial_dose = {} ; // initial dose (arbitrary amount)
         dose_interval = {} ; // time interval between doses in days
         dose = {} ; //dose of subsequent treatments
+        dose_end = {} // end of treatment day
 
         E1: at (time - first_dose > 0): Drug=Drug+initial_dose ;
-        E2: at ( (time-first_dose > dose_interval) && sin((((time-first_dose)/dose_interval))*2*pi)>0): Drug=Drug+dose
+        E2: at ( (time-first_dose > dose_interval) && (time < dose_end) && sin((((time-first_dose)/dose_interval))*2*pi)>0): Drug=Drug+dose
         end
         '''.format(_init_drug, _init_avail1, _init_avail2, _init_avail3, _init_avail4, _k0_rate, _d0_rate, _k1_rate,
                    _d1_rate, _k2_rate, _d2_rate, _k3_rate, _d3_rate, _d4_rate, _first_dose, _initial_dose,
-                   _dose_interval, _dose)
+                   _dose_interval, _dose, _eot)
 
         drug_dosig_model_vars = ["Drug", "Available1", "Available2", "Available3", "Available4"]
 
