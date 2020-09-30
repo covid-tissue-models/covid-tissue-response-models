@@ -203,13 +203,6 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
 
         self.vr_model_name = ViralInfectionVTMLib.vr_model_name
 
-        self.__flush_counter = 1
-
-        if self.write_ddm_data:
-            self.data_files = {'ddm_data': 'ddm_data.dat', 'ddm_rmax_data': 'ddm_rmax_data.dat',
-                               'ddm_tot_RNA_data': 'ddm_tot_RNA_data.dat', 'ddm_mean_RNA_data': 'ddm_mean_RNA_data.dat'}
-            self.ddm_data = {'ddm_data': {}, 'ddm_rmax_data': {}, 'ddm_tot_RNA_data': {}, 'ddm_mean_RNA_data': {}}
-
     def start(self):
 
         # set model string
@@ -227,6 +220,7 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
             # for i in range(int(10 / days_2_mcs)):  # let it run for 10 days
             # WARNING, self.timestep_sbml() steps all sbml!! But not when in the step function(?!)
             # TODO find a way to only step this sbml
+            # TODO SOLUTION: recall sheet init function
             # self.timestep_sbml()
 
         self.rmax = self.get_rmax(self.sbml.drug_dosing_model['Available4'])
@@ -237,14 +231,6 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
 
         vim_steppable.do_cell_internalization = self.do_cell_internalization_changing_rmax
 
-        # init save data
-        if self.write_ddm_data:
-            from pathlib import Path
-            for key, rel_path in self.data_files.items():
-                self.data_files[key] = Path(self.output_dir).joinpath(rel_path)
-                with open(self.data_files[key], 'w'):
-                    pass
-
         # Post reference to self
         self.shared_steppable_vars[self.drug_dosing_model_key] = self
 
@@ -254,26 +240,10 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
     def step(self, mcs):
         self.rmax = self.get_rmax(self.sbml.drug_dosing_model['Available4'])
         self.shared_steppable_vars['rmax'] = self.rmax
-        # print(rmax)
-        # if self.plot_ddm_data or self.write_ddm_data:
-        #     rna_list = self.get_rna_array()
 
         for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING):
             vr_model = getattr(cell.sbml, self.vr_model_name)
             vr_model.replicating_rate = self.rmax
-
-        # if self.write_ddm_data and mcs % write_ddm_data_freq == 0:
-        #     self.ddm_data['ddm_rmax_data'][mcs] = [self.rmax]
-        #
-        #     self.ddm_data['ddm_data'][mcs] = [self.sbml.drug_dosing_model[x] for x in self.ddm_vars]
-        #
-        #     self.ddm_data['ddm_tot_RNA_data'][mcs] = [np.sum(rna_list)]
-        #     self.ddm_data['ddm_mean_RNA_data'][mcs] = [np.mean(rna_list)]
-        #
-        # if mcs >= int(self.simulator.getNumSteps() / 4 * self.__flush_counter) and self.write_ddm_data:
-        #     self.flush_stored_outputs()
-        #     self.__flush_counter += 1
-
         self.timestep_sbml()
 
     def get_rna_array(self):
@@ -344,12 +314,6 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
                                'ddm_tot_RNA_data': 'ddm_tot_RNA_data.dat', 'ddm_mean_RNA_data': 'ddm_mean_RNA_data.dat'}
             self.ddm_data = {'ddm_data': {}, 'ddm_rmax_data': {}, 'ddm_tot_RNA_data': {}, 'ddm_mean_RNA_data': {}}
 
-    def start(self):
-        self.mvars = self.shared_steppable_vars[drug_dosing_model_key]  # main ddm class vars
-        self.get_rna_array = self.mvars.get_rna_array
-        if self.plot_ddm_data:
-            self.init_plots()
-
     def init_plots(self):
         self.ddm_data_win = self.add_new_plot_window(title='Drug dosing model',
                                                      x_axis_title='Time (hours)',
@@ -388,6 +352,23 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
                                                       grid=True,
                                                       config_options={'legend': True})
         self.mean_rna_plot.add_plot('RNA_mean', style='Dots', color='red', size=5)
+
+    def init_writes(self):
+        # init save data
+        # if self.write_ddm_data:
+        from pathlib import Path
+        for key, rel_path in self.data_files.items():
+            self.data_files[key] = Path(self.output_dir).joinpath(rel_path)
+            with open(self.data_files[key], 'w'):
+                pass
+
+    def start(self):
+        self.mvars = self.shared_steppable_vars[drug_dosing_model_key]  # main ddm class vars
+        self.get_rna_array = self.mvars.get_rna_array
+        if self.plot_ddm_data:
+            self.init_plots()
+        if self.write_ddm_data:
+            self.init_writes()
 
     def do_plots(self, mcs):
         """
@@ -428,7 +409,6 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
         #   2. The path to write the data to
         #   3. The data to write
         out_info = [(self.write_ddm_data, self.data_files[x], self.ddm_data[x]) for x in self.ddm_data.keys()]
-        # print(out_info)
         for write_data, data_path, data in out_info:
             if write_data:
                 with open(data_path, 'a') as fout:
