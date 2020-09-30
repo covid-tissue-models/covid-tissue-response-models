@@ -168,7 +168,7 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
                                                                            Available4,
                                                                            k0, d0, k1, d1, k2, d2, k3, d3, d4,
                                                                            first_dose,
-                                                                           initial_dose, dose_interval, dose)
+                                                                           initial_dose, dose_interval, dose, dose_end)
 
         # init sbml
         self.add_free_floating_antimony(model_string=self.drug_model_string, step_size=days_2_mcs,
