@@ -235,7 +235,7 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
         # replace viral uptake function
         vim_steppable = self.shared_steppable_vars[ViralInfectionVTMLib.vim_steppable_key]
 
-        vim_steppable.do_cell_internalization = self.do_cell_internalization_w_rmax
+        vim_steppable.do_cell_internalization = self.do_cell_internalization_changing_rmax
 
         # init save data
         if self.write_ddm_data:
@@ -280,7 +280,7 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
         return np.array([cell.dict['Replicating'] for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING,
                                                                                      self.UNINFECTED, self.DYING)])
 
-    def do_cell_internalization_w_rmax(self, cell, viral_amount_com):
+    def do_cell_internalization_changing_rmax(self, cell, viral_amount_com):
         # WARNING!! OVERWRITES FUNCTION OF MAIN MODEL
         if cell.dict['Receptors'] == 0:
             return False, 0.0
@@ -309,30 +309,8 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
 
         return cell_does_uptake, uptake_amount
 
-    # def flush_stored_outputs(self):
-    #     """
-    #     Write stored outputs to file and clear output storage
-    #     :return: None
-    #     """
-    #     # Each tuple contains the necessary information for writing a set of data to file
-    #     #   1. Boolean for whether we're writing to file at all
-    #     #   2. The path to write the data to
-    #     #   3. The data to write
-    #     out_info = [(self.write_ddm_data, self.data_files[x], self.ddm_data[x]) for x in self.ddm_data.keys()]
-    #
-    #     for write_data, data_path, data in out_info:
-    #         if write_data:
-    #             with open(data_path, 'a') as fout:
-    #                 fout.write(SimDataSteppable.data_output_string(self, data))
-    #                 data.clear()
-
-    def on_stop(self):
-        self.finish()
-
     def finish(self):
         pass
-        # if self.write_ddm_data:
-        #     self.flush_stored_outputs()
 
 
 class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
