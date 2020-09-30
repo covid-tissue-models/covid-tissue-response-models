@@ -210,28 +210,6 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
                                'ddm_tot_RNA_data': 'ddm_tot_RNA_data.dat', 'ddm_mean_RNA_data': 'ddm_mean_RNA_data.dat'}
             self.ddm_data = {'ddm_data': {}, 'ddm_rmax_data': {}, 'ddm_tot_RNA_data': {}, 'ddm_mean_RNA_data': {}}
 
-    def init_plots(self):
-        self.ddm_data_win = self.add_new_plot_window(title='Drug dosing model',
-                                                     x_axis_title='Time (hours)',
-                                                     y_axis_title='Variables',
-                                                     x_scale_type='linear',
-                                                     y_scale_type='linear',
-                                                     grid=True,
-                                                     config_options={'legend': True})
-        colors = ['blue', 'red', 'green', 'yellow', 'white']
-        for c, var in zip(colors, self.ddm_vars):
-            self.ddm_data_win.add_plot(var, style='Dots', color=c, size=5)
-
-        self.rmax_data_win = self.add_new_plot_window(title='r_max vs Time',
-                                                      x_axis_title='Time (hours)',
-                                                      y_axis_title='r_max',
-                                                      x_scale_type='linear',
-                                                      y_scale_type='linear',
-                                                      grid=True,
-                                                      config_options={'legend': True})
-
-        self.rmax_data_win.add_plot('rmax', style='Dots', color='red', size=5)
-
     def start(self):
 
         # set model string
@@ -259,10 +237,6 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
 
         vim_steppable.do_cell_internalization = self.do_cell_internalization_w_rmax
 
-        # init plots
-        if self.plot_ddm_data:
-            self.init_plots()
-
         # init save data
         if self.write_ddm_data:
             from pathlib import Path
@@ -281,34 +255,24 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
         self.rmax = self.get_rmax(self.sbml.drug_dosing_model['Available4'])
         self.shared_steppable_vars['rmax'] = self.rmax
         # print(rmax)
-        if self.plot_ddm_data or self.write_ddm_data:
-            rna_list = np.array([cell.dict['Replicating'] for cell in self.cell_list_by_type(self.INFECTED,
-                                                                                             self.VIRUSRELEASING,
-                                                                                             self.UNINFECTED,
-                                                                                             self.DYING)])
+        # if self.plot_ddm_data or self.write_ddm_data:
+        #     rna_list = self.get_rna_array()
 
         for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING):
             vr_model = getattr(cell.sbml, self.vr_model_name)
             vr_model.replicating_rate = self.rmax
 
-        if self.plot_ddm_data and mcs % plot_ddm_data_freq == 0:
-            pass
-            # [self.ddm_data_win.add_data_point(x, s_to_mcs * mcs / 60 / 60, self.sbml.drug_dosing_model[x])
-            #  for x in self.ddm_vars]
-            # if mcs > first_dose / days_2_mcs or constant_drug_concentration:
-            #     self.rmax_data_win.add_data_point('rmax', s_to_mcs * mcs / 60 / 60, self.rmax)
-
-        if self.write_ddm_data and mcs % write_ddm_data_freq == 0:
-            self.ddm_data['ddm_rmax_data'][mcs] = [self.rmax]
-
-            self.ddm_data['ddm_data'][mcs] = [self.sbml.drug_dosing_model[x] for x in self.ddm_vars]
-
-            self.ddm_data['ddm_tot_RNA_data'][mcs] = [np.sum(rna_list)]
-            self.ddm_data['ddm_mean_RNA_data'][mcs] = [np.mean(rna_list)]
-
-        if mcs >= int(self.simulator.getNumSteps() / 4 * self.__flush_counter) and self.write_ddm_data:
-            self.flush_stored_outputs()
-            self.__flush_counter += 1
+        # if self.write_ddm_data and mcs % write_ddm_data_freq == 0:
+        #     self.ddm_data['ddm_rmax_data'][mcs] = [self.rmax]
+        #
+        #     self.ddm_data['ddm_data'][mcs] = [self.sbml.drug_dosing_model[x] for x in self.ddm_vars]
+        #
+        #     self.ddm_data['ddm_tot_RNA_data'][mcs] = [np.sum(rna_list)]
+        #     self.ddm_data['ddm_mean_RNA_data'][mcs] = [np.mean(rna_list)]
+        #
+        # if mcs >= int(self.simulator.getNumSteps() / 4 * self.__flush_counter) and self.write_ddm_data:
+        #     self.flush_stored_outputs()
+        #     self.__flush_counter += 1
 
         self.timestep_sbml()
 
@@ -317,7 +281,7 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
                                                                                      self.UNINFECTED, self.DYING)])
 
     def do_cell_internalization_w_rmax(self, cell, viral_amount_com):
-        # WARNING!! OVERWRITES STEPPABLE FUNCTION OF MAIN MODEL
+        # WARNING!! OVERWRITES FUNCTION OF MAIN MODEL
         if cell.dict['Receptors'] == 0:
             return False, 0.0
 
@@ -345,29 +309,30 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
 
         return cell_does_uptake, uptake_amount
 
-    def flush_stored_outputs(self):
-        """
-        Write stored outputs to file and clear output storage
-        :return: None
-        """
-        # Each tuple contains the necessary information for writing a set of data to file
-        #   1. Boolean for whether we're writing to file at all
-        #   2. The path to write the data to
-        #   3. The data to write
-        out_info = [(self.write_ddm_data, self.data_files[x], self.ddm_data[x]) for x in self.ddm_data.keys()]
-
-        for write_data, data_path, data in out_info:
-            if write_data:
-                with open(data_path, 'a') as fout:
-                    fout.write(SimDataSteppable.data_output_string(self, data))
-                    data.clear()
+    # def flush_stored_outputs(self):
+    #     """
+    #     Write stored outputs to file and clear output storage
+    #     :return: None
+    #     """
+    #     # Each tuple contains the necessary information for writing a set of data to file
+    #     #   1. Boolean for whether we're writing to file at all
+    #     #   2. The path to write the data to
+    #     #   3. The data to write
+    #     out_info = [(self.write_ddm_data, self.data_files[x], self.ddm_data[x]) for x in self.ddm_data.keys()]
+    #
+    #     for write_data, data_path, data in out_info:
+    #         if write_data:
+    #             with open(data_path, 'a') as fout:
+    #                 fout.write(SimDataSteppable.data_output_string(self, data))
+    #                 data.clear()
 
     def on_stop(self):
         self.finish()
 
     def finish(self):
-        if self.write_ddm_data:
-            self.flush_stored_outputs()
+        pass
+        # if self.write_ddm_data:
+        #     self.flush_stored_outputs()
 
 
 class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
@@ -451,12 +416,6 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
         :parameter mcs
         :return None
         """
-        # ddm_vars = self.main_ddm_steppable_vars.ddm_vars
-        # [self.ddm_data_win.add_data_point(x, s_to_mcs * mcs / 60 / 60, self.sbml.drug_dosing_model[x])
-        #  for x in ddm_vars]
-        #
-        # if mcs > first_dose / days_2_mcs:
-        #     self.rmax_data_win.add_data_point('rmax', s_to_mcs * mcs / 60 / 60, self.rmax)
 
         [self.ddm_data_win.add_data_point(x, s_to_mcs * mcs / 60 / 60, self.sbml.drug_dosing_model[x])
          for x in self.mvars.ddm_vars]
@@ -468,14 +427,49 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
         self.total_rna_plot.add_data_point('RNA_tot', mcs, np.sum(rna_list))
         self.mean_rna_plot.add_data_point('RNA_mean', mcs, np.mean(rna_list))
 
+    def do_writes(self, mcs):
+        self.ddm_data['ddm_rmax_data'][mcs] = [self.shared_steppable_vars['rmax']]
+
+        self.ddm_data['ddm_data'][mcs] = [self.sbml.drug_dosing_model[x] for x in self.mvars.ddm_vars]
+
+        rna_list = self.get_rna_array()
+
+        self.ddm_data['ddm_tot_RNA_data'][mcs] = [np.sum(rna_list)]
+        self.ddm_data['ddm_mean_RNA_data'][mcs] = [np.mean(rna_list)]
+
+        if mcs >= int(self.simulator.getNumSteps() / 4 * self.__flush_counter):
+            self.flush_stored_outputs()
+
+    def flush_stored_outputs(self):
+        """
+        Write stored outputs to file and clear output storage
+        :return: None
+        """
+        # Each tuple contains the necessary information for writing a set of data to file
+        #   1. Boolean for whether we're writing to file at all
+        #   2. The path to write the data to
+        #   3. The data to write
+        out_info = [(self.write_ddm_data, self.data_files[x], self.ddm_data[x]) for x in self.ddm_data.keys()]
+        # print(out_info)
+        for write_data, data_path, data in out_info:
+            if write_data:
+                with open(data_path, 'a') as fout:
+                    print(data)
+                    print(SimDataSteppable.data_output_string(self, data))
+                    fout.write(SimDataSteppable.data_output_string(self, data))
+                    data.clear()
+        self.__flush_counter += 1
+
     def step(self, mcs):
-        self.do_plots(mcs)
+
         if self.plot_ddm_data and mcs % plot_ddm_data_freq == 0:
             self.do_plots(mcs)
+        if self.write_ddm_data and mcs % write_ddm_data_freq == 0:
+            self.do_writes(mcs)
 
-    # def get_rna_array(self):
-    #     return np.array([cell.dict['Replicating'] for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING,
-    #                                                                                  self.UNINFECTED, self.DYING)])
+    def on_stop(self):
+        self.finish()
 
     def finish(self):
-        pass
+        if self.write_ddm_data:
+            self.flush_stored_outputs()
