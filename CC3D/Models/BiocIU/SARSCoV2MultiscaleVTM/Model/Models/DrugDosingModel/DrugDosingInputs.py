@@ -23,7 +23,7 @@ active_met_name = 'GS-443902'
 __param_desc__['plot_ddm_data_freq'] = 'Plot drug model data frequency'
 plot_ddm_data_freq = 1  # Plot recovery model data frequency (disable with 0)
 __param_desc__['write_ddm_data_freq'] = 'Write drug model data to simulation directory frequency'
-write_ddm_data_freq = 0  # Write recovery model data to simulation directory frequency (disable with 0)
+write_ddm_data_freq = 1  # Write recovery model data to simulation directory frequency (disable with 0)
 
 # parameters
 __param_desc__['auto_ec50'] = 'bool for auto scaling of EC50 by max(avail4) and rel_avail4_EC50'
@@ -62,7 +62,7 @@ __param_desc__['Available4'] = 'bioavailable metabolite 4 already in the system'
 Available4 = 0
 
 # rates
-# rates derived from https://doi.org/10.1111/cts.12840
+# rates matched to pk of remdesivir
 __param_desc__['k0'] = 'bioavailability rate, units /day. 100/day <-> 15 minutes'
 k0 = 10.0
 
