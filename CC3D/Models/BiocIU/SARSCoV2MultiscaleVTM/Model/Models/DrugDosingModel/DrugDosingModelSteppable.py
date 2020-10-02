@@ -45,6 +45,12 @@ with the default parameters (k0 = 100.0; d0 = 1.0; k1 = 25.0; d1 = 6.0; k2 = 25.
 d4 = 6.0) max(Available4) is a linear function of dose following:
 
 max(Available4) ~= 4.14360796e-01 x dose -1.65564741e-08
+
+with the fitted pk (k0 = 10.0; d0 = 16.635; k1 = 1.0; d1 = 8.317; k2 = 989.6; d2 = 8.317; k3 = 158.4; d3 = 0.693; 
+d4 = 0.693) max(Available4) is a linear function of dose following:
+
+max(Available4) ~= 2.32417475e-01 x dose + 1.59151098e-08
+
 '''
 
 
@@ -194,7 +200,7 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
         self.plot_ddm_data = plot_ddm_data_freq > 0
         self.write_ddm_data = write_ddm_data_freq > 0
 
-        self.max_avail4 = 4.14360796e-01 * dose  # see comment just before steppable definition
+        self.max_avail4 = 2.32417475e-01 * dose  # see comment just before steppable definition
 
         if auto_ec50:
             self.hill_k = self.max_avail4 * rel_avail4_EC50
