@@ -21,7 +21,7 @@ active_met_name = 'GS-443902'
 
 # Data control options
 __param_desc__['plot_ddm_data_freq'] = 'Plot drug model data frequency'
-plot_ddm_data_freq = 0  # Plot recovery model data frequency (disable with 0)
+plot_ddm_data_freq = 1  # Plot recovery model data frequency (disable with 0)
 __param_desc__['write_ddm_data_freq'] = 'Write drug model data to simulation directory frequency'
 write_ddm_data_freq = 1  # Write recovery model data to simulation directory frequency (disable with 0)
 
@@ -40,10 +40,10 @@ __param_desc__['constant_drug_concentration'] = 'bool flag for constant prodrug'
 constant_drug_concentration = False
 
 __param_desc__['prophylactic_treatment'] = 'bool flag for prophylactic treatment'
-profilactic_treatment = False
+prophylactic_treatment = False
 
 __param_desc__['treatment_ends'] = 'bool flag for setting a end time for treatment or not'
-treatment_ends = True
+treatment_ends = False
 
 # initial drug concentrations
 __param_desc__['Drug'] = 'Amount of Drug already in the system'
@@ -62,7 +62,7 @@ __param_desc__['Available4'] = 'bioavailable metabolite 4 already in the system'
 Available4 = 0
 
 # rates
-# rates derived from https://doi.org/10.1111/cts.12840
+# rates matched to pk of remdesivir
 __param_desc__['k0'] = 'bioavailability rate, units /day. 100/day <-> 15 minutes'
 k0 = 10.0
 
@@ -89,15 +89,15 @@ d3 = 0.693
 
 __param_desc__['active_metabolite_half_life'] = 'half life of active metabolite, available 4, in days. from ' \
                                                 'https://doi.org/10.1111/cts.12840 '
-active_metabolite_half_life = 22 / 24  # NOT USED range from 17.2 to 26.9h
+active_metabolite_half_life = 22 / 24  # NOT USED. range from 17.2 to 26.9h
 
 __param_desc__['d4'] = 'clearance time of avail4, units /day'
 d4 = 0.693
 
 # dosing
 __param_desc__['first_dose'] = 'time of first dose in days'
-first_dose = 1
-if profilactic_treatment:
+first_dose = 0.5 / 24
+if prophylactic_treatment:
     first_dose = 0
 
 __param_desc__['initial_dose'] = 'initial dose (arbitrary amount)'

@@ -45,7 +45,140 @@ with the default parameters (k0 = 100.0; d0 = 1.0; k1 = 25.0; d1 = 6.0; k2 = 25.
 d4 = 6.0) max(Available4) is a linear function of dose following:
 
 max(Available4) ~= 4.14360796e-01 x dose -1.65564741e-08
+
+with the fitted pk (k0 = 10.0; d0 = 16.635; k1 = 1.0; d1 = 8.317; k2 = 989.6; d2 = 8.317; k3 = 158.4; d3 = 0.693; 
+d4 = 0.693) max(Available4) is a linear function of dose following:
+
+max(Available4) ~= 2.32417475e-01 x dose + 1.59151098e-08
+
 '''
+
+
+# @staticmethod
+def set_default_ddm_string(_init_drug, _init_avail1, _init_avail2, _init_avail3, _init_avail4,
+                           _k0_rate, _d0_rate, _k1_rate, _d1_rate, _k2_rate, _d2_rate, _k3_rate, _d3_rate,
+                           _d4_rate, _first_dose, _initial_dose, _dose_interval, _dose, _eot):
+    """
+    Antimony model string generator for this steppable.
+    To change parameters do so on the DrugDosingInputs
+    :param
+    """
+
+    dosingmodel_str = '''
+
+            model dosingmodel()
+
+            // Simple cascade model of bioiavailability with multiple metabolites
+            // linear clearance at each stage
+            // All times measured in Days
+
+            J0: Drug -> Available1 ; k0*Drug ; //Distribution and bioavailability of drug after dosing
+            J0A: Drug -> ; d0*Drug ; // Clearance of drug before bioavailability
+            J1: Available1 -> Available2 ; k1*Available1 ; // Metabolism of drug into metabolite 2
+            J1A: Available1 -> ; d1*Available1 ; // Clearance of drug after bioavailability
+            J2: Available2 -> Available3 ; k2*Available2 ; // Metabolism of drug into metabolite 3
+            J2A: Available2 -> ; d2*Available2 ; // Clearance of metabolite 2 
+            J3: Available3 -> Available4 ; k3*Available3 ; // Metabolism of drug into metabolite 4
+            J3A: Available3 -> ; d3*Available3 ; // Clearance of metabolite 3 
+            J4A: Available4 -> ; d4*Available4 ; // Clearance of metabolite 4
+
+            //Initial values
+            Drug = {} ; 
+            Available1 = {};
+            Available2 = {};
+            Available3 = {};
+            Available4 = {};
+
+            k0 = {}; // bioavailability rate, units /day
+            d0 = {} ; // clearance time, units /day 
+            k1 = {} ; // metabolism of primary drug rate, units /day
+            d1 = {} ; // clearance time, units /day = 4 hours
+            k2 = {} ; // metabolism of secondary product, units /day
+            d2 = {} ; // clearance time, units /day = 4 hours
+            k3 = {} ; // metabolism of tertiary product, units /day
+            d3 = {} ; // clearance time, units /day = 4 hours
+            d4 = {} ; // clearance time, units /day = 4 hours
+
+            first_dose={} ; // time of first dose in days
+            initial_dose = {} ; // initial dose (arbitrary amount)
+            dose_interval = {} ; // time interval between doses in days
+            dose = {} ; //dose of subsequent treatments
+            dose_end = {} // end of treatment day
+
+            E1: at (time - first_dose > 0): Drug=Drug+initial_dose ;
+            E2: at ( (time-first_dose > dose_interval) && (time < dose_end) && sin((((time-first_dose)/dose_interval))*2*pi)>0): Drug=Drug+dose
+            end
+            '''.format(_init_drug, _init_avail1, _init_avail2, _init_avail3, _init_avail4, _k0_rate, _d0_rate, _k1_rate,
+                       _d1_rate, _k2_rate, _d2_rate, _k3_rate, _d3_rate, _d4_rate, _first_dose, _initial_dose,
+                       _dose_interval, _dose, _eot)
+
+    drug_dosig_model_vars = ["Drug", "Available1", "Available2", "Available3", "Available4"]
+
+    return dosingmodel_str, drug_dosig_model_vars
+
+
+def set_cst_drug_ddm_string(_init_drug, _init_avail1, _init_avail2, _init_avail3, _init_avail4,
+                            _k0_rate, _d0_rate, _k1_rate, _d1_rate, _k2_rate, _d2_rate, _k3_rate, _d3_rate,
+                            _d4_rate, _first_dose, _initial_dose, _dose_interval, _dose, _eot):
+    """
+    Antimony model string generator for this steppable.
+    To change parameters do so on the DrugDosingInputs
+    :param
+    """
+
+    dosingmodel_str = '''
+
+            model dosingmodel()
+
+            // Simple cascade model of bioiavailability with multiple metabolites
+            // linear clearance at each stage
+            // All times measured in Days
+
+            J0: Drug -> Available1 ; k0*Drug ; //Distribution and bioavailability of drug after dosing
+            J0A: Drug -> ; d0*Drug ; // Clearance of drug before bioavailability
+            J1: Available1 -> Available2 ; k1*Available1 ; // Metabolism of drug into metabolite 2
+            J1A: Available1 -> ; d1*Available1 ; // Clearance of drug after bioavailability
+            J2: Available2 -> Available3 ; k2*Available2 ; // Metabolism of drug into metabolite 3
+            J2A: Available2 -> ; d2*Available2 ; // Clearance of metabolite 2 
+            J3: Available3 -> Available4 ; k3*Available3 ; // Metabolism of drug into metabolite 4
+            J3A: Available3 -> ; d3*Available3 ; // Clearance of metabolite 3 
+            J4A: Available4 -> ; d4*Available4 ; // Clearance of metabolite 4
+
+            //Initial values
+            dummy = {} ; 
+            Available1 = {};
+            Available2 = {};
+            Available3 = {};
+            Available4 = {};
+
+            k0 = {}; // bioavailability rate, units /day
+            d0 = {} ; // clearance time, units /day 
+            k1 = {} ; // metabolism of primary drug rate, units /day
+            d1 = {} ; // clearance time, units /day = 4 hours
+            k2 = {} ; // metabolism of secondary product, units /day
+            d2 = {} ; // clearance time, units /day = 4 hours
+            k3 = {} ; // metabolism of tertiary product, units /day
+            d3 = {} ; // clearance time, units /day = 4 hours
+            d4 = {} ; // clearance time, units /day = 4 hours
+
+            first_dose={} ; // time of first dose in days
+            initial_dose = {} ; // initial dose (arbitrary amount)
+            dose_interval = {} ; // time interval between doses in days
+            dose = {} ; //dose of subsequent treatments
+            dose_end = {} // end of treatment day
+
+            const Drug := initial_dose;
+
+            //E1: at (time - first_dose > 0): Drug=Drug+initial_dose ;
+            //E2: at ( (time-first_dose > dose_interval) && (time < dose_end) && sin((((time-first_dose)/dose_interval))*2*pi)>0): Drug=Drug+dose
+            end
+            '''.format(_init_drug, _init_avail1, _init_avail2, _init_avail3, _init_avail4, _k0_rate, _d0_rate, _k1_rate,
+                       _d1_rate, _k2_rate, _d2_rate, _k3_rate, _d3_rate, _d4_rate, _first_dose, _initial_dose,
+                       _dose_interval, _dose, _eot)
+
+    drug_dosig_model_vars = ["Drug", "Available1", "Available2", "Available3", "Available4"]
+
+    return dosingmodel_str, drug_dosig_model_vars
 
 
 class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
@@ -59,107 +192,22 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
         BatchRunLib.apply_external_multipliers(__name__, DrugDosingInputs)
         self.drug_dosing_model_key = drug_dosing_model_key
 
+        if constant_drug_concentration:
+            self.set_drug_model_string = set_cst_drug_ddm_string
+        else:
+            self.set_drug_model_string = set_default_ddm_string
+
         self.plot_ddm_data = plot_ddm_data_freq > 0
         self.write_ddm_data = write_ddm_data_freq > 0
 
-        self.max_avail4 = 4.14360796e-01 * dose  # see comment just before steppable definition
+        self.max_avail4 = 2.32417475e-01 * dose  # see comment just before steppable definition
 
         if auto_ec50:
-            self.ec50 = self.max_avail4 * rel_avail4_EC50
+            self.hill_k = self.max_avail4 * rel_avail4_EC50
         else:
-            self.ec50 = ec50
+            self.hill_k = ec50
 
         self.vr_model_name = ViralInfectionVTMLib.vr_model_name
-
-        self.__flush_counter = 1
-
-        if self.write_ddm_data:
-            self.data_files = {'ddm_data': 'ddm_data.dat', 'ddm_rmax_data': 'ddm_rmax_data.dat',
-                               'ddm_tot_RNA_data': 'ddm_tot_RNA_data.dat', 'ddm_mean_RNA_data': 'ddm_mean_RNA_data.dat'}
-            self.ddm_data = {'ddm_data': {}, 'ddm_rmax_data': {}, 'ddm_tot_RNA_data': {}, 'ddm_mean_RNA_data': {}}
-
-    def set_drug_model_string(self, _init_drug, _init_avail1, _init_avail2, _init_avail3, _init_avail4,
-                              _k0_rate, _d0_rate, _k1_rate, _d1_rate, _k2_rate, _d2_rate, _k3_rate, _d3_rate,
-                              _d4_rate, _first_dose, _initial_dose, _dose_interval, _dose, _eot):
-        """
-        Antimony model string generator for this steppable.
-        To change parameters do so on the DrugDosingInputs
-        :param
-        """
-
-        dosingmodel_str = '''
-
-        model dosingmodel()
-
-        // Simple cascade model of bioiavailability with multiple metabolites
-        // linear clearance at each stage
-        // All times measured in Days
-
-        J0: Drug -> Available1 ; k0*Drug ; //Distribution and bioavailability of drug after dosing
-        J0A: Drug -> ; d0*Drug ; // Clearance of drug before bioavailability
-        J1: Available1 -> Available2 ; k1*Available1 ; // Metabolism of drug into metabolite 2
-        J1A: Available1 -> ; d1*Available1 ; // Clearance of drug after bioavailability
-        J2: Available2 -> Available3 ; k2*Available2 ; // Metabolism of drug into metabolite 3
-        J2A: Available2 -> ; d2*Available2 ; // Clearance of metabolite 2 
-        J3: Available3 -> Available4 ; k3*Available3 ; // Metabolism of drug into metabolite 4
-        J3A: Available3 -> ; d3*Available3 ; // Clearance of metabolite 3 
-        J4A: Available4 -> ; d4*Available4 ; // Clearance of metabolite 4
-
-        //Initial values
-        Drug = {} ; 
-        Available1 = {};
-        Available2 = {};
-        Available3 = {};
-        Available4 = {};
-
-        k0 = {}; // bioavailability rate, units /day
-        d0 = {} ; // clearance time, units /day 
-        k1 = {} ; // metabolism of primary drug rate, units /day
-        d1 = {} ; // clearance time, units /day = 4 hours
-        k2 = {} ; // metabolism of secondary product, units /day
-        d2 = {} ; // clearance time, units /day = 4 hours
-        k3 = {} ; // metabolism of tertiary product, units /day
-        d3 = {} ; // clearance time, units /day = 4 hours
-        d4 = {} ; // clearance time, units /day = 4 hours
-
-        first_dose={} ; // time of first dose in days
-        initial_dose = {} ; // initial dose (arbitrary amount)
-        dose_interval = {} ; // time interval between doses in days
-        dose = {} ; //dose of subsequent treatments
-        dose_end = {} // end of treatment day
-
-        E1: at (time - first_dose > 0): Drug=Drug+initial_dose ;
-        E2: at ( (time-first_dose > dose_interval) && (time < dose_end) && sin((((time-first_dose)/dose_interval))*2*pi)>0): Drug=Drug+dose
-        end
-        '''.format(_init_drug, _init_avail1, _init_avail2, _init_avail3, _init_avail4, _k0_rate, _d0_rate, _k1_rate,
-                   _d1_rate, _k2_rate, _d2_rate, _k3_rate, _d3_rate, _d4_rate, _first_dose, _initial_dose,
-                   _dose_interval, _dose, _eot)
-
-        drug_dosig_model_vars = ["Drug", "Available1", "Available2", "Available3", "Available4"]
-
-        return dosingmodel_str, drug_dosig_model_vars
-
-    def init_plots(self):
-        self.ddm_data_win = self.add_new_plot_window(title='Drug dosing model',
-                                                     x_axis_title='Time (hours)',
-                                                     y_axis_title='Variables',
-                                                     x_scale_type='linear',
-                                                     y_scale_type='linear',
-                                                     grid=True,
-                                                     config_options={'legend': True})
-        colors = ['blue', 'red', 'green', 'yellow', 'white']
-        for c, var in zip(colors, self.ddm_vars):
-            self.ddm_data_win.add_plot(var, style='Dots', color=c, size=5)
-
-        self.rmax_data_win = self.add_new_plot_window(title='r_max vs Time',
-                                                      x_axis_title='Time (hours)',
-                                                      y_axis_title='r_max',
-                                                      x_scale_type='linear',
-                                                      y_scale_type='linear',
-                                                      grid=True,
-                                                      config_options={'legend': True})
-
-        self.rmax_data_win.add_plot('rmax', style='Dots', color='red', size=5)
 
     def start(self):
 
@@ -173,66 +221,43 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
         # init sbml
         self.add_free_floating_antimony(model_string=self.drug_model_string, step_size=days_2_mcs,
                                         model_name='drug_dosing_model')
+        if prophylactic_treatment:
+            pass
+            # for i in range(int(10 / days_2_mcs)):  # let it run for 10 days
+            # WARNING, self.timestep_sbml() steps all sbml!! But not when in the step function(?!)
+            # TODO find a way to only step this sbml
+            # TODO SOLUTION: recall sheet init function
+            # self.timestep_sbml()
+
         self.rmax = self.get_rmax(self.sbml.drug_dosing_model['Available4'])
+        self.shared_steppable_vars['rmax'] = self.rmax
 
         # replace viral uptake function
         vim_steppable = self.shared_steppable_vars[ViralInfectionVTMLib.vim_steppable_key]
 
-        vim_steppable.do_cell_internalization = self.do_cell_internalization_w_rmax
-
-        # init plots
-        if self.plot_ddm_data:
-            self.init_plots()
-
-        # init save data
-        if self.write_ddm_data:
-            from pathlib import Path
-            for key, rel_path in self.data_files.items():
-                self.data_files[key] = Path(self.output_dir).joinpath(rel_path)
-                with open(self.data_files[key], 'w'):
-                    pass
+        vim_steppable.do_cell_internalization = self.do_cell_internalization_changing_rmax
 
         # Post reference to self
         self.shared_steppable_vars[self.drug_dosing_model_key] = self
 
     def get_rmax(self, avail4):
-        return (1 - nCoVUtils.hill_equation(avail4, self.ec50, 2)) * replicating_rate
+        return (1 - nCoVUtils.hill_equation(avail4, self.hill_k, 2)) * replicating_rate
 
     def step(self, mcs):
         self.rmax = self.get_rmax(self.sbml.drug_dosing_model['Available4'])
-        # print(rmax)
-        if self.plot_ddm_data or self.write_ddm_data:
-            rna_list = np.array([cell.dict['Replicating'] for cell in self.cell_list_by_type(self.INFECTED,
-                                                                                             self.VIRUSRELEASING,
-                                                                                             self.UNINFECTED,
-                                                                                             self.DYING)])
+        self.shared_steppable_vars['rmax'] = self.rmax
 
         for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING):
             vr_model = getattr(cell.sbml, self.vr_model_name)
             vr_model.replicating_rate = self.rmax
-
-        if self.plot_ddm_data and mcs % plot_ddm_data_freq == 0:
-            [self.ddm_data_win.add_data_point(x, s_to_mcs * mcs / 60 / 60, self.sbml.drug_dosing_model[x])
-             for x in self.ddm_vars]
-            if mcs > first_dose / days_2_mcs:
-                self.rmax_data_win.add_data_point('rmax', s_to_mcs * mcs / 60 / 60, self.rmax)
-
-        if self.write_ddm_data and mcs % write_ddm_data_freq == 0:
-            self.ddm_data['ddm_rmax_data'][mcs] = [self.rmax]
-
-            self.ddm_data['ddm_data'][mcs] = [self.sbml.drug_dosing_model[x] for x in self.ddm_vars]
-
-            self.ddm_data['ddm_tot_RNA_data'][mcs] = [np.sum(rna_list)]
-            self.ddm_data['ddm_mean_RNA_data'][mcs] = [np.mean(rna_list)]
-
-        if mcs >= int(self.simulator.getNumSteps() / 4 * self.__flush_counter) and self.write_ddm_data:
-            self.flush_stored_outputs()
-            self.__flush_counter += 1
-
         self.timestep_sbml()
 
-    def do_cell_internalization_w_rmax(self, cell, viral_amount_com):
-        # WARNING!! OVERWRITES STEPPABLE FUNCTION OF MAIN MODEL
+    def get_rna_array(self):
+        return np.array([cell.dict['Replicating'] for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING,
+                                                                                     self.UNINFECTED, self.DYING)])
+
+    def do_cell_internalization_changing_rmax(self, cell, viral_amount_com):
+        # WARNING!! OVERWRITES FUNCTION OF MAIN MODEL
         if cell.dict['Receptors'] == 0:
             return False, 0.0
 
@@ -260,29 +285,8 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
 
         return cell_does_uptake, uptake_amount
 
-    def flush_stored_outputs(self):
-        """
-        Write stored outputs to file and clear output storage
-        :return: None
-        """
-        # Each tuple contains the necessary information for writing a set of data to file
-        #   1. Boolean for whether we're writing to file at all
-        #   2. The path to write the data to
-        #   3. The data to write
-        out_info = [(self.write_ddm_data, self.data_files[x], self.ddm_data[x]) for x in self.ddm_data.keys()]
-
-        for write_data, data_path, data in out_info:
-            if write_data:
-                with open(data_path, 'a') as fout:
-                    fout.write(SimDataSteppable.data_output_string(self, data))
-                    data.clear()
-
-    def on_stop(self):
-        self.finish()
-
     def finish(self):
-        if self.write_ddm_data:
-            self.flush_stored_outputs()
+        pass
 
 
 class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
@@ -295,18 +299,26 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
         # import Models.DrugDosingModel.DrugDosingInputs as DrugDosingInputs
         self.track_cell_level_scalar_attribute(field_name='internal_viral_RNA', attribute_name='Replicating')
 
-        self.main_ddm_steppable_vars = None
+        self.mvars = None
+
+        self.get_rna_array = None
 
         self.plot_ddm_data = plot_ddm_data_freq > 0
+        self.write_ddm_data = write_ddm_data_freq > 0
+
+        self.ddm_data_win = None
+
+        self.rmax_data_win = None
 
         self.total_rna_plot = None
         self.mean_rna_plot = None
 
-    def start(self):
-        self.main_ddm_steppable_vars = self.shared_steppable_vars[drug_dosing_model_key]
+        self.__flush_counter = 1
 
-        if self.plot_ddm_data:
-            self.init_plots()
+        if self.write_ddm_data:
+            self.data_files = {'ddm_data': 'ddm_data.dat', 'ddm_rmax_data': 'ddm_rmax_data.dat',
+                               'ddm_tot_RNA_data': 'ddm_tot_RNA_data.dat', 'ddm_mean_RNA_data': 'ddm_mean_RNA_data.dat'}
+            self.ddm_data = {'ddm_data': {}, 'ddm_rmax_data': {}, 'ddm_tot_RNA_data': {}, 'ddm_mean_RNA_data': {}}
 
     def init_plots(self):
         self.ddm_data_win = self.add_new_plot_window(title='Drug dosing model',
@@ -317,7 +329,7 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
                                                      grid=True,
                                                      config_options={'legend': True})
         colors = ['blue', 'red', 'green', 'yellow', 'white']
-        ddm_vars = self.main_ddm_steppable_vars.ddm_vars
+        ddm_vars = self.mvars.ddm_vars
         for c, var in zip(colors, ddm_vars):
             self.ddm_data_win.add_plot(var, style='Dots', color=c, size=5)
 
@@ -347,28 +359,79 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
                                                       config_options={'legend': True})
         self.mean_rna_plot.add_plot('RNA_mean', style='Dots', color='red', size=5)
 
+    def init_writes(self):
+        # init save data
+        # if self.write_ddm_data:
+        from pathlib import Path
+        for key, rel_path in self.data_files.items():
+            self.data_files[key] = Path(self.output_dir).joinpath(rel_path)
+            with open(self.data_files[key], 'w'):
+                pass
+
+    def start(self):
+        self.mvars = self.shared_steppable_vars[drug_dosing_model_key]  # main ddm class vars
+        self.get_rna_array = self.mvars.get_rna_array
+        if self.plot_ddm_data:
+            self.init_plots()
+        if self.write_ddm_data:
+            self.init_writes()
+
     def do_plots(self, mcs):
         """
         :parameter mcs
         :return None
         """
-        # ddm_vars = self.main_ddm_steppable_vars.ddm_vars
-        # [self.ddm_data_win.add_data_point(x, s_to_mcs * mcs / 60 / 60, self.sbml.drug_dosing_model[x])
-        #  for x in ddm_vars]
-        #
-        # if mcs > first_dose / days_2_mcs:
-        #     self.rmax_data_win.add_data_point('rmax', s_to_mcs * mcs / 60 / 60, self.rmax)
 
-        rna_list = np.array([cell.dict['Replicating'] for cell in self.cell_list_by_type(
-            self.INFECTED, self.VIRUSRELEASING, self.UNINFECTED, self.DYING)])
+        [self.ddm_data_win.add_data_point(x, s_to_mcs * mcs / 60 / 60, self.sbml.drug_dosing_model[x])
+         for x in self.mvars.ddm_vars]
+        if mcs > first_dose / days_2_mcs or constant_drug_concentration:
+            self.rmax_data_win.add_data_point('rmax', s_to_mcs * mcs / 60 / 60, self.shared_steppable_vars['rmax'])
+
+        rna_list = self.get_rna_array()
 
         self.total_rna_plot.add_data_point('RNA_tot', mcs, np.sum(rna_list))
         self.mean_rna_plot.add_data_point('RNA_mean', mcs, np.mean(rna_list))
+
+    def do_writes(self, mcs):
+        self.ddm_data['ddm_rmax_data'][mcs] = [self.shared_steppable_vars['rmax']]
+
+        self.ddm_data['ddm_data'][mcs] = [self.sbml.drug_dosing_model[x] for x in self.mvars.ddm_vars]
+
+        rna_list = self.get_rna_array()
+
+        self.ddm_data['ddm_tot_RNA_data'][mcs] = [np.sum(rna_list)]
+        self.ddm_data['ddm_mean_RNA_data'][mcs] = [np.mean(rna_list)]
+
+        if mcs >= int(self.simulator.getNumSteps() / 4 * self.__flush_counter):
+            self.flush_stored_outputs()
+
+    def flush_stored_outputs(self):
+        """
+        Write stored outputs to file and clear output storage
+        :return: None
+        """
+        # Each tuple contains the necessary information for writing a set of data to file
+        #   1. Boolean for whether we're writing to file at all
+        #   2. The path to write the data to
+        #   3. The data to write
+        out_info = [(self.write_ddm_data, self.data_files[x], self.ddm_data[x]) for x in self.ddm_data.keys()]
+        for write_data, data_path, data in out_info:
+            if write_data:
+                with open(data_path, 'a') as fout:
+                    fout.write(SimDataSteppable.data_output_string(self, data))
+                    data.clear()
+        self.__flush_counter += 1
 
     def step(self, mcs):
 
         if self.plot_ddm_data and mcs % plot_ddm_data_freq == 0:
             self.do_plots(mcs)
+        if self.write_ddm_data and mcs % write_ddm_data_freq == 0:
+            self.do_writes(mcs)
+
+    def on_stop(self):
+        self.finish()
 
     def finish(self):
-        pass
+        if self.write_ddm_data:
+            self.flush_stored_outputs()

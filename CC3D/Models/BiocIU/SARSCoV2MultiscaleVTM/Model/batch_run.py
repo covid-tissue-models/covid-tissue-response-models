@@ -1,5 +1,4 @@
 import os
-
 os.environ["ViralInfectionVTM"] = os.path.dirname(__file__)
 
 # ----------------------------- Setup Instructions ----------------------------- #
@@ -100,17 +99,17 @@ out_freq = 50
 #           set_1/
 #           ...
 # sweep_output_folder = os.path.abspath(os.path.join(os.path.splitdrive(os.getcwd())[0], '/DrugDosing_test'))
-sweep_output_folder = r'/N/slate/jferrari/ddm_batch_1'
+sweep_output_folder = r'D:\Google Drive IU\phdStuff\covid 19 project\ddm results\old PK\ddm_batch_1'
 
 # Option to execute sweep simulations
 #   Set to False to not run simulations
-opt_run_sims = True
+opt_run_sims = False
 # Option to render statistics results
 #   Set to False to not generate statistics figures
 opt_render_stat = True
 # Option to render spatial results
 #   Set to False to not generate spatial figures
-opt_render_spat = True
+opt_render_spat = False
 # Optional dump folder
 #   Once all local work is done on a parameter set, the set directory is moved to this location
 #   Set to None to leave results where they are first generated
@@ -133,7 +132,7 @@ input_modules = [ViralInfectionVTMModelInputs, DrugDosingInputs]
 #   For example, the following sets the vertical limits of the plot for uninfected cells to [0, 900],
 #       stat_plot_manips = {'Uninfected': lambda fig, ax: ax.axes.set_ylim(bottom=0, top=900)}
 stat_plot_manips = None
-
+stat_plot_manips = {'Uninfected': lambda fig, ax: ax.axes.set_ylim(bottom=0, top=900)}
 # ----------------------------- Begin computer work ----------------------------- #
 import logging
 
@@ -164,10 +163,10 @@ def sim_input_generator(_set_idx):
             recur_vals[sweep_var] = _set_idx
             sweep_idx[sweep_var] = _set_idx % len_mults[sweep_var]
         elif k == len(sweep_vars) - 1:
-            sweep_var_o = sweep_vars[k - 1]
+            sweep_var_o = sweep_vars[k-1]
             sweep_idx[sweep_var] = int((recur_vals[sweep_var_o] - sweep_idx[sweep_var_o]) / len_mults[sweep_var_o])
         else:
-            sweep_var_o = sweep_vars[k - 1]
+            sweep_var_o = sweep_vars[k-1]
             recur_vals[sweep_var] = int((recur_vals[sweep_var_o] - sweep_idx[sweep_var_o]) / len_mults[sweep_var_o])
             sweep_idx[sweep_var] = recur_vals[sweep_var] % len_mults[sweep_var]
 
@@ -179,7 +178,6 @@ if __name__ == '__main__':
     # Check inputs
     if mult_dict is not None:
         assert isinstance(mult_dict, dict), 'mult_dict must be a dictionary or None'
-
 
         def check_multipliers(m: dict):
             for var, mults in m.items():
@@ -197,13 +195,12 @@ if __name__ == '__main__':
                     except ValueError:
                         raise ValueError(f'Multiplier {mults[x]} for {var} is not a number')
 
-
         check_multipliers(mult_dict)
 
     assert num_rep > 0, 'Number of replicas per parameter set (num_rep) must be greater than zero'
     if num_par < 1:
         num_par = 1
-    assert out_freq >= 0, 'Output frequency (out_freq) must be greater than zero'
+    assert out_freq > 0, 'Output frequency (out_freq) must be greater than zero'
     if sweep_output_folder is not None:
         assert os.path.isdir(sweep_output_folder), 'Output directory (sweep_output_folder) does not exist'
     if dump_folder is not None:
@@ -225,7 +222,7 @@ if __name__ == '__main__':
         si = sim_input_generator(set_idx)
         si['__param_desc__'] = get_param_descr()
         # Append system configuration inputs
-        si[cc3d_batch_key] = {'out_freq': model_out_freq}
+        si[cc3d_batch_key] = {'out_freq': out_freq}
         sim_input.append(si)
 
     sim_run_sch = CallableCoV2VTMScheduler(root_output_folder=_root_output_folder,
@@ -241,14 +238,26 @@ if __name__ == '__main__':
     # Export model parameters
     if input_modules is not None and isinstance(input_modules, list):
         for set_idx in range(num_sets):
+            if sim_run_sch.is_dumping:
+                o = sim_run_sch.dump_set_directory(set_idx)
+            else:
+                o = sim_run_sch.output_set_directory(set_idx)
+
             for x in input_modules:
                 export_file_rel = x.__name__.split('.')[-1] + "Params.csv"
-                export_file_abs = os.path.join(sim_run_sch.final_set_directory(set_idx), export_file_rel)
+                export_file_abs = os.path.join(o, export_file_rel)
                 nCoVUtils.export_parameters(x, export_file_abs)
 
     if opt_render_stat:
         try:
-            sim_run_sch.export_transient_plot_trials(manipulators=stat_plot_manips)
+            for set_idx in range(num_sets):
+                _cov2_vtm_sim_run = sim_run_sch.run_instance(set_idx)
+                if sim_run_sch.is_dumping:
+                    _cov2_vtm_sim_run.output_dir_root = sim_run_sch.dump_set_directory(set_idx)
+                else:
+                    _cov2_vtm_sim_run.output_dir_root = sim_run_sch.output_set_directory(set_idx)
+                cov2_vtm_sim_run_post = CoV2VTMSimRunPost(_cov2_vtm_sim_run)
+                cov2_vtm_sim_run_post.export_transient_plot_trials(manipulators=stat_plot_manips)
         except Exception as err:
             logging.exception('Error during transient plot rendering.')
             opt_render_stat = False
@@ -260,9 +269,16 @@ if __name__ == '__main__':
         set_labs = []
         run_labs = []
         for set_idx in range(num_sets):
-            fig_directory = os.path.dirname(sim_run_sch.final_set_directory(set_idx))
+            if sim_run_sch.is_dumping:
+                set_directory = sim_run_sch.dump_set_directory(set_idx)
+                get_run_directory = sim_run_sch.dump_run_directory
+            else:
+                set_directory = sim_run_sch.output_set_directory(set_idx)
+                get_run_directory = sim_run_sch.output_run_directory
+            fig_directory = os.path.dirname(set_directory)
+
             for run_idx in range(sim_run_sch.num_runs[set_idx]):
-                data_dirs.append(sim_run_sch.final_run_directory(set_idx, run_idx))
+                data_dirs.append(get_run_directory(set_idx, run_idx))
                 out_dirs.append(fig_directory)
                 set_labs.append(set_idx)
                 run_labs.append(run_idx)
