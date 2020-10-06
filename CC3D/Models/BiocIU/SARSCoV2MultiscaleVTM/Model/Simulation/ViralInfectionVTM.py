@@ -11,6 +11,7 @@
 import os
 from ViralInfectionVTMSteppables import __file__ as main_step_file
 sys.path.append(os.path.dirname(os.path.dirname(main_step_file)))
+os.environ["ViralInfectionVTM"] = os.path.dirname(os.path.dirname(main_step_file))
 
 from cc3d import CompuCellSetup
 
