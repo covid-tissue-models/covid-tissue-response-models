@@ -841,6 +841,9 @@ class CallableCC3DRenderer:
             gd_manipulator = self._get_rendering_manipulator(trial_idx, mcs)
             if gd_manipulator is not None:
                 gd_manipulator(self.gd)
+            sc_manipulator = self._get_screenshot_manipulator(trial_idx, mcs)
+            if sc_manipulator is not None:
+                sc_manipulator(self.scm)
             print('...{}'.format(mcs))
             self.output_screenshots(mcs)
 
@@ -1091,6 +1094,9 @@ class CallableCC3DDataRenderer(CallableCC3DRenderer):
             gd_manipulator = self._get_rendering_manipulator(trial_idx, mcs)
             if gd_manipulator is not None:
                 gd_manipulator(self.gd)
+            sc_manipulator = self._get_screenshot_manipulator(trial_idx, mcs)
+            if sc_manipulator is not None:
+                sc_manipulator(self.scm)
             print('...{}'.format(mcs))
             self.output_screenshots(mcs)
 
