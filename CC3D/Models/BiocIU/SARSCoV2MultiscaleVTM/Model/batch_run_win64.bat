@@ -12,5 +12,5 @@ REM Environment setup
 REM Run it!
 
 @SET exit_code=0
-"%PYTHON_INSTALL_PATH%\python" "%~dp0\batch_run.py"
+"%PYTHON_INSTALL_PATH%\python" "%CD%\batch_run.py"
 @SET exit_code= %errorlevel%

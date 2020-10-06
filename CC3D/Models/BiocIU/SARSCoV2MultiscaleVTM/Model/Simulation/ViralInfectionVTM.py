@@ -59,4 +59,11 @@ from ViralInfectionVTMSteppables import oxidationAgentModelSteppable
 
 CompuCellSetup.register_steppable(steppable=oxidationAgentModelSteppable(frequency=1))
 
+from Models.DrugDosingModel.DrugDosingModelSteppable import DrugDosingModelSteppable
+
+CompuCellSetup.register_steppable(steppable=DrugDosingModelSteppable(frequency=1))
+
+from Models.DrugDosingModel.DrugDosingModelSteppable import DrugDosingDataFieldsPlots
+CompuCellSetup.register_steppable(steppable=DrugDosingDataFieldsPlots(frequency=1))
+
 CompuCellSetup.run()
