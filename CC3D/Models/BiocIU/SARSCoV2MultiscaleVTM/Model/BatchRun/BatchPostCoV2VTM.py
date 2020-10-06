@@ -1,18 +1,15 @@
 # todo - document stuff for easier usage by others
 import os
 import sys
-
 sys.path.append(os.environ['PYTHONPATH'])
 
 import math
 import shutil
 import csv
-
 try:
     import matplotlib.pyplot as plt
 except ModuleNotFoundError:
     import subprocess
-
     subprocess.check_call([sys.executable, "-m", "pip", "install", "matplotlib"])
     import matplotlib.pyplot as plt
 
@@ -93,6 +90,7 @@ fig_save_names = {'ir_data': {'ImmuneResp': 'metric_immune_response_svar'},
                                'Metabolite4': 'metric_metabolite4'},
                   'ddm_tot_RNA_data': {'tot_RNA': 'metric_total_RNA'}
                   }
+
 
 fig_suffix_trials = '_trials'
 fig_suffix_stat = '_stat'
@@ -277,6 +275,7 @@ def generate_transient_plot_stat(batch_data_summary, data_desc, var_name, plot_s
 
 
 def generate_2var_plot_trials(batch_data_summary, var_name_hor, var_name_ver):
+
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.grid()
@@ -312,6 +311,7 @@ def generate_2var_plot_trials(batch_data_summary, var_name_hor, var_name_ver):
 
 
 def generate_2var_plot_stat(batch_data_summary, var_name_hor, var_name_ver, plot_stdev=True):
+
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.grid()
@@ -360,7 +360,6 @@ class CoV2VTMSimRunPost:
     """
     Renders simulation metrics data generated from executing a CallableCoV2VTM simulation batch
     """
-
     def __init__(self, cov2_vtm_sim_run, step_list=None):
         self.cov2_vtm_sim_run = cov2_vtm_sim_run
 
@@ -456,8 +455,7 @@ class CoV2VTMSimRunPost:
             loc = self.cov2_vtm_sim_run.output_dir_root
 
         assert os.path.isdir(loc), "Results directory must be defined before rendering dump."
-        assert manipulators is None or isinstance(manipulators,
-                                                  dict), "manipulators must be None or a dictionary of manipulator functions"
+        assert manipulators is None or isinstance(manipulators, dict), "manipulators must be None or a dictionary of manipulator functions"
 
         fig_dir = self.get_fig_root_dir(loc, auto_make_dir=True)
 
@@ -512,7 +510,6 @@ class CC3DUIDummy(QObject):
     """
     Some trickery to fake the launching of Player
     """
-
     def __init__(self, field_dim: Dim3D):
         super().__init__()
         self.fieldExtractor = PlayerPython.FieldExtractorCML()
@@ -573,7 +570,6 @@ class GenericDrawerFree(GenericDrawer):
     """
     Removes dependency on persistent globals
     """
-
     def __init__(self, parent=None, originating_widget=None):
         super().__init__(parent, originating_widget)
 
@@ -597,7 +593,6 @@ class CallableCC3DRenderer:
     """
     Performs CC3D rendering of data generated from executing a CallableCoV2VTM simulation batch without launching Player
     """
-
     def __init__(self, cov2_vtm_sim_run):
         self.cov2_vtm_sim_run = cov2_vtm_sim_run
 
@@ -855,6 +850,9 @@ class CallableCC3DRenderer:
             gd_manipulator = self._get_rendering_manipulator(trial_idx, mcs)
             if gd_manipulator is not None:
                 gd_manipulator(self.gd)
+            sc_manipulator = self._get_screenshot_manipulator(trial_idx, mcs)
+            if sc_manipulator is not None:
+                sc_manipulator(self.scm)
             print('...{}'.format(mcs))
             self.output_screenshots(mcs)
 
@@ -919,7 +917,6 @@ class _RenderJob:
                 # Apply log scale to all field renders
                 def gd_manipulator(gd):
                     gd.draw_model_2D.clut.SetScaleToLog10()
-
                 _renderer.load_rendering_manipulator(gd_manipulator)
 
             if 'fixed_caxes' in self._opts.keys() and self._opts['fixed_caxes']:
@@ -947,7 +944,6 @@ class CallableCC3DDataRenderer(CallableCC3DRenderer):
     Performs CC3D rendering of data generated from executing a CallableCoV2VTM simulation batch without launching Player
     Like CallableCC3DRenderer, but works on individual directories of data instead of a CallableCoV2VTM instance
     """
-
     def __init__(self, data_dirs, out_dirs, set_labs=None, run_labs=None, num_workers=1):
         super().__init__(None)
 
@@ -1107,6 +1103,9 @@ class CallableCC3DDataRenderer(CallableCC3DRenderer):
             gd_manipulator = self._get_rendering_manipulator(trial_idx, mcs)
             if gd_manipulator is not None:
                 gd_manipulator(self.gd)
+            sc_manipulator = self._get_screenshot_manipulator(trial_idx, mcs)
+            if sc_manipulator is not None:
+                sc_manipulator(self.scm)
             print('...{}'.format(mcs))
             self.output_screenshots(mcs)
 
@@ -1180,7 +1179,6 @@ class _RenderDataJob:
                 # Apply log scale to all field renders
                 def gd_manipulator(gd):
                     gd.draw_model_2D.clut.SetScaleToLog10()
-
                 _renderer.load_rendering_manipulator(gd_manipulator)
 
             if 'fixed_caxes' in self._opts.keys() and self._opts['fixed_caxes']:

@@ -348,6 +348,18 @@ class CallableCoV2VTMScheduler:
         else:
             return None
 
+    def final_set_directory(self, _set_idx):
+        if self.is_dumping:
+            return self.dump_set_directory(_set_idx)
+        else:
+            return self.output_set_directory(_set_idx)
+
+    def final_run_directory(self, _set_idx, _run_idx):
+        if self.is_dumping:
+            return self.dump_run_directory(_set_idx, _run_idx)
+        else:
+            return self.output_run_directory(_set_idx, _run_idx)
+
     def prep(self):
         # Create root output directory if necessary
         if not os.path.isdir(self.output_dir_root):
@@ -440,6 +452,17 @@ class CallableCoV2VTMScheduler:
                     self.set_status[s] = 2
                     self.dump_status()
             time.sleep(10)
+
+    def export_transient_plot_trials(self, set_idx=None, manipulators=None):
+        if set_idx is None:
+            for _s in range(self.num_sets):
+                self.export_transient_plot_trials(set_idx=_s, manipulators=manipulators)
+        else:
+            from BatchPostCoV2VTM import CoV2VTMSimRunPost
+            _sim_run = self.run_instance(set_idx)
+            _sim_run.output_dir_root = self.final_set_directory(set_idx)
+            _sim_run_post = CoV2VTMSimRunPost(_sim_run)
+            _sim_run_post.export_transient_plot_trials(manipulators=manipulators)
 
 
 class _MoveDirProcess(multiprocessing.Process):
