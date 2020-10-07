@@ -27,10 +27,10 @@ write_ddm_data_freq = 1  # Write recovery model data to simulation directory fre
 
 # parameters
 __param_desc__['auto_ec50'] = 'bool for auto scaling of EC50 by max(avail4) and rel_avail4_EC50'
-auto_ec50 = False
+auto_ec50 = True
 
 __param_desc__['ec50'] = 'value for ec50 in the hill equation, only used if auto_ec50 is false'
-ec50 = 4.14360796
+ec50 = 2.32417475e-01
 
 # DDM SBML model
 
