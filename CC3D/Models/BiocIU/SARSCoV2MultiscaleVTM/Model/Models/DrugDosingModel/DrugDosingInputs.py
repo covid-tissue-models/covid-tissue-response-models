@@ -104,7 +104,7 @@ __param_desc__['initial_dose'] = 'initial dose (arbitrary amount)'
 initial_dose = 10
 
 __param_desc__['dose_interval'] = 'time interval between doses in days'
-dose_interval = 0.25
+dose_interval = 1
 
 __param_desc__['dose'] = 'dose of subsequent treatments (arbitrary units)'
 dose = 10
