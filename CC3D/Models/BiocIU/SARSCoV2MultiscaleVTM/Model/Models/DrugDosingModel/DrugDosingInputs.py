@@ -96,7 +96,7 @@ d4 = 0.693
 
 # dosing
 __param_desc__['first_dose'] = 'time of first dose in days'
-first_dose = 0.5 / 24
+first_dose = 1
 if prophylactic_treatment:
     first_dose = 0
 
