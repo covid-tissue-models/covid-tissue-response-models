@@ -173,7 +173,7 @@ if __name__ == '__main__':
     assert num_rep > 0, 'Number of replicas per parameter set (num_rep) must be greater than zero'
     if num_par < 1:
         num_par = 1
-    assert out_freq >= 0, 'Output frequency (out_freq) must be greater than zero'
+    assert out_freq >= 0, 'Output frequency (out_freq) must be greater than or equal to zero'
     if sweep_output_folder is not None:
         assert os.path.isdir(sweep_output_folder), 'Output directory (sweep_output_folder) does not exist'
     if dump_folder is not None:
