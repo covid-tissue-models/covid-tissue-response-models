@@ -209,6 +209,16 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
 
         self.vr_model_name = ViralInfectionVTMLib.vr_model_name
 
+        # self.ddm_rr = None
+
+    @staticmethod
+    def get_roadrunner_for_single_antimony(model):
+        from cc3d.CompuCellSetup import persistent_globals as pg
+        for model_name, rr in pg.free_floating_sbml_simulators.items():
+            if model_name == model:
+                return rr
+        return None
+
     def start(self):
 
         # set model string
@@ -222,12 +232,10 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
         self.add_free_floating_antimony(model_string=self.drug_model_string, step_size=days_2_mcs,
                                         model_name='drug_dosing_model')
         if prophylactic_treatment:
-            pass
-            # for i in range(int(10 / days_2_mcs)):  # let it run for 10 days
-            # WARNING, self.timestep_sbml() steps all sbml!! But not when in the step function(?!)
-            # TODO find a way to only step this sbml
-            # TODO SOLUTION: recall sheet init function
-            # self.timestep_sbml()
+            ddm_rr = self.get_roadrunner_for_single_antimony('drug_dosing_model')
+            for i in range(int(10 / days_2_mcs)):  # let it run for 10 days
+                # print('time stepping', i)
+                ddm_rr.timestep()
 
         self.rmax = self.get_rmax(self.sbml.drug_dosing_model['Available4'])
         self.shared_steppable_vars['rmax'] = self.rmax
@@ -322,7 +330,7 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
 
     def init_plots(self):
         self.ddm_data_win = self.add_new_plot_window(title='Drug dosing model',
-                                                     x_axis_title='Time (hours)',
+                                                     x_axis_title='Time (Days)',
                                                      y_axis_title='Variables',
                                                      x_scale_type='linear',
                                                      y_scale_type='linear',
@@ -382,9 +390,9 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
         :return None
         """
 
-        [self.ddm_data_win.add_data_point(x, s_to_mcs * mcs / 60 / 60, self.sbml.drug_dosing_model[x])
+        [self.ddm_data_win.add_data_point(x, self.sbml.drug_dosing_model['time'], self.sbml.drug_dosing_model[x])
          for x in self.mvars.ddm_vars]
-        if mcs > first_dose / days_2_mcs or constant_drug_concentration:
+        if mcs > first_dose / days_2_mcs or constant_drug_concentration or prophylactic_treatment:
             self.rmax_data_win.add_data_point('rmax', s_to_mcs * mcs / 60 / 60, self.shared_steppable_vars['rmax'])
 
         rna_list = self.get_rna_array()
