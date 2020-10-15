@@ -8,6 +8,9 @@ cc3d_input_key = '__input_dict__'
 # Key in Python API input dictionary where batch configuration inputs are stored for batch runs
 cc3d_batch_key = '__cc3d_batch__'
 
+# Key for sharing auto inputs over multiple processes
+cc3d_auto_key = '__auto_inputs__'
+
 # Automatic tasks
 
 #   Plot variables by module
@@ -15,15 +18,12 @@ cc3d_batch_key = '__cc3d_batch__'
 #       scripts when running a batch
 mod_plot_vars = {'ViralInfectionVTMModelInputs': ['plot_vrm_data_freq', 'plot_vrm_data_freq', 'plot_vim_data_freq',
                                                   'plot_pop_data_freq', 'plot_ir_data_freq', 'plot_med_diff_data_freq',
-                                                  'plot_spat_data_freq', 'plot_death_data_freq'],
-                 'Models.DrugDosingModel.DrugDosingInputs': ['plot_ddm_data_freq']}
-
+                                                  'plot_spat_data_freq', 'plot_death_data_freq']}
 #   Write variables by module
 #       These are automatically enabled when running in batch mode and assigned the same frequency as specified through
 #       the Python API, so the user doesn't have to modify any simulation scripts when running a batch
 mod_write_vars = {'ViralInfectionVTMModelInputs': ['write_pop_data_freq', 'write_med_diff_data_freq',
-                                                   'write_ir_data_freq', 'write_death_data_freq'],
-                  'Models.DrugDosingModel.DrugDosingInputs': ['write_ddm_data_freq']}
+                                                   'write_ir_data_freq', 'write_death_data_freq']}
 
 
 # todo - test registering unknown input modules with batch workflow
@@ -66,6 +66,19 @@ def reset_auto_inputs(_input_module_name: str):
         mod_write_vars[_input_module_name] = []
 
 
+def append_auto_inputs(_input_dict: dict) -> None:
+    """
+    Appends auto inputs to an input dictionary
+    :param _input_dict: input dictionary
+    :return: None
+    """
+    assert cc3d_input_key in _input_dict.keys()
+    _input_dict[cc3d_input_key][cc3d_auto_key] = [{'input_module_name': k,
+                                                   'plot_var_names': mod_plot_vars[k],
+                                                   'write_var_names': mod_write_vars[k]
+                                                   } for k in mod_plot_vars.keys()]
+
+
 def apply_external_multipliers(calling_module_str, input_module):
     """
     Applies external input multipliers to model inputs
@@ -77,7 +90,15 @@ def apply_external_multipliers(calling_module_str, input_module):
     from cc3d.CompuCellSetup import persistent_globals
     input_object = persistent_globals.input_object
     if not isinstance(input_object, dict) or cc3d_input_key not in input_object.keys():
+        print('No valid batch input found.')
         return
+
+    if cc3d_auto_key in input_object[cc3d_input_key].keys():
+        for el in input_object[cc3d_input_key][cc3d_auto_key]:
+            reset_auto_inputs(el['input_module_name'])
+            register_auto_inputs(**el)
+        input_object[cc3d_input_key].pop(cc3d_auto_key)
+
     for k, v in input_object[cc3d_input_key].items():
         if k != '__param_desc__' and k != cc3d_batch_key:
             try:

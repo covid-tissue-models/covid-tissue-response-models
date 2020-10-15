@@ -41,7 +41,7 @@ class CoV2VTMSimRun:
         if sim_input is not None:
             check_callable_cc3d_compat()
 
-        self.__sim_input = sim_input
+        self._sim_input = sim_input
 
         # Project convention:   all callable simulation inputs are passed in a dictionary
         #                       key is name of simulation input
@@ -50,13 +50,13 @@ class CoV2VTMSimRun:
             assert len(sim_input) == num_runs, "Number of runs does not match number of simulation inputs"
         elif isinstance(sim_input, dict):
             print("CoV2VTMSimRun is applying uniform simulation inputs to {} runs".format(self.num_runs))
-            self.__sim_input = [sim_input] * self.num_runs
+            self._sim_input = [sim_input] * self.num_runs
 
         self.sim_output = [None] * self.num_runs
 
     def set_run_inputs(self, run_idx, sim_inputs):
         assert isinstance(sim_inputs, dict)
-        self.__sim_input[run_idx] = sim_inputs
+        self._sim_input[run_idx] = sim_inputs
 
     def get_run_output_dir(self, run_idx):
         return os.path.join(self.output_dir_root, f'run_{run_idx}')
@@ -65,14 +65,14 @@ class CoV2VTMSimRun:
         return [self.get_run_output_dir(x) for x in range(self.num_runs)]
 
     def write_sim_inputs(self, run_idx):
-        if self.__sim_input is None:
+        if self._sim_input is None:
             return
-        sim_inputs = self.__sim_input[run_idx]
+        sim_inputs = self._sim_input[run_idx]
         nCoVUtils.export_parameters(sim_inputs, os.path.join(self.get_run_output_dir(run_idx), 'CallableSimInputs.csv'))
 
     def generate_callable(self, run_idx=0):
-        if self.__sim_input is not None:
-            _sim_input = {cc3d_input_key: self.__sim_input[run_idx]}
+        if self._sim_input is not None:
+            _sim_input = {cc3d_input_key: self._sim_input[run_idx]}
         else:
             _sim_input = None
 
@@ -146,12 +146,12 @@ class CoV2VTMSimRunAsync(CoV2VTMSimRun):
                          screenshot_output_frequency=screenshot_output_frequency, num_workers=1, num_runs=num_runs,
                          sim_input=sim_input)
 
-        # 0: not yet run; 1: running; 2: done; -1: failed
+        # 0: not yet run; 1: running; 2: done
         self.run_status = multiprocessing.Array('i', [0] * num_runs)
 
     @property
     def has_more_runs(self) -> bool:
-        return any([x == -1 or x == 0 for x in self.run_status])
+        return any([x == 0 for x in self.run_status])
 
     @property
     def num_running(self):
@@ -159,7 +159,7 @@ class CoV2VTMSimRunAsync(CoV2VTMSimRun):
 
     @property
     def is_done(self) -> bool:
-        return not any([x == -1 or x == 0 or x == 1 for x in self.run_status])
+        return not any([x == 0 or x == 1 for x in self.run_status])
 
     def set_status(self, _run_idx, _status):
         self.run_status[_run_idx] = _status
@@ -167,88 +167,66 @@ class CoV2VTMSimRunAsync(CoV2VTMSimRun):
     def get_status(self):
         return list(self.run_status)
 
-    def run_next_async(self, no_purge=False):
-        if not no_purge:
-            self.purge_failed()
-
+    def run_next_async(self):
         if not self.has_more_runs:
-            return False
+            return
 
         run_idx = self.get_status().index(0, )
         self.run_status[run_idx] = 1
         p = multiprocessing.Process(target=sim_run_single, args=(self, run_idx, self.run_status))
         p.start()
-        return True
-
-    def purge_failed(self):
-        for run_idx in range(len(self.run_status)):
-            if self.run_status[run_idx] == -1:
-                run_dir = self.get_run_output_dir(run_idx)
-                if os.path.isdir(run_dir):
-                    shutil.rmtree(run_dir, ignore_errors=True)
-                self.run_status[run_idx] = 0
+        return run_idx
 
 
-def sim_run_single(cov2_vtm_sim_run: CoV2VTMSimRunAsync, run_idx=0, status: multiprocessing.Array = None):
-    # Start worker
-    tasks = multiprocessing.JoinableQueue()
-    results = multiprocessing.Queue()
-    worker = CC3DCallerWorker(tasks, results)
-    worker.start()
+def sim_run_single(cov2_vtm_sim_run: CoV2VTMSimRunAsync, run_idx, status: multiprocessing.Array = None):
+    while True:
+        # Start worker
+        tasks = multiprocessing.JoinableQueue()
+        results = multiprocessing.Queue()
+        worker = CC3DCallerWorker(tasks, results)
+        worker.start()
 
-    # Enqueue jobs
-    tasks.put(cov2_vtm_sim_run.generate_callable(run_idx))
+        # Enqueue jobs
+        tasks.put(cov2_vtm_sim_run.generate_callable(run_idx))
 
-    print(f'CC3DCallerWorker {worker.name} launched')
+        # Add a stop task for each of worker
+        tasks.put(None)
 
-    # Add a stop task for each of worker
-    tasks.put(None)
+        # Monitor worker state
+        monitor_rate = 1
+        while worker.is_alive():
+            time.sleep(monitor_rate)
 
-    # Monitor worker state
-    monitor_rate = 1
-    while worker.is_alive():
-        time.sleep(monitor_rate)
-
-    print(f'CC3DCallerWorker {worker.name} finished with exit code {worker.exitcode}')
-
-    if worker.exitcode == 0:
         # Fetch available results
-        try:
-            result = results.get(block=True, timeout=10)
+        while True:
+            result = results.get()
+            run_idx = result['tag']
             sim_output = result['result']
-        except:
-            print(f'CC3DCallerWorker {worker.name} returned no async result {run_idx}')
 
+            print(f'Got CoV2VTMSimRun async result {run_idx}')
+
+            cov2_vtm_sim_run.sim_output[run_idx] = sim_output
+            cov2_vtm_sim_run.write_sim_inputs(run_idx)
+
+            if results.empty():
+                break
+
+        print(f'CC3DCallerWorker {worker.name} finished with exit code {worker.exitcode}')
+
+        if worker.exitcode == 0:
             if status is not None:
-                status[run_idx] = -1
-            return False
-
-        print(f'CC3DCallerWorker {worker.name} returned async result {run_idx}')
-
-        cov2_vtm_sim_run.sim_output[run_idx] = sim_output
-        cov2_vtm_sim_run.write_sim_inputs(run_idx)
-
-        if status is not None:
-            status[run_idx] = 2
-
-        return True
-    else:
-        if status is not None:
-            status[run_idx] = -1
-
-        return False
+                status[run_idx] = 2
+            return
 
 
 class CallableCoV2VTMScheduler:
     def __init__(self, root_output_folder=generic_root_output_folder, output_frequency=0, screenshot_output_frequency=0,
-                 num_workers=1, num_runs=1, sim_input=None, dump_dir=None):
+                 num_workers=1, num_runs=1, sim_input=None, dump_dir=None, async_delay=0):
         self.output_dir_root = root_output_folder
         self.status_file = os.path.join(self.output_dir_root, "batch_status.json")
         if os.path.exists(self.status_file):
             print('Importing from status file: ', self.status_file)
-
-            with open(self.status_file, 'r') as sf:
-                status_dict = json.load(sf)
+            status_dict = self.load_status(self.status_file)
             output_frequency = status_dict['output_frequency']
             screenshot_output_frequency = status_dict['screenshot_output_frequency']
             num_runs = status_dict['num_runs']
@@ -256,6 +234,7 @@ class CallableCoV2VTMScheduler:
             run_status = status_dict['run_status']
             dump_dir = status_dict['dump_dir']
             set_status = status_dict['set_status']
+            async_delay = status_dict['async_delay']
         else:
             run_status = None
             set_status = None
@@ -272,6 +251,7 @@ class CallableCoV2VTMScheduler:
         self.screenshot_output_frequency = screenshot_output_frequency
         self.num_workers = num_workers
         self.dump_dir = dump_dir
+        self.async_delay = async_delay
 
         # Do version check; simulation inputs via CallableCC3D is an experimental feature as of CompuCell3D v 4.1.0
         def check_callable_cc3d_compat():
@@ -282,16 +262,16 @@ class CallableCoV2VTMScheduler:
             check_callable_cc3d_compat()
 
         if sim_input is None:
-            self.__sim_input = [sim_input]
+            self._sim_input = [sim_input]
         elif isinstance(sim_input, list):
             assert not any(not isinstance(x, dict) for x in sim_input)
-            self.__sim_input = sim_input
+            self._sim_input = sim_input
         elif isinstance(sim_input, dict):
-            self.__sim_input = [sim_input]
+            self._sim_input = [sim_input]
         else:
             raise ValueError('Incompatible sim inputs')
 
-        self.num_sets = len(self.__sim_input)
+        self.num_sets = len(self._sim_input)
 
         if isinstance(num_runs, list):
             assert not any(not isinstance(x, int) for x in num_runs) and len(num_runs) == self.num_sets
@@ -316,19 +296,40 @@ class CallableCoV2VTMScheduler:
                                   output_frequency=self.output_frequency,
                                   screenshot_output_frequency=self.screenshot_output_frequency,
                                   num_runs=self.num_runs[_set_idx],
-                                  sim_input=self.__sim_input[_set_idx])
+                                  sim_input=self._sim_input[_set_idx])
 
     def dump_status(self):
         status_dict = dict()
         status_dict['output_frequency'] = self.output_frequency
         status_dict['screenshot_output_frequency'] = self.screenshot_output_frequency
         status_dict['num_runs'] = self.num_runs
-        status_dict['sim_input'] = self.__sim_input
+        status_dict['sim_input'] = self._sim_input
         status_dict['run_status'] = self.run_status
         status_dict['dump_dir'] = self.dump_dir
         status_dict['set_status'] = self.set_status
+        status_dict['async_delay'] = self.async_delay
         with open(self.status_file, 'w') as sf:
             json.dump(status_dict, sf)
+
+    @staticmethod
+    def load_status(_status_file):
+        status_dict = CallableCoV2VTMScheduler.default_status()
+        with open(_status_file, 'r') as sf:
+            status_dict.update(json.load(sf))
+        return status_dict
+
+    @staticmethod
+    def default_status():
+        status_dict = dict()
+        status_dict['output_frequency'] = 0
+        status_dict['screenshot_output_frequency'] = 0
+        status_dict['num_runs'] = 1
+        status_dict['sim_input'] = None
+        status_dict['run_status'] = [0]
+        status_dict['dump_dir'] = None
+        status_dict['set_status'] = [0]
+        status_dict['async_delay'] = 0
+        return status_dict
 
     def output_set_directory(self, _set_idx):
         return os.path.join(self.output_dir_root, f"set_{_set_idx}")
@@ -422,6 +423,8 @@ class CallableCoV2VTMScheduler:
                 while set_runners[s].has_more_runs and num_added < num_to_add:
                     if set_runners[s].run_next_async():
                         num_added += 1
+                        if self.async_delay > 0:
+                            time.sleep(self.async_delay)
                 self.run_status[s] = set_runners[s].get_status()
 
             # Update status file and then wait a little bit

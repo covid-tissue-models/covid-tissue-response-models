@@ -1,18 +1,14 @@
 # todo - document stuff for easier usage by others
 import os
 import sys
-
 sys.path.append(os.environ['PYTHONPATH'])
 
-import math
 import shutil
 import csv
-
 try:
     import matplotlib.pyplot as plt
 except ModuleNotFoundError:
     import subprocess
-
     subprocess.check_call([sys.executable, "-m", "pip", "install", "matplotlib"])
     import matplotlib.pyplot as plt
 
@@ -30,7 +26,6 @@ from cc3d.cpp.CompuCell import Dim3D
 from cc3d.player5 import Configuration
 from cc3d.player5.Simulation.CMLResultReader import CMLResultReader
 from cc3d.player5.Utilities.utils import extract_address_int_from_vtk_object
-from Simulation.ViralInfectionVTMModelInputs import s_to_mcs
 
 export_data_desc = {'ir_data': ['ImmuneResp'],
                     'med_diff_data': ['MedViral', 'MedCyt', 'MedOxi'],
@@ -228,32 +223,39 @@ def generate_batch_data_summary(cov2_vtm_sim_run, step_list=None):
     return batch_data_summary
 
 
-def generate_transient_plot_trials(batch_data_summary, data_desc, var_name):
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
+def generate_transient_plot_trials(batch_data_summary, data_desc, var_name, fig_pack=None):
+    fig = None
+    if fig_pack is None:
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+    else:
+        ax = fig_pack.get_subplot()
     ax.grid()
 
     data_dict = batch_data_summary[data_desc]
-    # sim_mcs = list(data_dict[list(data_dict.keys())[0]].keys())
     for trial_idx in data_dict.keys():
         if trial_idx in ['batchMean', 'batchStDev']:
             continue
         sim_mcs = list(data_dict[trial_idx].keys())
-        # sim_hours = float(sim_mcs[:]) * s_to_mcs / 60 / 60
-        sim_days = [this_mcs*s_to_mcs/60/60/24 for this_mcs in sim_mcs]
         y_data = [data_dict[trial_idx][this_mcs][var_name] for this_mcs in sim_mcs]
-        ax.plot(sim_days, y_data, label='Trial {}'.format(trial_idx), marker='.')
+        ax.plot(sim_mcs, y_data, label='Trial {}'.format(trial_idx), marker='.')
+
     ax.set_xlabel(x_label_str_transient)
     ax.set_ylabel(y_label_str[data_desc][var_name])
     # ax.legend()
-    fig.tight_layout()
 
-    return fig, ax
+    if fig_pack is None:
+        fig.tight_layout()
+        return fig, ax
 
 
-def generate_transient_plot_stat(batch_data_summary, data_desc, var_name, plot_stdev=True):
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
+def generate_transient_plot_stat(batch_data_summary, data_desc, var_name, plot_stdev=True, fig_pack=None):
+    fig = None
+    if fig_pack is None:
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+    else:
+        ax = fig_pack.get_subplot()
     ax.grid()
 
     data_dict = batch_data_summary[data_desc]
@@ -271,12 +273,14 @@ def generate_transient_plot_stat(batch_data_summary, data_desc, var_name, plot_s
 
     ax.set_xlabel(x_label_str_transient)
     ax.set_ylabel(y_label_str[data_desc][var_name])
-    fig.tight_layout()
 
-    return fig, ax
+    if fig_pack is None:
+        fig.tight_layout()
+        return fig, ax
 
 
 def generate_2var_plot_trials(batch_data_summary, var_name_hor, var_name_ver):
+
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.grid()
@@ -312,6 +316,7 @@ def generate_2var_plot_trials(batch_data_summary, var_name_hor, var_name_ver):
 
 
 def generate_2var_plot_stat(batch_data_summary, var_name_hor, var_name_ver, plot_stdev=True):
+
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.grid()
@@ -360,7 +365,6 @@ class CoV2VTMSimRunPost:
     """
     Renders simulation metrics data generated from executing a CallableCoV2VTM simulation batch
     """
-
     def __init__(self, cov2_vtm_sim_run, step_list=None):
         self.cov2_vtm_sim_run = cov2_vtm_sim_run
 
@@ -451,21 +455,17 @@ class CoV2VTMSimRunPost:
         fig_save_name_rel = 'metric_' + var_name_hor + '_and_' + var_name_ver + fig_suffix_stat + fig_suffix
         return os.path.join(fig_dir, fig_save_name_rel)
 
-    def export_transient_plot_trials(self, loc=None, manipulators=None):
+    def export_transient_plot_trials(self, loc=None):
         if loc is None:
             loc = self.cov2_vtm_sim_run.output_dir_root
 
         assert os.path.isdir(loc), "Results directory must be defined before rendering dump."
-        assert manipulators is None or isinstance(manipulators,
-                                                  dict), "manipulators must be None or a dictionary of manipulator functions"
 
         fig_dir = self.get_fig_root_dir(loc, auto_make_dir=True)
 
         for data_desc in self.get_data_descs():
             for param_name in self.return_param_names(data_desc):
-                fig, ax = self.generate_transient_plot_trials(data_desc, param_name)
-                if manipulators is not None and param_name in manipulators.keys():
-                    manipulators[param_name](fig, ax)
+                fig, _ = self.generate_transient_plot_trials(data_desc, param_name)
                 fig.savefig(self.generate_transient_plot_trials_filename(data_desc, param_name, fig_dir=fig_dir))
                 plt.close(fig)
 
@@ -512,7 +512,6 @@ class CC3DUIDummy(QObject):
     """
     Some trickery to fake the launching of Player
     """
-
     def __init__(self, field_dim: Dim3D):
         super().__init__()
         self.fieldExtractor = PlayerPython.FieldExtractorCML()
@@ -573,7 +572,6 @@ class GenericDrawerFree(GenericDrawer):
     """
     Removes dependency on persistent globals
     """
-
     def __init__(self, parent=None, originating_widget=None):
         super().__init__(parent, originating_widget)
 
@@ -593,11 +591,11 @@ class GenericDrawerFree(GenericDrawer):
         return model, view
 
 
+# todo - add parallel rendering
 class CallableCC3DRenderer:
     """
     Performs CC3D rendering of data generated from executing a CallableCoV2VTM simulation batch without launching Player
     """
-
     def __init__(self, cov2_vtm_sim_run):
         self.cov2_vtm_sim_run = cov2_vtm_sim_run
 
@@ -608,10 +606,10 @@ class CallableCC3DRenderer:
         self.cml_results_reader = None
 
         # Methods for modifying specification of GenericDrawer
-        self._gd_manipulators = {}
+        self.__gd_manipulators = {}
 
         # Methods for modifying specification of ScreenshotData
-        self._sc_manipulators = {}
+        self.__sc_manipulators = {}
 
     def get_trial_vtk_dir(self, trial_idx):
         """
@@ -721,10 +719,10 @@ class CallableCC3DRenderer:
         :param mcs: step at which to apply the manipulator
         :return: None
         """
-        if trial_idx not in self._gd_manipulators.keys():
-            self._gd_manipulators[trial_idx] = dict()
+        if trial_idx not in self.__gd_manipulators.keys():
+            self.__gd_manipulators[trial_idx] = dict()
 
-        self._gd_manipulators[trial_idx][mcs] = gd_manipulator
+        self.__gd_manipulators[trial_idx][mcs] = gd_manipulator
 
     # todo - add API for defining rendering specs so users don't have to search through the details of GenericDrawer;
     #  API should include convenience function for retrieving current specs
@@ -737,10 +735,10 @@ class CallableCC3DRenderer:
         :param mcs: step at which to apply the manipulator
         :return: None
         """
-        if trial_idx not in self._sc_manipulators.keys():
-            self._sc_manipulators[trial_idx] = dict()
+        if trial_idx not in self.__sc_manipulators.keys():
+            self.__sc_manipulators[trial_idx] = dict()
 
-        self._sc_manipulators[trial_idx][mcs] = sc_manipulator
+        self.__sc_manipulators[trial_idx][mcs] = sc_manipulator
 
     def get_results_min_max(self, trial_idx):
         """
@@ -818,18 +816,18 @@ class CallableCC3DRenderer:
         return min_max
 
     def _get_rendering_manipulator(self, trial_idx, mcs):
-        if trial_idx not in self._gd_manipulators.keys() or mcs not in self._gd_manipulators[trial_idx].keys():
+        if trial_idx not in self.__gd_manipulators.keys() or mcs not in self.__gd_manipulators[trial_idx].keys():
             return None
         else:
-            return self._gd_manipulators[trial_idx][mcs]
+            return self.__gd_manipulators[trial_idx][mcs]
 
     def _get_screenshot_manipulator(self, trial_idx, mcs):
-        if trial_idx not in self._sc_manipulators.keys() or mcs not in self._sc_manipulators[trial_idx].keys():
+        if trial_idx not in self.__sc_manipulators.keys() or mcs not in self.__sc_manipulators[trial_idx].keys():
             return None
         else:
-            return self._sc_manipulators[trial_idx][mcs]
+            return self.__sc_manipulators[trial_idx][mcs]
 
-    def _render_trial(self, trial_idx):
+    def __render_trial(self, trial_idx):
         """
         Main routine to perform rendering for a trial from batch run
         :param trial_idx: index of trial
@@ -864,7 +862,7 @@ class CallableCC3DRenderer:
         :return: None
         """
         self.prep_output_dir()
-        [self._render_trial(trial_idx) for trial_idx in range(len(self.cov2_vtm_sim_run.get_trial_dirs()))]
+        [self.__render_trial(trial_idx) for trial_idx in range(len(self.cov2_vtm_sim_run.get_trial_dirs()))]
 
     def render_trial_results(self, trial_idx):
         """
@@ -873,7 +871,7 @@ class CallableCC3DRenderer:
         :return: None
         """
         self.prep_output_dir()
-        self._render_trial(trial_idx)
+        self.__render_trial(trial_idx)
 
     def render_trial_results_par(self, opts=None):
         """
@@ -919,7 +917,6 @@ class _RenderJob:
                 # Apply log scale to all field renders
                 def gd_manipulator(gd):
                     gd.draw_model_2D.clut.SetScaleToLog10()
-
                 _renderer.load_rendering_manipulator(gd_manipulator)
 
             if 'fixed_caxes' in self._opts.keys() and self._opts['fixed_caxes']:
@@ -942,12 +939,14 @@ class _RenderJob:
             return False
 
 
+#       Prototype from immune model prototyping
+
+
 class CallableCC3DDataRenderer(CallableCC3DRenderer):
     """
     Performs CC3D rendering of data generated from executing a CallableCoV2VTM simulation batch without launching Player
     Like CallableCC3DRenderer, but works on individual directories of data instead of a CallableCoV2VTM instance
     """
-
     def __init__(self, data_dirs, out_dirs, set_labs=None, run_labs=None, num_workers=1):
         super().__init__(None)
 
@@ -1081,13 +1080,13 @@ class CallableCC3DDataRenderer(CallableCC3DRenderer):
 
         return min_max_dict
 
-    def _render_trial(self, trial_idx):
+    def __render_trial(self, trial_idx):
         """
         Main routine to perform rendering for a trial from batch run
         :param trial_idx: index of trial
         :return: None
         """
-        print('CallableCC3DRenderer rendering trial {}'.format(trial_idx))
+        print('CallableCC3DDataRenderer rendering trial {}'.format(trial_idx))
         self.load_trial_results(trial_idx)
 
         if self.cml_results_reader is None:
@@ -1116,7 +1115,7 @@ class CallableCC3DDataRenderer(CallableCC3DRenderer):
         :return: None
         """
         self.prep_output_dir()
-        [self._render_trial(trial_idx) for trial_idx in range(len(self.data_dirs))]
+        [self.__render_trial(trial_idx) for trial_idx in range(len(self.data_dirs))]
 
     def render_trial_results(self, trial_idx):
         """
@@ -1125,7 +1124,7 @@ class CallableCC3DDataRenderer(CallableCC3DRenderer):
         :return: None
         """
         self.prep_output_dir()
-        self._render_trial(trial_idx)
+        self.__render_trial(trial_idx)
 
     def render_trial_results_par(self, opts=None):
         """
@@ -1180,7 +1179,6 @@ class _RenderDataJob:
                 # Apply log scale to all field renders
                 def gd_manipulator(gd):
                     gd.draw_model_2D.clut.SetScaleToLog10()
-
                 _renderer.load_rendering_manipulator(gd_manipulator)
 
             if 'fixed_caxes' in self._opts.keys() and self._opts['fixed_caxes']:
@@ -1199,5 +1197,6 @@ class _RenderDataJob:
 
             _renderer.render_trial_results(0)
             return True
-        except Exception:
+        except Exception as e:
+            print(e)
             return False

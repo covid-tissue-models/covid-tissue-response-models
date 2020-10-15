@@ -40,7 +40,7 @@ __param_desc__['constant_drug_concentration'] = 'bool flag for constant prodrug'
 constant_drug_concentration = False
 
 __param_desc__['prophylactic_treatment'] = 'bool flag for prophylactic treatment'
-prophylactic_treatment = False
+prophylactic_treatment = True
 
 __param_desc__['treatment_ends'] = 'bool flag for setting a end time for treatment or not'
 treatment_ends = False
