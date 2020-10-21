@@ -89,7 +89,7 @@ out_freq = 50
 # Root output directory
 
 # sweep_output_folder = r'/N/slate/jferrari/new_pk/corrected_ic50_calc/ddm_batch_1'
-sweep_output_folder = r'/N/slate/jferrari/new_pk/prophylaxis/ddm_batch_1'
+sweep_output_folder = r'/N/slate/jferrari/new_pk/prophylaxis/ddm_laxis_batch_1'
 # Input modules
 from Simulation import ViralInfectionVTMModelInputs
 from Models.DrugDosingModel import DrugDosingInputs
