@@ -3,7 +3,7 @@
 # #todo write some more
 # Model parameters are specified in DrugDosingInputs.py
 #
-# RandomSusceptibilitySteppable
+# DrugDosingModelSteppable
 #   Description: implements drug dosing and viral replication rate reduction
 #   Usage:
 #       In ViralInfectionVTM.py, add the following
@@ -224,13 +224,10 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
         self.add_free_floating_antimony(model_string=self.drug_model_string, step_size=days_2_mcs,
                                         model_name='drug_dosing_model')
         if prophylactic_treatment:
-            ddm_rr = self.get_roadrunner_for_single_antimony('drug_dosing_model')
-            number_of_prophylactic_steps = int(prophylactic_time / days_2_mcs)
-            self.shared_steppable_vars['pre_sim_time'] = number_of_prophylactic_steps
-            for i in range(number_of_prophylactic_steps):  # let it run for prophylactic_time days
-                # print('time stepping', i)
-                ddm_rr.timestep()
-
+            # to be able to write the data from prophylaxis I put the prophylactic code in the
+            # data steppable. May not be elegant but it works
+            # this DOES MEAN that if the write step is not included prophylaxis won't work
+            pass
         self.rmax = self.get_rmax(self.sbml.drug_dosing_model['Available4'])
         self.shared_steppable_vars['rmax'] = self.rmax
 
@@ -377,6 +374,25 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
             self.init_plots()
         if self.write_ddm_data:
             self.init_writes()
+        if prophylactic_treatment:            
+            from cc3d.CompuCellSetup import persistent_globals as pg
+            for model_name, rr in pg.free_floating_sbml_simulators.items():
+                if model_name == 'drug_dosing_model':
+                    ddm_rr = rr
+                    break
+            number_of_prophylactic_steps = int(prophylactic_time / days_2_mcs)
+            # from Models.DrugDosingModel.DrugDosingModelSteppable import DrugDosingModelSteppable
+            # get_rmax = getattr(DrugDosingModelSteppable, 'get_rmax')
+            get_rmax = getattr(DrugDosingModelSteppable, 'get_rmax')
+            for i in range(number_of_prophylactic_steps):  # let it run for prophylactic_time days
+                # print('time stepping', i)
+                ddm_rr.timestep()
+                self.shared_steppable_vars['rmax'] = get_rmax(self.mvars, self.sbml.drug_dosing_model['Available4'])
+                self.shared_steppable_vars['pre_sim_time'] = number_of_prophylactic_steps - i
+                if self.write_ddm_data:
+                    self.do_writes(0)
+            self.flush_stored_outputs()
+            self.__flush_counter -= 1
 
     def do_plots(self, mcs):
         """
