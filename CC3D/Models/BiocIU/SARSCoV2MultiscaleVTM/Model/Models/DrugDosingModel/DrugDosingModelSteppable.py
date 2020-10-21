@@ -222,12 +222,10 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
         self.add_free_floating_antimony(model_string=self.drug_model_string, step_size=days_2_mcs,
                                         model_name='drug_dosing_model')
         if prophylactic_treatment:
-            pass
-            # for i in range(int(10 / days_2_mcs)):  # let it run for 10 days
-            # WARNING, self.timestep_sbml() steps all sbml!! But not when in the step function(?!)
-            # TODO find a way to only step this sbml
-            # TODO SOLUTION: recall sheet init function
-            # self.timestep_sbml()
+            ddm_rr = self.get_roadrunner_for_single_antimony('drug_dosing_model')
+            for i in range(int(prophylactic_time / days_2_mcs)):  # let it run for prophylactic_time days
+                # print('time stepping', i)
+                ddm_rr.timestep()
 
         self.rmax = self.get_rmax(self.sbml.drug_dosing_model['Available4'])
         self.shared_steppable_vars['rmax'] = self.rmax

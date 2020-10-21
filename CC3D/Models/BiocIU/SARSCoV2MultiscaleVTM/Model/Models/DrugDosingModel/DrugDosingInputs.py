@@ -100,6 +100,12 @@ first_dose = 1
 if prophylactic_treatment:
     first_dose = 0
 
+__param_desc__['prophylactic_time'] = 'Number of days of prophylactic treatment'
+prophylactic_time = 1
+
+if not prophylactic_treatment:
+    prophylactic_time = 0
+
 __param_desc__['initial_dose'] = 'initial dose (arbitrary amount)'
 initial_dose = 10
 
