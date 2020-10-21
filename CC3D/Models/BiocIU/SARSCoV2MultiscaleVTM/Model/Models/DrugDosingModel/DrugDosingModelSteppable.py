@@ -207,6 +207,8 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
         else:
             self.hill_k = ec50
 
+        self.rmax = None
+
         self.vr_model_name = ViralInfectionVTMLib.vr_model_name
 
     def start(self):
@@ -223,7 +225,9 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
                                         model_name='drug_dosing_model')
         if prophylactic_treatment:
             ddm_rr = self.get_roadrunner_for_single_antimony('drug_dosing_model')
-            for i in range(int(prophylactic_time / days_2_mcs)):  # let it run for prophylactic_time days
+            number_of_prophylactic_steps = int(prophylactic_time / days_2_mcs)
+            self.shared_steppable_vars['pre_sim_time'] = number_of_prophylactic_steps
+            for i in range(number_of_prophylactic_steps):  # let it run for prophylactic_time days
                 # print('time stepping', i)
                 ddm_rr.timestep()
 
@@ -391,14 +395,19 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
         self.mean_rna_plot.add_data_point('RNA_mean', mcs, np.mean(rna_list))
 
     def do_writes(self, mcs):
-        self.ddm_data['ddm_rmax_data'][mcs] = [self.shared_steppable_vars['rmax']]
+        if prophylactic_treatment and mcs == 0:
+            time = mcs - self.shared_steppable_vars['pre_sim_time']
+        else:
+            time = mcs
+        self.ddm_data['ddm_rmax_data'][time] = [self.shared_steppable_vars['rmax']]
 
-        self.ddm_data['ddm_data'][mcs] = [self.sbml.drug_dosing_model[x] for x in self.mvars.ddm_vars]
+        self.ddm_data['ddm_data'][time] = [self.sbml.drug_dosing_model[x] for x in self.mvars.ddm_vars]
 
-        rna_list = self.get_rna_array()
+        if time >= 0:
+            rna_list = self.get_rna_array()
 
-        self.ddm_data['ddm_tot_RNA_data'][mcs] = [np.sum(rna_list)]
-        self.ddm_data['ddm_mean_RNA_data'][mcs] = [np.mean(rna_list)]
+            self.ddm_data['ddm_tot_RNA_data'][mcs] = [np.sum(rna_list)]
+            self.ddm_data['ddm_mean_RNA_data'][mcs] = [np.mean(rna_list)]
 
         if mcs >= int(self.simulator.getNumSteps() / 4 * self.__flush_counter):
             self.flush_stored_outputs()
