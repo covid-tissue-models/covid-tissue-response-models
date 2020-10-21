@@ -58,8 +58,29 @@ ddm_batch_11 = {'first_dose': [1],
                'rel_avail4_EC50': [0.01, 0.1, .5, .75, 1, 1.25],
                'kon': [1/2, 1]}
 
+full_laxis_mult_dit = {'prophylactic_treatment': [1],
+                 'prophylactic_time': [4, 10],
+                 'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
+                 'rel_avail4_EC50': [0.01, 0.1, .5, .75, 1, 1.25],
+                 'kon': [1 / 4, 1 / 2, 1]}
 
-mult_dict = ddm_batch_1
+laxis_mult_dit_1 = {'prophylactic_treatment': [1],
+                 'prophylactic_time': [4, 10],
+                 'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
+                 'rel_avail4_EC50': [0.01, 0.1, .5, .75, 1, 1.25],
+                 'kon': [1 / 4]}
+laxis_mult_dit_2 = {'prophylactic_treatment': [1],
+                 'prophylactic_time': [4, 10],
+                 'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
+                 'rel_avail4_EC50': [0.01, 0.1, .5, .75, 1, 1.25],
+                 'kon': [1 / 2]}
+laxis_mult_dit_3 = {'prophylactic_treatment': [1],
+                 'prophylactic_time': [4, 10],
+                 'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
+                 'rel_avail4_EC50': [0.01, 0.1, .5, .75, 1, 1.25],
+                 'kon': [1]}
+
+mult_dict = laxis_mult_dit_1
 num_rep = 5
 # Model output frequency
 model_out_freq = 1
@@ -67,7 +88,8 @@ model_out_freq = 1
 out_freq = 50
 # Root output directory
 
-sweep_output_folder = r'/N/slate/jferrari/new_pk/corrected_ic50_calc/ddm_batch_1'
+# sweep_output_folder = r'/N/slate/jferrari/new_pk/corrected_ic50_calc/ddm_batch_1'
+sweep_output_folder = r'/N/slate/jferrari/new_pk/prophylaxis/ddm_batch_1'
 # Input modules
 from Simulation import ViralInfectionVTMModelInputs
 from Models.DrugDosingModel import DrugDosingInputs
@@ -90,8 +112,8 @@ BatchRunLib.register_auto_inputs(input_module_name='Models.DrugDosingModel.DrugD
 from BatchRun.BatchRunPrototyping import carbonate_config_template
 
 carbonate_config_template = carbonate_config_template()
-carbonate_config_template['jn'] = 'ddm_model_batch1'
-carbonate_config_template['wh'] = 7
+carbonate_config_template['jn'] = 'ddm_model_prophylaxis_batch1'
+carbonate_config_template['wh'] = 9
 carbonate_config_template['wm'] = 0
 carbonate_config_template['vmem'] = 10
 
