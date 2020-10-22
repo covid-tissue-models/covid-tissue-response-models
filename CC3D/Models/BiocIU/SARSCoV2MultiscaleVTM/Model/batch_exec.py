@@ -85,7 +85,7 @@ num_rep = 5
 # Model output frequency
 model_out_freq = 1
 # Output frequency of simulation data per simulation replica
-out_freq = 50
+out_freq = 250
 # Root output directory
 
 # sweep_output_folder = r'/N/slate/jferrari/new_pk/corrected_ic50_calc/ddm_batch_1'
