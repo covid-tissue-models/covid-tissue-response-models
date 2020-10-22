@@ -249,7 +249,6 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
         for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING):
             vr_model = getattr(cell.sbml, self.vr_model_name)
             vr_model.replicating_rate = self.rmax
-        self.timestep_sbml()
 
     def get_rna_array(self):
         return np.array([cell.dict['Replicating'] for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING,
@@ -374,7 +373,7 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
             self.init_plots()
         if self.write_ddm_data:
             self.init_writes()
-        if prophylactic_treatment:            
+        if prophylactic_treatment:
             from cc3d.CompuCellSetup import persistent_globals as pg
             for model_name, rr in pg.free_floating_sbml_simulators.items():
                 if model_name == 'drug_dosing_model':
