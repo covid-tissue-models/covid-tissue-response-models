@@ -32,6 +32,7 @@ root directory of the simulation framework. So, for example, to import the varia
     sys.path.append(os.path.join(os.environ["ViralInfectionVTM"], "Simulation"))
     from ViralInfectionVTMModelInputs import s_to_mcs
 
+
 For a demonstration of this, see ``RecoverySteppables.py`` in the module ``Models.RecoverySimple``.
 
 The same can be done for importing model modules defined in this collection (*e.g.*, for using or extending
