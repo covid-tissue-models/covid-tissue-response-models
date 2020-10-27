@@ -3,7 +3,7 @@
 # #todo write some more
 # Model parameters are specified in DrugDosingInputs.py
 #
-# RandomSusceptibilitySteppable
+# DrugDosingModelSteppable
 #   Description: implements drug dosing and viral replication rate reduction
 #   Usage:
 #       In ViralInfectionVTM.py, add the following
@@ -207,9 +207,11 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
         else:
             self.hill_k = ec50
 
+        self.rmax = None
+
         self.vr_model_name = ViralInfectionVTMLib.vr_model_name
 
-        # self.ddm_rr = None
+        self.ddm_rr = None
 
     @staticmethod
     def get_roadrunner_for_single_antimony(model):
@@ -231,13 +233,18 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
         # init sbml
         self.add_free_floating_antimony(model_string=self.drug_model_string, step_size=days_2_mcs,
                                         model_name='drug_dosing_model')
+        self.ddm_rr = self.get_roadrunner_for_single_antimony('drug_dosing_model')
         if prophylactic_treatment:
-            ddm_rr = self.get_roadrunner_for_single_antimony('drug_dosing_model')
-            for i in range(int(10 / days_2_mcs)):  # let it run for 10 days
-                # print('time stepping', i)
-                ddm_rr.timestep()
+            # to be able to write the data from prophylaxis I put the prophylactic code in the
+            # data steppable. May not be elegant but it works
+            # this DOES MEAN that if the write step is not included prophylaxis won't work
+            pass
 
-        self.rmax = self.get_rmax(self.sbml.drug_dosing_model['Available4'])
+        if sanity_run:
+            self.rmax = replicating_rate
+        else:
+            self.rmax = self.get_rmax(self.sbml.drug_dosing_model['Available4'])
+
         self.shared_steppable_vars['rmax'] = self.rmax
 
         # replace viral uptake function
@@ -252,12 +259,16 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
         return (1 - nCoVUtils.hill_equation(avail4, self.hill_k, 2)) * replicating_rate
 
     def step(self, mcs):
-        self.rmax = self.get_rmax(self.sbml.drug_dosing_model['Available4'])
-        self.shared_steppable_vars['rmax'] = self.rmax
+
+        if not sanity_run:
+            self.rmax = self.get_rmax(self.sbml.drug_dosing_model['Available4'])
+            self.shared_steppable_vars['rmax'] = self.rmax
 
         for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING):
             vr_model = getattr(cell.sbml, self.vr_model_name)
             vr_model.replicating_rate = self.rmax
+
+        self.ddm_rr.timestep()
 
     def get_rna_array(self):
         return np.array([cell.dict['Replicating'] for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING,
@@ -329,7 +340,7 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
 
     def init_plots(self):
         self.ddm_data_win = self.add_new_plot_window(title='Drug dosing model',
-                                                     x_axis_title='Time (Days)',
+                                                     x_axis_title='Time (hours)',
                                                      y_axis_title='Variables',
                                                      x_scale_type='linear',
                                                      y_scale_type='linear',
@@ -382,6 +393,26 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
             self.init_plots()
         if self.write_ddm_data:
             self.init_writes()
+        if prophylactic_treatment:
+            # from cc3d.CompuCellSetup import persistent_globals as pg
+            # for model_name, rr in pg.free_floating_sbml_simulators.items():
+            #     if model_name == 'drug_dosing_model':
+            #         ddm_rr = rr
+            #         break
+            number_of_prophylactic_steps = int(prophylactic_time / days_2_mcs)
+
+            ddm_rr = self.shared_steppable_vars[drug_dosing_model_key].ddm_rr
+            get_rmax = getattr(DrugDosingModelSteppable, 'get_rmax')
+            for i in range(number_of_prophylactic_steps):  # let it run for prophylactic_time days
+                # print('time stepping', i)
+                ddm_rr.timestep()
+                self.shared_steppable_vars['rmax'] = get_rmax(self.mvars, self.sbml.drug_dosing_model['Available4'])
+                self.shared_steppable_vars['pre_sim_time'] = number_of_prophylactic_steps - i
+                if self.write_ddm_data:
+                    self.do_writes(0)
+            if self.write_ddm_data:
+                self.flush_stored_outputs()
+                self.__flush_counter -= 1
 
     def do_plots(self, mcs):
         """
@@ -389,9 +420,9 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
         :return None
         """
 
-        [self.ddm_data_win.add_data_point(x, self.sbml.drug_dosing_model['time'], self.sbml.drug_dosing_model[x])
+        [self.ddm_data_win.add_data_point(x, s_to_mcs * mcs / 60 / 60, self.sbml.drug_dosing_model[x])
          for x in self.mvars.ddm_vars]
-        if mcs > first_dose / days_2_mcs or constant_drug_concentration or prophylactic_treatment:
+        if mcs > first_dose / days_2_mcs or constant_drug_concentration:
             self.rmax_data_win.add_data_point('rmax', s_to_mcs * mcs / 60 / 60, self.shared_steppable_vars['rmax'])
 
         rna_list = self.get_rna_array()
@@ -400,9 +431,13 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
         self.mean_rna_plot.add_data_point('RNA_mean', mcs, np.mean(rna_list))
 
     def do_writes(self, mcs):
-        self.ddm_data['ddm_rmax_data'][mcs] = [self.shared_steppable_vars['rmax']]
+        if prophylactic_treatment and mcs == 0:
+            time = mcs - self.shared_steppable_vars['pre_sim_time']
+        else:
+            time = mcs
+        self.ddm_data['ddm_rmax_data'][time] = [self.shared_steppable_vars['rmax']]
 
-        self.ddm_data['ddm_data'][mcs] = [self.sbml.drug_dosing_model[x] for x in self.mvars.ddm_vars]
+        self.ddm_data['ddm_data'][time] = [self.sbml.drug_dosing_model[x] for x in self.mvars.ddm_vars]
 
         rna_list = self.get_rna_array()
 
@@ -425,8 +460,6 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
         for write_data, data_path, data in out_info:
             if write_data:
                 with open(data_path, 'a') as fout:
-                    print(data)
-                    print(SimDataSteppable.data_output_string(self, data))
                     fout.write(SimDataSteppable.data_output_string(self, data))
                     data.clear()
         self.__flush_counter += 1
