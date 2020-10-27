@@ -45,6 +45,12 @@ prophylactic_treatment = True
 __param_desc__['treatment_ends'] = 'bool flag for setting a end time for treatment or not'
 treatment_ends = False
 
+__param_desc__['sanity_run'] = 'bool for shutting off drug treatment (True -> no treatment)'
+sanity_run = False
+
+__param_desc__['double_sbml_step'] = 'bool for doing 2 sbmls calls'
+double_sbml_step = False
+
 # initial drug concentrations
 __param_desc__['Drug'] = 'Amount of Drug already in the system'
 Drug = 0
@@ -100,6 +106,12 @@ first_dose = 1
 if prophylactic_treatment:
     first_dose = 0
 
+__param_desc__['prophylactic_time'] = 'Number of days of prophylactic treatment'
+prophylactic_time = 1
+
+if not prophylactic_treatment:
+    prophylactic_time = 0
+
 __param_desc__['initial_dose'] = 'initial dose (arbitrary amount)'
 initial_dose = 10
 
@@ -108,6 +120,10 @@ dose_interval = 1
 
 __param_desc__['dose'] = 'dose of subsequent treatments (arbitrary units)'
 dose = 10
+
+if sanity_run:
+    initial_dose = 0
+    dose = 0
 
 __param_desc__['dose_end'] = 'time of end of treatment in days'
 dose_end = 1
