@@ -30,7 +30,7 @@ __param_desc__['auto_ec50'] = 'bool for auto scaling of EC50 by max(avail4) and 
 auto_ec50 = True
 
 __param_desc__['ec50'] = 'value for ec50 in the hill equation, only used if auto_ec50 is false'
-ec50 = 4.14360796
+ec50 = 2.32417475e-01
 
 # DDM SBML model
 
@@ -44,6 +44,12 @@ prophylactic_treatment = True
 
 __param_desc__['treatment_ends'] = 'bool flag for setting a end time for treatment or not'
 treatment_ends = False
+
+__param_desc__['sanity_run'] = 'bool for shutting off drug treatment (True -> no treatment)'
+sanity_run = False
+
+__param_desc__['double_sbml_step'] = 'bool for doing 2 sbmls calls'
+double_sbml_step = False
 
 # initial drug concentrations
 __param_desc__['Drug'] = 'Amount of Drug already in the system'
@@ -114,6 +120,10 @@ dose_interval = 1
 
 __param_desc__['dose'] = 'dose of subsequent treatments (arbitrary units)'
 dose = 10
+
+if sanity_run:
+    initial_dose = 0
+    dose = 0
 
 __param_desc__['dose_end'] = 'time of end of treatment in days'
 dose_end = 1

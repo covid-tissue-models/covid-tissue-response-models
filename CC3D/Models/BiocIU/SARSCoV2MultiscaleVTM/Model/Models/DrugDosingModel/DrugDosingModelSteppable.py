@@ -211,6 +211,16 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
 
         self.vr_model_name = ViralInfectionVTMLib.vr_model_name
 
+        self.ddm_rr = None
+
+    @staticmethod
+    def get_roadrunner_for_single_antimony(model):
+        from cc3d.CompuCellSetup import persistent_globals as pg
+        for model_name, rr in pg.free_floating_sbml_simulators.items():
+            if model_name == model:
+                return rr
+        return None
+
     def start(self):
 
         # set model string
@@ -223,12 +233,18 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
         # init sbml
         self.add_free_floating_antimony(model_string=self.drug_model_string, step_size=days_2_mcs,
                                         model_name='drug_dosing_model')
+        self.ddm_rr = self.get_roadrunner_for_single_antimony('drug_dosing_model')
         if prophylactic_treatment:
             # to be able to write the data from prophylaxis I put the prophylactic code in the
             # data steppable. May not be elegant but it works
             # this DOES MEAN that if the write step is not included prophylaxis won't work
             pass
-        self.rmax = self.get_rmax(self.sbml.drug_dosing_model['Available4'])
+
+        if sanity_run:
+            self.rmax = replicating_rate
+        else:
+            self.rmax = self.get_rmax(self.sbml.drug_dosing_model['Available4'])
+
         self.shared_steppable_vars['rmax'] = self.rmax
 
         # replace viral uptake function
@@ -243,12 +259,16 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
         return (1 - nCoVUtils.hill_equation(avail4, self.hill_k, 2)) * replicating_rate
 
     def step(self, mcs):
-        self.rmax = self.get_rmax(self.sbml.drug_dosing_model['Available4'])
-        self.shared_steppable_vars['rmax'] = self.rmax
+
+        if not sanity_run:
+            self.rmax = self.get_rmax(self.sbml.drug_dosing_model['Available4'])
+            self.shared_steppable_vars['rmax'] = self.rmax
 
         for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING):
             vr_model = getattr(cell.sbml, self.vr_model_name)
             vr_model.replicating_rate = self.rmax
+
+        self.ddm_rr.timestep()
 
     def get_rna_array(self):
         return np.array([cell.dict['Replicating'] for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING,
@@ -374,14 +394,14 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
         if self.write_ddm_data:
             self.init_writes()
         if prophylactic_treatment:
-            from cc3d.CompuCellSetup import persistent_globals as pg
-            for model_name, rr in pg.free_floating_sbml_simulators.items():
-                if model_name == 'drug_dosing_model':
-                    ddm_rr = rr
-                    break
+            # from cc3d.CompuCellSetup import persistent_globals as pg
+            # for model_name, rr in pg.free_floating_sbml_simulators.items():
+            #     if model_name == 'drug_dosing_model':
+            #         ddm_rr = rr
+            #         break
             number_of_prophylactic_steps = int(prophylactic_time / days_2_mcs)
-            # from Models.DrugDosingModel.DrugDosingModelSteppable import DrugDosingModelSteppable
-            # get_rmax = getattr(DrugDosingModelSteppable, 'get_rmax')
+
+            ddm_rr = self.shared_steppable_vars[drug_dosing_model_key].ddm_rr
             get_rmax = getattr(DrugDosingModelSteppable, 'get_rmax')
             for i in range(number_of_prophylactic_steps):  # let it run for prophylactic_time days
                 # print('time stepping', i)
@@ -390,8 +410,9 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
                 self.shared_steppable_vars['pre_sim_time'] = number_of_prophylactic_steps - i
                 if self.write_ddm_data:
                     self.do_writes(0)
-            self.flush_stored_outputs()
-            self.__flush_counter -= 1
+            if self.write_ddm_data:
+                self.flush_stored_outputs()
+                self.__flush_counter -= 1
 
     def do_plots(self, mcs):
         """
