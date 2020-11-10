@@ -25,12 +25,6 @@ plot_ddm_data_freq = 1  # Plot recovery model data frequency (disable with 0)
 __param_desc__['write_ddm_data_freq'] = 'Write drug model data to simulation directory frequency'
 write_ddm_data_freq = 1  # Write recovery model data to simulation directory frequency (disable with 0)
 
-# parameters
-__param_desc__['auto_ec50'] = 'bool for auto scaling of EC50 by max(avail4) and rel_avail4_EC50'
-auto_ec50 = True
-
-__param_desc__['ec50'] = 'value for ec50 in the hill equation, only used if auto_ec50 is false'
-ec50 = 2.32417475e-01
 
 # DDM SBML model
 
@@ -40,7 +34,7 @@ __param_desc__['constant_drug_concentration'] = 'bool flag for constant prodrug'
 constant_drug_concentration = False
 
 __param_desc__['prophylactic_treatment'] = 'bool flag for prophylactic treatment'
-prophylactic_treatment = True
+prophylactic_treatment = False
 
 __param_desc__['treatment_ends'] = 'bool flag for setting a end time for treatment or not'
 treatment_ends = False
@@ -113,13 +107,13 @@ if not prophylactic_treatment:
     prophylactic_time = 0
 
 __param_desc__['initial_dose'] = 'initial dose (arbitrary amount)'
-initial_dose = 10
+initial_dose = 1
 
 __param_desc__['dose_interval'] = 'time interval between doses in days'
 dose_interval = 1
 
 __param_desc__['dose'] = 'dose of subsequent treatments (arbitrary units)'
-dose = 10
+dose = initial_dose
 
 if sanity_run:
     initial_dose = 0
@@ -131,6 +125,20 @@ if not treatment_ends:
     dose_end = 1e99
 
 # rate reduction parameters
+
+# parameters
+__param_desc__['auto_ec50'] = 'bool for auto scaling of EC50 by max(avail4) and rel_avail4_EC50'
+auto_ec50 = False
+
+__param_desc__['drug_ic50'] = 'value for drug ic50'
+drug_ic50 = 1
+
+__param_desc__['drug_2_a4_factor'] = 'factor to go from drug to max a4 for constant drug' \
+									 'concentration. obtained by fitting max(a4) vs drug'
+drug_2_a4_factor = 1.5291823098746118
+
+__param_desc__['ec50'] = 'value for ec50 in the hill equation, only used if auto_ec50 is false'
+ec50 = drug_2_a4_factor * drug_ic50
 
 __param_desc__['rel_avail4_EC50'] = 'EC50 value for rmax reduction in therms of max available 4,' \
                                     ' ie EC50 = rel_avail4_EC50 * max(available 4)'
