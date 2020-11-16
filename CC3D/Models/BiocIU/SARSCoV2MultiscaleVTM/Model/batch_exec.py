@@ -80,26 +80,26 @@ laxis_mult_dit_3 = {'prophylactic_treatment': [1],
                     'rel_avail4_EC50': [0.01, 0.1, .5, .75, 1, 1.25],
                     'kon': [1]}
 
-ddm_new_method_full_batch = {'first_dose': [0, 6 / 24, 12 / 24, 48 / 24, 72 / 24],
+ddm_new_method_full_batch = {'first_dose': [0, 12 / 24, 24 / 24, 48 / 24, 72 / 24, 5],
                              # missing profilaxis. time of 1st dose in days
                              'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
                              # missing continuous dosing. dose interval in days
-                             'initial_dose': [100, 10, 2, 1, .5, .1],
+                             'daily_dose': [10, 2, 1, .5, .1],
                              'kon': [1 / 4, 1 / 2, 1]}
-ddm_new_batch1 = {'first_dose': [0, 6 / 24],  # missing profilaxis. time of 1st dose in days
+ddm_new_batch1 = {'first_dose': [0, 12 / 24],  # missing profilaxis. time of 1st dose in days
                   'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
                   # missing continuous dosing. dose interval in days
-                  'initial_dose': [100, 10, 2, 1, .5, .1],
+                  'daily_dose': [10, 2, 1, .5, .1],
                   'kon': [1]}
-ddm_new_batch2 = {'first_dose': [12 / 24, 48 / 24],  # missing profilaxis. time of 1st dose in days
+ddm_new_batch2 = {'first_dose': [24 / 24, 48 / 24],  # missing profilaxis. time of 1st dose in days
                   'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
                   # missing continuous dosing. dose interval in days
-                  'initial_dose': [100, 10, 2, 1, .5, .1],
+                  'daily_dose': [10, 2, 1, .5, .1],
                   'kon': [1]}
-ddm_new_batch3 = {'first_dose': [72 / 24],  # missing profilaxis. time of 1st dose in days
+ddm_new_batch3 = {'first_dose': [72 / 24, 5],  # missing profilaxis. time of 1st dose in days
                   'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
                   # missing continuous dosing. dose interval in days
-                  'initial_dose': [100, 10, 2, 1, .5, .1],
+                  'daily_dose': [10, 2, 1, .5, .1],
                   'kon': [1]}
 
 mult_dict = ddm_new_batch1
@@ -111,7 +111,7 @@ out_freq = 250
 # Root output directory
 
 # sweep_output_folder = r'/N/slate/jferrari/new_pk/corrected_ic50_calc/ddm_batch_1'
-sweep_output_folder = r'/N/slate/jferrari/varying_dose/regular'
+sweep_output_folder = r'/N/slate/jferrari/ddm/varying_dose/regular'
 # Input modules
 from Simulation import ViralInfectionVTMModelInputs
 from Models.DrugDosingModel import DrugDosingInputs

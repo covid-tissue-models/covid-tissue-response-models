@@ -105,11 +105,14 @@ prophylactic_time = 1
 if not prophylactic_treatment:
     prophylactic_time = 0
 
-__param_desc__['initial_dose'] = 'initial dose (arbitrary amount)'
-initial_dose = 1
+__param_desc__['daily_dose'] = 'how much drug is given in a DAY'
+daily_dose = 1
 
 __param_desc__['dose_interval'] = 'time interval between doses in days'
 dose_interval = 1
+
+__param_desc__['initial_dose'] = 'initial dose (arbitrary amount)'
+initial_dose = daily_dose / (24. / dose_interval)  # daily_dose/(N doses/day)
 
 __param_desc__['dose'] = 'dose of subsequent treatments (arbitrary units)'
 dose = initial_dose
