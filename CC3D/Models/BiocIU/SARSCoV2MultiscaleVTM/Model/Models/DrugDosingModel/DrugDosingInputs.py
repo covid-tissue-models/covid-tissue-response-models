@@ -25,7 +25,6 @@ plot_ddm_data_freq = 1  # Plot recovery model data frequency (disable with 0)
 __param_desc__['write_ddm_data_freq'] = 'Write drug model data to simulation directory frequency'
 write_ddm_data_freq = 1  # Write recovery model data to simulation directory frequency (disable with 0)
 
-
 # DDM SBML model
 
 # Treatment options
@@ -134,7 +133,7 @@ __param_desc__['drug_ic50'] = 'value for drug ic50'
 drug_ic50 = 1
 
 __param_desc__['drug_2_a4_factor'] = 'factor to go from drug to max a4 for constant drug' \
-									 'concentration. obtained by fitting max(a4) vs drug'
+                                     'concentration. obtained by fitting max(a4) vs drug'
 drug_2_a4_factor = 1.5291823098746118
 
 __param_desc__['ec50'] = 'value for ec50 in the hill equation, only used if auto_ec50 is false'
