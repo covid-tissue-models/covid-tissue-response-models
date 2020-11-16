@@ -47,7 +47,7 @@ d4 = 6.0) max(Available4) is a linear function of dose following:
 max(Available4) ~= 4.14360796e-01 x dose -1.65564741e-08
 
 with the fitted pk (k0 = 10.0; d0 = 16.635; k1 = 1.0; d1 = 8.317; k2 = 989.6; d2 = 8.317; k3 = 158.4; d3 = 0.693; 
-d4 = 0.693) max(Available4) is a linear function of dose following:
+d4 = 0.693; period of dosing = 1/4 day) max(Available4) is a linear function of dose following:
 
 max(Available4) ~= 2.32417475e-01 x dose + 1.59151098e-08
 
