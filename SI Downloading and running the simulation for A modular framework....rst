@@ -20,3 +20,21 @@ directory separately.
 
 CompuCell3D *Player* is a GUI tool which executes CompuCell3D simulations during desktop execution (or on nanoHUB). In order to run the simulation either right click *ViralInfectionVTM.cc3d* in the left hand panel and select “Open In Player” or open *CompuCell3D.exe* to open the CompuCell3D Player and select ``File; Open Simulation File`` and open *ViralInfectionVTM.cc3d*. Once the simulation is open in Player click play (on the nanoHub deployment the simulation should start automatically). Player will display windows with the cell lattice rendered (Figure S14), set the z-plane to 0 to visualize the epithelial cells and the z-plane to 1 to visualize the immune cells. More windows can be created (menu ``Window; New graphics Window``, Figure S15) as needed to visualize the virus, cytokine, oxidative agent fields. Each window has a drop-down menu containing the selection of fields that can be rendered (i.e., the chemical fields and the cell field, Figure S16). 
 
+.. image::  https://github.com/covid-tissue-models/covid-tissue-response-models/blob/master/Figure%20S12.png 
+**Figure S12. Opening a CompuCell3D project in Tweedit++.**
+
+
+.. image::  https://github.com/covid-tissue-models/covid-tissue-response-models/blob/master/Figure%20S13.png 
+**Figure S13. Tweedit++’s left hand panel with simulation project files openned.**
+
+
+.. image::  https://github.com/covid-tissue-models/covid-tissue-response-models/blob/master/Figure%20S14.png 
+**Figure S14. Example of CompuCell3D’s player open with the COVID-19 simulation loaded.**
+
+
+.. image::  https://github.com/covid-tissue-models/covid-tissue-response-models/blob/master/Figure%20S15.png 
+**Figure S15. How to open a new simulation render window in CompuCell3D Player.**
+
+
+.. image::  https://github.com/covid-tissue-models/covid-tissue-response-models/blob/master/Figure%20S16.png 
+**Figure S16. Drop-down menu in simulation render window to select which field to render.**
