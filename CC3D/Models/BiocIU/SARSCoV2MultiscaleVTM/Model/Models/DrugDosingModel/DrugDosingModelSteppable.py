@@ -260,6 +260,22 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
 
     def step(self, mcs):
 
+        # ~~~1. get amount of prodrug entering the system~~~
+        # 1.1. Was doing as global. Now progrug will be divided among the cells, to the value before needs to be
+        # multiplied by number of cells uptaking (?), and by 2(?) because of two layers
+        # ~~2~~. Uptake the chemical;
+        # So now we have an issue, because this uptake is simply diffusion in reality. Ah, the rate k0 is to go
+        # from plasma to the lung and back. So how much enters the system is k0 (Dplasma - Dlung).
+        # Then the cells convert it.
+        # What we want then is to have the chemical inky be deposited inthe epithelial cells. We also want it to not
+        # diffuse to medium (if possible). Cells read the full value in their region and uptake k12*Dlung(uptaken)
+        # 1. get amount of prodrug entering the system, k0*D, add it. Get the amount leaving back to plasma
+        # 1.1. deposit k0*Dplasma uniformely as diffusing concentration
+        # 1.2. the amount leaving the system is modeled by the decay. Decay will be both k0 and kE1, \gamma = k0 + kE1;
+        # so need to calculate k0*Dlung to add it back to the sbml
+        # 2. The epithelial cells uptake in their whole domain.
+        # 2.1. They uptake k12*Dlung(over cell) and that is added to their sbml
+
         if not sanity_run:
             self.rmax = self.get_rmax(self.sbml.drug_dosing_model['Available4'])
             self.shared_steppable_vars['rmax'] = self.rmax
@@ -267,6 +283,8 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
         for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING):
             vr_model = getattr(cell.sbml, self.vr_model_name)
             vr_model.replicating_rate = self.rmax
+
+            # ViralInfectionVTMLib.step_sbml_model_cell(cell=cell)
 
         self.ddm_rr.timestep()
 
