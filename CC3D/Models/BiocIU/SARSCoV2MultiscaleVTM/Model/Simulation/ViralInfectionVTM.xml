@@ -136,5 +136,26 @@
             </Plane>
          </BoundaryConditions>
       </DiffusionField>
+
+       <DiffusionField Name="prodrug">
+           <DiffusionData>
+               <FieldName>prodrug</FieldName>
+               <GlobalDiffusionConstant id = 'prodr_dc'>10.0</GlobalDiffusionConstant>
+               <GlobalDecayConstant id="prodr_decay">0.0</GlobalDecayConstant>
+           </DiffusionData>
+           <BoundaryConditions>
+               <Plane Axis="X">
+                   <Periodic/>
+               </Plane>
+               <Plane Axis="Y">
+               <Periodic/>
+            </Plane>
+            <Plane Axis="Z">
+               <ConstantDerivative PlanePosition="Min" Value="0.0"/>
+               <ConstantDerivative PlanePosition="Max" Value="0.0"/>
+            </Plane>
+           </BoundaryConditions>
+       </DiffusionField>
+
    </Steppable>
 </CompuCell3D>
