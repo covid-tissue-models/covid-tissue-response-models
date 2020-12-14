@@ -47,7 +47,7 @@ d4 = 6.0) max(Available4) is a linear function of dose following:
 max(Available4) ~= 4.14360796e-01 x dose -1.65564741e-08
 
 with the fitted pk (k0 = 10.0; d0 = 16.635; k1 = 1.0; d1 = 8.317; k2 = 989.6; d2 = 8.317; k3 = 158.4; d3 = 0.693; 
-d4 = 0.693; period of dosing = 1/4 day) max(Available4) is a linear function of dose following:
+d4 = 0.693) max(Available4) is a linear function of dose following:
 
 max(Available4) ~= 2.32417475e-01 x dose + 1.59151098e-08
 
@@ -166,9 +166,9 @@ def set_cst_drug_ddm_string(_init_drug, _init_avail1, _init_avail2, _init_avail3
             dose_interval = {} ; // time interval between doses in days
             dose = {} ; //dose of subsequent treatments
             dose_end = {} // end of treatment day
-            
+
             const Drug := initial_dose;
-            
+
             //E1: at (time - first_dose > 0): Drug=Drug+initial_dose ;
             //E2: at ( (time-first_dose > dose_interval) && (time < dose_end) && sin((((time-first_dose)/dose_interval))*2*pi)>0): Drug=Drug+dose
             end
@@ -439,10 +439,11 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
 
         self.ddm_data['ddm_data'][time] = [self.sbml.drug_dosing_model[x] for x in self.mvars.ddm_vars]
 
-        rna_list = self.get_rna_array()
+        if time >= 0:
+            rna_list = self.get_rna_array()
 
-        self.ddm_data['ddm_tot_RNA_data'][mcs] = [np.sum(rna_list)]
-        self.ddm_data['ddm_mean_RNA_data'][mcs] = [np.mean(rna_list)]
+            self.ddm_data['ddm_tot_RNA_data'][mcs] = [np.sum(rna_list)]
+            self.ddm_data['ddm_mean_RNA_data'][mcs] = [np.mean(rna_list)]
 
         if mcs >= int(self.simulator.getNumSteps() / 4 * self.__flush_counter):
             self.flush_stored_outputs()
