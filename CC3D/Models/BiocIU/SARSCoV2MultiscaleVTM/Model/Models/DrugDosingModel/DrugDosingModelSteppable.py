@@ -181,6 +181,38 @@ def set_cst_drug_ddm_string(_init_drug, _init_avail1, _init_avail2, _init_avail3
     return dosingmodel_str, drug_dosig_model_vars
 
 
+def set_cell_drug_metabolization(_init_drug, _init_avail1, _init_avail2, _init_avail3, _init_avail4,
+                                 _k0_rate, _d0_rate, _k1_rate, _d1_rate, _k2_rate, _d2_rate, _k3_rate, _d3_rate,
+                                 _d4_rate, _first_dose, _initial_dose, _dose_interval, _dose, _eot):
+    """
+
+    Antimony model string generator for drug metabolization in cells.
+    To change parameters do so on the DrugDosingInputs
+
+    :param _init_drug:
+    :param _init_avail1:
+    :param _init_avail2:
+    :param _init_avail3:
+    :param _init_avail4:
+    :param _k0_rate:
+    :param _d0_rate:
+    :param _k1_rate:
+    :param _d1_rate:
+    :param _k2_rate:
+    :param _d2_rate:
+    :param _k3_rate:
+    :param _d3_rate:
+    :param _d4_rate:
+    :param _first_dose:
+    :param _initial_dose:
+    :param _dose_interval:
+    :param _dose:
+    :param _eot:
+    :return:
+    """
+    return
+
+
 class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
     """
     Implements drug dosing regimen
@@ -273,8 +305,12 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
         # 1.1. deposit k0*Dplasma uniformely as diffusing concentration
         # 1.2. the amount leaving the system is modeled by the decay. Decay will be both k0 and kE1, \gamma = k0 + kE1;
         # so need to calculate k0*Dlung to add it back to the sbml
+        # 1.note I'll have the prodrug as a global for the beginning of implementation, change later
         # 2. The epithelial cells uptake in their whole domain.
         # 2.1. They uptake k12*Dlung(over cell) and that is added to their sbml
+        #
+        #
+        # diffusion: very fast, mol weigh of 602.585. See bose-eistein for upper limit. treat it as a small molecule.
 
         if not sanity_run:
             self.rmax = self.get_rmax(self.sbml.drug_dosing_model['Available4'])
