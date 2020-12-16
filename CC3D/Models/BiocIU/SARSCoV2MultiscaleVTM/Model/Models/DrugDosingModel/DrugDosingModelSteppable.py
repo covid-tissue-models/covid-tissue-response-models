@@ -60,7 +60,7 @@ def set_default_ddm_string(_init_drug, _init_avail1, _init_avail2, _init_avail3,
                            _d4_rate, _first_dose, _initial_dose, _dose_interval, _dose, _eot):
     """
     Antimony model string generator for this steppable.
-    To change parameters do so on the DrugDosingInputs
+    To change parameters do so on the DrugDosingInputs. Parameter descriptions are also in DrugDosingInputs
     :param
     """
 
@@ -72,7 +72,7 @@ def set_default_ddm_string(_init_drug, _init_avail1, _init_avail2, _init_avail3,
             // linear clearance at each stage
             // All times measured in Days
 
-            J0: Drug -> Available1 ; k0*Drug ; //Distribution and bioavailability of drug after dosing
+           // J0: Drug -> Available1 ; k0*Drug ; //Distribution and bioavailability of drug after dosing
             J0A: Drug -> ; d0*Drug ; // Clearance of drug before bioavailability
             J1: Available1 -> Available2 ; k1*Available1 ; // Metabolism of drug into metabolite 2
             J1A: Available1 -> ; d1*Available1 ; // Clearance of drug after bioavailability
@@ -122,7 +122,7 @@ def set_cst_drug_ddm_string(_init_drug, _init_avail1, _init_avail2, _init_avail3
                             _d4_rate, _first_dose, _initial_dose, _dose_interval, _dose, _eot):
     """
     Antimony model string generator for this steppable.
-    To change parameters do so on the DrugDosingInputs
+    To change parameters do so on the DrugDosingInputs. Parameter descriptions are also in DrugDosingInputs
     :param
     """
 
@@ -134,7 +134,7 @@ def set_cst_drug_ddm_string(_init_drug, _init_avail1, _init_avail2, _init_avail3
             // linear clearance at each stage
             // All times measured in Days
 
-            J0: Drug -> Available1 ; k0*Drug ; //Distribution and bioavailability of drug after dosing
+           // J0: Drug -> Available1 ; k0*Drug ; //Distribution and bioavailability of drug after dosing
             J0A: Drug -> ; d0*Drug ; // Clearance of drug before bioavailability
             J1: Available1 -> Available2 ; k1*Available1 ; // Metabolism of drug into metabolite 2
             J1A: Available1 -> ; d1*Available1 ; // Clearance of drug after bioavailability
@@ -181,21 +181,18 @@ def set_cst_drug_ddm_string(_init_drug, _init_avail1, _init_avail2, _init_avail3
     return dosingmodel_str, drug_dosig_model_vars
 
 
-def set_cell_drug_metabolization(_init_drug, _init_avail1, _init_avail2, _init_avail3, _init_avail4,
-                                 _k0_rate, _d0_rate, _k1_rate, _d1_rate, _k2_rate, _d2_rate, _k3_rate, _d3_rate,
-                                 _d4_rate, _first_dose, _initial_dose, _dose_interval, _dose, _eot):
+def set_cell_drug_metabolization(_init_avail1, _init_avail2, _init_avail3, _init_avail4, _k1_rate, _d1_rate, _k2_rate,
+                                 _d2_rate, _k3_rate, _d3_rate, _d4_rate):
     """
 
     Antimony model string generator for drug metabolization in cells.
-    To change parameters do so on the DrugDosingInputs
+    To change parameters do so on the DrugDosingInputs. Parameter descriptions are also in DrugDosingInputs
 
-    :param _init_drug:
+
     :param _init_avail1:
     :param _init_avail2:
     :param _init_avail3:
     :param _init_avail4:
-    :param _k0_rate:
-    :param _d0_rate:
     :param _k1_rate:
     :param _d1_rate:
     :param _k2_rate:
@@ -203,14 +200,46 @@ def set_cell_drug_metabolization(_init_drug, _init_avail1, _init_avail2, _init_a
     :param _k3_rate:
     :param _d3_rate:
     :param _d4_rate:
-    :param _first_dose:
-    :param _initial_dose:
-    :param _dose_interval:
-    :param _dose:
-    :param _eot:
     :return:
     """
-    return
+
+    metabolization_str = '''
+
+                model metabolizationmodel()
+
+                // Simple cascade model of bioiavailability with multiple metabolites
+                // linear clearance at each stage
+                // All times measured in Days
+
+                
+                J1: Available1 -> Available2 ; k1*Available1 ; // Metabolism of drug into metabolite 2
+                J1A: Available1 -> ; d1*Available1 ; // Clearance of drug after bioavailability
+                J2: Available2 -> Available3 ; k2*Available2 ; // Metabolism of drug into metabolite 3
+                J2A: Available2 -> ; d2*Available2 ; // Clearance of metabolite 2 
+                J3: Available3 -> Available4 ; k3*Available3 ; // Metabolism of drug into metabolite 4
+                J3A: Available3 -> ; d3*Available3 ; // Clearance of metabolite 3 
+                J4A: Available4 -> ; d4*Available4 ; // Clearance of metabolite 4
+
+                //Initial values
+                 
+                Available1 = {};
+                Available2 = {};
+                Available3 = {};
+                Available4 = {};
+
+                k1 = {} ; // metabolism of primary drug rate, units /day
+                d1 = {} ; // clearance time, units /day = 4 hours
+                k2 = {} ; // metabolism of secondary product, units /day
+                d2 = {} ; // clearance time, units /day = 4 hours
+                k3 = {} ; // metabolism of tertiary product, units /day
+                d3 = {} ; // clearance time, units /day = 4 hours
+                d4 = {} ; // clearance time, units /day = 4 hours
+
+                end
+                '''.format(_init_avail1, _init_avail2, _init_avail3, _init_avail4, _k1_rate, _d1_rate,
+                           _k2_rate, _d2_rate, _k3_rate, _d3_rate, _d4_rate)
+
+    return metabolization_str
 
 
 class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
@@ -239,6 +268,12 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
         else:
             self.hill_k = ec50
 
+        self.drug_model_string = None
+
+        self.ddm_vars = None
+
+        self.drug_metabolization_string = None
+
         self.rmax = None
 
         self.vr_model_name = ViralInfectionVTMLib.vr_model_name
@@ -266,6 +301,15 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
         self.add_free_floating_antimony(model_string=self.drug_model_string, step_size=days_2_mcs,
                                         model_name='drug_dosing_model')
         self.ddm_rr = self.get_roadrunner_for_single_antimony('drug_dosing_model')
+
+        self.drug_metabolization_string = set_cell_drug_metabolization(Available1, Available2, Available3, Available4,
+                                                                       k1, d1, k2, d2, k3, d3, d4)
+
+        for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING, self.UNINFECTED):
+
+            self.add_antimony_to_cell(model_string=self.drug_metabolization_string, model_name='drug_metabolization',
+                                      cell=cell, step_size=days_2_mcs)
+
         if prophylactic_treatment:
             # to be able to write the data from prophylaxis I put the prophylactic code in the
             # data steppable. May not be elegant but it works
@@ -292,25 +336,23 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
 
     def step(self, mcs):
 
-        # ~~~1. get amount of prodrug entering the system~~~
-        # 1.1. Was doing as global. Now progrug will be divided among the cells, to the value before needs to be
-        # multiplied by number of cells uptaking (?), and by 2(?) because of two layers
-        # ~~2~~. Uptake the chemical;
-        # So now we have an issue, because this uptake is simply diffusion in reality. Ah, the rate k0 is to go
+        # the rate k0 is to go
         # from plasma to the lung and back. So how much enters the system is k0 (Dplasma - Dlung).
         # Then the cells convert it.
-        # What we want then is to have the chemical inky be deposited inthe epithelial cells. We also want it to not
+        # What we want then is to have the chemical be deposited in the epithelial cells. We also want it to not
         # diffuse to medium (if possible). Cells read the full value in their region and uptake k12*Dlung(uptaken)
-        # 1. get amount of prodrug entering the system, k0*D, add it. Get the amount leaving back to plasma
-        # 1.1. deposit k0*Dplasma uniformely as diffusing concentration
+        # 0. Get the amount leaving back to plasma
+        # 1. get amount of prodrug entering the system, k0*D, add it (D = Dplasma - Dlung).
+        # 1.1. deposit k0*D uniformely as diffusing concentration
         # 1.2. the amount leaving the system is modeled by the decay. Decay will be both k0 and kE1, \gamma = k0 + kE1;
         # so need to calculate k0*Dlung to add it back to the sbml
         # 1.note I'll have the prodrug as a global for the beginning of implementation, change later
+        #
         # 2. The epithelial cells uptake in their whole domain.
         # 2.1. They uptake k12*Dlung(over cell) and that is added to their sbml
         #
         #
-        # diffusion: very fast, mol weigh of 602.585. See bose-eistein for upper limit. treat it as a small molecule.
+        # diffusion: very fast, mol weigh of 602.585. See bose-einstein for upper limit. treat it as a small molecule.
 
         if not sanity_run:
             self.rmax = self.get_rmax(self.sbml.drug_dosing_model['Available4'])
