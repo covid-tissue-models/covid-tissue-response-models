@@ -374,7 +374,7 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
         self.add_free_floating_antimony(model_string=self.drug_model_string, step_size=days_2_mcs,
                                         model_name='drug_dosing_model')
         self.ddm_rr = self.get_roadrunner_for_single_antimony('drug_dosing_model')
-        
+
         self.add_free_floating_antimony(model_string=self.control_string, step_size=days_2_mcs,
                                         model_name='drug_dosing_control')
         self.control_rr = self.get_roadrunner_for_single_antimony('drug_dosing_control')
@@ -465,14 +465,21 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
                 for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING, self.UNINFECTED):
                     cell.sbml.drug_metabolization['Available1'] += u
                     self.sbml.drug_dosing_model['Drug'] -= u
-            print(self.sbml.drug_dosing_model['Drug'], total)
-            print('control:', self.sbml.drug_dosing_control['Drug'], days_2_mcs * self.sbml.drug_dosing_control['J0'])
-            print('result/control:', self.sbml.drug_dosing_model['Drug']/self.sbml.drug_dosing_control['Drug'],
-                  total/(days_2_mcs * self.sbml.drug_dosing_control['J0']))
+
         else:
             # regular cc3d uptake
-            pass
-
+            secretor = self.get_field_secretor("prodrug")
+            total = 0
+            for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING, self.UNINFECTED):
+                rate = days_2_mcs * cell.sbml.drug_metabolization['k0']
+                uptake = secretor.uptakeInsideCellTotalCount(cell, 9e99, rate)  # uptake at rate 'rate' without max
+                # value for uptake (9e99)
+                cell.sbml.drug_metabolization['Available1'] += abs(uptake.tot_amount)
+                total += abs(uptake.tot_amount)
+        print('result:', self.sbml.drug_dosing_model['Drug'], total)
+        print('control:', self.sbml.drug_dosing_control['Drug'], days_2_mcs * self.sbml.drug_dosing_control['J0'])
+        print('result/control:', self.sbml.drug_dosing_model['Drug'] / self.sbml.drug_dosing_control['Drug'],
+              total / (days_2_mcs * self.sbml.drug_dosing_control['J0']))
         return
 
     def step(self, mcs):
