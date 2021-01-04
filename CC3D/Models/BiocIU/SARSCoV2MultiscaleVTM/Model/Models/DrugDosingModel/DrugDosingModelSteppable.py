@@ -650,6 +650,18 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
         self.get_rna_array = self.mvars.get_rna_array
         if self.plot_ddm_data:
             self.init_plots()
+        self.ddm_control_plot = self.add_plot_window(title='Drug dosing control plot',
+                                                     x_axis_title='Time (hours)',
+                                                     y_axis_title='Variables',
+                                                     x_scale_type='linear',
+                                                     y_scale_type='linear',
+                                                     grid=True,
+                                                     config_options={'legend': True})
+        colors = ['blue', 'red', 'green', 'yellow', 'white']
+        ddm_vars = self.mvars.ddm_vars
+        for c, var in zip(colors, ddm_vars):
+            self.ddm_data_win.add_plot(var, style='Dots', color=c, size=5)
+
         if self.write_ddm_data:
             self.init_writes()
         if prophylactic_treatment:
@@ -686,8 +698,8 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
 
         rna_list = self.get_rna_array()
 
-        self.total_rna_plot.add_data_point('RNA_tot', mcs, np.sum(rna_list))
-        self.mean_rna_plot.add_data_point('RNA_mean', mcs, np.mean(rna_list))
+        self.total_rna_plot.add_data_point('RNA_tot', s_to_mcs * mcs / 60 / 60, np.sum(rna_list))
+        self.mean_rna_plot.add_data_point('RNA_mean', s_to_mcs * mcs / 60 / 60, np.mean(rna_list))
 
     def do_writes(self, mcs):
         if prophylactic_treatment and mcs == 0:
