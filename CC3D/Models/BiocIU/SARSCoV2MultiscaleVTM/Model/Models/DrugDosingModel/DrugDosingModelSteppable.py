@@ -650,7 +650,7 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
         self.get_rna_array = self.mvars.get_rna_array
         if self.plot_ddm_data:
             self.init_plots()
-        self.ddm_control_plot = self.add_plot_window(title='Drug dosing control plot',
+        self.ddm_control_plot = self.add_new_plot_window(title='Drug dosing control plot',
                                                      x_axis_title='Time (hours)',
                                                      y_axis_title='Variables',
                                                      x_scale_type='linear',
@@ -660,7 +660,7 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
         colors = ['blue', 'red', 'green', 'yellow', 'white']
         ddm_vars = self.mvars.ddm_vars
         for c, var in zip(colors, ddm_vars):
-            self.ddm_data_win.add_plot(var, style='Dots', color=c, size=5)
+            self.ddm_control_plot.add_plot(var, style='Dots', color=c, size=5)
 
         if self.write_ddm_data:
             self.init_writes()
@@ -737,7 +737,8 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
         self.__flush_counter += 1
 
     def step(self, mcs):
-
+        [self.ddm_control_plot.add_data_point(x, s_to_mcs * mcs / 60 / 60, self.sbml.drug_dosing_control[x])
+         for x in self.mvars.ddm_vars]
         if self.plot_ddm_data and mcs % plot_ddm_data_freq == 0:
             self.do_plots(mcs)
         if self.write_ddm_data and mcs % write_ddm_data_freq == 0:
