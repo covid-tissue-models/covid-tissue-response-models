@@ -350,11 +350,35 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
 
     @staticmethod
     def get_roadrunner_for_single_antimony(model):
+        """
+        :type model: str name of the model
+        :param model:
+        :return:
+        """
         from cc3d.CompuCellSetup import persistent_globals as pg
         for model_name, rr in pg.free_floating_sbml_simulators.items():
             if model_name == model:
                 return rr
         return None
+
+    def get_sbml_simulator_for_cell(self, model_name: str, cell: object = None) -> Union[object, None]:
+        """
+        Returns a reference to RoadRunnerPy or None
+        :param model_name: model name
+        :param cell: CellG cell object
+        :return {instance of RoadRunnerPy} or {None}:
+        """
+        try:
+            dict_attrib = CompuCell.getPyAttrib(cell)
+            return dict_attrib['SBMLSolver'][model_name]
+        except LookupError:
+            return None
+
+    def timestep_cell_sbml(self, model_name: str, cell: object = None):
+        if not cell:
+            return
+        rr = self.get_sbml_simulator_for_cell(model_name, cell)
+        rr.timestep()
 
     def start(self):
 
@@ -457,11 +481,12 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
                 for cid, u in uptakes:
                     cell = self.fetch_cell_by_id(cid)
                     cell.sbml.drug_metabolization['Available1'] += u
+                    # print(cell.id, cell.sbml.drug_metabolization['Available1'])
                     self.sbml.drug_dosing_model['Drug'] -= u
             else:
                 u = self.sbml.drug_dosing_model['Drug'] / len(self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING,
                                                                                      self.UNINFECTED))
-                print('equal uptake = ', u)
+                # print('equal uptake = ', u)
                 for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING, self.UNINFECTED):
                     cell.sbml.drug_metabolization['Available1'] += u
                     self.sbml.drug_dosing_model['Drug'] -= u
@@ -519,7 +544,11 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
             self.rmax = self.get_rmax(self.sbml.drug_dosing_model['Available4'])
             self.shared_steppable_vars['rmax'] = self.rmax
             self.do_prodrug_metabolization()
-            # for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING, self.UNINFECTED):
+            for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING, self.UNINFECTED):
+                self.timestep_cell_sbml('drug_metabolization', cell)
+                time = cell.sbml.drug_metabolization['Time']
+            print('time', time, self.sbml.drug_dosing_model['Time'])
+
             #     k_pm1 = cell.sbml.drug_metabolization['k0']  # rate prom prodrug to metabolite1
             #     # uptake_amount = self.get_prodrug_uptake(k_pm1, cell)
 
@@ -607,7 +636,8 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
                                                      config_options={'legend': True})
         colors = ['blue', 'red', 'green', 'yellow', 'white']
         ddm_vars = self.mvars.ddm_vars
-        for c, var in zip(colors, ddm_vars):
+        self.ddm_data_win.add_plot(ddm_vars[0], style='Dots', color=colors[0], size=5)
+        for c, var in zip(colors[1:], ddm_vars[1:]):
             self.ddm_data_win.add_plot(var, style='Dots', color=c, size=5)
 
         self.rmax_data_win = self.add_new_plot_window(title='r_max vs Time',
@@ -651,12 +681,12 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
         if self.plot_ddm_data:
             self.init_plots()
         self.ddm_control_plot = self.add_new_plot_window(title='Drug dosing control plot',
-                                                     x_axis_title='Time (hours)',
-                                                     y_axis_title='Variables',
-                                                     x_scale_type='linear',
-                                                     y_scale_type='linear',
-                                                     grid=True,
-                                                     config_options={'legend': True})
+                                                         x_axis_title='Time (hours)',
+                                                         y_axis_title='Variables',
+                                                         x_scale_type='linear',
+                                                         y_scale_type='linear',
+                                                         grid=True,
+                                                         config_options={'legend': True})
         colors = ['blue', 'red', 'green', 'yellow', 'white']
         ddm_vars = self.mvars.ddm_vars
         for c, var in zip(colors, ddm_vars):
@@ -685,14 +715,43 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
                 self.flush_stored_outputs()
                 self.__flush_counter -= 1
 
+    def get_metabolites_in_cell(self, cell):
+        # print(cell.sbml.drug_metabolization['Available1'])
+        l = [cell.sbml.drug_metabolization[x] for x in self.mvars.ddm_vars[1:]]
+        # print(cell.id, l)
+        return l
+
+    def get_total_metabolites_in_cells(self):
+
+        m = [[] for x in self.mvars.ddm_vars[1:]]
+        print(m)
+        for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING, self.UNINFECTED):
+            cm = self.get_metabolites_in_cell(cell)
+            for i in range(len(cm)):
+                m[i].append(cm[i])
+                # print(m[i])
+
+        return m
+
     def do_plots(self, mcs):
         """
         :parameter mcs
         :return None
         """
 
-        [self.ddm_data_win.add_data_point(x, s_to_mcs * mcs / 60 / 60, self.sbml.drug_dosing_model[x])
-         for x in self.mvars.ddm_vars]
+        # [self.ddm_data_win.add_data_point(x, s_to_mcs * mcs / 60 / 60, self.sbml.drug_dosing_model[x])
+        #  for x in self.mvars.ddm_vars]
+
+        self.ddm_data_win.add_data_point('Drug', s_to_mcs * mcs / 60 / 60, self.sbml.drug_dosing_model['Drug'])
+
+        total_mets = self.get_total_metabolites_in_cells()
+
+        for i, x in enumerate(self.mvars.ddm_vars[1:]):
+            # print(x, np.sum(total_mets[i]), total_mets[i])
+            y = np.sum(total_mets[i])
+            print(y)
+            self.ddm_data_win.add_data_point(x, s_to_mcs * mcs / 60 / 60, y)
+
         if mcs > first_dose / days_2_mcs or constant_drug_concentration:
             self.rmax_data_win.add_data_point('rmax', s_to_mcs * mcs / 60 / 60, self.shared_steppable_vars['rmax'])
 
