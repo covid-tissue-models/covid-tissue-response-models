@@ -622,6 +622,8 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
 
         self.ddm_data_win = None
 
+        self.ddm_control_plot = None
+
         self.rmax_data_win = None
 
         self.total_rna_plot = None
@@ -647,6 +649,18 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
         # self.ddm_data_win.add_plot(ddm_vars[0], style='Dots', color=colors[0], size=5)
         for c, var in zip(colors, ddm_vars):
             self.ddm_data_win.add_plot(var, style='Dots', color=c, size=5)
+
+        self.ddm_control_plot = self.add_new_plot_window(title='Drug dosing control plot',
+                                                         x_axis_title='Time (hours)',
+                                                         y_axis_title='Variables',
+                                                         x_scale_type='linear',
+                                                         y_scale_type='linear',
+                                                         grid=True,
+                                                         config_options={'legend': True})
+        colors = ['blue', 'red', 'green', 'yellow', 'white']
+        ddm_vars = self.mvars.ddm_vars
+        for c, var in zip(colors, ddm_vars):
+            self.ddm_control_plot.add_plot(var, style='Dots', color=c, size=5)
 
         self.rmax_data_win = self.add_new_plot_window(title='Mean r_max vs Time',
                                                       x_axis_title='Time (hours)',
@@ -688,17 +702,7 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
         self.get_rna_array = self.mvars.get_rna_array
         if self.plot_ddm_data:
             self.init_plots()
-        self.ddm_control_plot = self.add_new_plot_window(title='Drug dosing control plot',
-                                                         x_axis_title='Time (hours)',
-                                                         y_axis_title='Variables',
-                                                         x_scale_type='linear',
-                                                         y_scale_type='linear',
-                                                         grid=True,
-                                                         config_options={'legend': True})
-        colors = ['blue', 'red', 'green', 'yellow', 'white']
-        ddm_vars = self.mvars.ddm_vars
-        for c, var in zip(colors, ddm_vars):
-            self.ddm_control_plot.add_plot(var, style='Dots', color=c, size=5)
+
 
         if self.write_ddm_data:
             self.init_writes()
