@@ -348,6 +348,8 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
 
         self.ddm_rr = None
 
+        self.control_rr = None
+
     @staticmethod
     def get_roadrunner_for_single_antimony(model):
         """
@@ -361,7 +363,8 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
                 return rr
         return None
 
-    def get_sbml_simulator_for_cell(self, model_name: str, cell: object = None) -> Union[object, None]:
+    @staticmethod
+    def get_sbml_simulator_for_cell(model_name: str, cell: object = None) -> Union[object, None]:
         """
         Returns a reference to RoadRunnerPy or None
         :param model_name: model name
@@ -546,11 +549,9 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
             self.do_prodrug_metabolization()
             for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING, self.UNINFECTED):
                 self.timestep_cell_sbml('drug_metabolization', cell)
+
                 time = cell.sbml.drug_metabolization['Time']
             print('time', time, self.sbml.drug_dosing_model['Time'])
-
-            #     k_pm1 = cell.sbml.drug_metabolization['k0']  # rate prom prodrug to metabolite1
-            #     # uptake_amount = self.get_prodrug_uptake(k_pm1, cell)
 
         for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING):
             vr_model = getattr(cell.sbml, self.vr_model_name)
@@ -636,8 +637,8 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
                                                      config_options={'legend': True})
         colors = ['blue', 'red', 'green', 'yellow', 'white']
         ddm_vars = self.mvars.ddm_vars
-        self.ddm_data_win.add_plot(ddm_vars[0], style='Dots', color=colors[0], size=5)
-        for c, var in zip(colors[1:], ddm_vars[1:]):
+        # self.ddm_data_win.add_plot(ddm_vars[0], style='Dots', color=colors[0], size=5)
+        for c, var in zip(colors, ddm_vars):
             self.ddm_data_win.add_plot(var, style='Dots', color=c, size=5)
 
         self.rmax_data_win = self.add_new_plot_window(title='r_max vs Time',
@@ -717,14 +718,14 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
 
     def get_metabolites_in_cell(self, cell):
         # print(cell.sbml.drug_metabolization['Available1'])
-        l = [cell.sbml.drug_metabolization[x] for x in self.mvars.ddm_vars[1:]]
+        metabolites = [cell.sbml.drug_metabolization[x] for x in self.mvars.ddm_vars[1:]]
         # print(cell.id, l)
-        return l
+        return metabolites
 
     def get_total_metabolites_in_cells(self):
 
         m = [[] for x in self.mvars.ddm_vars[1:]]
-        print(m)
+        # print(m)
         for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING, self.UNINFECTED):
             cm = self.get_metabolites_in_cell(cell)
             for i in range(len(cm)):
@@ -739,8 +740,8 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
         :return None
         """
 
-        # [self.ddm_data_win.add_data_point(x, s_to_mcs * mcs / 60 / 60, self.sbml.drug_dosing_model[x])
-        #  for x in self.mvars.ddm_vars]
+        [self.ddm_control_plot.add_data_point(x, s_to_mcs * mcs / 60 / 60, self.sbml.drug_dosing_control[x])
+         for x in self.mvars.ddm_vars]
 
         self.ddm_data_win.add_data_point('Drug', s_to_mcs * mcs / 60 / 60, self.sbml.drug_dosing_model['Drug'])
 
@@ -749,7 +750,7 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
         for i, x in enumerate(self.mvars.ddm_vars[1:]):
             # print(x, np.sum(total_mets[i]), total_mets[i])
             y = np.sum(total_mets[i])
-            print(y)
+            # print(y)
             self.ddm_data_win.add_data_point(x, s_to_mcs * mcs / 60 / 60, y)
 
         if mcs > first_dose / days_2_mcs or constant_drug_concentration:
@@ -796,8 +797,7 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
         self.__flush_counter += 1
 
     def step(self, mcs):
-        [self.ddm_control_plot.add_data_point(x, s_to_mcs * mcs / 60 / 60, self.sbml.drug_dosing_control[x])
-         for x in self.mvars.ddm_vars]
+
         if self.plot_ddm_data and mcs % plot_ddm_data_freq == 0:
             self.do_plots(mcs)
         if self.write_ddm_data and mcs % write_ddm_data_freq == 0:
