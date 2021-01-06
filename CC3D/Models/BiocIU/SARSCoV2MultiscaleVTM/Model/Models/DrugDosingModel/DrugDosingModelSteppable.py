@@ -542,14 +542,21 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
 
         self.ddm_rr.timestep()
         self.control_rr.timestep()
+        self.do_prodrug_metabolization()
 
         if not sanity_run:
-            self.rmax = self.get_rmax(self.sbml.drug_dosing_model['Available4'])
-            self.shared_steppable_vars['rmax'] = self.rmax
-            self.do_prodrug_metabolization()
+            # self.rmax = self.get_rmax(self.sbml.drug_dosing_model['Available4'])
+            # self.shared_steppable_vars['rmax'] = self.rmax
+
             for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING, self.UNINFECTED):
                 self.timestep_cell_sbml('drug_metabolization', cell)
-
+                
+                cell.dict['rmax'] = self.get_rmax(cell.sbml.drug_metabolization['Available4'])
+                if cell.type != self.UNINFECTED:
+                    vr_model = getattr(cell.sbml, self.vr_model_name)
+                    vr_model.replicating_rate = cell.dict['rmax']
+                    # print(vr_model.replicating_rate)
+                
                 time = cell.sbml.drug_metabolization['Time']
             print('time', time, self.sbml.drug_dosing_model['Time'])
 
