@@ -648,7 +648,7 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
         for c, var in zip(colors, ddm_vars):
             self.ddm_data_win.add_plot(var, style='Dots', color=c, size=5)
 
-        self.rmax_data_win = self.add_new_plot_window(title='r_max vs Time',
+        self.rmax_data_win = self.add_new_plot_window(title='Mean r_max vs Time',
                                                       x_axis_title='Time (hours)',
                                                       y_axis_title='r_max',
                                                       x_scale_type='linear',
@@ -741,6 +741,11 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
 
         return m
 
+    def get_mean_std_rmax(self):
+        rmax_list = [cell.dict['rmax'] for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING,
+                                                                          self.UNINFECTED)]
+        return np.mean(rmax_list), np.std(rmax_list)
+
     def do_plots(self, mcs):
         """
         :parameter mcs
@@ -761,7 +766,8 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
             self.ddm_data_win.add_data_point(x, s_to_mcs * mcs / 60 / 60, y)
 
         if mcs > first_dose / days_2_mcs or constant_drug_concentration:
-            self.rmax_data_win.add_data_point('rmax', s_to_mcs * mcs / 60 / 60, self.shared_steppable_vars['rmax'])
+            mean, _ = self.get_mean_std_rmax()
+            self.rmax_data_win.add_data_point('rmax', s_to_mcs * mcs / 60 / 60, mean)
 
         rna_list = self.get_rna_array()
 
@@ -773,7 +779,9 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
             time = mcs - self.shared_steppable_vars['pre_sim_time']
         else:
             time = mcs
-        self.ddm_data['ddm_rmax_data'][time] = [self.shared_steppable_vars['rmax']]
+        mean, _ = self.get_mean_std_rmax()
+        # self.ddm_data['ddm_rmax_data'][time] = [self.shared_steppable_vars['rmax']]
+        self.ddm_data['ddm_rmax_data'][time] = [mean]
 
         self.ddm_data['ddm_data'][time] = [self.sbml.drug_dosing_model[x] for x in self.mvars.ddm_vars]
 
