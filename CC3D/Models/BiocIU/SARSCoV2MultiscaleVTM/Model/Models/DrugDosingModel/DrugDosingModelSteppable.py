@@ -463,7 +463,7 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
             print(self.sbml.drug_dosing_model['Drug'])
             if self.sbml.drug_dosing_model['Drug'] < 0:
                 self.sbml.drug_dosing_model['Drug'] = 0
-            return
+            return 0
         if not diffusing_drug:
 
             # for non-diffusing drug (aka, an scalar) the calculation of uptake goes as follows:
@@ -486,7 +486,9 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
                     cell.sbml.drug_metabolization['Available1'] += u
                     # print(cell.id, cell.sbml.drug_metabolization['Available1'])
                     self.sbml.drug_dosing_model['Drug'] -= u
+
             else:
+                total = self.sbml.drug_dosing_model['Drug']
                 u = self.sbml.drug_dosing_model['Drug'] / len(self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING,
                                                                                      self.UNINFECTED))
                 # print('equal uptake = ', u)
@@ -496,11 +498,11 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
 
         else:
             # regular cc3d uptake
-            secretor = self.get_field_secretor("prodrug")
+            secreter = self.get_field_secretor("prodrug")
             total = 0
             for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING, self.UNINFECTED):
                 rate = days_2_mcs * cell.sbml.drug_metabolization['k0']
-                uptake = secretor.uptakeInsideCellTotalCount(cell, 9e99, rate)  # uptake at rate 'rate' without max
+                uptake = secreter.uptakeInsideCellTotalCount(cell, 9e99, rate)  # uptake at rate 'rate' without max
                 # value for uptake (9e99)
                 cell.sbml.drug_metabolization['Available1'] += abs(uptake.tot_amount)
                 total += abs(uptake.tot_amount)
@@ -508,7 +510,7 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
         print('control:', self.sbml.drug_dosing_control['Drug'], days_2_mcs * self.sbml.drug_dosing_control['J0'])
         print('result/control:', self.sbml.drug_dosing_model['Drug'] / self.sbml.drug_dosing_control['Drug'],
               total / (days_2_mcs * self.sbml.drug_dosing_control['J0']))
-        return
+        return total
 
     def step(self, mcs):
 
@@ -542,21 +544,21 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
 
         self.ddm_rr.timestep()
         self.control_rr.timestep()
-        self.do_prodrug_metabolization()
-
+        remdesivir_upt_tot = self.do_prodrug_metabolization()
+        self.shared_steppable_vars['remdesivir_upt_tot'] = remdesivir_upt_tot
         if not sanity_run:
             # self.rmax = self.get_rmax(self.sbml.drug_dosing_model['Available4'])
             # self.shared_steppable_vars['rmax'] = self.rmax
 
             for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING, self.UNINFECTED):
                 self.timestep_cell_sbml('drug_metabolization', cell)
-                
+
                 cell.dict['rmax'] = self.get_rmax(cell.sbml.drug_metabolization['Available4'])
                 if cell.type != self.UNINFECTED:
                     vr_model = getattr(cell.sbml, self.vr_model_name)
                     vr_model.replicating_rate = cell.dict['rmax']
                     # print(vr_model.replicating_rate)
-                
+
                 time = cell.sbml.drug_metabolization['Time']
             print('time', time, self.sbml.drug_dosing_model['Time'])
 
@@ -699,7 +701,6 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
         self.get_rna_array = self.mvars.get_rna_array
         if self.plot_ddm_data:
             self.init_plots()
-
 
         if self.write_ddm_data:
             self.init_writes()
