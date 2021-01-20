@@ -65,50 +65,111 @@ def set_default_ddm_string(_init_drug, _init_avail1, _init_avail2, _init_avail3,
     """
 
     dosingmodel_str = '''
+    model dosingmodel()
+    //Time is in days!
+    
+    //infusion
+    
+    -> Dpls; switch * infusion_amount / one_our // switch = (0,1) to turn on or off, infusion happens over 1h
+    
+    //flow from plasma 
+    
+    Dpls -> ; kE0 * Dpls // elimination
+    
+    Dpls -> Dperi ; kp * Dpls // to periphery 
+    
+    Dpls -> Dlung ; k0 * Dpls
+    
+    // flow from periphery
+    
+    Dperi -> Dpls ; kpp * Dpls // to plasma 
+    
+    // Drug reactions / flow in lung
+    
+    Dlung -> Dpls ; k0 * Dlung
+    
+    Dlung -> Mala ; k12 * Dlung
+    
+    Dlung -> ; kE1 * Dlung
+    
+    // Mala reactions
+    
+    Mala -> Mnmp ; k23 * Mala
+    
+    Mala -> ; kE2 * Mala
+    
+    //Mnmp reactions
+    
+    Mnmp -> Mntp ; k34 * Mnmp
+    Mnmp ->  ; kE3 * Mnmp
+    
+    // Mntp reaction
+    
+    Mntp -> ; kE4 * Mntp
+    
+    //parameters
+    // initial conditions 
+    
+    Dpls = {}
+    
+    Dperi = {}
+    
+    Dlung = {}
+    
+    Mala = {}
+    
+    Mnmp = {}
+    
+    Mntp = {}
+    
+    
+    //utils
+    switch = 0 //turns infusion on/off
+    curr_infu_start = 0 // tracks when current infusion started
+    
+    // rates
+    
+    kp = 0.41195
+    
+    kpp = 0.36502
 
-            model dosingmodel()
+    k0 = 6.3335
+    
+    k12 = 1.2248
+    
+    k23 = 372.61
+    
+    k34 = 181.64
 
-            // Simple cascade model of bioiavailability with multiple metabolites
-            // linear clearance at each stage
-            // All times measured in Days
+    kE0 = 20.253
+    
+    kE1 = 7.81
+    
+    kE2 = 6.0801
+    
+    kE3 = 0.97259
+    
+    kE4 = 0.83115
 
-           // J0: Drug -> Available1 ; k0*Drug ; //Distribution and bioavailability of drug after dosing
-            J0A: Drug -> ; d0*Drug ; // Clearance of drug before bioavailability
-            J1: Available1 -> Available2 ; k1*Available1 ; // Metabolism of drug into metabolite 2
-            J1A: Available1 -> ; d1*Available1 ; // Clearance of drug after bioavailability
-            J2: Available2 -> Available3 ; k2*Available2 ; // Metabolism of drug into metabolite 3
-            J2A: Available2 -> ; d2*Available2 ; // Clearance of metabolite 2 
-            J3: Available3 -> Available4 ; k3*Available3 ; // Metabolism of drug into metabolite 4
-            J3A: Available3 -> ; d3*Available3 ; // Clearance of metabolite 3 
-            J4A: Available4 -> ; d4*Available4 ; // Clearance of metabolite 4
-
-            //Initial values
-            Drug = {} ; 
-            Available1 = {};
-            Available2 = {};
-            Available3 = {};
-            Available4 = {};
-
-            k0 = {}; // bioavailability rate, units /day
-            d0 = {} ; // clearance time, units /day 
-            k1 = {} ; // metabolism of primary drug rate, units /day
-            d1 = {} ; // clearance time, units /day = 4 hours
-            k2 = {} ; // metabolism of secondary product, units /day
-            d2 = {} ; // clearance time, units /day = 4 hours
-            k3 = {} ; // metabolism of tertiary product, units /day
-            d3 = {} ; // clearance time, units /day = 4 hours
-            d4 = {} ; // clearance time, units /day = 4 hours
-
-            first_dose={} ; // time of first dose in days
-            initial_dose = {} ; // initial dose (arbitrary amount)
-            dose_interval = {} ; // time interval between doses in days
-            dose = {} ; //dose of subsequent treatments
-            dose_end = {} // end of treatment day
-
-            E1: at (time - first_dose > 0): Drug=Drug+initial_dose ;
-            E2: at ( (time-first_dose > dose_interval) && (time < dose_end) && sin((((time-first_dose)/dose_interval))*2*pi)>0): Drug=Drug+dose
-            end
-            '''.format(_init_drug, _init_avail1, _init_avail2, _init_avail3, _init_avail4, _k0_rate, _d0_rate, _k1_rate,
+    //constants
+    infusion_amount = 1
+    
+    dose_interval = 1 // time interval between doses in days
+    
+    dose_end = 9999 // end of treatment day
+    
+    one_our = 1/24 
+    
+    first_dose = 0 // time of first dose in days
+    
+    // events
+    
+    E1: at (time - first_dose > 0): switch = 1, curr_infu_start = time ; // starts the first infusion
+    E2: at ( (time-first_dose > dose_interval) && (time < dose_end) && sin((((time-first_dose)/dose_interval))*2*pi)>0): switch = 1, curr_infu_start = time; // starts the subsequent infusions
+    E3: at (time - (one_our + curr_infu_start) > 0): switch = 0 ; // turns infusion off
+    
+    end
+'''.format(_init_drug, _init_avail1, _init_avail2, _init_avail3, _init_avail4, _k0_rate, _d0_rate, _k1_rate,
                        _d1_rate, _k2_rate, _d2_rate, _k3_rate, _d3_rate, _d4_rate, _first_dose, _initial_dose,
                        _dose_interval, _dose, _eot)
 
