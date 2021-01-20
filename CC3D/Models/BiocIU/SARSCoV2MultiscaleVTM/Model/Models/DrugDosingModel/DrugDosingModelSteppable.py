@@ -55,12 +55,35 @@ max(Available4) ~= 2.32417475e-01 x dose + 1.59151098e-08
 
 
 # @staticmethod
-def set_default_ddm_string(_init_drug, _init_avail1, _init_avail2, _init_avail3, _init_avail4,
-                           _k0_rate, _d0_rate, _k1_rate, _d1_rate, _k2_rate, _d2_rate, _k3_rate, _d3_rate,
-                           _d4_rate, _first_dose, _initial_dose, _dose_interval, _dose, _eot):
+def set_default_ddm_string(_init_drug_plasma, _init_drug_periphery, _init_drug_lung, _init_met_alanine, _init_met_NMP,
+                           _init_met_NTP, _double_first_dose, _k_p_rate, _k_p_prime_rate, _k0_rate, _k12_rate,
+                           _k23_rate, _k34_rate, _kE0_rate, _kE1_rate, _kE2_rate, _kE3_rate, _kE4_rate,
+                           _infusion_amount, _dose_interval, _eot, _treatment_start):
     """
     Antimony model string generator for this steppable.
     To change parameters do so on the DrugDosingInputs. Parameter descriptions are also in DrugDosingInputs
+    :param _treatment_start:
+    :param _init_drug_plasma:
+    :param _init_drug_periphery:
+    :param _init_drug_lung:
+    :param _init_met_alanine:
+    :param _init_met_NMP:
+    :param _init_met_NTP:
+    :param _double_first_dose:
+    :param _k_p_rate:
+    :param _k_p_prime_rate:
+    :param _k0_rate:
+    :param _k12_rate:
+    :param _k23_rate:
+    :param _k34_rate:
+    :param _kE0_rate:
+    :param _kE1_rate:
+    :param _kE2_rate:
+    :param _kE3_rate:
+    :param _kE4_rate:
+    :param _infusion_amount:
+    :param _dose_interval:
+    :param _eot:
     :param
     """
 
@@ -136,7 +159,7 @@ def set_default_ddm_string(_init_drug, _init_avail1, _init_avail2, _init_avail3,
     end
 '''.format(_init_drug_plasma, _init_drug_periphery, _init_drug_lung, _init_met_alanine, _init_met_NMP, _init_met_NTP,
            _double_first_dose, _k_p_rate, _k_p_prime_rate, _k0_rate, _k12_rate, _k23_rate, _k34_rate, _kE0_rate,
-           _kE1_rate, _kE2_rate, _kE3_rate, _kE4_rate, _infusion_amount, _dose_interval, _eot, _first_dose)
+           _kE1_rate, _kE2_rate, _kE3_rate, _kE4_rate, _infusion_amount, _dose_interval, _eot, _treatment_start)
 
     drug_dosig_model_vars = ["Drug_pls", "Drug_per", "Drug_lung", "Ala_metabolite", "NMP_metabolite", "NTP_metabolite"]
 
