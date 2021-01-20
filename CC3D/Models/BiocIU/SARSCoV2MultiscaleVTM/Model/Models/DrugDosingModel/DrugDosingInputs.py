@@ -44,54 +44,62 @@ sanity_run = False
 __param_desc__['double_sbml_step'] = 'bool for doing 2 sbmls calls'
 double_sbml_step = False
 
+__param_desc__['double_loading_dose'] = 'bool for having the loading dose be double'
+double_loading_dose = False
+
+__param_desc__['first_dose_doubler'] = 'multiplier to double loading dose'
+first_dose_doubler = 1
+if double_loading_dose:
+    first_dose_doubler = 2
+
 # initial drug concentrations
-__param_desc__['Drug'] = 'Amount of Drug already in the system'
-Drug = 0
+__param_desc__['Drug_pls'] = 'Concentration of Drug already in plasma'
+Drug_pls = 0
 
-__param_desc__['Available1'] = 'Bioavailable drug already in the system'
-Available1 = 0
+__param_desc__['Drug_peri'] = 'Concentration of Drug already in the periphery'
+Drug_peri = 0
 
-__param_desc__['Available2'] = 'bioavailable metabolite 2 already in the system'
-Available2 = 0
+__param_desc__['Drug_lung'] = 'Concentration of Drug already in the lungs'
+Drug_lung = 0
 
-__param_desc__['Available3'] = 'bioavailable metabolite 3 already in the system'
-Available3 = 0
+__param_desc__['Ala_met'] = 'Concentration of alanine metabolite already in the system'
+Ala_met = 0
 
-__param_desc__['Available4'] = 'bioavailable metabolite 4 already in the system'
-Available4 = 0
+__param_desc__['NMP_met'] = 'Concentration of NMP metabolite already in the system'
+NMP_met = 0
+
+__param_desc__['NTP_met'] = 'Concentration of NTP metabolite already in the system'
+NTP_met = 0
 
 # rates
-# rates matched to pk of remdesivir
-__param_desc__['k0'] = 'bioavailability rate, units /day. 100/day <-> 15 minutes'
-k0 = 10.0
+__param_desc__['kp'] = 'rate of remdesivir from plasma to periphery, units /day'
+kp = 0.41195
 
-__param_desc__['d0'] = 'clearance time of drug, units /day'
-d0 = 16.635
+__param_desc__['kpp'] = 'rate of remdesivir from periphery to plasma, units /day'
+kpp = 0.36502
 
-__param_desc__['k1'] = 'metabolism of primary drug rate, units /day'
-k1 = 1.0
+__param_desc__['k0'] = 'reversible lung-plasma rate, units /day'
+k0 = 6.3335
 
-__param_desc__['d1'] = 'clearance time of avail1, units /day'
-d1 = 8.317
+__param_desc__['k12'] = 'drug -> metabolite alanine rate, units /day'
+k12 = 10.0
 
-__param_desc__['k2'] = 'metabolism of secondary product, units /day'
-k2 = 989.6
+__param_desc__['k23'] = 'metabolite alanine -> metabolite NMP rate, units /day'
+k23 = 10.0
 
-__param_desc__['d2'] = 'clearance time of avail2, units /day'
-d2 = 8.317
+__param_desc__['k34'] = 'metabolite NMP -> metabolite NTP rate, units /day'
+k34 = 10.0
 
-__param_desc__['k3'] = 'metabolism of tertiary product, units /day'
-k3 = 158.4
-
-__param_desc__['d3'] = 'clearance time of avail3, units /day'
-d3 = 0.693
-
-__param_desc__['active_metabolite_half_life'] = 'half life of active metabolite, available 4, in days. from ' \
-                                                'https://doi.org/10.1111/cts.12840 '
-active_metabolite_half_life = 22 / 24  # NOT USED. range from 17.2 to 26.9h
-
-__param_desc__['d4'] = 'clearance time of avail4, units /day'
-d4 = 0.693
+__param_desc__['kE0'] = 'elimination rate of drug from plasma, units /day'
+kE0 = 16.635
+__param_desc__['kE1'] = 'elimination rate of drug from lungs, units /day'
+kE1 = 16.635
+__param_desc__['kE2'] = 'elimination rate of metabolite alanine, units /day'
+kE2 = 16.635
+__param_desc__['kE3'] = 'elimination rate of metabolite NMP, units /day'
+kE3 = 16.635
+__param_desc__['kE4'] = 'elimination rate of metabolite NTP, units /day'
+kE4 = 16.635
 
 # dosing
 __param_desc__['first_dose'] = 'time of first dose in days'
