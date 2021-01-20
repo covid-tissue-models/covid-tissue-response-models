@@ -562,9 +562,9 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
                 time = cell.sbml.drug_metabolization['Time']
             print('time', time, self.sbml.drug_dosing_model['Time'])
 
-        for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING):
-            vr_model = getattr(cell.sbml, self.vr_model_name)
-            vr_model.replicating_rate = self.rmax
+        # for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING):
+        #     vr_model = getattr(cell.sbml, self.vr_model_name)
+        #     vr_model.replicating_rate = self.rmax
 
             # ViralInfectionVTMLib.step_sbml_model_cell(cell=cell)
 
