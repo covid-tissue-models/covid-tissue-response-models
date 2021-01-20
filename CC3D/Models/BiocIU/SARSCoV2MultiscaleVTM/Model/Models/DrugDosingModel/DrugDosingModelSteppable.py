@@ -68,112 +68,77 @@ def set_default_ddm_string(_init_drug, _init_avail1, _init_avail2, _init_avail3,
     model dosingmodel()
     //Time is in days!
     
-    //infusion
-    
-    -> Dpls; switch * infusion_amount / one_our // switch = (0,1) to turn on or off, infusion happens over 1h
-    
-    //flow from plasma 
-    
-    Dpls -> ; kE0 * Dpls // elimination
-    
-    Dpls -> Dperi ; kp * Dpls // to periphery 
-    
+    //infusion    
+    -> Dpls; switch * infusion_amount / one_our // switch = (0,1) to turn on or off, infusion happens over 1h    
+    //flow from plasma     
+    Dpls -> ; kE0 * Dpls // elimination    
+    Dpls -> Dperi ; kp * Dpls // to periphery     
     Dpls -> Dlung ; k0 * Dpls
+        
+    // flow from periphery    
+    Dperi -> Dpls ; kpp * Dpls // to plasma     
     
-    // flow from periphery
-    
-    Dperi -> Dpls ; kpp * Dpls // to plasma 
-    
-    // Drug reactions / flow in lung
-    
-    Dlung -> Dpls ; k0 * Dlung
-    
-    Dlung -> Mala ; k12 * Dlung
-    
+    // Drug reactions / flow in lung    
+    Dlung -> Dpls ; k0 * Dlung    
+    Dlung -> Mala ; k12 * Dlung    
     Dlung -> ; kE1 * Dlung
     
-    // Mala reactions
-    
-    Mala -> Mnmp ; k23 * Mala
-    
+    // Mala reactions    
+    Mala -> Mnmp ; k23 * Mala    
     Mala -> ; kE2 * Mala
     
-    //Mnmp reactions
-    
+    //Mnmp reactions    
     Mnmp -> Mntp ; k34 * Mnmp
     Mnmp ->  ; kE3 * Mnmp
     
-    // Mntp reaction
-    
+    // Mntp reaction    
     Mntp -> ; kE4 * Mntp
     
     //parameters
-    // initial conditions 
-    
-    Dpls = {}
-    
-    Dperi = {}
-    
-    Dlung = {}
-    
-    Mala = {}
-    
-    Mnmp = {}
-    
-    Mntp = {}
-    
+    // initial conditions     
+    Dpls = {}    
+    Dperi = {}    
+    Dlung = {}    
+    Mala = {}    
+    Mnmp = {}    
+    Mntp = {}    
     
     //utils
     switch = 0 //turns infusion on/off
     curr_infu_start = 0 // tracks when current infusion started
+    double_first_dose = {}
     
-    // rates
+    // rates    
+    kp = {}    
+    kpp = {}
+    k0 = {}    
+    k12 = {}    
+    k23 = {}    
+    k34 = {}
+    kE0 = {}    
+    kE1 = {}    
+    kE2 = {}    
+    kE3 = {}    
+    kE4 = {}
     
-    kp = 0.41195
-    
-    kpp = 0.36502
-
-    k0 = 6.3335
-    
-    k12 = 1.2248
-    
-    k23 = 372.61
-    
-    k34 = 181.64
-
-    kE0 = 20.253
-    
-    kE1 = 7.81
-    
-    kE2 = 6.0801
-    
-    kE3 = 0.97259
-    
-    kE4 = 0.83115
-
     //constants
-    infusion_amount = 1
+    infusion_amount = {}    
+    dose_interval = {} // time interval between doses in days    
+    dose_end = {} // end of treatment day    
+    one_our = 1/24     
+    first_dose = {} // time of first dose in days
     
-    dose_interval = 1 // time interval between doses in days
-    
-    dose_end = 9999 // end of treatment day
-    
-    one_our = 1/24 
-    
-    first_dose = 0 // time of first dose in days
-    
-    // events
-    
+    // events    
     E1: at (time - first_dose > 0): switch = 1, curr_infu_start = time ; // starts the first infusion
     E2: at ( (time-first_dose > dose_interval) && (time < dose_end) && sin((((time-first_dose)/dose_interval))*2*pi)>0): switch = 1, curr_infu_start = time; // starts the subsequent infusions
     E3: at (time - (one_our + curr_infu_start) > 0): switch = 0 ; // turns infusion off
     
     end
-'''.format(_init_drug, _init_avail1, _init_avail2, _init_avail3, _init_avail4, _k0_rate, _d0_rate, _k1_rate,
-                       _d1_rate, _k2_rate, _d2_rate, _k3_rate, _d3_rate, _d4_rate, _first_dose, _initial_dose,
-                       _dose_interval, _dose, _eot)
+'''.format(_init_drug_plasma, _init_drug_periphery, _init_drug_lung, _init_met_alanine, _init_met_NMP, _init_met_NTP,
+           _double_first_dose, _k_p_rate, _k_p_prime_rate, _k0_rate, _k12_rate, _k23_rate, _k34_rate, _kE0_rate,
+           _kE1_rate, _kE2_rate, _kE3_rate, _kE4_rate, _infusion_amount, _dose_interval, _eot, _first_dose)
 
-    drug_dosig_model_vars = ["Drug", "Available1", "Available2", "Available3", "Available4"]
+    drug_dosig_model_vars = ["Drug_pls", "Drug_per", "Drug_lung", "Ala_metabolite", "NMP_metabolite", "NTP_metabolite"]
 
     return dosingmodel_str, drug_dosig_model_vars
 
@@ -627,7 +592,7 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
         #     vr_model = getattr(cell.sbml, self.vr_model_name)
         #     vr_model.replicating_rate = self.rmax
 
-            # ViralInfectionVTMLib.step_sbml_model_cell(cell=cell)
+        # ViralInfectionVTMLib.step_sbml_model_cell(cell=cell)
 
     def get_rna_array(self):
         return np.array([cell.dict['Replicating'] for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING,
