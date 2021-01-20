@@ -152,7 +152,7 @@ def set_default_ddm_string(_init_drug_plasma, _init_drug_periphery, _init_drug_l
     first_dose = {} // time of first dose in days
     
     // events    
-    E1: at (time - first_dose > 0): switch = 1, curr_infu_start = time ; // starts the first infusion
+    E1: at (time - first_dose > 0): switch = 1*double_first_dose, curr_infu_start = time ; // starts the first infusion
     E2: at ( (time-first_dose > dose_interval) && (time < dose_end) && sin((((time-first_dose)/dose_interval))*2*pi)>0): switch = 1, curr_infu_start = time; // starts the subsequent infusions
     E3: at (time - (one_our + curr_infu_start) > 0): switch = 0 ; // turns infusion off
     
