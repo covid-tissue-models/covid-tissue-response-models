@@ -103,29 +103,13 @@ def set_default_ddm_string(_init_drug_plasma, _init_drug_periphery, _init_drug_l
     
     // Drug reactions / flow in lung    
     Dlung -> Dpls ; k0 * Dlung    
-    //Dlung -> Mala ; k12 * Dlung    
     Dlung -> ; kE1 * Dlung
-    
-    // Mala reactions    
-    Mala -> Mnmp ; k23 * Mala    
-    Mala -> ; kE2 * Mala
-    
-    //Mnmp reactions    
-    Mnmp -> Mntp ; k34 * Mnmp
-    Mnmp ->  ; kE3 * Mnmp
-    
-    // Mntp reaction    
-    Mntp -> ; kE4 * Mntp
-    
     //parameters
     // initial conditions     
     Dpls = {}    
     Dperi = {}    
     Dlung = {}    
-    Mala = {}    
-    Mnmp = {}    
-    Mntp = {}    
-    
+ 
     //utils
     switch = 0 //turns infusion on/off
     curr_infu_start = 0 // tracks when current infusion started
@@ -134,16 +118,11 @@ def set_default_ddm_string(_init_drug_plasma, _init_drug_periphery, _init_drug_l
     // rates    
     kp = {}    
     kpp = {}
-    k0 = {}    
-    k12 = {}    
-    k23 = {}    
-    k34 = {}
+    k0 = {}   
+    
     kE0 = {}    
     kE1 = {}    
-    kE2 = {}    
-    kE3 = {}    
-    kE4 = {}
-    
+        
     //constants
     infusion_amount = {}    
     dose_interval = {} // time interval between doses in days    
@@ -157,9 +136,9 @@ def set_default_ddm_string(_init_drug_plasma, _init_drug_periphery, _init_drug_l
     E3: at (time - (one_our + curr_infu_start) > 0): switch = 0 ; // turns infusion off
     
     end
-'''.format(_init_drug_plasma, _init_drug_periphery, _init_drug_lung, _init_met_alanine, _init_met_NMP, _init_met_NTP,
-           _double_first_dose, _k_p_rate, _k_p_prime_rate, _k0_rate, _k12_rate, _k23_rate, _k34_rate, _kE0_rate,
-           _kE1_rate, _kE2_rate, _kE3_rate, _kE4_rate, _infusion_amount, _dose_interval, _eot, _treatment_start)
+'''.format(_init_drug_plasma, _init_drug_periphery, _init_drug_lung,
+           _double_first_dose, _k_p_rate, _k_p_prime_rate, _k0_rate,  _kE0_rate,
+           _kE1_rate,  _infusion_amount, _dose_interval, _eot, _treatment_start)
 
     drug_dosig_model_vars = ["Drug_pls", "Drug_per", "Drug_lung", "Ala_metabolite", "NMP_metabolite", "NTP_metabolite"]
 
