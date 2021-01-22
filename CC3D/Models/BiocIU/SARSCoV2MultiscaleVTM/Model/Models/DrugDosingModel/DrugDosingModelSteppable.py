@@ -138,7 +138,7 @@ def set_default_ddm_string(_init_drug_plasma, _init_drug_periphery, _init_drug_l
            _double_first_dose, _k_p_rate, _k_p_prime_rate, _k0_rate, _kE0_rate,
            _kE1_rate, _infusion_amount, _dose_interval, _eot, _treatment_start)
 
-    drug_dosig_model_vars = ["Drug_pls", "Drug_per", "Drug_lung", "Ala_metabolite", "NMP_metabolite", "NTP_metabolite"]
+    drug_dosig_model_vars = ["Dpls", "Dperi", "Dlung", "Mala", "Mnmp", "Mntp"]
 
     return dosingmodel_str, drug_dosig_model_vars
 
@@ -577,7 +577,7 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
                 cell.sbml.drug_metabolization['Mala'] += abs(uptake.tot_amount)
                 total += abs(uptake.tot_amount)
         print('result:', self.sbml.drug_dosing_model['Dlung'], total)
-        
+
         print('control:', self.sbml.drug_dosing_control['Dlung'], days_2_mcs * self.sbml.drug_dosing_control['J6'])
         print('result/control:', self.sbml.drug_dosing_model['Dlung'] / self.sbml.drug_dosing_control['Dlung'],
               total / (days_2_mcs * self.sbml.drug_dosing_control['J6']))
@@ -683,7 +683,7 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
 
     def __init__(self, frequency=1):
         ViralInfectionVTMSteppableBasePy.__init__(self, frequency)
-        # import Models.DrugDosingModel.DrugDosingInputs as DrugDosingInputs
+
         self.track_cell_level_scalar_attribute(field_name='internal_viral_RNA', attribute_name='Replicating')
 
         self.mvars = None
@@ -702,12 +702,16 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
         self.total_rna_plot = None
         self.mean_rna_plot = None
 
+        self.total_virus_released = 0
+
         self.__flush_counter = 1
 
         if self.write_ddm_data:
             self.data_files = {'ddm_data': 'ddm_data.dat', 'ddm_rmax_data': 'ddm_rmax_data.dat',
-                               'ddm_tot_RNA_data': 'ddm_tot_RNA_data.dat', 'ddm_mean_RNA_data': 'ddm_mean_RNA_data.dat'}
-            self.ddm_data = {'ddm_data': {}, 'ddm_rmax_data': {}, 'ddm_tot_RNA_data': {}, 'ddm_mean_RNA_data': {}}
+                               'ddm_tot_RNA_data': 'ddm_tot_RNA_data.dat', 'ddm_mean_RNA_data': 'ddm_mean_RNA_data.dat',
+                               'ddm_total_viral_production_data': 'ddm_total_viral_production_data.dat'}
+            self.ddm_data = {'ddm_data': {}, 'ddm_rmax_data': {}, 'ddm_tot_RNA_data': {}, 'ddm_mean_RNA_data': {},
+                             'ddm_total_viral_production_data': {}}
 
     def init_plots(self):
         self.ddm_data_win = self.add_new_plot_window(title='Drug dosing model',
@@ -726,7 +730,7 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
                                                          grid=True,
                                                          config_options={'legend': True})
 
-        colors = ['blue', 'red', 'green', 'yellow', 'white']
+        colors = ['blue', 'red', 'green', 'yellow', 'white', 'magenta']
         ddm_vars = self.mvars.ddm_vars
         for c, var in zip(colors, ddm_vars):
             self.ddm_data_win.add_plot(var, style='Dots', color=c, size=5)
@@ -848,6 +852,7 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
         self.mean_rna_plot.add_data_point('RNA_mean', s_to_mcs * mcs / 60 / 60, np.mean(rna_list))
 
     def do_writes(self, mcs):
+
         if prophylactic_treatment and mcs == 0:
             time = mcs - self.shared_steppable_vars['pre_sim_time']
         else:
@@ -863,6 +868,8 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
 
             self.ddm_data['ddm_tot_RNA_data'][mcs] = [np.sum(rna_list)]
             self.ddm_data['ddm_mean_RNA_data'][mcs] = [np.mean(rna_list)]
+
+            self.ddm_data['ddm_total_viral_production_data'][mcs] = self.total_virus_released
 
         if mcs >= int(self.simulator.getNumSteps() / 4 * self.__flush_counter):
             self.flush_stored_outputs()
@@ -885,7 +892,7 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
         self.__flush_counter += 1
 
     def step(self, mcs):
-
+        self.total_virus_released += self.shared_steppable_vars['total_virus_release_this_mcs']
         if self.plot_ddm_data and mcs % plot_ddm_data_freq == 0:
             self.do_plots(mcs)
         if self.write_ddm_data and mcs % write_ddm_data_freq == 0:
