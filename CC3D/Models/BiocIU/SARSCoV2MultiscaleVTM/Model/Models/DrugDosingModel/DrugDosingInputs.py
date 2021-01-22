@@ -1,6 +1,18 @@
 from numpy import log
+from .rate_sets import set_importer
+
+rate_sets_dict = set_importer.import_sets_as_dict()
 
 __param_desc__ = {}
+
+# what rates set to use
+
+__param_desc__['set_numb'] = 'chooses which rates to use'
+set_numb = 1
+
+set_name = 'set' + str(set_numb)
+
+rs = rate_sets_dict[set_name]  # rates now can be accessed by rs.rate
 
 # remdesivir metabolites names
 
@@ -73,33 +85,33 @@ NTP_met = 0
 
 # rates
 __param_desc__['kp'] = 'rate of remdesivir from plasma to periphery, units /day'
-kp = 0.41195
+kp = rs.kp
 
 __param_desc__['kpp'] = 'rate of remdesivir from periphery to plasma, units /day'
-kpp = 0.36502
+kpp = rs.kpp
 
 __param_desc__['k0'] = 'reversible lung-plasma rate, units /day'
-k0 = 6.3335
+k0 = rs.k0
 
 __param_desc__['k12'] = 'drug -> metabolite alanine rate, units /day'
-k12 = 10.0
+k12 = rs.k12
 
 __param_desc__['k23'] = 'metabolite alanine -> metabolite NMP rate, units /day'
-k23 = 10.0
+k23 = rs.k23
 
 __param_desc__['k34'] = 'metabolite NMP -> metabolite NTP rate, units /day'
-k34 = 10.0
+k34 = rs.k34
 
 __param_desc__['kE0'] = 'elimination rate of drug from plasma, units /day'
-kE0 = 16.635
+kE0 = rs.kE0
 __param_desc__['kE1'] = 'elimination rate of drug from lungs, units /day'
-kE1 = 16.635
+kE1 = rs.kE1
 __param_desc__['kE2'] = 'elimination rate of metabolite alanine, units /day'
-kE2 = 16.635
+kE2 = rs.kE2
 __param_desc__['kE3'] = 'elimination rate of metabolite NMP, units /day'
-kE3 = 16.635
+kE3 = rs.kE3
 __param_desc__['kE4'] = 'elimination rate of metabolite NTP, units /day'
-kE4 = 16.635
+kE4 = rs.kE4
 
 # dosing
 __param_desc__['first_dose'] = 'time of first dose in days'
