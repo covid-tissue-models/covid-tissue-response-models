@@ -802,7 +802,7 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
 
     def get_metabolites_in_cell(self, cell):
         # print(cell.sbml.drug_metabolization['Available1'])
-        metabolites = [cell.sbml.drug_metabolization[x] for x in self.mvars.ddm_vars[1:]]
+        metabolites = [cell.sbml.drug_metabolization[x] for x in self.mvars.ddm_vars[3:]]
         # print(cell.id, l)
         return metabolites
 
@@ -836,7 +836,7 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
 
         total_mets = self.get_total_metabolites_in_cells()
 
-        for i, x in enumerate(self.mvars.ddm_vars[1:]):
+        for i, x in enumerate(self.mvars.ddm_vars[3:]):
             # print(x, np.sum(total_mets[i]), total_mets[i])
             y = np.sum(total_mets[i])
             # print(y)
@@ -851,6 +851,15 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
         self.total_rna_plot.add_data_point('RNA_tot', s_to_mcs * mcs / 60 / 60, np.sum(rna_list))
         self.mean_rna_plot.add_data_point('RNA_mean', s_to_mcs * mcs / 60 / 60, np.mean(rna_list))
 
+    def get_ddm_data_list(self):
+
+        d = [self.sbml.drug_dosing_model[x] for x in self.mvars.ddm_vars[:3]]
+
+        total_mets = self.get_total_metabolites_in_cells()
+        for m in total_mets:
+            d.append(np.sum(m))
+        return d
+
     def do_writes(self, mcs):
 
         if prophylactic_treatment and mcs == 0:
@@ -861,7 +870,7 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
         # self.ddm_data['ddm_rmax_data'][time] = [self.shared_steppable_vars['rmax']]
         self.ddm_data['ddm_rmax_data'][time] = [mean]
 
-        self.ddm_data['ddm_data'][time] = [self.sbml.drug_dosing_model[x] for x in self.mvars.ddm_vars]
+        self.ddm_data['ddm_data'][time] = self.get_ddm_data_list()
 
         if time >= 0:
             rna_list = self.get_rna_array()
