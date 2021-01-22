@@ -37,8 +37,6 @@ drug_dosing_model_key = "drug_dose_steppable"
 
 days_2_mcs = s_to_mcs / 60 / 60 / 24
 
-# todo: name the rates in the sbmls
-
 '''
 with the default parameters (k0 = 100.0; d0 = 1.0; k1 = 25.0; d1 = 6.0; k2 = 25.0; d2 = 6.0; k3 = 25.0; d3 = 6.0; 
 d4 = 6.0) max(Available4) is a linear function of dose following:
@@ -579,10 +577,10 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
                 cell.sbml.drug_metabolization['Mala'] += abs(uptake.tot_amount)
                 total += abs(uptake.tot_amount)
         print('result:', self.sbml.drug_dosing_model['Dlung'], total)
-        # todo: after naming transitions change the J0
-        print('control:', self.sbml.drug_dosing_control['Dlung'], days_2_mcs * self.sbml.drug_dosing_control['J0'])
+        
+        print('control:', self.sbml.drug_dosing_control['Dlung'], days_2_mcs * self.sbml.drug_dosing_control['J6'])
         print('result/control:', self.sbml.drug_dosing_model['Dlung'] / self.sbml.drug_dosing_control['Dlung'],
-              total / (days_2_mcs * self.sbml.drug_dosing_control['J0']))
+              total / (days_2_mcs * self.sbml.drug_dosing_control['J6']))
         return total
 
     def step(self, mcs):
