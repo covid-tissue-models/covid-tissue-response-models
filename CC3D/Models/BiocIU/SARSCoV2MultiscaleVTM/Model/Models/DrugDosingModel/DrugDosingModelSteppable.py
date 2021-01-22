@@ -137,8 +137,8 @@ def set_default_ddm_string(_init_drug_plasma, _init_drug_periphery, _init_drug_l
     
     end
 '''.format(_init_drug_plasma, _init_drug_periphery, _init_drug_lung,
-           _double_first_dose, _k_p_rate, _k_p_prime_rate, _k0_rate,  _kE0_rate,
-           _kE1_rate,  _infusion_amount, _dose_interval, _eot, _treatment_start)
+           _double_first_dose, _k_p_rate, _k_p_prime_rate, _k0_rate, _kE0_rate,
+           _kE1_rate, _infusion_amount, _dose_interval, _eot, _treatment_start)
 
     drug_dosig_model_vars = ["Drug_pls", "Drug_per", "Drug_lung", "Ala_metabolite", "NMP_metabolite", "NTP_metabolite"]
 
@@ -146,9 +146,9 @@ def set_default_ddm_string(_init_drug_plasma, _init_drug_periphery, _init_drug_l
 
 
 def full_ddm_for_testing(_init_drug_plasma, _init_drug_periphery, _init_drug_lung, _init_met_alanine, _init_met_NMP,
-                           _init_met_NTP, _double_first_dose, _k_p_rate, _k_p_prime_rate, _k0_rate, _k12_rate,
-                           _k23_rate, _k34_rate, _kE0_rate, _kE1_rate, _kE2_rate, _kE3_rate, _kE4_rate,
-                           _infusion_amount, _dose_interval, _eot, _treatment_start):
+                         _init_met_NTP, _double_first_dose, _k_p_rate, _k_p_prime_rate, _k0_rate, _k12_rate,
+                         _k23_rate, _k34_rate, _kE0_rate, _kE1_rate, _kE2_rate, _kE3_rate, _kE4_rate,
+                         _infusion_amount, _dose_interval, _eot, _treatment_start):
     dosingmodel_str = '''
     model dosingmodel()
     //Time is in days!
@@ -229,9 +229,9 @@ def full_ddm_for_testing(_init_drug_plasma, _init_drug_periphery, _init_drug_lun
 
 
 def set_cst_drug_ddm_string(_init_drug_plasma, _init_drug_periphery, _init_drug_lung, _init_met_alanine, _init_met_NMP,
-                           _init_met_NTP, _double_first_dose, _k_p_rate, _k_p_prime_rate, _k0_rate, _k12_rate,
-                           _k23_rate, _k34_rate, _kE0_rate, _kE1_rate, _kE2_rate, _kE3_rate, _kE4_rate,
-                           _infusion_amount, _dose_interval, _eot, _treatment_start):
+                            _init_met_NTP, _double_first_dose, _k_p_rate, _k_p_prime_rate, _k0_rate, _k12_rate,
+                            _k23_rate, _k34_rate, _kE0_rate, _kE1_rate, _kE2_rate, _kE3_rate, _kE4_rate,
+                            _infusion_amount, _dose_interval, _eot, _treatment_start):
     dosingmodel_str = '''
     model dosingmodel()
     //Time is in days!
@@ -313,7 +313,6 @@ def set_cst_drug_ddm_string(_init_drug_plasma, _init_drug_periphery, _init_drug_
 
 def set_cell_drug_metabolization(_init_met_alanine, _init_met_NMP, _init_met_NTP,
                                  _k12_rate, _k23_rate, _k34_rate, _kE2_rate, _kE3_rate, _kE4_rate):
-
     """
     Antimony model string generator for drug metabolization in cells.
     To change parameters do so on the DrugDosingInputs. Parameter descriptions are also in DrugDosingInputs
@@ -448,16 +447,14 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
     def start(self):
 
         # set model string
-        self.drug_model_string, self.ddm_vars = self.set_drug_model_string(Drug, Available1, Available2, Available3,
-                                                                           Available4,
-                                                                           k0, d0, k1, d1, k2, d2, k3, d3, d4,
-                                                                           first_dose,
-                                                                           initial_dose, dose_interval, dose, dose_end)
-        self.control_string, _ = self.set_control_model_string(Drug, Available1, Available2, Available3,
-                                                               Available4,
-                                                               k0, d0, k1, d1, k2, d2, k3, d3, d4,
-                                                               first_dose,
-                                                               initial_dose, dose_interval, dose, dose_end)
+        self.drug_model_string, self.ddm_vars = self.set_drug_model_string(
+            Drug_pls, Drug_peri, Drug_lung, Ala_met, NMP_met, NTP_met,
+            first_dose_doubler, kp, kpp, k0, k12, k23, k34, kE0, kE1, kE2, kE3, kE4, dose, dose_interval, dose_end,
+            first_dose)
+        self.control_string, _ = self.set_control_model_string(
+            Drug_pls, Drug_peri, Drug_lung, Ala_met, NMP_met, NTP_met,
+            first_dose_doubler, kp, kpp, k0, k12, k23, k34, kE0, kE1, kE2, kE3, kE4, dose, dose_interval, dose_end,
+            first_dose)
 
         # init sbml
         self.add_free_floating_antimony(model_string=self.drug_model_string, step_size=days_2_mcs,
@@ -468,8 +465,8 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
                                         model_name='drug_dosing_control')
         self.control_rr = self.get_roadrunner_for_single_antimony('drug_dosing_control')
 
-        self.drug_metabolization_string = set_cell_drug_metabolization(Available1, Available2, Available3, Available4,
-                                                                       k0, k1, d1, k2, d2, k3, d3, d4)
+        self.drug_metabolization_string = set_cell_drug_metabolization(Ala_met, NMP_met, NTP_met, k12, k23, k34, kE2,
+                                                                       kE3, kE4)
 
         for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING, self.UNINFECTED):
             self.add_antimony_to_cell(model_string=self.drug_metabolization_string, model_name='drug_metabolization',
@@ -484,7 +481,7 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
         if sanity_run:
             self.rmax = replicating_rate
         else:
-            self.rmax = self.get_rmax(self.sbml.drug_dosing_model['Available4'])
+            self.rmax = self.get_rmax(self.sbml.drug_dosing_control['Mntp'])
 
         self.shared_steppable_vars['rmax'] = self.rmax
 
