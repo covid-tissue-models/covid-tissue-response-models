@@ -212,6 +212,7 @@ class ViralSecretionSteppable(ViralInfectionVTMSteppableBasePy):
         self.vim_steppable = None
 
     def start(self):
+        self.shared_steppable_vars['total_virus_release_this_mcs'] = 0
         if track_model_variables:
             self.track_cell_level_scalar_attribute(field_name='Uptake', attribute_name='Uptake')
             self.track_cell_level_scalar_attribute(field_name='Assembled', attribute_name='Assembled')
@@ -225,6 +226,7 @@ class ViralSecretionSteppable(ViralInfectionVTMSteppableBasePy):
             self.vim_steppable: ViralInternalizationSteppable = \
                 self.shared_steppable_vars[ViralInfectionVTMLib.vim_steppable_key]
 
+        self.shared_steppable_vars['total_virus_release_this_mcs'] = 0
         secretor = self.get_field_secretor("Virus")
         for cell in self.cell_list_by_type(self.UNINFECTED, self.INFECTED, self.VIRUSRELEASING):
 
@@ -241,6 +243,7 @@ class ViralSecretionSteppable(ViralInfectionVTMSteppableBasePy):
             if cell.type == self.VIRUSRELEASING:
                 sec_amount = ViralInfectionVTMLib.get_viral_replication_cell_secretion(cell=cell)
                 secretor.secreteInsideCellTotalCount(cell, sec_amount / cell.volume)
+                self.shared_steppable_vars['total_virus_release_this_mcs'] += sec_amount
 
 
 class ImmuneCellKillingSteppable(ViralInfectionVTMSteppableBasePy):
