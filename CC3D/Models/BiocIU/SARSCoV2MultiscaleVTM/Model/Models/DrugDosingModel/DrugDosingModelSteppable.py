@@ -91,18 +91,19 @@ def set_default_ddm_string(_init_drug_plasma, _init_drug_periphery, _init_drug_l
     //Time is in days!
     
     //infusion    
-    -> Dpls; switch * infusion_amount / one_our // switch = (0,1) to turn on or off, infusion happens over 1h    
+    J0: -> Dpls; switch * infusion_amount / one_our // switch = (0,1) to turn on or off, infusion happens over 1h    
     //flow from plasma     
-    Dpls -> ; kE0 * Dpls // elimination    
-    Dpls -> Dperi ; kp * Dpls // to periphery     
-    Dpls -> Dlung ; k0 * Dpls
+    J1: Dpls -> ; kE0 * Dpls // elimination    
+    J2: Dpls -> Dperi ; kp * Dpls // to periphery     
+    J3: Dpls -> Dlung ; k0 * Dpls
         
     // flow from periphery    
-    Dperi -> Dpls ; kpp * Dpls // to plasma     
+    J4: Dperi -> Dpls ; kpp * Dpls // to plasma     
     
     // Drug reactions / flow in lung    
-    Dlung -> Dpls ; k0 * Dlung    
-    Dlung -> ; kE1 * Dlung
+    J5: Dlung -> Dpls ; k0 * Dlung    
+    //J6: Dlung -> Mala ; k12 * Dlung    
+    J7: Dlung -> ; kE1 * Dlung
     //parameters
     // initial conditions     
     Dpls = {}    
@@ -153,30 +154,30 @@ def full_ddm_for_testing(_init_drug_plasma, _init_drug_periphery, _init_drug_lun
     //Time is in days!
     
     //infusion    
-    -> Dpls; switch * infusion_amount / one_our // switch = (0,1) to turn on or off, infusion happens over 1h    
+    J0: -> Dpls; switch * infusion_amount / one_our // switch = (0,1) to turn on or off, infusion happens over 1h    
     //flow from plasma     
-    Dpls -> ; kE0 * Dpls // elimination    
-    Dpls -> Dperi ; kp * Dpls // to periphery     
-    Dpls -> Dlung ; k0 * Dpls
+    J1: Dpls -> ; kE0 * Dpls // elimination    
+    J2: Dpls -> Dperi ; kp * Dpls // to periphery     
+    J3: Dpls -> Dlung ; k0 * Dpls
         
     // flow from periphery    
-    Dperi -> Dpls ; kpp * Dpls // to plasma     
+    J4: Dperi -> Dpls ; kpp * Dpls // to plasma     
     
     // Drug reactions / flow in lung    
-    Dlung -> Dpls ; k0 * Dlung    
-    Dlung -> Mala ; k12 * Dlung    
-    Dlung -> ; kE1 * Dlung
+    J5: Dlung -> Dpls ; k0 * Dlung    
+    J6: Dlung -> Mala ; k12 * Dlung    
+    J7: Dlung -> ; kE1 * Dlung
     
     // Mala reactions    
-    Mala -> Mnmp ; k23 * Mala    
-    Mala -> ; kE2 * Mala
+    J8: Mala -> Mnmp ; k23 * Mala    
+    J9: Mala -> ; kE2 * Mala
     
     //Mnmp reactions    
-    Mnmp -> Mntp ; k34 * Mnmp
-    Mnmp ->  ; kE3 * Mnmp
+    J10: Mnmp -> Mntp ; k34 * Mnmp
+    J11: Mnmp ->  ; kE3 * Mnmp
     
     // Mntp reaction    
-    Mntp -> ; kE4 * Mntp
+    J12: Mntp -> ; kE4 * Mntp
     
     //parameters
     // initial conditions     
@@ -236,30 +237,30 @@ def set_cst_drug_ddm_string(_init_drug_plasma, _init_drug_periphery, _init_drug_
     //Time is in days!
     
     //infusion    
-    -> Dpls; switch * infusion_amount / one_our // switch = (0,1) to turn on or off, infusion happens over 1h    
+    J0: -> Dpls; switch * infusion_amount / one_our // switch = (0,1) to turn on or off, infusion happens over 1h    
     //flow from plasma     
-    Dpls -> ; kE0 * Dpls // elimination    
-    Dpls -> Dperi ; kp * Dpls // to periphery     
-    Dpls -> Dlung ; k0 * Dpls
+    J1: Dpls -> ; kE0 * Dpls // elimination    
+    J2: Dpls -> Dperi ; kp * Dpls // to periphery     
+    J3: Dpls -> Dlung ; k0 * Dpls
         
     // flow from periphery    
-    Dperi -> Dpls ; kpp * Dpls // to plasma     
+    J4: Dperi -> Dpls ; kpp * Dpls // to plasma     
     
     // Drug reactions / flow in lung    
-    Dlung -> Dpls ; k0 * Dlung    
-    Dlung -> Mala ; k12 * Dlung    
-    Dlung -> ; kE1 * Dlung
+    J5: Dlung -> Dpls ; k0 * Dlung    
+    J6: Dlung -> Mala ; k12 * Dlung    
+    J7: Dlung -> ; kE1 * Dlung
     
     // Mala reactions    
-    Mala -> Mnmp ; k23 * Mala    
-    Mala -> ; kE2 * Mala
+    J8: Mala -> Mnmp ; k23 * Mala    
+    J9: Mala -> ; kE2 * Mala
     
     //Mnmp reactions    
-    Mnmp -> Mntp ; k34 * Mnmp
-    Mnmp ->  ; kE3 * Mnmp
+    J10: Mnmp -> Mntp ; k34 * Mnmp
+    J11: Mnmp ->  ; kE3 * Mnmp
     
     // Mntp reaction    
-    Mntp -> ; kE4 * Mntp
+    J12: Mntp -> ; kE4 * Mntp
     
     //parameters
     // initial conditions     
@@ -331,19 +332,32 @@ def set_cell_drug_metabolization(_init_met_alanine, _init_met_NMP, _init_met_NTP
         model dosingmodel()
         //Time is in days!
     
-        //Dlung -> Mala ; k12 * Dlung    
-
+        //infusion    
+        //J0: -> Dpls; switch * infusion_amount / one_our // switch = (0,1) to turn on or off, infusion happens over 1h    
+        //flow from plasma     
+        //J1: Dpls -> ; kE0 * Dpls // elimination    
+        //J2: Dpls -> Dperi ; kp * Dpls // to periphery     
+        //J3: Dpls -> Dlung ; k0 * Dpls
+            
+        // flow from periphery    
+        //J4: Dperi -> Dpls ; kpp * Dpls // to plasma     
+        
+        // Drug reactions / flow in lung    
+        //J5: Dlung -> Dpls ; k0 * Dlung    
+        //J6: Dlung -> Mala ; k12 * Dlung    
+        //J7: Dlung -> ; kE1 * Dlung
+        
         // Mala reactions    
-        Mala -> Mnmp ; k23 * Mala    
-        Mala -> ; kE2 * Mala
-
+        J8: Mala -> Mnmp ; k23 * Mala    
+        J9: Mala -> ; kE2 * Mala
+        
         //Mnmp reactions    
-        Mnmp -> Mntp ; k34 * Mnmp
-        Mnmp ->  ; kE3 * Mnmp
-
+        J10: Mnmp -> Mntp ; k34 * Mnmp
+        J11: Mnmp ->  ; kE3 * Mnmp
+        
         // Mntp reaction    
-        Mntp -> ; kE4 * Mntp
-
+        J12: Mntp -> ; kE4 * Mntp
+        
         //parameters
         // initial conditions     
         
