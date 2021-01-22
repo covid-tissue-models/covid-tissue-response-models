@@ -103,7 +103,7 @@ def set_default_ddm_string(_init_drug_plasma, _init_drug_periphery, _init_drug_l
     
     // Drug reactions / flow in lung    
     Dlung -> Dpls ; k0 * Dlung    
-    Dlung -> Mala ; k12 * Dlung    
+    //Dlung -> Mala ; k12 * Dlung    
     Dlung -> ; kE1 * Dlung
     
     // Mala reactions    
