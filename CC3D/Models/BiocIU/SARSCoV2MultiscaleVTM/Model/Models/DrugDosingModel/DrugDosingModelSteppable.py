@@ -166,193 +166,227 @@ def set_default_ddm_string(_init_drug_plasma, _init_drug_periphery, _init_drug_l
     return dosingmodel_str, drug_dosig_model_vars
 
 
-def full_ddm_for_testing(_init_drug, _init_avail1, _init_avail2, _init_avail3, _init_avail4,
-                         _k0_rate, _d0_rate, _k1_rate, _d1_rate, _k2_rate, _d2_rate, _k3_rate, _d3_rate,
-                         _d4_rate, _first_dose, _initial_dose, _dose_interval, _dose, _eot):
-    """
-    Antimony model string generator for this steppable.
-    To change parameters do so on the DrugDosingInputs. Parameter descriptions are also in DrugDosingInputs
-    :param
-    """
-
+def full_ddm_for_testing(_init_drug_plasma, _init_drug_periphery, _init_drug_lung, _init_met_alanine, _init_met_NMP,
+                           _init_met_NTP, _double_first_dose, _k_p_rate, _k_p_prime_rate, _k0_rate, _k12_rate,
+                           _k23_rate, _k34_rate, _kE0_rate, _kE1_rate, _kE2_rate, _kE3_rate, _kE4_rate,
+                           _infusion_amount, _dose_interval, _eot, _treatment_start):
     dosingmodel_str = '''
+    model dosingmodel()
+    //Time is in days!
+    
+    //infusion    
+    -> Dpls; switch * infusion_amount / one_our // switch = (0,1) to turn on or off, infusion happens over 1h    
+    //flow from plasma     
+    Dpls -> ; kE0 * Dpls // elimination    
+    Dpls -> Dperi ; kp * Dpls // to periphery     
+    Dpls -> Dlung ; k0 * Dpls
+        
+    // flow from periphery    
+    Dperi -> Dpls ; kpp * Dpls // to plasma     
+    
+    // Drug reactions / flow in lung    
+    Dlung -> Dpls ; k0 * Dlung    
+    Dlung -> Mala ; k12 * Dlung    
+    Dlung -> ; kE1 * Dlung
+    
+    // Mala reactions    
+    Mala -> Mnmp ; k23 * Mala    
+    Mala -> ; kE2 * Mala
+    
+    //Mnmp reactions    
+    Mnmp -> Mntp ; k34 * Mnmp
+    Mnmp ->  ; kE3 * Mnmp
+    
+    // Mntp reaction    
+    Mntp -> ; kE4 * Mntp
+    
+    //parameters
+    // initial conditions     
+    Dpls = {}    
+    Dperi = {}    
+    Dlung = {}    
+    Mala = {}    
+    Mnmp = {}    
+    Mntp = {}    
+    
+    //utils
+    switch = 0 //turns infusion on/off
+    curr_infu_start = 0 // tracks when current infusion started
+    double_first_dose = {}
+    
+    // rates    
+    kp = {}    
+    kpp = {}
+    k0 = {}    
+    k12 = {}    
+    k23 = {}    
+    k34 = {}
+    kE0 = {}    
+    kE1 = {}    
+    kE2 = {}    
+    kE3 = {}    
+    kE4 = {}
+    
+    //constants
+    infusion_amount = {}    
+    dose_interval = {} // time interval between doses in days    
+    dose_end = {} // end of treatment day    
+    one_our = 1/24     
+    first_dose = {} // time of first dose in days
+    
+    // events    
+    E1: at (time - first_dose > 0): switch = 1*double_first_dose, curr_infu_start = time ; // starts the first infusion
+    E2: at ( (time-first_dose > dose_interval) && (time < dose_end) && sin((((time-first_dose)/dose_interval))*2*pi)>0): switch = 1, curr_infu_start = time; // starts the subsequent infusions
+    E3: at (time - (one_our + curr_infu_start) > 0): switch = 0 ; // turns infusion off
+    
+    end
+'''.format(_init_drug_plasma, _init_drug_periphery, _init_drug_lung, _init_met_alanine, _init_met_NMP, _init_met_NTP,
+           _double_first_dose, _k_p_rate, _k_p_prime_rate, _k0_rate, _k12_rate, _k23_rate, _k34_rate, _kE0_rate,
+           _kE1_rate, _kE2_rate, _kE3_rate, _kE4_rate, _infusion_amount, _dose_interval, _eot, _treatment_start)
 
-            model dosingmodel()
-
-            // Simple cascade model of bioiavailability with multiple metabolites
-            // linear clearance at each stage
-            // All times measured in Days
-
-            J0: Drug -> Available1 ; k0*Drug ; //Distribution and bioavailability of drug after dosing
-            J0A: Drug -> ; d0*Drug ; // Clearance of drug before bioavailability
-            J1: Available1 -> Available2 ; k1*Available1 ; // Metabolism of drug into metabolite 2
-            J1A: Available1 -> ; d1*Available1 ; // Clearance of drug after bioavailability
-            J2: Available2 -> Available3 ; k2*Available2 ; // Metabolism of drug into metabolite 3
-            J2A: Available2 -> ; d2*Available2 ; // Clearance of metabolite 2 
-            J3: Available3 -> Available4 ; k3*Available3 ; // Metabolism of drug into metabolite 4
-            J3A: Available3 -> ; d3*Available3 ; // Clearance of metabolite 3 
-            J4A: Available4 -> ; d4*Available4 ; // Clearance of metabolite 4
-
-            //Initial values
-            Drug = {} ; 
-            Available1 = {};
-            Available2 = {};
-            Available3 = {};
-            Available4 = {};
-
-            k0 = {}; // bioavailability rate, units /day
-            d0 = {} ; // clearance time, units /day 
-            k1 = {} ; // metabolism of primary drug rate, units /day
-            d1 = {} ; // clearance time, units /day = 4 hours
-            k2 = {} ; // metabolism of secondary product, units /day
-            d2 = {} ; // clearance time, units /day = 4 hours
-            k3 = {} ; // metabolism of tertiary product, units /day
-            d3 = {} ; // clearance time, units /day = 4 hours
-            d4 = {} ; // clearance time, units /day = 4 hours
-
-            first_dose={} ; // time of first dose in days
-            initial_dose = {} ; // initial dose (arbitrary amount)
-            dose_interval = {} ; // time interval between doses in days
-            dose = {} ; //dose of subsequent treatments
-            dose_end = {} // end of treatment day
-
-            E1: at (time - first_dose > 0): Drug=Drug+initial_dose ;
-            E2: at ( (time-first_dose > dose_interval) && (time < dose_end) && sin((((time-first_dose)/dose_interval))*2*pi)>0): Drug=Drug+dose
-            end
-            '''.format(_init_drug, _init_avail1, _init_avail2, _init_avail3, _init_avail4, _k0_rate, _d0_rate, _k1_rate,
-                       _d1_rate, _k2_rate, _d2_rate, _k3_rate, _d3_rate, _d4_rate, _first_dose, _initial_dose,
-                       _dose_interval, _dose, _eot)
-
-    drug_dosig_model_vars = ["Drug", "Available1", "Available2", "Available3", "Available4"]
+    drug_dosig_model_vars = ["Drug_pls", "Drug_per", "Drug_lung", "Ala_metabolite", "NMP_metabolite", "NTP_metabolite"]
 
     return dosingmodel_str, drug_dosig_model_vars
 
 
-def set_cst_drug_ddm_string(_init_drug, _init_avail1, _init_avail2, _init_avail3, _init_avail4,
-                            _k0_rate, _d0_rate, _k1_rate, _d1_rate, _k2_rate, _d2_rate, _k3_rate, _d3_rate,
-                            _d4_rate, _first_dose, _initial_dose, _dose_interval, _dose, _eot):
-    """
-    Antimony model string generator for this steppable.
-    To change parameters do so on the DrugDosingInputs. Parameter descriptions are also in DrugDosingInputs
-    :param
-    """
-
+def set_cst_drug_ddm_string(_init_drug_plasma, _init_drug_periphery, _init_drug_lung, _init_met_alanine, _init_met_NMP,
+                           _init_met_NTP, _double_first_dose, _k_p_rate, _k_p_prime_rate, _k0_rate, _k12_rate,
+                           _k23_rate, _k34_rate, _kE0_rate, _kE1_rate, _kE2_rate, _kE3_rate, _kE4_rate,
+                           _infusion_amount, _dose_interval, _eot, _treatment_start):
     dosingmodel_str = '''
+    model dosingmodel()
+    //Time is in days!
+    
+    //infusion    
+    -> Dpls; switch * infusion_amount / one_our // switch = (0,1) to turn on or off, infusion happens over 1h    
+    //flow from plasma     
+    Dpls -> ; kE0 * Dpls // elimination    
+    Dpls -> Dperi ; kp * Dpls // to periphery     
+    Dpls -> Dlung ; k0 * Dpls
+        
+    // flow from periphery    
+    Dperi -> Dpls ; kpp * Dpls // to plasma     
+    
+    // Drug reactions / flow in lung    
+    Dlung -> Dpls ; k0 * Dlung    
+    Dlung -> Mala ; k12 * Dlung    
+    Dlung -> ; kE1 * Dlung
+    
+    // Mala reactions    
+    Mala -> Mnmp ; k23 * Mala    
+    Mala -> ; kE2 * Mala
+    
+    //Mnmp reactions    
+    Mnmp -> Mntp ; k34 * Mnmp
+    Mnmp ->  ; kE3 * Mnmp
+    
+    // Mntp reaction    
+    Mntp -> ; kE4 * Mntp
+    
+    //parameters
+    // initial conditions     
+    Dpls = {}    
+    Dperi = {}    
+    Dlung = {}    
+    Mala = {}    
+    Mnmp = {}    
+    Mntp = {}    
+    
+    //utils
+    switch = 0 //turns infusion on/off
+    curr_infu_start = 0 // tracks when current infusion started
+    double_first_dose = {}
+    
+    // rates    
+    kp = {}    
+    kpp = {}
+    k0 = {}    
+    k12 = {}    
+    k23 = {}    
+    k34 = {}
+    kE0 = {}    
+    kE1 = {}    
+    kE2 = {}    
+    kE3 = {}    
+    kE4 = {}
+    
+    //constants
+    infusion_amount = {}    
+    dose_interval = {} // time interval between doses in days    
+    dose_end = {} // end of treatment day    
+    one_our = 1/24     
+    first_dose = {} // time of first dose in days
+    
+    // events    
+    E1: at (time - first_dose > 0): switch = 1*double_first_dose, curr_infu_start = time ; // starts the first infusion
+    E2: at ( (time-first_dose > dose_interval) && (time < dose_end) && sin((((time-first_dose)/dose_interval))*2*pi)>0): switch = 1, curr_infu_start = time; // starts the subsequent infusions
+    E3: at (time - (one_our + curr_infu_start) > 0): switch = 0 ; // turns infusion off
+    
+    end
+'''.format(_init_drug_plasma, _init_drug_periphery, _init_drug_lung, _init_met_alanine, _init_met_NMP, _init_met_NTP,
+           _double_first_dose, _k_p_rate, _k_p_prime_rate, _k0_rate, _k12_rate, _k23_rate, _k34_rate, _kE0_rate,
+           _kE1_rate, _kE2_rate, _kE3_rate, _kE4_rate, _infusion_amount, _dose_interval, _eot, _treatment_start)
 
-            model dosingmodel()
-
-            // Simple cascade model of bioiavailability with multiple metabolites
-            // linear clearance at each stage
-            // All times measured in Days
-
-           // J0: Drug -> Available1 ; k0*Drug ; //Distribution and bioavailability of drug after dosing
-            J0A: Drug -> ; d0*Drug ; // Clearance of drug before bioavailability
-            J1: Available1 -> Available2 ; k1*Available1 ; // Metabolism of drug into metabolite 2
-            J1A: Available1 -> ; d1*Available1 ; // Clearance of drug after bioavailability
-            J2: Available2 -> Available3 ; k2*Available2 ; // Metabolism of drug into metabolite 3
-            J2A: Available2 -> ; d2*Available2 ; // Clearance of metabolite 2 
-            J3: Available3 -> Available4 ; k3*Available3 ; // Metabolism of drug into metabolite 4
-            J3A: Available3 -> ; d3*Available3 ; // Clearance of metabolite 3 
-            J4A: Available4 -> ; d4*Available4 ; // Clearance of metabolite 4
-
-            //Initial values
-            dummy = {} ; 
-            Available1 = {};
-            Available2 = {};
-            Available3 = {};
-            Available4 = {};
-
-            k0 = {}; // bioavailability rate, units /day
-            d0 = {} ; // clearance time, units /day 
-            k1 = {} ; // metabolism of primary drug rate, units /day
-            d1 = {} ; // clearance time, units /day = 4 hours
-            k2 = {} ; // metabolism of secondary product, units /day
-            d2 = {} ; // clearance time, units /day = 4 hours
-            k3 = {} ; // metabolism of tertiary product, units /day
-            d3 = {} ; // clearance time, units /day = 4 hours
-            d4 = {} ; // clearance time, units /day = 4 hours
-
-            first_dose={} ; // time of first dose in days
-            initial_dose = {} ; // initial dose (arbitrary amount)
-            dose_interval = {} ; // time interval between doses in days
-            dose = {} ; //dose of subsequent treatments
-            dose_end = {} // end of treatment day
-
-            const Drug := initial_dose;
-
-            //E1: at (time - first_dose > 0): Drug=Drug+initial_dose ;
-            //E2: at ( (time-first_dose > dose_interval) && (time < dose_end) && sin((((time-first_dose)/dose_interval))*2*pi)>0): Drug=Drug+dose
-            end
-            '''.format(_init_drug, _init_avail1, _init_avail2, _init_avail3, _init_avail4, _k0_rate, _d0_rate, _k1_rate,
-                       _d1_rate, _k2_rate, _d2_rate, _k3_rate, _d3_rate, _d4_rate, _first_dose, _initial_dose,
-                       _dose_interval, _dose, _eot)
-
-    drug_dosig_model_vars = ["Drug", "Available1", "Available2", "Available3", "Available4"]
+    drug_dosig_model_vars = ["Drug_pls", "Drug_per", "Drug_lung", "Ala_metabolite", "NMP_metabolite", "NTP_metabolite"]
 
     return dosingmodel_str, drug_dosig_model_vars
 
 
-def set_cell_drug_metabolization(_init_avail1, _init_avail2, _init_avail3, _init_avail4, _k0_rate, _k1_rate, _d1_rate,
-                                 _k2_rate, _d2_rate, _k3_rate, _d3_rate, _d4_rate):
-    """
+def set_cell_drug_metabolization(_init_met_alanine, _init_met_NMP, _init_met_NTP,
+                                 _k12_rate, _k23_rate, _k34_rate, _kE2_rate, _kE3_rate, _kE4_rate):
 
+    """
     Antimony model string generator for drug metabolization in cells.
     To change parameters do so on the DrugDosingInputs. Parameter descriptions are also in DrugDosingInputs
-
-
-    :param _k0_rate:
-    :param _init_avail1:
-    :param _init_avail2:
-    :param _init_avail3:
-    :param _init_avail4:
-    :param _k1_rate:
-    :param _d1_rate:
-    :param _k2_rate:
-    :param _d2_rate:
-    :param _k3_rate:
-    :param _d3_rate:
-    :param _d4_rate:
+    :param _init_met_alanine:
+    :param _init_met_NMP:
+    :param _init_met_NTP:
+    :param _k12_rate:
+    :param _k23_rate:
+    :param _k34_rate:
+    :param _kE2_rate:
+    :param _kE3_rate:
+    :param _kE4_rate:
     :return:
     """
 
-    metabolization_str = '''
+    dosingmodel_str = '''
+        model dosingmodel()
+        //Time is in days!
+    
+        //Dlung -> Mala ; k12 * Dlung    
 
-                model metabolizationmodel()
+        // Mala reactions    
+        Mala -> Mnmp ; k23 * Mala    
+        Mala -> ; kE2 * Mala
 
-                // Simple cascade model of bioiavailability with multiple metabolites
-                // linear clearance at each stage
-                // All times measured in Days
+        //Mnmp reactions    
+        Mnmp -> Mntp ; k34 * Mnmp
+        Mnmp ->  ; kE3 * Mnmp
 
-                
-                J1: Available1 -> Available2 ; k1*Available1 ; // Metabolism of drug into metabolite 2
-                J1A: Available1 -> ; d1*Available1 ; // Clearance of drug after bioavailability
-                J2: Available2 -> Available3 ; k2*Available2 ; // Metabolism of drug into metabolite 3
-                J2A: Available2 -> ; d2*Available2 ; // Clearance of metabolite 2 
-                J3: Available3 -> Available4 ; k3*Available3 ; // Metabolism of drug into metabolite 4
-                J3A: Available3 -> ; d3*Available3 ; // Clearance of metabolite 3 
-                J4A: Available4 -> ; d4*Available4 ; // Clearance of metabolite 4
+        // Mntp reaction    
+        Mntp -> ; kE4 * Mntp
 
-                //Initial values
-                 
-                Available1 = {};
-                Available2 = {};
-                Available3 = {};
-                Available4 = {};
-                
-                k0 = {}; // bioavailability rate, units /day
-                k1 = {} ; // metabolism of primary drug rate, units /day
-                d1 = {} ; // clearance time, units /day = 4 hours
-                k2 = {} ; // metabolism of secondary product, units /day
-                d2 = {} ; // clearance time, units /day = 4 hours
-                k3 = {} ; // metabolism of tertiary product, units /day
-                d3 = {} ; // clearance time, units /day = 4 hours
-                d4 = {} ; // clearance time, units /day = 4 hours
+        //parameters
+        // initial conditions     
+        
+        Mala = {}    
+        Mnmp = {}    
+        Mntp = {}   
+        // rates    
+        
+        k12 = {}    
+        k23 = {}    
+        k34 = {}        
+        kE2 = {}    
+        kE3 = {}    
+        kE4 = {}
 
-                end
-                '''.format(_init_avail1, _init_avail2, _init_avail3, _init_avail4, _k0_rate, _k1_rate, _d1_rate,
-                           _k2_rate, _d2_rate, _k3_rate, _d3_rate, _d4_rate)
+        end
+    '''.format(_init_met_alanine, _init_met_NMP, _init_met_NTP, _k12_rate, _k23_rate, _k34_rate,
+               _kE2_rate, _kE3_rate, _kE4_rate)
 
-    return metabolization_str
+    return dosingmodel_str
 
 
 class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
