@@ -866,13 +866,17 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
             time = mcs - self.shared_steppable_vars['pre_sim_time']
         else:
             time = mcs
-        mean, _ = self.get_mean_std_rmax()
-        # self.ddm_data['ddm_rmax_data'][time] = [self.shared_steppable_vars['rmax']]
-        self.ddm_data['ddm_rmax_data'][time] = [mean]
 
-        self.ddm_data['ddm_data'][time] = self.get_ddm_data_list()
+        if time < 0:
+            self.ddm_data['ddm_data'][time] = [self.sbml.drug_dosing_control[x] for x in self.mvars.ddm_vars]
 
         if time >= 0:
+            self.ddm_data['ddm_data'][time] = self.get_ddm_data_list()
+
+            mean, _ = self.get_mean_std_rmax()
+            # self.ddm_data['ddm_rmax_data'][time] = [self.shared_steppable_vars['rmax']]
+            self.ddm_data['ddm_rmax_data'][time] = [mean]
+
             rna_list = self.get_rna_array()
 
             self.ddm_data['ddm_tot_RNA_data'][mcs] = [np.sum(rna_list)]
