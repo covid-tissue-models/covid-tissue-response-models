@@ -52,7 +52,7 @@ pmol_to_cc3d_au = 1e14  # 1e15au/1pmol
 __param_desc__['exp_cell_diameter'] = 'Cell diameter'
 exp_cell_diameter = 12.0  # um
 
-# fitted replication, check with Josh the source
+# fitted replication, by Josh, source https://doi.org/10.3201/eid2606.200516
 
 __param_desc__['exp_unpacking_rate'] = 'Unpacking rate'
 exp_unpacking_rate = 1.00070475e-05
