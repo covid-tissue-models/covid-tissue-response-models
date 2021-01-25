@@ -9,3 +9,8 @@ kE2 = 9.3548
 k34 = 41.108
 kE3 = 0.2103
 kE4 = 0.53667
+
+# for constant plasma concentration of drug the active metabolite is f(drug) such that
+# f(drug) = a drug + b with
+a = 4.10887070e-01
+b = 1.64409304e-06
