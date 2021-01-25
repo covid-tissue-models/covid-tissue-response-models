@@ -104,13 +104,18 @@
 
 new_full_dicst = {}
 
-set_investigation_dict ={'set_numb': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-                         'drug_ic50': [10, 2, 1, 0.5, 0.1],
-                         'daily_dose': [1],
-                         'first_dose': [2],
-                         'dose_interval': [1]}
+set_investigation_dict_1 = {'set_numb': [1, 2, 3, 4, 5, 6, 7, 8, 9],
+                            'drug_ic50': [10, 2, 1, 0.5, 0.1],
+                            'daily_dose': [1],
+                            'first_dose': [2],
+                            'dose_interval': [1]}
+set_investigation_dict_2 = {'set_numb': [10],
+                            'drug_ic50': [10, 2, 1, 0.5, 0.1],
+                            'daily_dose': [1],
+                            'first_dose': [2],
+                            'dose_interval': [1]}
 
-mult_dict = set_investigation_dict
+mult_dict = set_investigation_dict_1
 num_rep = 10
 # Model output frequency
 model_out_freq = 1
@@ -119,7 +124,8 @@ out_freq = 250
 # Root output directory
 
 # sweep_output_folder = r'/N/slate/jferrari/new_pk/corrected_ic50_calc/ddm_batch_1'
-sweep_output_folder = r'/N/slate/jferrari/ddm/varying_dose/regular'
+#
+sweep_output_folder = r'/N/slate/jferrari/ddm/new_k_2021/set_investigation'
 # Input modules
 from Simulation import ViralInfectionVTMModelInputs
 from Models.DrugDosingModel import DrugDosingInputs
