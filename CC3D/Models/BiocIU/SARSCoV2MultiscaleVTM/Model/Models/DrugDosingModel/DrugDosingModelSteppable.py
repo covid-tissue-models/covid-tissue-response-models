@@ -235,7 +235,7 @@ def set_cst_drug_ddm_string(_init_drug_plasma, _init_drug_periphery, _init_drug_
     //Time is in days!
     
     //infusion    
-    J0: -> Dpls; switch * infusion_amount / one_our // switch = (0,1) to turn on or off, infusion happens over 1h    
+    //J0: -> Dpls; switch * infusion_amount / one_our // switch = (0,1) to turn on or off, infusion happens over 1h    
     //flow from plasma     
     J1: Dpls -> ; kE0 * Dpls // elimination    
     J2: Dpls -> Dperi ; kp * Dpls // to periphery     
@@ -262,7 +262,6 @@ def set_cst_drug_ddm_string(_init_drug_plasma, _init_drug_periphery, _init_drug_
     
     //parameters
     // initial conditions     
-    Dpls = {}    
     Dperi = {}    
     Dlung = {}    
     Mala = {}    
@@ -293,14 +292,12 @@ def set_cst_drug_ddm_string(_init_drug_plasma, _init_drug_periphery, _init_drug_
     dose_end = {} // end of treatment day    
     one_our = 1/24     
     first_dose = {} // time of first dose in days
+    const Dpls := initial_dose;
     
     // events    
-    E1: at (time - first_dose > 0): switch = 1*double_first_dose, curr_infu_start = time ; // starts the first infusion
-    E2: at ( (time-first_dose > dose_interval) && (time < dose_end) && sin((((time-first_dose)/dose_interval))*2*pi)>0): switch = 1, curr_infu_start = time; // starts the subsequent infusions
-    E3: at (time - (one_our + curr_infu_start) > 0): switch = 0 ; // turns infusion off
     
     end
-'''.format(_init_drug_plasma, _init_drug_periphery, _init_drug_lung, _init_met_alanine, _init_met_NMP, _init_met_NTP,
+'''.format(_init_drug_periphery, _init_drug_lung, _init_met_alanine, _init_met_NMP, _init_met_NTP,
            _double_first_dose, _k_p_rate, _k_p_prime_rate, _k0_rate, _k12_rate, _k23_rate, _k34_rate, _kE0_rate,
            _kE1_rate, _kE2_rate, _kE3_rate, _kE4_rate, _infusion_amount, _dose_interval, _eot, _treatment_start)
 
