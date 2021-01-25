@@ -148,8 +148,8 @@ BatchRunLib.register_auto_inputs(input_module_name='Models.DrugDosingModel.DrugD
 from BatchRun.BatchRunPrototyping import carbonate_config_template
 
 carbonate_config_template = carbonate_config_template()
-carbonate_config_template['jn'] = 'ddm_model_prophylaxis_batch1'
-carbonate_config_template['wh'] = 9
+carbonate_config_template['jn'] = 'ddm_new_pk_set_inv1'
+carbonate_config_template['wh'] = 18
 carbonate_config_template['wm'] = 0
 carbonate_config_template['vmem'] = 10
 
