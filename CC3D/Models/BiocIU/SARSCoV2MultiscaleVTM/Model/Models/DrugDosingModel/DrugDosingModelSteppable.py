@@ -876,7 +876,7 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
             self.ddm_data['ddm_tot_RNA_data'][mcs] = [np.sum(rna_list)]
             self.ddm_data['ddm_mean_RNA_data'][mcs] = [np.mean(rna_list)]
 
-            self.ddm_data['ddm_total_viral_production_data'][mcs] = self.total_virus_released
+            self.ddm_data['ddm_total_viral_production_data'][mcs] = [self.total_virus_released]
 
         if mcs >= int(self.simulator.getNumSteps() / 4 * self.__flush_counter):
             self.flush_stored_outputs()
