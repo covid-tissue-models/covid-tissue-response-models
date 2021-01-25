@@ -398,10 +398,7 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
 
         self.max_avail4 = 2.32417475e-01 * dose  # see comment just before steppable definition
 
-        if auto_ec50:
-            self.hill_k = self.max_avail4 * rel_avail4_EC50
-        else:
-            self.hill_k = ec50
+        self.hill_k = active_met_ic50
 
         self.drug_model_string = None
 
