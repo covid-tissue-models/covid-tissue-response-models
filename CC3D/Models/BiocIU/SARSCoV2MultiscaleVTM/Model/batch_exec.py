@@ -104,12 +104,12 @@
 
 new_full_dicst = {}
 
-set_investigation_dict_1 = {'set_numb': [1, 2, 3, 4, 5, 6, 7, 8, 9],
+set_investigation_dict_1 = {'set_numb': [1, 2, 3, 4, 5, 6, 7, 8],
                             'drug_ic50': [10, 2, 1, 0.5, 0.1],
                             'daily_dose': [1],
                             'first_dose': [2],
                             'dose_interval': [1]}
-set_investigation_dict_2 = {'set_numb': [10],
+set_investigation_dict_2 = {'set_numb': [9, 10],
                             'drug_ic50': [10, 2, 1, 0.5, 0.1],
                             'daily_dose': [1],
                             'first_dose': [2],
