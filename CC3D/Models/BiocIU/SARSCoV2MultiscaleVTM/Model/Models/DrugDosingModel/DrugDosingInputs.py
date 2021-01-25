@@ -161,21 +161,6 @@ __param_desc__['active_met_ic50'] = 'value for the active metabolite ic50. param
                                     'concentration of drug (it is always linear)'
 active_met_ic50 = rs.a * drug_ic50 + rs.b
 
-# __param_desc__['auto_ec50'] = 'bool for auto scaling of EC50 by max(avail4) and rel_avail4_EC50'
-# auto_ec50 = True
-#
-
-#
-# __param_desc__['drug_2_a4_factor'] = 'factor to go from drug to max a4 for constant drug' \
-#                                      'concentration. obtained by fitting max(a4) vs drug'
-# drug_2_a4_factor = 1.5291823098746118
-#
-# __param_desc__['ec50'] = 'value for ec50 in the hill equation, only used if auto_ec50 is false'
-# ec50 = drug_2_a4_factor * drug_ic50
-#
-# __param_desc__['rel_avail4_EC50'] = 'EC50 value for rmax reduction in therms of max available 4,' \
-#                                     ' ie EC50 = rel_avail4_EC50 * max(available 4)'
-# rel_avail4_EC50 = 1
 
 __param_desc__['hill_coef'] = 'Hill coeficient for diminishing hill function of rmax'
 hill_coef = 2
