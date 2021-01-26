@@ -151,6 +151,7 @@ carbonate_config_template = carbonate_config_template()
 carbonate_config_template['jn'] = 'ddm_new_pk_set_inv1'
 carbonate_config_template['wh'] = 18
 carbonate_config_template['wm'] = 0
+carbonate_config_template['ppn'] = 8
 carbonate_config_template['vmem'] = 10
 
 # Begin computing work
