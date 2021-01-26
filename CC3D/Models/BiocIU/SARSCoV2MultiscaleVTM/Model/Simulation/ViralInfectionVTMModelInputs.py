@@ -55,15 +55,15 @@ exp_cell_diameter = 12.0  # um
 # fitted replication, by Josh, source https://doi.org/10.3201/eid2606.200516
 
 __param_desc__['exp_unpacking_rate'] = 'Unpacking rate'
-exp_unpacking_rate = 1.00070475e-05
+exp_unpacking_rate = 1.0 / 100.0 * 1.0 / 60.0
 __param_desc__['exp_replicating_rate'] = 'Replicating rate'
-exp_replicating_rate = 5.19159540e+03
+exp_replicating_rate = 1.0 / 300.0 * 1.0 / 60.0
 __param_desc__['exp_translating_rate'] = 'Translating rate'
-exp_translating_rate = 1.87391831e-03
+exp_translating_rate = 1.0 / 100.0 * 1.0 / 60.0
 __param_desc__['exp_packing_rate'] = 'Packing rate'
 exp_packing_rate = 1.85990022e-03
 __param_desc__['exp_secretion_rate'] = 'Secretion rate'
-exp_secretion_rate = 3.26795795e-08
+exp_secretion_rate = 1.0 / 100.0 * 1.0 / 60.0
 
 
 __param_desc__['exp_virus_dc'] = 'Viral diffusion coefficient'
@@ -261,9 +261,9 @@ initial_unbound_receptors = 200
 
 # Number of cell receptors at which the replication rate is half max (sets the steady state value of mRNA)
 __param_desc__['r_half'] = 'Number of cell receptors at which the replication rate is half of maximum'
-r_half = 3.18716164e+06  # from same fit as other viral replication params
+# r_half = 3.18716164e+06  # from same fit as other viral replication params
 
-# #r_half = exp_max_amount_viral_mRNA/(replicating_rate/translating_rate-1)
+r_half = exp_max_amount_viral_mRNA/(replicating_rate/translating_rate-1)
 
 __param_desc__['kon'] = 'Unitless virus-receptors association affinity'
 kon = exp_kon * s_to_mcs * 1.0E15 * (1.0/(um_to_lat_width**3)) * (1.0/1.0E12) * (1.0/pmol_to_cc3d_au) * 100
