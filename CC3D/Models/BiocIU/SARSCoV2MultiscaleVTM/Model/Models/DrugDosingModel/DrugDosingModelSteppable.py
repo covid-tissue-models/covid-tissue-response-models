@@ -524,7 +524,7 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
         :return:
         """
         if self.sbml.drug_dosing_model['Dlung'] <= 0:
-            print(self.sbml.drug_dosing_model['Dlung'])
+            # print(self.sbml.drug_dosing_model['Dlung'])
             self.sbml.drug_dosing_model['Dlung'] = 0
             return 0
         if not diffusing_drug:
@@ -570,11 +570,11 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
                 # value for uptake (9e99)
                 cell.sbml.drug_metabolization['Mala'] += abs(uptake.tot_amount)
                 total += abs(uptake.tot_amount)
-        print('result:', self.sbml.drug_dosing_model['Dlung'], total)
+        # print('result:', self.sbml.drug_dosing_model['Dlung'], total)
 
-        print('control:', self.sbml.drug_dosing_control['Dlung'], days_2_mcs * self.sbml.drug_dosing_control['J6'])
-        print('result/control:', self.sbml.drug_dosing_model['Dlung'] / self.sbml.drug_dosing_control['Dlung'],
-              total / (days_2_mcs * self.sbml.drug_dosing_control['J6']))
+        # print('control:', self.sbml.drug_dosing_control['Dlung'], days_2_mcs * self.sbml.drug_dosing_control['J6'])
+        # print('result/control:', self.sbml.drug_dosing_model['Dlung'] / self.sbml.drug_dosing_control['Dlung'],
+        #       total / (days_2_mcs * self.sbml.drug_dosing_control['J6']))
         return total
 
     def step(self, mcs):
@@ -625,7 +625,7 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
                     # print(vr_model.replicating_rate)
 
                 time = cell.sbml.drug_metabolization['Time']
-            print('time', time, self.sbml.drug_dosing_model['Time'])
+            # print('time', time, self.sbml.drug_dosing_model['Time'])
 
         # for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING):
         #     vr_model = getattr(cell.sbml, self.vr_model_name)
