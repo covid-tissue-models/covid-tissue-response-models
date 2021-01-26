@@ -161,6 +161,8 @@ __param_desc__['active_met_ic50'] = 'value for the active metabolite ic50. param
                                     'concentration of drug (it is always linear)'
 active_met_ic50 = rs.a * drug_ic50 + rs.b
 
+__param_desc__['diffusing_drug'] = 'bool to use scalar prodrug or as diffusive species'
+diffusing_drug = False
 
 __param_desc__['hill_coef'] = 'Hill coeficient for diminishing hill function of rmax'
 hill_coef = 2
