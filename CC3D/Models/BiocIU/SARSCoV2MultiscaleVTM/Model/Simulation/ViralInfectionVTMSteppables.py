@@ -175,7 +175,8 @@ class ViralInternalizationSteppable(ViralInfectionVTMSteppableBasePy):
             return False, 0.0
 
         _k = kon * cell.volume / koff
-        diss_coeff_uptake_pr = (initial_unbound_receptors / 2.0 / _k / cell.dict['Receptors']) ** (1.0 / hill_coeff_uptake_pr)
+        diss_coeff_uptake_pr = (initial_unbound_receptors / 2.0 / _k / cell.dict['Receptors']) ** (
+                    1.0 / hill_coeff_uptake_pr)
         uptake_probability = nCoVUtils.hill_equation(viral_amount_com,
                                                      diss_coeff_uptake_pr,
                                                      hill_coeff_uptake_pr)
@@ -250,6 +251,7 @@ class ImmuneCellKillingSteppable(ViralInfectionVTMSteppableBasePy):
     """
     Implements immune cell direct cytotoxicity and bystander effect module
     """
+
     def __init__(self, frequency=1):
         ViralInfectionVTMSteppableBasePy.__init__(self, frequency)
 
@@ -670,7 +672,12 @@ class SimDataSteppable(SteppableBasePy):
         if plot_med_diff_data or write_med_diff_data:
 
             # Gather total diffusive amounts
-            if False:  # Pre-v4.2.1 CC3D
+            try:
+                med_viral_total = self.get_field_secretor("Virus").totalFieldIntegral()
+                med_cyt_total = self.get_field_secretor("cytokine").totalFieldIntegral()
+                med_oxi_total = self.get_field_secretor("oxidator").totalFieldIntegral()
+            except AttributeError:  # Pre-v4.2.1 CC3D
+
                 med_viral_total = 0.0
                 med_cyt_total = 0.0
                 med_oxi_total = 0.0
@@ -678,10 +685,6 @@ class SimDataSteppable(SteppableBasePy):
                     med_viral_total += self.field.Virus[x, y, z]
                     med_cyt_total += self.field.cytokine[x, y, z]
                     med_oxi_total += self.field.oxidator[x, y, z]
-            else:  # v4.2.1+ CC3D
-                med_viral_total = self.get_field_secretor("Virus").totalFieldIntegral()
-                med_cyt_total = self.get_field_secretor("cytokine").totalFieldIntegral()
-                med_oxi_total = self.get_field_secretor("oxidator").totalFieldIntegral()
 
             # Plot total diffusive viral amount if requested
             if plot_med_diff_data:
@@ -1042,6 +1045,7 @@ class oxidationAgentModelSteppable(ViralInfectionVTMSteppableBasePy):
     """
     Implements immune cell oxidizing agent cytotoxicity module
     """
+
     def __init__(self, frequency=1):
         SteppableBasePy.__init__(self, frequency)
         if track_model_variables:
