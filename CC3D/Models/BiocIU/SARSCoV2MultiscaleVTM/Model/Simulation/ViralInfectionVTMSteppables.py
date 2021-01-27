@@ -670,7 +670,7 @@ class SimDataSteppable(SteppableBasePy):
         if plot_med_diff_data or write_med_diff_data:
 
             # Gather total diffusive amounts
-            if True:  # Pre-v4.2.1 CC3D
+            if False:  # Pre-v4.2.1 CC3D
                 med_viral_total = 0.0
                 med_cyt_total = 0.0
                 med_oxi_total = 0.0
