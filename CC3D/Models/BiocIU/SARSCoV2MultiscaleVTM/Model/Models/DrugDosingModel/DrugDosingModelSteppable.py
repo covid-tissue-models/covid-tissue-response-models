@@ -826,7 +826,12 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
         [self.ddm_control_plot.add_data_point(x, s_to_mcs * mcs / 60 / 60, self.sbml.drug_dosing_control[x])
          for x in self.mvars.ddm_vars]
 
-        self.ddm_data_win.add_data_point('Drug in lung', s_to_mcs * mcs / 60 / 60, self.sbml.drug_dosing_model['Dlung'])
+        self.ddm_data_win.add_data_point(self.mvars.ddm_vars[0], s_to_mcs * mcs / 60 / 60,
+                                         self.sbml.drug_dosing_model[self.mvars.ddm_vars[0]])
+        self.ddm_data_win.add_data_point(self.mvars.ddm_vars[1], s_to_mcs * mcs / 60 / 60,
+                                         self.sbml.drug_dosing_model[self.mvars.ddm_vars[1]])
+        self.ddm_data_win.add_data_point(self.mvars.ddm_vars[2], s_to_mcs * mcs / 60 / 60,
+                                         self.sbml.drug_dosing_model[self.mvars.ddm_vars[2]])
 
         total_mets = self.get_total_metabolites_in_cells()
 
