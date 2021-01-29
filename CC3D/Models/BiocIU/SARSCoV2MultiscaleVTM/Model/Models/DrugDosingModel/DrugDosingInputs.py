@@ -1,7 +1,7 @@
 from numpy import log
-from .rate_sets import set_importer
+from .DDMUtils import SetImporter
 
-rate_sets_dict = set_importer.import_sets_as_dict()
+rate_sets_dict = SetImporter.import_sets_as_dict()
 
 __param_desc__ = {}
 
