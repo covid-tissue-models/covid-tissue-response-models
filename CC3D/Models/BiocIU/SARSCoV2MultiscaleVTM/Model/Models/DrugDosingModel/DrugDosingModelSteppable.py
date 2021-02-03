@@ -53,8 +53,8 @@ max(Available4) ~= 2.32417475e-01 x dose + 1.59151098e-08
 
 # @staticmethod
 def set_default_ddm_string(_init_drug_plasma, _init_drug_periphery, _init_drug_lung, _init_met_alanine, _init_met_NMP,
-                           _init_met_NTP, _double_first_dose, _k_p_rate, _k_p_prime_rate, _k0_rate, _k12_rate,
-                           _k23_rate, _k34_rate, _kE0_rate, _kE1_rate, _kE2_rate, _kE3_rate, _kE4_rate,
+                           _init_met_NTP, _double_first_dose, _k_p_rate, _k_p_prime_rate, _k01_rate, _k10_rate,
+                           _k12_rate,_k23_rate, _k34_rate, _kE0_rate, _kE1_rate, _kE2_rate, _kE3_rate, _kE4_rate,
                            _infusion_amount, _dose_interval, _eot, _treatment_start):
     """
     Antimony model string generator for this steppable.
@@ -69,7 +69,8 @@ def set_default_ddm_string(_init_drug_plasma, _init_drug_periphery, _init_drug_l
     :param _double_first_dose:
     :param _k_p_rate:
     :param _k_p_prime_rate:
-    :param _k0_rate:
+    :param _k01_rate:
+    :param _k10_rate:
     :param _k12_rate:
     :param _k23_rate:
     :param _k34_rate:
@@ -93,14 +94,14 @@ def set_default_ddm_string(_init_drug_plasma, _init_drug_periphery, _init_drug_l
     //flow from plasma     
     J1: Dpls -> ; kE0 * Dpls // elimination    
     J2: Dpls -> Dperi ; kp * Dpls // to periphery     
-    J3: Dpls -> Dlung ; k0 * Dpls
+    J3: Dpls -> Dlung ; k01 * Dpls
         
     // flow from periphery    
     J4: Dperi -> Dpls ; kpp * Dpls // to plasma     
     
     // Drug reactions / flow in lung    
-    J5: Dlung -> Dpls ; k0 * Dlung    
-    //J6: Dlung -> Mala ; k12 * Dlung    
+    J5: Dlung -> Dpls ; k10 * Dlung    
+    // J6: Dlung -> Mala ; k12 * Dlung  // this happens in cells  
     J7: Dlung -> ; kE1 * Dlung
     //parameters
     // initial conditions     
@@ -116,7 +117,8 @@ def set_default_ddm_string(_init_drug_plasma, _init_drug_periphery, _init_drug_l
     // rates    
     kp = {}    
     kpp = {}
-    k0 = {}   
+    k01 = {}   
+    k10 = {}   
     
     kE0 = {}    
     kE1 = {}    
@@ -135,7 +137,7 @@ def set_default_ddm_string(_init_drug_plasma, _init_drug_periphery, _init_drug_l
     
     end
 '''.format(_init_drug_plasma, _init_drug_periphery, _init_drug_lung,
-           _double_first_dose, _k_p_rate, _k_p_prime_rate, _k0_rate, _kE0_rate,
+           _double_first_dose, _k_p_rate, _k_p_prime_rate, _k01_rate, _k10_rate, _kE0_rate,
            _kE1_rate, _infusion_amount, _dose_interval, _eot, _treatment_start)
 
     drug_dosig_model_vars = ["Dpls", "Dperi", "Dlung", "Mala", "Mnmp", "Mntp"]
@@ -144,7 +146,7 @@ def set_default_ddm_string(_init_drug_plasma, _init_drug_periphery, _init_drug_l
 
 
 def full_ddm_for_testing(_init_drug_plasma, _init_drug_periphery, _init_drug_lung, _init_met_alanine, _init_met_NMP,
-                         _init_met_NTP, _double_first_dose, _k_p_rate, _k_p_prime_rate, _k0_rate, _k12_rate,
+                         _init_met_NTP, _double_first_dose, _k_p_rate, _k_p_prime_rate, _k01_rate, _k10_rate, _k12_rate,
                          _k23_rate, _k34_rate, _kE0_rate, _kE1_rate, _kE2_rate, _kE3_rate, _kE4_rate,
                          _infusion_amount, _dose_interval, _eot, _treatment_start):
     dosingmodel_str = '''
@@ -156,13 +158,13 @@ def full_ddm_for_testing(_init_drug_plasma, _init_drug_periphery, _init_drug_lun
     //flow from plasma     
     J1: Dpls -> ; kE0 * Dpls // elimination    
     J2: Dpls -> Dperi ; kp * Dpls // to periphery     
-    J3: Dpls -> Dlung ; k0 * Dpls
+    J3: Dpls -> Dlung ; k01 * Dpls
         
     // flow from periphery    
     J4: Dperi -> Dpls ; kpp * Dpls // to plasma     
     
     // Drug reactions / flow in lung    
-    J5: Dlung -> Dpls ; k0 * Dlung    
+    J5: Dlung -> Dpls ; k10 * Dlung    
     J6: Dlung -> Mala ; k12 * Dlung    
     J7: Dlung -> ; kE1 * Dlung
     
@@ -194,7 +196,8 @@ def full_ddm_for_testing(_init_drug_plasma, _init_drug_periphery, _init_drug_lun
     // rates    
     kp = {}    
     kpp = {}
-    k0 = {}    
+    k01 = {}    
+    k10 = {}    
     k12 = {}    
     k23 = {}    
     k34 = {}
@@ -218,7 +221,7 @@ def full_ddm_for_testing(_init_drug_plasma, _init_drug_periphery, _init_drug_lun
     
     end
 '''.format(_init_drug_plasma, _init_drug_periphery, _init_drug_lung, _init_met_alanine, _init_met_NMP, _init_met_NTP,
-           _double_first_dose, _k_p_rate, _k_p_prime_rate, _k0_rate, _k12_rate, _k23_rate, _k34_rate, _kE0_rate,
+           _double_first_dose, _k_p_rate, _k_p_prime_rate, _k01_rate, _k10_rate, _k12_rate, _k23_rate, _k34_rate, _kE0_rate,
            _kE1_rate, _kE2_rate, _kE3_rate, _kE4_rate, _infusion_amount, _dose_interval, _eot, _treatment_start)
 
     drug_dosig_model_vars = ["Dpls", "Dperi", "Dlung", "Mala", "Mnmp", "Mntp"]
@@ -227,7 +230,7 @@ def full_ddm_for_testing(_init_drug_plasma, _init_drug_periphery, _init_drug_lun
 
 
 def set_cst_drug_ddm_string(_init_drug_plasma, _init_drug_periphery, _init_drug_lung, _init_met_alanine, _init_met_NMP,
-                            _init_met_NTP, _double_first_dose, _k_p_rate, _k_p_prime_rate, _k0_rate, _k12_rate,
+                            _init_met_NTP, _double_first_dose, _k_p_rate, _k_p_prime_rate, _k01_rate, _k10_rate, _k12_rate,
                             _k23_rate, _k34_rate, _kE0_rate, _kE1_rate, _kE2_rate, _kE3_rate, _kE4_rate,
                             _infusion_amount, _dose_interval, _eot, _treatment_start):
     dosingmodel_str = '''
@@ -239,13 +242,13 @@ def set_cst_drug_ddm_string(_init_drug_plasma, _init_drug_periphery, _init_drug_
     //flow from plasma     
     J1: Dpls -> ; kE0 * Dpls // elimination    
     J2: Dpls -> Dperi ; kp * Dpls // to periphery     
-    J3: Dpls -> Dlung ; k0 * Dpls
+    J3: Dpls -> Dlung ; k01 * Dpls
         
     // flow from periphery    
     J4: Dperi -> Dpls ; kpp * Dpls // to plasma     
     
     // Drug reactions / flow in lung    
-    J5: Dlung -> Dpls ; k0 * Dlung    
+    J5: Dlung -> Dpls ; k10 * Dlung    
     J6: Dlung -> Mala ; k12 * Dlung    
     J7: Dlung -> ; kE1 * Dlung
     
@@ -276,7 +279,8 @@ def set_cst_drug_ddm_string(_init_drug_plasma, _init_drug_periphery, _init_drug_
     // rates    
     kp = {}    
     kpp = {}
-    k0 = {}    
+    k01 = {}    
+    k10 = {}    
     k12 = {}    
     k23 = {}    
     k34 = {}
@@ -298,7 +302,7 @@ def set_cst_drug_ddm_string(_init_drug_plasma, _init_drug_periphery, _init_drug_
     
     end
 '''.format(_init_drug_periphery, _init_drug_lung, _init_met_alanine, _init_met_NMP, _init_met_NTP,
-           _double_first_dose, _k_p_rate, _k_p_prime_rate, _k0_rate, _k12_rate, _k23_rate, _k34_rate, _kE0_rate,
+           _double_first_dose, _k_p_rate, _k_p_prime_rate, _k01_rate, _k10_rate, _k12_rate, _k23_rate, _k34_rate, _kE0_rate,
            _kE1_rate, _kE2_rate, _kE3_rate, _kE4_rate, _infusion_amount, _dose_interval, _eot, _treatment_start)
 
     drug_dosig_model_vars = ["Dpls", "Dperi", "Dlung", "Mala", "Mnmp", "Mntp"]
@@ -332,13 +336,13 @@ def set_cell_drug_metabolization(_init_met_alanine, _init_met_NMP, _init_met_NTP
         //flow from plasma     
         //J1: Dpls -> ; kE0 * Dpls // elimination    
         //J2: Dpls -> Dperi ; kp * Dpls // to periphery     
-        //J3: Dpls -> Dlung ; k0 * Dpls
+        //J3: Dpls -> Dlung ; k01 * Dpls
             
         // flow from periphery    
         //J4: Dperi -> Dpls ; kpp * Dpls // to plasma     
         
         // Drug reactions / flow in lung    
-        //J5: Dlung -> Dpls ; k0 * Dlung    
+        //J5: Dlung -> Dpls ; k10 * Dlung    
         //J6: Dlung -> Mala ; k12 * Dlung    
         //J7: Dlung -> ; kE1 * Dlung
         
@@ -454,11 +458,11 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
         # set model string
         self.drug_model_string, self.ddm_vars = self.set_drug_model_string(
             Drug_pls, Drug_peri, Drug_lung, Ala_met, NMP_met, NTP_met,
-            first_dose_doubler, kp, kpp, k0, k12, k23, k34, kE0, kE1, kE2, kE3, kE4, dose, dose_interval, dose_end,
+            first_dose_doubler, kp, kpp, k01, k10, k12, k23, k34, kE0, kE1, kE2, kE3, kE4, dose, dose_interval, dose_end,
             first_dose)
         self.control_string, _ = self.set_control_model_string(
             Drug_pls, Drug_peri, Drug_lung, Ala_met, NMP_met, NTP_met,
-            first_dose_doubler, kp, kpp, k0, k12, k23, k34, kE0, kE1, kE2, kE3, kE4, dose, dose_interval, dose_end,
+            first_dose_doubler, kp, kpp, k01, k10, k12, k23, k34, kE0, kE1, kE2, kE3, kE4, dose, dose_interval, dose_end,
             first_dose)
 
         # init sbml
