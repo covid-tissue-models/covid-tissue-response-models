@@ -90,8 +90,11 @@ kp = rs.kp
 __param_desc__['kpp'] = 'rate of remdesivir from periphery to plasma, units /day'
 kpp = rs.kpp
 
-__param_desc__['k0'] = 'reversible lung-plasma rate, units /day'
-k0 = rs.k0
+__param_desc__['k01'] = 'plasma -> lung rate, units /day'
+k01 = rs.k0  # todo: replace k0 on the right here and in k10 with new rates
+
+__param_desc__['k10'] = 'lung -> plasma rate, units /day'
+k10 = rs.k0
 
 __param_desc__['k12'] = 'drug -> metabolite alanine rate, units /day'
 k12 = rs.k12
