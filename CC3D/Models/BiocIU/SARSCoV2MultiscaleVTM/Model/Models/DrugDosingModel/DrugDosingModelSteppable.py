@@ -292,7 +292,7 @@ def set_cst_drug_ddm_string(_init_drug_plasma, _init_drug_periphery, _init_drug_
     dose_end = {} // end of treatment day    
     one_our = 1/24     
     first_dose = {} // time of first dose in days
-    const Dpls := initial_dose;
+    const Dpls := infusion_amount;
     
     // events    
     
