@@ -28,59 +28,27 @@ from cc3d.player5 import Configuration
 from cc3d.player5.Simulation.CMLResultReader import CMLResultReader
 from cc3d.player5.Utilities.utils import extract_address_int_from_vtk_object
 
-export_data_desc = {'ir_data': ['ImmuneResp'],
-                    'med_diff_data': ['MedViral',
-                                      'MedCyt',
-                                      'MedOxi'],
+export_data_desc = {'med_diff_data': ['MedViral'],
                     'pop_data': ['Uninfected',
                                  'Infected',
                                  'InfectedSecreting',
-                                 'Dying',
-                                 'ImmuneCell',
-                                 'ImmuneCellActivated'],
-                    'spat_data': ['DeathComp',
-                                  'InfectDist'],
-                    'death_data': ['Viral',
-                                   'OxiField',
-                                   'Contact',
-                                   'Bystander']}
+                                 'Dying']
+                    }
 
 x_label_str_transient = "Simulation time (MCS)"
 
-y_label_str = {'ir_data': {'ImmuneResp': 'Immune response state variable'},
-               'med_diff_data': {'MedViral': 'Total diffusive virus',
-                                 'MedCyt': 'Total diffusive cytokine',
-                                 'MedOxi': 'Total oxidative agent'},
+y_label_str = {'med_diff_data': {'MedViral': 'Total diffusive virus'},
                'pop_data': {'Uninfected': 'Number of uninfected cells',
                             'Infected': 'Number of infected cells',
                             'InfectedSecreting': 'Number of infected secreting cells',
-                            'Dying': 'Number of dying cells',
-                            'ImmuneCell': 'Number of immune cells',
-                            'ImmuneCellActivated': 'Number of activated immune cells'},
-               'spat_data': {'DeathComp': 'Cell death compactness (ul)',
-                             'InfectDist': 'Infection distance (px)'},
-               'death_data': {'Viral': 'Number of virally-induced apoptosis deaths',
-                              'OxiField': 'Number of oxidative deaths',
-                              'Contact': 'Number of cytotoxic kill deaths',
-                              'Bystander': 'Number of bystander effect deaths'}
+                            'Dying': 'Number of dying cells'}
                }
 
-fig_save_names = {'ir_data': {'ImmuneResp': 'metric_immune_response_svar'},
-                  'med_diff_data': {'MedViral': 'metric_diffusive_virus',
-                                    'MedCyt': 'metric_diffusive_cytokine',
-                                    'MedOxi': 'metric_diffusive_oxidator'},
+fig_save_names = {'med_diff_data': {'MedViral': 'metric_diffusive_virus'},
                   'pop_data': {'Uninfected': 'metric_num_uninfected',
                                'Infected': 'metric_num_infected',
                                'InfectedSecreting': 'metric_num_infectedSecreting',
-                               'Dying': 'metric_num_dying',
-                               'ImmuneCell': 'metric_num_immune',
-                               'ImmuneCellActivated': 'metric_num_immuneActivated'},
-                  'spat_data': {'DeathComp': 'metric_death_compact',
-                                'InfectDist': 'metric_infection_distance'},
-                  'death_data': {'Viral': 'metric_death_viral',
-                                 'OxiField': 'metric_death_oxi',
-                                 'Contact': 'metric_death_contact',
-                                 'Bystander': 'metric_death_bystander'}
+                               'Dying': 'metric_num_dying'}
                   }
 
 

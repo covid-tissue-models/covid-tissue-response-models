@@ -1,17 +1,11 @@
 # This is a library of steppable classes for the viral infection modeling project using CompuCell3D
 # by the Biocomplexity Institute at Indiana University using CompuCell3D
 
-import os
-import sys
-
 # Import project libraries
-sys.path.append(os.path.dirname(__file__))
-import ViralInfectionVTMLib
+from . import ViralInfectionVTMLib
 
 # Import toolkit
-sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from nCoVToolkit.nCoVSteppableBase import nCoVSteppableBase
-from nCoVToolkit import nCoVUtils
 
 
 class ViralInfectionVTMSteppableBasePy(nCoVSteppableBase):
@@ -21,6 +15,16 @@ class ViralInfectionVTMSteppableBasePy(nCoVSteppableBase):
 
     def __init__(self, frequency=1):
         nCoVSteppableBase.__init__(self, frequency)
+
+        self._uninfected_type_name = ''
+        self._infected_type_name = ''
+        self._virus_releasing_type_name = ''
+        self._dead_type_name = ''
+        self._immune_type_name = ''
+
+        self._virus_field_name = ''
+        self._cytokine_field_name = ''
+        self._oxidator_field_name = ''
 
     def start(self):
         pass
@@ -35,6 +39,7 @@ class ViralInfectionVTMSteppableBasePy(nCoVSteppableBase):
         """
         Antimony model string generator for viral replication model; can be set with set_viral_replication_model(), and
         subclasses can override
+
         :param args:
         :param kwargs:
         :return {str}: Antimony model string for viral replication model
@@ -45,6 +50,7 @@ class ViralInfectionVTMSteppableBasePy(nCoVSteppableBase):
     def set_viral_replication_model(_fnc, _name: str = ViralInfectionVTMLib.vr_model_name):
         """
         Sets the viral replication model
+
         :param _fnc: Antimony model string generator
         :param _name: name of Antimony model
         :return: None
@@ -55,6 +61,7 @@ class ViralInfectionVTMSteppableBasePy(nCoVSteppableBase):
     def load_viral_replication_model(self, *args, **kwargs):
         """
         Loads viral replication model for a cell; subclasses can override
+
         :param args:
         :param kwargs:
         :return: None
@@ -67,6 +74,7 @@ class ViralInfectionVTMSteppableBasePy(nCoVSteppableBase):
                                       translating_rate=0, packing_rate=0, secretion_rate=0):
         """
         Loads viral replication model for a cell; initial values of state model are extract from cell.dict
+
         :param cell: cell for which the viral replication model is loaded
         :param vr_step_size: Antimony/SBML model step size
         :param unpacking_rate: model unpacking rate
@@ -83,18 +91,22 @@ class ViralInfectionVTMSteppableBasePy(nCoVSteppableBase):
         # Generate Antimony model string
         model_string = self.viral_replication_model_string(
             unpacking_rate, replicating_rate, r_half, translating_rate, packing_rate, secretion_rate,
-            cell.dict['Unpacking'], cell.dict['Replicating'], cell.dict['Packing'], cell.dict['Assembled'],
-            cell.dict['Uptake'])
+            cell.dict[ViralInfectionVTMLib.vrm_unpacking],
+            cell.dict[ViralInfectionVTMLib.vrm_replicating],
+            cell.dict[ViralInfectionVTMLib.vrm_packing],
+            cell.dict[ViralInfectionVTMLib.vrm_assembled],
+            cell.dict[ViralInfectionVTMLib.vrm_uptake])
         self.add_antimony_to_cell(model_string=model_string,
                                   model_name=ViralInfectionVTMSteppableBasePy.vr_model_name,
                                   cell=cell,
                                   step_size=vr_step_size)
         cell.dict[ViralInfectionVTMLib.vrl_key] = True
-        ViralInfectionVTMLib.enable_viral_secretion(cell, cell.type == self.VIRUSRELEASING)
+        ViralInfectionVTMLib.enable_viral_secretion(cell, cell.type == self.virus_releasing_type_id)
 
     def new_cell_in_time(self, cell_type, mcs=None):
         """
         Add cell and record MCS
+
         :param cell_type: type id of cell (e.g., for cell.type)
         :param mcs: step when cell is created; defaults from steppable mcs attribute
         :return: new cell instance
@@ -112,35 +124,37 @@ class ViralInfectionVTMSteppableBasePy(nCoVSteppableBase):
     def new_uninfected_cell_in_time(self, mcs=None):
         """
         Add an uninfected cell with default initial configuration and record MCS
+
         :param mcs: step when cell is created; defaults from steppable mcs attribute
         :return: new cell instance of immune cell type
         """
-        cell = self.new_cell_in_time(self.UNINFECTED, mcs)
+        cell = self.new_cell_in_time(self.uninfected_type_id, mcs)
         cell.dict[ViralInfectionVTMLib.vrl_key] = False
         ViralInfectionVTMLib.reset_viral_replication_variables(cell=cell)
-        cell.dict['Survived'] = False
         return cell
 
     def new_immune_cell_in_time(self, ck_production, ck_consumption, mcs=None, activated=False):
         """
         Add an immune cell with default initial configuration and record MCS
+
         :param ck_production: cytokine production rate
         :param ck_consumption: cytokine consumption rate
         :param mcs: step when cell is created; defaults from steppable mcs attribute
         :param activated: flag for immune cell being naive or activated
         :return: new cell instance of immune cell type
         """
-        cell = self.new_cell_in_time(self.IMMUNECELL, mcs)
+        cell = self.new_cell_in_time(self.immune_type_id, mcs)
         # cyttokine params
-        cell.dict['ck_production'] = ck_production  # TODO: replace secretion by hill
-        cell.dict['ck_consumption'] = ck_consumption  # TODO: replace by hill
-        cell.dict['activated'] = activated
-        cell.dict['tot_ck_upt'] = 0
+        cell.dict[ViralInfectionVTMLib.ck_production_cellg_key] = ck_production
+        cell.dict[ViralInfectionVTMLib.ck_consumption_cellg_key] = ck_consumption
+        cell.dict[ViralInfectionVTMLib.activated_cellg_key] = activated
+        cell.dict[ViralInfectionVTMLib.tot_ck_upt_cellg_key] = 0
         return cell
 
     def total_seen_field(self, field, cell, estimate=True):
         """
         Calculates total value of field in the cell.
+
         :param field: the field to be looked
         :param cell: the cell
         :param estimate: when true assumes homogeneous field. false is slower
@@ -158,10 +172,11 @@ class ViralInfectionVTMSteppableBasePy(nCoVSteppableBase):
     def kill_cell(self, cell):
         """
         Model-specific cell death routines
+
         :param cell: cell to kill
         :return: None
         """
-        cell.type = self.DYING
+        self.set_cell_type(cell, self.dead_type_id)
 
         # Remove viral replication model: no model for dead cell type
         ViralInfectionVTMLib.reset_viral_replication_variables(cell=cell)
@@ -170,9 +185,72 @@ class ViralInfectionVTMSteppableBasePy(nCoVSteppableBase):
     def remove_viral_replication_model(self, cell):
         """
         Removes viral replication model for a cell
+
         :param cell: cell for which to remove the viral replication model
         :return: None
         """
         if cell.dict[ViralInfectionVTMLib.vrl_key]:
             self.delete_sbml_from_cell(ViralInfectionVTMSteppableBasePy.vr_model_name, cell)
             cell.dict[ViralInfectionVTMLib.vrl_key] = False
+
+    def set_uninfected_type_name(self, _name: str):
+        self._uninfected_type_name = _name
+
+    def set_infected_type_name(self, _name: str):
+        self._infected_type_name = _name
+
+    def set_virus_releasing_type_name(self, _name: str):
+        self._virus_releasing_type_name = _name
+
+    def set_dead_type_name(self, _name: str):
+        self._dead_type_name = _name
+
+    def set_immune_type_name(self, _name: str):
+        self._immune_type_name = _name
+
+    @property
+    def uninfected_type_id(self) -> int:
+        return getattr(self, self._uninfected_type_name.upper())
+
+    @property
+    def infected_type_id(self) -> int:
+        return getattr(self, self._infected_type_name.upper())
+
+    @property
+    def virus_releasing_type_id(self) -> int:
+        return getattr(self, self._virus_releasing_type_name.upper())
+
+    @property
+    def dead_type_id(self) -> int:
+        return getattr(self, self._dead_type_name.upper())
+
+    @property
+    def immune_type_id(self) -> int:
+        return getattr(self, self._immune_type_name.upper())
+
+    def set_virus_field_name(self, _name: str):
+        self._virus_field_name = _name
+
+    def set_cytokine_field_name(self, _name: str):
+        self._cytokine_field_name = _name
+
+    def set_oxidator_field_name(self, _name: str):
+        self._oxidator_field_name = _name
+
+    @property
+    def virus_field(self):
+        if self._virus_field_name:
+            return getattr(self.field, self._virus_field_name)
+        return None
+
+    @property
+    def cytokine_field(self):
+        if self._cytokine_field_name:
+            return getattr(self.field, self._cytokine_field_name)
+        return None
+
+    @property
+    def oxidator_field(self):
+        if self._oxidator_field_name:
+            return getattr(self.field, self._oxidator_field_name)
+        return None

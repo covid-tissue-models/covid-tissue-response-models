@@ -9,54 +9,42 @@
 ###############################################################################################################
 
 import os
-from ViralInfectionVTMSteppables import __file__ as main_step_file
+from ViralInfectionVTMModelInputs import __file__ as main_step_file
 sys.path.append(os.path.dirname(os.path.dirname(main_step_file)))
 os.environ["ViralInfectionVTM"] = os.path.dirname(os.path.dirname(main_step_file))
 
 from cc3d import CompuCellSetup
 
-from ViralInfectionVTMSteppables import CellsInitializerSteppable
+from ViralInfectionVTMSteppables import CellInitializerSteppable
 
-CompuCellSetup.register_steppable(steppable=CellsInitializerSteppable(frequency=1))
+CompuCellSetup.register_steppable(steppable=CellInitializerSteppable(frequency=1))
+
+from ViralInfectionVTMSteppables import VirusFieldInitializerSteppable
+
+CompuCellSetup.register_steppable(steppable=VirusFieldInitializerSteppable(frequency=1))
+
+from Models.RecoveryNeighbor.RecoverySteppables import SimpleRecoverySteppable
+
+CompuCellSetup.register_steppable(steppable=SimpleRecoverySteppable(frequency=1))
+
+from ViralInfectionVTMSteppables import ViralDeathSteppable
+
+CompuCellSetup.register_steppable(steppable=ViralDeathSteppable(frequency=1))
+
+from ViralInfectionVTMSteppables import EclipsePhaseSteppable
+
+CompuCellSetup.register_steppable(steppable=EclipsePhaseSteppable(frequency=1))
 
 from ViralInfectionVTMSteppables import ViralInternalizationSteppable
 
 CompuCellSetup.register_steppable(steppable=ViralInternalizationSteppable(frequency=1))
 
-from ViralInfectionVTMSteppables import ViralReplicationSteppable
+from ViralInfectionVTMSteppables import ViralReleaseSteppable
 
-CompuCellSetup.register_steppable(steppable=ViralReplicationSteppable(frequency=1))
-
-from ViralInfectionVTMSteppables import ViralSecretionSteppable
-
-CompuCellSetup.register_steppable(steppable=ViralSecretionSteppable(frequency=1))
-
-from ViralInfectionVTMSteppables import ImmuneCellKillingSteppable
-
-CompuCellSetup.register_steppable(steppable=ImmuneCellKillingSteppable(frequency=1))
-
-from ViralInfectionVTMSteppables import ChemotaxisSteppable
-
-CompuCellSetup.register_steppable(steppable=ChemotaxisSteppable(frequency=1))
-
-from ViralInfectionVTMSteppables import ImmuneCellSeedingSteppable
-
-CompuCellSetup.register_steppable(steppable=ImmuneCellSeedingSteppable(frequency=1))
+CompuCellSetup.register_steppable(steppable=ViralReleaseSteppable(frequency=1))
 
 from ViralInfectionVTMSteppables import SimDataSteppable
 
 CompuCellSetup.register_steppable(steppable=SimDataSteppable(frequency=1))
-
-from ViralInfectionVTMSteppables import CytokineProductionAbsorptionSteppable
-
-CompuCellSetup.register_steppable(steppable=CytokineProductionAbsorptionSteppable(frequency=1))
-
-from ViralInfectionVTMSteppables import ImmuneRecruitmentSteppable
-
-CompuCellSetup.register_steppable(steppable=ImmuneRecruitmentSteppable(frequency=1))
-
-from ViralInfectionVTMSteppables import oxidationAgentModelSteppable
-
-CompuCellSetup.register_steppable(steppable=oxidationAgentModelSteppable(frequency=1))
 
 CompuCellSetup.run()

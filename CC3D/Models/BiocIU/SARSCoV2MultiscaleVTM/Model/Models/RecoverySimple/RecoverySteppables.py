@@ -20,33 +20,39 @@
 import random
 import sys
 import os
-from cc3d.core.PySteppables import *
 
 sys.path.append(os.path.join(os.environ["ViralInfectionVTM"], "Simulation"))
 from ViralInfectionVTMModelInputs import s_to_mcs
-import ViralInfectionVTMLib
+from Models.SegoAponte2020 import ViralInfectionVTMLib
+from nCoVToolkit.nCoVSteppableBase import nCoVSteppableBase
 from ViralInfectionVTMSteppables import SimDataSteppable
 
 from .RecoveryInputs import *
 rec_steppable_key = "sprec_steppable"
+rec_data_steppable_key = "sprec_data_steppable"
 
 
-class SimpleRecoverySteppable(SteppableBasePy):
+class SimpleRecoverySteppable(nCoVSteppableBase):
     """
     Implements simple recovery
     """
+
+    unique_key = rec_steppable_key
+
     def __init__(self, frequency=1):
-        super().__init__(self, frequency)
+        super().__init__(frequency)
         self.num_recovered = 0
 
-        self.rec_steppable_key = rec_steppable_key
+        self._recovered_type_name = ''
+        self._dead_type_name = ''
 
-    def start(self):
-        # Post reference to self
-        self.shared_steppable_vars[self.rec_steppable_key] = self
+        # Initialize default data
+        from ViralInfectionVTMSteppables import uninfected_type_name, dead_type_name
+        self.set_recovered_type_name(uninfected_type_name)
+        self.set_dead_type_name(dead_type_name)
 
     def step(self, mcs):
-        [self.recover_cell(cell) for cell in self.cell_list_by_type(self.DYING) if self.cell_recovers(cell)]
+        [self.recover_cell(cell) for cell in self.cell_list_by_type(self.dead_type_id) if self.cell_recovers(cell)]
 
     def cell_recovers(self, _cell) -> bool:
         """
@@ -62,17 +68,35 @@ class SimpleRecoverySteppable(SteppableBasePy):
         :param _cell: dead cell to recover
         :return: None
         """
-        _cell.type = self.UNINFECTED
-        _cell.dict[ViralInfectionVTMLib.vrl_key] = False
+        self.set_cell_type(_cell, self.recovered_type_id)
+        if ViralInfectionVTMLib.vrl_key in _cell.dict.keys():
+            _cell.dict[ViralInfectionVTMLib.vrl_key] = False
         self.num_recovered += 1
 
+    def set_recovered_type_name(self, _name: str):
+        self._recovered_type_name = _name
 
-class SimpleRecoveryDataSteppable(SteppableBasePy):
+    def set_dead_type_name(self, _name: str):
+        self._dead_type_name = _name
+
+    @property
+    def recovered_type_id(self) -> int:
+        return getattr(self, self._recovered_type_name.upper())
+
+    @property
+    def dead_type_id(self) -> int:
+        return getattr(self, self._dead_type_name.upper())
+
+
+class SimpleRecoveryDataSteppable(nCoVSteppableBase):
     """
     Implements simple recovery data tracking; like SimDataSteppable in main framework
     """
+
+    unique_key = rec_data_steppable_key
+
     def __init__(self, frequency=1, plot_freq=None, write_freq=None):
-        super().__init__(self, frequency)
+        super().__init__(frequency)
 
         self.rec_steppable = None
 

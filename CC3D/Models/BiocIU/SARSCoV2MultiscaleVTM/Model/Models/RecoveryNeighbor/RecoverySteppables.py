@@ -23,13 +23,13 @@
 import random
 import sys
 import os
-from cc3d.core.PySteppables import *
 
 sys.path.append(os.path.join(os.environ["ViralInfectionVTM"], "Simulation"))
 from ViralInfectionVTMModelInputs import s_to_mcs
 
 from .RecoveryInputs import *
 rec_steppable_key = "nbrec_steppable"
+rec_data_steppable_key = "nbrec_data_steppable"
 
 # Inherit from Simple Recovery model
 sys.path.append(os.environ["ViralInfectionVTM"])
@@ -40,11 +40,8 @@ class NeighborRecoverySteppable(SimpleRecoverySteppable):
     """
     Implements neighbor-dependent recovery
     """
-    def __init__(self, frequency=1):
-        super().__init__(frequency)
 
-        # Particularize SimpleRecoverySteppable
-        self.rec_steppable_key = rec_steppable_key
+    unique_key = rec_steppable_key
 
     def cell_recovers(self, _cell) -> bool:
         """
@@ -52,7 +49,8 @@ class NeighborRecoverySteppable(SimpleRecoverySteppable):
         :param _cell: dead cell to test for recovery
         :return: True if cell recovers
         """
-        ca = sum([a for n, a in self.get_cell_neighbor_data_list(_cell) if n is not None and n.type == self.UNINFECTED])
+        ca = sum([a for n, a in self.get_cell_neighbor_data_list(_cell)
+                  if n is not None and n.type == self.recovered_type_id])
         return random.random() < ca * recovery_rate * s_to_mcs
 
 
@@ -60,6 +58,9 @@ class NeighborRecoveryDataSteppable(SimpleRecoveryDataSteppable):
     """
     Implements neighbor-dependent recovery data tracking; like SimDataSteppable in main framework
     """
+
+    unique_keys = rec_data_steppable_key
+
     def __init__(self, frequency=1):
         super().__init__(frequency, plot_freq=plot_rec_data_freq, write_freq=write_rec_data_freq)
 

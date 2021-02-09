@@ -1,6 +1,6 @@
 # Integrated model of hepatitis c virus
 # Written by T.J. Sego, Ph.D.
-# Genomic replication from the main framework is replaced by a model of hepatitis c virus replication from
+# Genomic replication in the module SegoAponte2020 is replaced by a model of hepatitis c virus replication from
 #
 #   Dahari, Harel, et al. "Mathematical modeling of subgenomic hepatitis C virus replication in Huh-7 cells."
 #   Journal of virology 81.2 (2007): 750-760.
@@ -27,18 +27,21 @@
 #           from Models.HCVIntegrated.HCVSteppables import HCVCellsInitializerSteppable
 #           CompuCellSetup.register_steppable(steppable=HCVCellsInitializerSteppable(frequency=1))
 
-import os
-import sys
-
-sys.path.append(os.path.join(os.environ["ViralInfectionVTM"], "Simulation"))
-import ViralInfectionVTMLib
-from ViralInfectionVTMModelInputs import s_to_mcs
-from ViralInfectionVTMModelInputs import vr_step_size, unpacking_rate, replicating_rate, r_half, translating_rate, \
-    packing_rate, secretion_rate
-from ViralInfectionVTMSteppables import SimDataSteppable, CellsInitializerSteppable
-from ViralInfectionVTMSteppableBasePy import ViralInfectionVTMSteppableBasePy
+from Models.SegoAponte2020 import ViralInfectionVTMLib
+from Models.SegoAponte2020.ViralInfectionVTMModelInputs import s_to_mcs
+from Models.SegoAponte2020.ViralInfectionVTMSteppables import SimDataSteppable, CellsInitializerSteppable
+from Models.SegoAponte2020 import ViralInfectionVTMBasePy
 
 from . import HCVInputs
+
+ViralInfectionVTMSteppableBasePy = ViralInfectionVTMBasePy.ViralInfectionVTMSteppableBasePy
+
+module_prefix = 'ihcv_'
+output_basename = module_prefix + 'ihcv_data.dat'
+
+integrator_steppable_key = module_prefix + 'hcv_integrator'  # HCVIntegrator
+data_steppable_key = module_prefix + 'hcv_data_steppable'  # HCVDataSteppable
+cell_initializer_key = module_prefix + 'cell_initializer'  # HCVCellsInitializerSteppable
 
 
 def hcv_viral_replication_model_string(_unpacking_rate, _replicating_rate, _r_half, _translating_rate, _packing_rate,
@@ -138,12 +141,18 @@ ihcv_model_vars = ["E", "ECYT", "PCYT", "RDS", "RIBO", "RIDS", "RIP", "RP", "TC"
 
 
 class HCVIntegrator(ViralInfectionVTMSteppableBasePy):
+
+    unique_key = integrator_steppable_key
+
     def __init__(self, frequency=1):
         super().__init__(frequency)
         self.set_viral_replication_model(hcv_viral_replication_model_string)
 
 
 class HCVDataSteppable(ViralInfectionVTMSteppableBasePy):
+
+    unique_key = data_steppable_key
+
     def __init__(self, frequency=1):
         super().__init__(frequency)
 
@@ -175,13 +184,13 @@ class HCVDataSteppable(ViralInfectionVTMSteppableBasePy):
 
         if self.write_ihcv_data:
             from pathlib import Path
-            self.ihcv_data_path = Path(self.output_dir).joinpath('ihcv_data.dat')
+            self.ihcv_data_path = Path(self.output_dir).joinpath(output_basename)
             with open(self.ihcv_data_path, 'w'):
                 pass
 
     def step(self, mcs):
         if self.simdata_steppable is None:
-            self.simdata_steppable = self.shared_steppable_vars[ViralInfectionVTMLib.simdata_steppable_key]
+            self.simdata_steppable = self.shared_steppable_vars[SimDataSteppable.unique_key]
 
         plot_ihcv_data = self.plot_ihcv_data and mcs % HCVInputs.plot_ihcv_data_freq == 0
         write_ihcv_data = self.write_ihcv_data and mcs % HCVInputs.write_ihcv_data_freq == 0
@@ -222,18 +231,18 @@ class HCVDataSteppable(ViralInfectionVTMSteppableBasePy):
 
 
 class HCVCellsInitializerSteppable(CellsInitializerSteppable):
+
+    unique_key = cell_initializer_key
+
     def __init__(self, frequency=1):
         super().__init__(frequency)
 
     def start(self):
         super().start()
-        for cell in self.cell_list_by_type(self.INFECTED):
-            cell.dict['Unpacking'] = 0
-            cell.dict['Replicating'] = HCVInputs.init_rna / HCVInputs.virus_from_ul
-            self.load_viral_replication_model(cell=cell, vr_step_size=vr_step_size,
-                                              unpacking_rate=unpacking_rate,
-                                              replicating_rate=replicating_rate,
-                                              r_half=r_half,
-                                              translating_rate=translating_rate,
-                                              packing_rate=packing_rate,
-                                              secretion_rate=secretion_rate)
+        for cell in self.cell_list_by_type(self.infected_type_id):
+            var_unpacking = ViralInfectionVTMLib.vr_cell_dict_to_sym[ViralInfectionVTMLib.vrm_unpacking]
+            getattr(cell.sbml, self.vr_model_name)[var_unpacking] = 0
+
+            var_replicating = ViralInfectionVTMLib.vr_cell_dict_to_sym[ViralInfectionVTMLib.vrm_replicating]
+            init_replicating = HCVInputs.init_rna / HCVInputs.virus_from_ul
+            getattr(cell.sbml, self.vr_model_name)[var_replicating] = init_replicating
