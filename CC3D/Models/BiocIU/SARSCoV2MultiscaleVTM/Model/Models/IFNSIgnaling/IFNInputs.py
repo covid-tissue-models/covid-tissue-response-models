@@ -49,3 +49,19 @@ __param_desc__["k72"] = "Saturation of viral production (1/μM)"
 k72 = 47.883
 __param_desc__["k73"] = "Viral export rate (1/hr)"
 k73 = 0.197
+
+# Diffusible Particles Parameters
+__param_desc__["IFNe_diffusion_coefficient"] = "IFNe diffusion coefficient (vl^2/s)"
+IFNe_diffusion_coefficient = 1.0/10.0
+__param_desc__["t2"] = "IFNe_decay (1/hr)"
+t2 = 3.481
+__param_desc__["Virus_diffusion_coefficient"] = "Virus diffusion coefficient (vl^2/s)"
+virus_diffusion_coefficient = 1.0/10.0
+__param_desc__["c"] = "IFNe_decay (1/days)"
+c = 13.0
+
+# Cell Transition Parameters
+__param_desc__['internalization_rate'] = 'Viral Infectivity (PFU/(mL*days))'
+b = 2.4E4
+__param_desc__['eclipse_phase'] = '1/days'
+k = 4.0
