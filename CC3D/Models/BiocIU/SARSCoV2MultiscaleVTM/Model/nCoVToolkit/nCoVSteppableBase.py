@@ -110,6 +110,11 @@ class nCoVSteppableBase(SteppableBasePy):
             return self.ode_manager.models_by_cell_type(_cell_type)
         raise NoODEManagerException
 
+    def cell_types_by_ode_model(self, _model_name: str) -> Union[None, List[int]]:
+        if self.ode_manager is not None:
+            return self.ode_manager.cell_types_by_model(_model_name)
+        raise NoODEManagerException
+
     def register_ode_model(self,
                            model_name: str,
                            model_fcn: Callable,
@@ -170,6 +175,14 @@ class ODEManagerSteppable(nCoVSteppableBase):
                 elif isinstance(cell_types, Iterable) and _cell_type in cell_types:
                     x.append(y)
         return x
+
+    def cell_types_by_model(self, _model_name: str) -> Union[None, List[int]]:
+        ode_model_entry = self._ode_models[_model_name]
+        if ode_model_entry.cell_types is None:
+            return None
+        if isinstance(ode_model_entry.cell_types, str):
+            return [getattr(self, ode_model_entry.cell_types.upper())]
+        return [getattr(self, x.upper()) for x in self._ode_models[_model_name].cell_types]
 
     def register_model(self,
                        model_name: str,
