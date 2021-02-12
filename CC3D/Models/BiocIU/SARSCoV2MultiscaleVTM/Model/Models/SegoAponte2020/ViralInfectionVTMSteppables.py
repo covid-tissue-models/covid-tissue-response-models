@@ -57,8 +57,6 @@ class CellsInitializerSteppable(ViralInfectionVTMSteppableBasePy, MainSteppables
         for cell in self.cell_list_by_type(self.uninfected_type_id, self.infected_type_id):
             cell.targetVolume = ViralInfectionVTMModelInputs.cell_volume
             cell.lambdaVolume = ViralInfectionVTMModelInputs.volume_lm
-            cell.dict[ViralInfectionVTMLib.unbound_receptors_cellg_key] = \
-                ViralInfectionVTMModelInputs.initial_unbound_receptors
             if ViralInfectionVTMLib.vrl_key in cell.dict.keys():
                 ViralInfectionVTMLib.pack_viral_replication_variables(cell)
 
@@ -66,8 +64,6 @@ class CellsInitializerSteppable(ViralInfectionVTMSteppableBasePy, MainSteppables
         for cell in self.cell_list_by_type(self.infected_type_id):
             var_unpacking = ViralInfectionVTMLib.vr_cell_dict_to_sym[ViralInfectionVTMLib.vrm_unpacking]
             getattr(cell.sbml, self.vr_model_name)[var_unpacking] = 1.0
-
-            cell.dict[ViralInfectionVTMLib.ck_production_cellg_key] = ViralInfectionVTMModelInputs.max_ck_secrete_infect
 
 
 class VirusFieldInitializerSteppable(MainSteppables.VirusFieldInitializerSteppable):
@@ -147,12 +143,6 @@ class ViralReplicationSteppable(ViralInfectionVTMSteppableBasePy):
             # Test for infected -> virus-releasing
             if self.cell_releases(cell):
                 self.set_cell_type(cell, self.virus_releasing_type_id)
-                ViralInfectionVTMLib.enable_viral_secretion(cell=cell,
-                                                            secretion_rate=ViralInfectionVTMModelInputs.secretion_rate)
-
-                # cytokine params
-                cell.dict[ViralInfectionVTMLib.ck_production_cellg_key] = \
-                    ViralInfectionVTMModelInputs.max_ck_secrete_infect
 
             # Test for virus-releasing -> dead
             if self.cell_dies(cell):
@@ -207,11 +197,23 @@ class ViralReplicationSteppable(ViralInfectionVTMSteppableBasePy):
     def infected_type_ids(self):
         return [getattr(self, x.upper()) for x in self._infected_types]
 
+    @property
+    def registered_type_ids(self):
+        return [getattr(self, x.upper()) for x in self._registered_types]
+
+    def on_new_cell(self, _new_cell):
+        """
+        Implementation of callback. Ensures that necessary data is available and properly set
+        """
+        if _new_cell.type in self.registered_type_ids and ViralInfectionVTMLib.vrl_key not in _new_cell.dict.keys():
+            _new_cell.dict[ViralInfectionVTMLib.vrl_key] = False
+
 
 class ViralInternalizationSteppable(ViralInfectionVTMSteppableBasePy):
     """
     Implements viral internalization module
     """
+    # todo: make initial_unbound_receptors settable on ViralInternalizationSteppable
 
     unique_key = ViralInfectionVTMLib.vim_steppable_key
 
@@ -221,6 +223,7 @@ class ViralInternalizationSteppable(ViralInfectionVTMSteppableBasePy):
         # Initialize default data
         self.set_uninfected_type_name(MainSteppables.uninfected_type_name)
         self.set_infected_type_name(MainSteppables.infected_type_name)
+        self.set_virus_releasing_type_name(MainSteppables.virus_releasing_type_name)
 
     def do_cell_internalization(self, cell, viral_amount_com):
         """
@@ -249,7 +252,6 @@ class ViralInternalizationSteppable(ViralInfectionVTMSteppableBasePy):
 
         if cell_does_uptake and cell.type == self.uninfected_type_id:
             self.set_cell_type(cell, self.infected_type_id)
-            cell.dict[ViralInfectionVTMLib.ck_production_cellg_key] = ViralInfectionVTMModelInputs.max_ck_secrete_infect
 
         return cell_does_uptake, uptake_amount
 
@@ -263,6 +265,15 @@ class ViralInternalizationSteppable(ViralInfectionVTMSteppableBasePy):
         """
         cell.dict[ViralInfectionVTMLib.unbound_receptors_cellg_key] = max(
             cell.dict[ViralInfectionVTMLib.unbound_receptors_cellg_key] + receptors_increment, 0.0)
+
+    def on_new_cell(self, _new_cell):
+        """
+        Implementation of callback. Ensures that necessary data is available and properly set
+        """
+        if _new_cell.type == self.uninfected_type_id and \
+                ViralInfectionVTMLib.unbound_receptors_cellg_key not in _new_cell.dict.keys():
+            _new_cell.dict[ViralInfectionVTMLib.unbound_receptors_cellg_key] = \
+                ViralInfectionVTMModelInputs.initial_unbound_receptors
 
 
 class ViralSecretionSteppable(ViralInfectionVTMSteppableBasePy):
@@ -372,6 +383,16 @@ class ViralSecretionSteppable(ViralInfectionVTMSteppableBasePy):
         :return: callback of registered cell type
         """
         return self._secretors_by_type.pop(_type_name)
+
+    def on_set_cell_type(self, cell, old_type):
+        """
+        Implementation of callback. If a cell's type changes to the registered virus-releasing type, then
+        release of virus in enabled
+        """
+        # todo: make secretion_rate settable on ViralSecretionSteppable
+        if cell.type == self.virus_releasing_type_id:
+            ViralInfectionVTMLib.enable_viral_secretion(cell=cell,
+                                                        secretion_rate=ViralInfectionVTMModelInputs.secretion_rate)
 
 
 class ImmuneCellKillingSteppable(ViralInfectionVTMSteppableBasePy):
@@ -485,12 +506,13 @@ class ImmuneCellKillingSteppable(ViralInfectionVTMSteppableBasePy):
         """
         self._bystander_targets.pop(_name)
 
+    @property
     def bystander_targets(self):
         return [x for x in self._bystander_targets.keys()]
 
     @property
     def bystander_target_ids(self):
-        return [getattr(self, x.upper()) for x in self.bystander_targets()]
+        return [getattr(self, x.upper()) for x in self.bystander_targets]
 
 
 class ChemotaxisSteppable(ViralInfectionVTMSteppableBasePy):
@@ -508,40 +530,58 @@ class ChemotaxisSteppable(ViralInfectionVTMSteppableBasePy):
 
         self._target_field_name = ''
         self._immune_type_name = ''
+        self._lamda_chemotaxis = 0.0
 
         # Initialize defaults
         self.set_immune_type_name(immune_type_name)
         self.set_target_field_name(cytokine_field_name)
+        self.set_lamda_chemotaxis(ViralInfectionVTMModelInputs.lamda_chemotaxis)
 
     def start(self):
         for cell in self.cell_list_by_type(self.immune_type_id):
-
-            cd = self.chemotaxisPlugin.addChemotaxisData(cell, self._target_field_name)
-            if cell.dict[ViralInfectionVTMLib.activated_cellg_key]:
-                cd.setLambda(ViralInfectionVTMModelInputs.lamda_chemotaxis)
-            else:
-                cd.setLambda(0.0)
-            cd.assignChemotactTowardsVectorTypes([self.MEDIUM])
+            self.add_cell_chemotaxis_data(cell=cell)
 
     def step(self, mcs):
         field = self.target_field
         for cell in self.cell_list_by_type(self.immune_type_id):
 
             cd = self.chemotaxisPlugin.getChemotaxisData(cell, self._target_field_name)
-            concentration = field[cell.xCOM, cell.yCOM, 1]
-            constant = ViralInfectionVTMModelInputs.lamda_chemotaxis
-            lam = constant / (1.0 + concentration)
             if cell.dict[ViralInfectionVTMLib.activated_cellg_key]:
-                cd.setLambda(lam)
+                cd.setLambda(self._lamda_chemotaxis / (1.0 + field[cell.xCOM, cell.yCOM, 1]))
             else:
                 cd.setLambda(0)
 
     def set_target_field_name(self, _name: str):
         self._target_field_name = _name
 
+    def set_lamda_chemotaxis(self, _val: float):
+        self._lamda_chemotaxis = _val
+
     @property
     def target_field(self):
         return getattr(self.field, self._target_field_name)
+
+    def on_new_cell(self, _new_cell):
+        """
+        Implementation of callback.
+
+        If a cell is of registered immune cell type, then its chemotaxis data is initialized
+        """
+        if _new_cell.type == self.immune_type_id:
+            self.add_cell_chemotaxis_data(cell=_new_cell)
+
+    def on_set_cell_type(self, cell, old_type):
+        """
+        Implementation of callback.
+
+        If a cell is of registered immune cell type, then its chemotaxis data is initialized
+        """
+        if cell.type == self.immune_type_id:
+            self.add_cell_chemotaxis_data(cell=cell)
+
+    def add_cell_chemotaxis_data(self, cell):
+        cd = self.chemotaxisPlugin.addChemotaxisData(cell, self._target_field_name)
+        cd.assignChemotactTowardsVectorTypes([self.MEDIUM])
 
 
 class ImmuneCellSeedingSteppable(ViralInfectionVTMSteppableBasePy):
@@ -553,8 +593,6 @@ class ImmuneCellSeedingSteppable(ViralInfectionVTMSteppableBasePy):
     The name of the field by which immune cells are seeded can be set with set_seeding_field_name
 
     The name of the field by which immune cells chemotaxis can be set with set_chemotaxis_field_name
-
-    Requires ChemotaxisPlugin
 
     By default, ImmuneRecruitmentSteppable to determine seeding and removal probabilities.
     If customizing, this functionality can be replaced by setting the attribute ir_steppable with any object that
@@ -598,11 +636,6 @@ class ImmuneCellSeedingSteppable(ViralInfectionVTMSteppableBasePy):
             self.cell_field[x:x + int(cell_diameter), y:y + int(cell_diameter), 1] = cell
             cell.targetVolume = ViralInfectionVTMModelInputs.cell_volume
             cell.lambdaVolume = ViralInfectionVTMModelInputs.volume_lm
-            cell.dict[ViralInfectionVTMLib.activated_cellg_key] = False  # flag for immune cell being naive or activated
-            # cyttokine params
-            cell.dict[ViralInfectionVTMLib.ck_production_cellg_key] = ViralInfectionVTMModelInputs.max_ck_secrete_im
-            cell.dict[ViralInfectionVTMLib.ck_consumption_cellg_key] = ViralInfectionVTMModelInputs.max_ck_consume
-            cell.dict[ViralInfectionVTMLib.tot_ck_upt_cellg_key] = 0
 
     def step(self, mcs):
         if self.ir_steppable is None:
@@ -646,13 +679,7 @@ class ImmuneCellSeedingSteppable(ViralInfectionVTMSteppableBasePy):
                                                     ck_consumption=ViralInfectionVTMModelInputs.max_ck_consume)
 
                 self.cell_field[x_seed:x_seed + int(cell_diameter), y_seed:y_seed + int(cell_diameter), 1] = cell
-                cd = self.chemotaxisPlugin.addChemotaxisData(cell, self._chemotaxis_field_name)
-                if cell.dict[ViralInfectionVTMLib.activated_cellg_key]:
-                    cd.setLambda(ViralInfectionVTMModelInputs.lamda_chemotaxis)
-                else:
-                    cd.setLambda(0.0)
 
-                cd.assignChemotactTowardsVectorTypes([self.MEDIUM])
                 cell.targetVolume = ViralInfectionVTMModelInputs.cell_volume
                 cell.lambdaVolume = ViralInfectionVTMModelInputs.volume_lm
 
@@ -1246,7 +1273,6 @@ class CytokineProductionAbsorptionSteppable(ViralInfectionVTMSteppableBasePy):
         self.set_infected_type_name(MainSteppables.infected_type_name)
         self.set_virus_releasing_type_name(MainSteppables.virus_releasing_type_name)
         self.set_immune_type_name(immune_type_name)
-        self.set_virus_field_name(MainSteppables.virus_field_name)
         self.set_field_data(field_name=cytokine_field_name, diffusion='cytokine_dc', decay='cytokine_decay')
         self.register_secretor_by_type(MainSteppables.infected_type_name, self.secr_func_infected)
         self.register_secretor_by_type(MainSteppables.virus_releasing_type_name, self.secr_func_infected)
@@ -1301,11 +1327,7 @@ class CytokineProductionAbsorptionSteppable(ViralInfectionVTMSteppableBasePy):
     @staticmethod
     def secr_func_immune(self, _cell, _mcs):
         total_ck_inc = 0.0
-        virus_secretor = self.get_field_secretor(self._virus_field_name)
         ck_secretor = self.get_field_secretor(self._cytokine_field_name)
-
-        virus_secretor.uptakeInsideCellTotalCount(
-            _cell, _cell.dict[ViralInfectionVTMLib.ck_consumption_cellg_key] / _cell.volume, 0.1)
 
         up_res = ck_secretor.uptakeInsideCellTotalCount(
             _cell, _cell.dict[ViralInfectionVTMLib.ck_consumption_cellg_key] / _cell.volume, 0.1)
@@ -1360,6 +1382,35 @@ class CytokineProductionAbsorptionSteppable(ViralInfectionVTMSteppableBasePy):
         """
         return self._secretors_by_type.pop(_type_name)
 
+    def on_new_cell(self, _new_cell):
+        """
+        Implementation of callback.
+
+        If a new cell is of registered infected, virus-releasing or immune types, then its cytokine production
+        parameter is set.
+
+        If a new cell is of registered immune cell type, total cytokine uptake variable is initialized as zero and
+        activated flag is initialized as False as necessary
+        """
+        if _new_cell.type == self.immune_type_id:
+            if ViralInfectionVTMLib.tot_ck_upt_cellg_key not in _new_cell.dict.keys():
+                _new_cell.dict[ViralInfectionVTMLib.tot_ck_upt_cellg_key] = 0
+            if ViralInfectionVTMLib.activated_cellg_key not in _new_cell.dict.keys():
+                _new_cell.dict[ViralInfectionVTMLib.activated_cellg_key] = False
+        self.on_set_cell_type(cell=_new_cell, old_type=None)
+
+    def on_set_cell_type(self, cell, old_type):
+        """
+        Implementation of callback. If a cell's type changes to the registered virus-releasing type, then
+        the cytokine production model parameter is updated
+        """
+        if cell.type in [self.infected_type_id, self.virus_releasing_type_id]:
+            # update cytokine param
+            cell.dict[ViralInfectionVTMLib.ck_production_cellg_key] = ViralInfectionVTMModelInputs.max_ck_secrete_infect
+        elif cell.type == self.immune_type_id:
+            cell.dict[ViralInfectionVTMLib.ck_production_cellg_key] = ViralInfectionVTMModelInputs.max_ck_secrete_im
+            cell.dict[ViralInfectionVTMLib.ck_consumption_cellg_key] = ViralInfectionVTMModelInputs.max_ck_consume
+
 
 class ImmuneRecruitmentSteppable(ViralInfectionVTMSteppableBasePy):
     """
@@ -1374,6 +1425,7 @@ class ImmuneRecruitmentSteppable(ViralInfectionVTMSteppableBasePy):
 
     To manage the total cytokine manually, use increment_total_cytokine_count
     """
+    # todo: make ImmuneRecruitmentSteppable ODE model step size settable
 
     unique_key = ViralInfectionVTMLib.ir_steppable_key
 
@@ -1507,6 +1559,7 @@ class oxidationAgentModelSteppable(ViralInfectionVTMSteppableBasePy):
     By default, module uninfected, infected and virus-releasing types are assigned the callback secr_func_epithelial
     and module immune cell type is assigned the callback secr_func_immune.
     """
+    # todo: make oxidationAgentModelSteppable-related model parameters settable
 
     unique_key = ViralInfectionVTMLib.oxidation_steppable_key
 

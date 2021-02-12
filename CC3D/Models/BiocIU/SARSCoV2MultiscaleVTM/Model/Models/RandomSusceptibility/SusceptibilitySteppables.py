@@ -10,56 +10,38 @@
 #           from Models.RandomSusceptibility.SusceptibilitySteppables import RandomSusceptibilitySteppable
 #           CompuCellSetup.register_steppable(steppable=RandomSusceptibilitySteppable(frequency=1))
 
-from random import randint
+from random import random
 
-from ViralInfectionVTMSteppables import (
-    uninfected_type_name, infected_type_name, virus_releasing_type_name, dead_type_name)
-from Models.SegoAponte2020 import ViralInfectionVTMBasePy
+from ViralInfectionVTMSteppables import uninfected_type_name
+from nCoVToolkit.nCoVSteppableBase import nCoVSteppableBase
 from Models.SegoAponte2020.ViralInfectionVTMLib import unbound_receptors_cellg_key
 
 from .SusceptibilityModelInputs import *
-
-ViralInfectionVTMSteppableBasePy = ViralInfectionVTMBasePy.ViralInfectionVTMSteppableBasePy
 
 vs_state_key = 'vs_susc'
 random_susceptibility_steppable_key = 'random_susceptibility_steppable'  # RandomSusceptibilitySteppable
 
 
-class RandomSusceptibilitySteppable(ViralInfectionVTMSteppableBasePy):
+class RandomSusceptibilitySteppable(nCoVSteppableBase):
     """
     Implements randomly varying viral susceptibility in space
     Implementation of non-susceptibility can be overwritten in subclasses (default sets surface receptors to zero)
+    Random susceptibility is implemented by assigning a probability of a cell being initialized as unsusceptible
+    according to a fractional value of unsusceptible cells.
     """
 
     unique_key = random_susceptibility_steppable_key
 
     def __init__(self, frequency=1):
-        ViralInfectionVTMSteppableBasePy.__init__(self, frequency)
+        nCoVSteppableBase.__init__(self, frequency)
 
         if track_susc:
             self.track_cell_level_scalar_attribute(field_name='Susceptible', attribute_name=vs_state_key)
 
-        self._epithelial_types = []
-        self._target_type = ''
-        self._frac_not_susc = 0.0
+        self._epithelial_types = {}
 
         # Initialize default data
-        self.append_epithelial_type(uninfected_type_name)
-        self.append_epithelial_type(infected_type_name)
-        self.append_epithelial_type(virus_releasing_type_name)
-        self.append_epithelial_type(dead_type_name)
-        self.set_target_type(uninfected_type_name)
-        self.set_frac_not_susc(frac_not_susc)
-
-    def start(self):
-        ec_list = self.cell_list_by_type(*[getattr(self, x.upper()) for x in self._epithelial_types])
-        if track_susc:
-            for cell in ec_list:
-                cell.dict[vs_state_key] = True
-        num_changed = 0
-        while num_changed < int(len(ec_list) * self._frac_not_susc):
-            if self.make_unsusceptible(self.cell_field[randint(0, self.dim.x - 1), randint(0, self.dim.y - 1), 0]):
-                num_changed += 1
+        self.append_epithelial_type(uninfected_type_name, frac_not_susc)
 
     def make_unsusceptible(self, _cell) -> bool:
         """
@@ -69,26 +51,32 @@ class RandomSusceptibilitySteppable(ViralInfectionVTMSteppableBasePy):
         """
         assert unbound_receptors_cellg_key in _cell.dict.keys(), \
             'RandomSusceptibilitySteppable requires surface receptors'
-        if _cell.dict[unbound_receptors_cellg_key] > 0 and _cell.type == self.target_type_id:
+        if _cell.dict[unbound_receptors_cellg_key] > 0:
             _cell.dict[unbound_receptors_cellg_key] = 0
             if track_susc:
                 _cell.dict[vs_state_key] = False
             return True
         return False
 
-    def append_epithelial_type(self, _name: str):
-        self._epithelial_types.append(_name)
+    def append_epithelial_type(self, _name: str, _val: float = frac_not_susc):
+        if not 0 <= _val <= 1:
+            raise ValueError('Fractional values must be in [0, 1]')
+        self._epithelial_types[_name] = _val
 
     def remove_epithelial_type(self, _name: str):
-        self._epithelial_types.remove(_name)
-
-    def set_target_type(self, _name: str):
-        self._target_type = _name
+        self._epithelial_types.pop(_name)
 
     @property
-    def target_type_id(self) -> int:
-        return getattr(self, self._target_type.upper())
+    def epithelial_type_ids(self):
+        return [getattr(self, x.upper()) for x in self._epithelial_types.keys()]
 
-    def set_frac_not_susc(self, _frac: float):
-        assert 0 <= _frac < 1, 'Fraction of not susceptible cells (num_not_susc) must be in [0, 1)'
-        self._frac_not_susc = _frac
+    def on_new_cell(self, _new_cell):
+        """
+        Implementation of callback. If a cell's type is registered, then it becomes unsusceptible with a probability
+        according to its registered fraction
+        """
+        if _new_cell.type in self.epithelial_type_ids:
+            if track_susc:
+                _new_cell.dict[vs_state_key] = True
+            if random() <= self._epithelial_types[self.get_type_name_by_cell(_new_cell)]:
+                self.make_unsusceptible(_new_cell)
