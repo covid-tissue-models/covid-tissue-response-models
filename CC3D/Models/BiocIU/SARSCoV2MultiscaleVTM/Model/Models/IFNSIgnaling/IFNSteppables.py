@@ -193,7 +193,7 @@ class IFNSteppable(nCoVSteppableBase):
     def step(self, mcs):
         # Connect viral replication model and IFN model and read IFNe field
         secretor = self.get_field_secretor(field_name=self._target_field_name)
-        for cell in self.cell_list_by_type(*[getattr(self, x.upper()) for x in self._registered_types]):
+        for cell in self.cell_list_by_type(*self.registered_type_ids):
             IFN_cell_sbml = get_cell_ifn_model(cell)
             virus_cell_sbml = get_cell_viral_replication_model(cell)
             IFN_cell_sbml['H'] = virus_cell_sbml['H']
@@ -242,6 +242,9 @@ class IFNSteppable(nCoVSteppableBase):
 
 
 class IFNViralInternalizationSteppable(MainSteppables.ViralInternalizationSteppable):
+    # todo: implement unique_key in IFNViralInternalizationSteppable
+    # todo: generate docstring for IFNViralInternalizationSteppable
+
     def __init__(self, frequency=1):
         super().__init__(frequency)
 
@@ -262,16 +265,6 @@ class IFNViralInternalizationSteppable(MainSteppables.ViralInternalizationSteppa
         initial_number_registered_cells = len(self.cell_list_by_type(*[getattr(self, x.upper()) for x in self._registered_types]))
         self.set_internalization_rate(IFNInputs.b * initial_number_registered_cells * days_to_mcs)
 
-    def step(self, mcs):
-        secretor = self.get_field_secretor(field_name=self._target_field_name)
-        for cell in self.cell_list_by_type(self.uninfected_type_id):
-            seen_amount = secretor.amountSeenByCell(cell)
-            rate = seen_amount * self._internalization_rate
-            if random.random() <= nCoVUtils.ul_rate_to_prob(rate):
-                self.set_cell_type(cell, self.infected_type_id)
-                virus_cell_sbml = get_cell_viral_replication_model(cell)
-                virus_cell_sbml['V'] = initial_amount_virus
-
     def set_virus_releasing_type_name(self, _name: str):
         self._virus_releasing_type_name = _name
 
@@ -285,14 +278,27 @@ class IFNViralInternalizationSteppable(MainSteppables.ViralInternalizationSteppa
     def unregister_type(self, _name: str):
         self._registered_types.remove(_name)
 
+    def on_set_cell_type(self, cell, old_type):
+        # todo: verify IFN internalization implementation: a fixed amount of virus is always introduced to
+        #  the intracellular model of a cell when internalization occurs
+        if cell.type == self.infected_type_id and old_type == self.uninfected_type_id:
+            virus_cell_sbml = get_cell_viral_replication_model(cell)
+            virus_cell_sbml['V'] = initial_amount_virus
+
 
 class IFNEclipsePhaseSteppable(MainSteppables.EclipsePhaseSteppable):
+    # todo: implement unique_key in IFNEclipsePhaseSteppable
+    # todo: generate docstring for IFNEclipsePhaseSteppable
+
     def __init__(self, frequency=1):
         super().__init__(frequency)
         self.set_eclipse_phase(1.0 / (IFNInputs.k * days_to_mcs))
 
 
 class IFNViralReleaseSteppable(MainSteppables.ViralReleaseSteppable):
+    # todo: implement unique_key in IFNViralReleaseSteppable
+    # todo: generate docstring for IFNViralReleaseSteppable
+
     def __init__(self, frequency=1):
         super().__init__(frequency)
 
@@ -311,6 +317,12 @@ class IFNViralReleaseSteppable(MainSteppables.ViralReleaseSteppable):
 
 
 class IFNViralDeathSteppable(MainSteppables.ViralDeathSteppable):
+    # todo: consider deriving ViralDeathSteppable from nCoVSteppableBase, since ViralDeathSteppable.set_viral_death_rate
+    #  is per cell type rather than per cell, which may be confusing to the user; otherwise, override
+    #  ViralDeathSteppable.set_viral_death_rate and throw an exception on use with a useful message
+    # todo: implement unique_key in IFNViralDeathSteppable
+    # todo: generate docstring for IFNViralDeathSteppable
+
     def __init__(self, frequency=1):
         super().__init__(frequency)
 
@@ -384,6 +396,10 @@ class IFNReleaseSteppable(nCoVSteppableBase):
     def set_virus_releasing_type_name(self, _name: str):
         self._virus_releasing_type_name = _name
 
+    @property
+    def virus_releasing_type_id(self):
+        return getattr(self, self._virus_releasing_type_name.upper())
+
     def set_target_field_name(self, _name: str):
         self._target_field_name = _name
 
@@ -394,6 +410,9 @@ class IFNReleaseSteppable(nCoVSteppableBase):
 
 
 class IFNVirusFieldInitializerSteppable(MainSteppables.VirusFieldInitializerSteppable):
+    # todo: implement unique_key in IFNVirusFieldInitializerSteppable
+    # todo: generate docstring for IFNVirusFieldInitializerSteppable
+
     def __init__(self, frequency=1):
         super().__init__(frequency)
 
@@ -462,6 +481,7 @@ class IFNFieldInitializerSteppable(nCoVSteppableBase):
 
 
 class IFNSimDataSteppable(nCoVSteppableBase):
+    # todo: generate docstring for IFNSimDataSteppable
 
     unique_key = ifn_sim_data_key
 
