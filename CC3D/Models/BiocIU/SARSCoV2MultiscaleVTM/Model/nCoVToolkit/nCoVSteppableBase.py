@@ -59,9 +59,30 @@ class nCoVSteppableBase(SteppableBasePy):
             for model_entry in self.ode_manager.models_by_cell_type(self.get_type_name_by_cell(new_cell)):
                 self._new_cell_ode_model(cell=new_cell, model_name=model_entry.model_name)
 
+        # Do callback on all registered subclasses
+        # If a subclass instance returns False, try again in a subsequent iteration
+        from cc3d.CompuCellSetup import persistent_globals
+        steppables = [x for x in persistent_globals.steppable_registry.allSteppables()
+                      if isinstance(x, nCoVSteppableBase)]
+        while steppables:
+            steppables = [x for x in steppables if x.on_new_cell(new_cell) is False]
+
         return new_cell
 
+    def on_new_cell(self, _new_cell: CompuCell.CellG) -> Union[None, bool]:
+        """
+        A callback on every occasion that a subclass calls new_cell. If the returned value is False, then the callback
+        is deferred and will be called again in a subsequent iteration over all subclasses registered with cc3d.
+
+        :param _new_cell: newly created cell
+        :return: None if not deferring; False if deferring
+        """
+        pass
+
     def set_cell_type(self, cell: CompuCell.CellG, _type_id: int):
+        if cell.type == _type_id:
+            return
+
         # Remove ODE models that are no longer relevant to this cell
         if self.ode_manager is not None:
             for model_entry in self.ode_manager.models_by_cell_type(self.get_type_name_by_cell(cell)):
@@ -70,6 +91,7 @@ class nCoVSteppableBase(SteppableBasePy):
                     self.delete_sbml_from_cell(model_name=model_entry.model_name,
                                                cell=cell)
 
+        old_type_id = cell.type
         cell.type = _type_id
 
         # Add ODE models that are now relevant to this cell
@@ -77,6 +99,27 @@ class nCoVSteppableBase(SteppableBasePy):
             for model_entry in self.ode_manager.models_by_cell_type(self.get_type_name_by_cell(cell)):
                 if not hasattr(cell.sbml, model_entry.model_name):
                     self._new_cell_ode_model(cell=cell, model_name=model_entry.model_name)
+
+        # Do callback on all registered subclasses
+        # If a subclass instance returns False, try again in a subsequent iteration
+        from cc3d.CompuCellSetup import persistent_globals
+        steppables = [x for x in persistent_globals.steppable_registry.allSteppables()
+                      if isinstance(x, nCoVSteppableBase)]
+        while steppables:
+            steppables = [x for x in steppables if x.on_set_cell_type(cell, old_type_id) is False]
+
+    def on_set_cell_type(self, cell: CompuCell.CellG, old_type: int) -> Union[None, bool]:
+        """
+        A callback on every occasion that a subclass calls set_cell_type. If the returned value is False, then the
+        callback is deferred and will be called again in a subsequent iteration over all subclasses registered with
+        cc3d. The callback is called after the cell type has been changed and all ODE models have been updated
+        according to the ode manager
+
+        :param cell: a cell with a newly assigned type
+        :param old_type: previous type of the cell
+        :return: None if not deferring; False if deferring
+        """
+        pass
 
     def _new_cell_ode_model(self, cell: CompuCell.CellG, model_name: str):
         if self.ode_manager is None:
@@ -108,6 +151,11 @@ class nCoVSteppableBase(SteppableBasePy):
     def ode_models_by_cell_type(self, _cell_type: str):
         if self.ode_manager is not None:
             return self.ode_manager.models_by_cell_type(_cell_type)
+        raise NoODEManagerException
+
+    def cell_types_by_ode_model(self, _model_name: str) -> Union[None, List[int]]:
+        if self.ode_manager is not None:
+            return self.ode_manager.cell_types_by_model(_model_name)
         raise NoODEManagerException
 
     def register_ode_model(self,
@@ -170,6 +218,14 @@ class ODEManagerSteppable(nCoVSteppableBase):
                 elif isinstance(cell_types, Iterable) and _cell_type in cell_types:
                     x.append(y)
         return x
+
+    def cell_types_by_model(self, _model_name: str) -> Union[None, List[int]]:
+        ode_model_entry = self._ode_models[_model_name]
+        if ode_model_entry.cell_types is None:
+            return None
+        if isinstance(ode_model_entry.cell_types, str):
+            return [getattr(self, ode_model_entry.cell_types.upper())]
+        return [getattr(self, x.upper()) for x in self._ode_models[_model_name].cell_types]
 
     def register_model(self,
                        model_name: str,

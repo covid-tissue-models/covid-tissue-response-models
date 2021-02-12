@@ -49,9 +49,9 @@ class NeighborRecoverySteppable(SimpleRecoverySteppable):
         :param _cell: dead cell to test for recovery
         :return: True if cell recovers
         """
-        ca = sum([a for n, a in self.get_cell_neighbor_data_list(_cell)
-                  if n is not None and n.type == self.recovered_type_id])
-        return random.random() < ca * recovery_rate * s_to_mcs
+        recovery_type = self.recovery_type(_cell)
+        ca = sum([a for n, a in self.get_cell_neighbor_data_list(_cell) if n is not None and n.type == recovery_type])
+        return random.random() < ca * self.recovery_prob(_cell)
 
 
 class NeighborRecoveryDataSteppable(SimpleRecoveryDataSteppable):

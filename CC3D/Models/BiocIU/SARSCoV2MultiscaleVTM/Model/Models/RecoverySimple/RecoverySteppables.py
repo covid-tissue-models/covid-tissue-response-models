@@ -17,19 +17,23 @@
 #           from Models.RecoverySimple.RecoverySteppables import SimpleRecoveryDataSteppable
 #           CompuCellSetup.register_steppable(steppable=SimpleRecoveryDataSteppable(frequency=1))
 
+from collections import namedtuple
 import random
-import sys
 import os
+import sys
+from typing import *
 
 sys.path.append(os.path.join(os.environ["ViralInfectionVTM"], "Simulation"))
 from ViralInfectionVTMModelInputs import s_to_mcs
-from Models.SegoAponte2020 import ViralInfectionVTMLib
 from nCoVToolkit.nCoVSteppableBase import nCoVSteppableBase
 from ViralInfectionVTMSteppables import SimDataSteppable
 
 from .RecoveryInputs import *
 rec_steppable_key = "sprec_steppable"
 rec_data_steppable_key = "sprec_data_steppable"
+
+
+RecoveryData = namedtuple(typename='RecoveryData', field_names=['recovered_type_name', 'recovery_prob'])
 
 
 class SimpleRecoverySteppable(nCoVSteppableBase):
@@ -42,50 +46,57 @@ class SimpleRecoverySteppable(nCoVSteppableBase):
     def __init__(self, frequency=1):
         super().__init__(frequency)
         self.num_recovered = 0
+        self.num_recovered_by_type: Dict[str, int] = {}
 
-        self._recovered_type_name = ''
-        self._dead_type_name = ''
+        self._registered_recovery: Dict[str, RecoveryData] = {}
 
         # Initialize default data
         from ViralInfectionVTMSteppables import uninfected_type_name, dead_type_name
-        self.set_recovered_type_name(uninfected_type_name)
-        self.set_dead_type_name(dead_type_name)
+        self.register_recovery(dead_type_name=dead_type_name,
+                               recovered_type_name=uninfected_type_name,
+                               recovery_prob=recovery_rate * s_to_mcs)
 
     def step(self, mcs):
-        [self.recover_cell(cell) for cell in self.cell_list_by_type(self.dead_type_id) if self.cell_recovers(cell)]
+        [self.recover_cell(cell) for cell in self.cell_list_by_type(*self.dead_type_ids) if self.cell_recovers(cell)]
 
     def cell_recovers(self, _cell) -> bool:
         """
         Recovery criterion
+
         :param _cell: dead cell to test for recovery
         :return: True if cell recovers
         """
-        return random.random() < recovery_rate * s_to_mcs
+        return random.random() < self.recovery_prob(_cell)
 
     def recover_cell(self, _cell):
         """
         Implement recovery
+
         :param _cell: dead cell to recover
         :return: None
         """
-        self.set_cell_type(_cell, self.recovered_type_id)
-        if ViralInfectionVTMLib.vrl_key in _cell.dict.keys():
-            _cell.dict[ViralInfectionVTMLib.vrl_key] = False
         self.num_recovered += 1
-
-    def set_recovered_type_name(self, _name: str):
-        self._recovered_type_name = _name
-
-    def set_dead_type_name(self, _name: str):
-        self._dead_type_name = _name
+        self.num_recovered_by_type[self.get_type_name_by_cell(_cell)] += 1
+        self.set_cell_type(_cell, self.recovery_type(_cell))
 
     @property
-    def recovered_type_id(self) -> int:
-        return getattr(self, self._recovered_type_name.upper())
+    def dead_type_ids(self) -> List[int]:
+        return [getattr(self, x.upper()) for x in self._registered_recovery.keys()]
 
-    @property
-    def dead_type_id(self) -> int:
-        return getattr(self, self._dead_type_name.upper())
+    def recovery_prob(self, _cell) -> float:
+        return self._registered_recovery[self.get_type_name_by_cell(_cell)].recovery_prob
+
+    def recovery_type(self, _cell) -> int:
+        return getattr(self, self._registered_recovery[self.get_type_name_by_cell(_cell)].recovered_type_name.upper())
+
+    def register_recovery(self, dead_type_name: str, recovered_type_name: str, recovery_prob: float):
+        self._registered_recovery[dead_type_name] = RecoveryData(recovered_type_name=recovered_type_name,
+                                                                 recovery_prob=recovery_prob)
+        self.num_recovered_by_type[dead_type_name] = 0
+
+    def unregister_recovery(self, _name: str):
+        self._registered_recovery.pop(_name)
+        self.num_recovered_by_type.pop(_name)
 
 
 class SimpleRecoveryDataSteppable(nCoVSteppableBase):
@@ -165,6 +176,7 @@ class SimpleRecoveryDataSteppable(nCoVSteppableBase):
     def flush_stored_outputs(self):
         """
         Write stored outputs to file and clear output storage
+
         :return: None
         """
         if self.write_rec_data_freq > 0:
