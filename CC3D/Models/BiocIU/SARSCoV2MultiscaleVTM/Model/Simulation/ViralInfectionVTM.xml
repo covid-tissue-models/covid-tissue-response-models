@@ -16,7 +16,7 @@
 
     <Potts>
         <!-- Basic properties of CPM (GGH) algorithm -->
-        <Dimensions x="210" y="210" z="1"/>
+        <Dimensions x="90" y="90" z="1"/>
         <Steps>4033</Steps>
         <Temperature>10.0</Temperature>
         <NeighborOrder>3</NeighborOrder>
@@ -84,9 +84,6 @@
             </Plane>
          </BoundaryConditions>
       </DiffusionField>
-   </Steppable>
-
-       <Steppable Type="DiffusionSolverFE">
       <DiffusionField Name="IFNe">
          <DiffusionData>
             <FieldName>IFNe</FieldName>

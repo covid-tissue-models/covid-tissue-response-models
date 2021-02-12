@@ -15,10 +15,6 @@ os.environ["ViralInfectionVTM"] = os.path.dirname(os.path.dirname(main_step_file
 
 from cc3d import CompuCellSetup
 
-from ViralInfectionVTMSteppables import CellInitializerSteppable
-
-CompuCellSetup.register_steppable(steppable=CellInitializerSteppable(frequency=1))
-
 from ..Models.IFNSIgnaling.IFNSteppables import IFNVirusFieldInitializerSteppable
 
 CompuCellSetup.register_steppable(steppable=IFNVirusFieldInitializerSteppable(frequency=1))
@@ -46,5 +42,9 @@ CompuCellSetup.register_steppable(steppable=IFNSimDataSteppable(frequency=1))
 from ..Models.IFNSIgnaling.IFNSteppables import IFNSteppable
 
 CompuCellSetup.register_steppable(steppable=IFNSteppable(frequency=1))
+
+from ViralInfectionVTMSteppables import CellInitializerSteppable
+
+CompuCellSetup.register_steppable(steppable=CellInitializerSteppable(frequency=1))
 
 CompuCellSetup.run()

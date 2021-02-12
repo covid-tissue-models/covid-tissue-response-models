@@ -32,6 +32,7 @@ days_to_mcs = hours_to_mcs / 24.0
 ifn_model_vars = ["IFN", "STATP", "IRF7", "IRF7P"]
 viral_replication_model_vars = ["H", "V"]
 
+
 def IFN_model_string():
     """
     Antimony model string generator for IFN intracellular signaling model adopted from "Multiscale Model
@@ -39,7 +40,7 @@ def IFN_model_string():
     Josua O. Aponte-Serrano, Jordan J.A. Weaver, T.J. Sego, James A. Glazier and Jason E. Shoemaker
     :return: Antimony model string
     """
-    model_string = f'''{IFN_model_name}()
+    model_string = f'''model {IFN_model_name}()
         //Equations
         E2a: -> IFN         ; H*(k11*RIGI*V+k12*(V^n)/(k13+(V^n))+k14*IRF7P)    ;
         E2b: IFN ->         ; k21*IFN                                           ;
@@ -87,11 +88,14 @@ def viral_replication_model_string():
     James A. Glazier and Jason E. Shoemaker
     :return: Antimony model string
     """
-    model_string = f'''{viral_replication_model_name}()
+    model_string = f'''model {viral_replication_model_name}()
         //Equations
         E7a: H ->           ; H*k61*V                     ;
         E8a: -> V           ; H*k71*V/(1.0+k72*IFNe*7E-5) ;
         E8b: V ->           ; k73*V                       ;
+        
+        // Conversion factors
+        s_t = {hours_to_mcs} ;
         
         //Parameters
         k61 = {IFNInputs.k61} * s_t ;
@@ -105,6 +109,7 @@ def viral_replication_model_string():
     
         //Inputs
         IFNe = 0.0   ;
+        end
     '''
     return model_string
 
@@ -148,6 +153,10 @@ class IFNSteppable(nCoVSteppableBase):
         self._virus_field_name = ''  # Name of virus field
         self._virus_diffusion_id = ''  # CC3DML id for diffusion coefficient
         self._virus_decay_id = ''  # CC3DML id for decay coefficient
+        self._ifn_field_name = ''
+        self._ifn_diffusion_id = ''
+        self._ifn_decay_id = ''
+        self._target_field_name = ''
 
         # Initialize default data
         self.set_target_field_name(IFN_field_name)
@@ -383,13 +392,15 @@ class IFNReleaseSteppable(nCoVSteppableBase):
             raise ValueError("Viral release must be non-negative")
         self._release_rate = _val
 
+
 class IFNVirusFieldInitializerSteppable(MainSteppables.VirusFieldInitializerSteppable):
     def __init__(self, frequency=1):
         super().__init__(frequency)
 
     def start(self):
-        self.diffusion_coefficient =  IFNInputs.virus_diffusion_coefficient * min_to_mcs
+        self.diffusion_coefficient = IFNInputs.virus_diffusion_coefficient * min_to_mcs
         self.decay_coefficient = IFNInputs.c * days_to_mcs
+
 
 class IFNFieldInitializerSteppable(nCoVSteppableBase):
     """
@@ -410,44 +421,44 @@ class IFNFieldInitializerSteppable(nCoVSteppableBase):
         self._ifn_decay_id = 'ifn_decay'
 
     def start(self):
-        self.diffusion_coefficient = IFNInputs.virus_diffusion_coefficient * min_to_mcs
+        self.diffusion_coefficient = IFNInputs.IFNe_diffusion_coefficient * min_to_mcs
         self.decay_coefficient = IFNInputs.c * days_to_mcs
 
     @property
     def diffusion_coefficient(self) -> float:
-        return self.get_xml_element(self._virus_diffusion_id).cdata
+        return self.get_xml_element(self._ifn_diffusion_id).cdata
 
     @diffusion_coefficient.setter
     def diffusion_coefficient(self, _val: float):
         if _val <= 0:
             raise ValueError("Diffusion coefficient must be positive")
-        self.get_xml_element(self._virus_diffusion_id).cdata = _val
+        self.get_xml_element(self._ifn_diffusion_id).cdata = _val
 
     @property
     def decay_coefficient(self) -> float:
-        return self.get_xml_element(self._virus_decay_id).cdata
+        return self.get_xml_element(self._ifn_decay_id).cdata
 
     @decay_coefficient.setter
     def decay_coefficient(self, _val: float):
         if _val < 0:
             raise ValueError("Decay coefficient must be non-negative")
-        self.get_xml_element(self._virus_decay_id).cdata = _val
+        self.get_xml_element(self._ifn_decay_id).cdata = _val
 
     def set_field_data(self, field_name: str = None, diffusion: str = None, decay: str = None):
         if field_name is not None:
-            self.virus_field_name = field_name
+            self.ifn_field_name = field_name
         if diffusion is not None:
-            self._virus_diffusion_id = diffusion
+            self._ifn_diffusion_id = diffusion
         if decay is not None:
-            self._virus_decay_id = decay
+            self._ifn_decay_id = decay
 
     @property
     def field_secretor(self):
-        return self.get_field_secretor(self.virus_field_name)
+        return self.get_field_secretor(self.ifn_field_name)
 
     @property
     def field_object(self):
-        return getattr(self.field, self.virus_field_name)
+        return getattr(self.field, self.ifn_field_name)
 
 
 class IFNSimDataSteppable(nCoVSteppableBase):
@@ -500,6 +511,7 @@ class IFNSimDataSteppable(nCoVSteppableBase):
         # Plotting and writing average values of IFN model variables
         if plot_ifn_data or write_ifn_data:
             for i in range(len(ifn_model_vars)):
+                # todo: make types counted in data steppable dynamic and settable
                 L = len(self.cell_list_by_type(MainSteppables.infected_type_name,MainSteppables.uninfected_type_name,MainSteppables.virus_releasing_type_name))
                 total_var = 0.0
                 for cell in self.cell_list_by_type(MainSteppables.infected_type_name,MainSteppables.uninfected_type_name,MainSteppables.virus_releasing_type_name):
@@ -509,7 +521,7 @@ class IFNSimDataSteppable(nCoVSteppableBase):
                     window_name = getattr(self, 'ifn_data_win' + str(i))
                     window_name.add_data_point(ifn_model_vars[i], mcs * hours_to_mcs, total_var / L)
                 if write_ifn_data:
-                    self.ifn_data[mcs] =[mcs * hours_to_mcs]
+                    self.ifn_data[mcs] = [mcs * hours_to_mcs]
                     self.ifn_data[mcs].append(total_var / L)
 
         # Flush outputs at quarter simulation lengths
