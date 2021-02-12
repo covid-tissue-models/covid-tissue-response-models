@@ -19,13 +19,13 @@ from Models.SegoAponte2020.ViralInfectionVTMSteppables import ViralReplicationSt
 
 CompuCellSetup.register_steppable(steppable=ViralReplicationSteppable(frequency=1))
 
-from Models.SegoAponte2020.ViralInfectionVTMSteppables import CellsInitializerSteppable
-
-CompuCellSetup.register_steppable(steppable=CellsInitializerSteppable(frequency=1))
-
 from Models.SegoAponte2020.ViralInfectionVTMSteppables import ViralInternalizationSteppable
 
 CompuCellSetup.register_steppable(steppable=ViralInternalizationSteppable(frequency=1))
+
+from Models.SegoAponte2020.ViralInfectionVTMSteppables import CellsInitializerSteppable
+
+CompuCellSetup.register_steppable(steppable=CellsInitializerSteppable(frequency=1))
 
 from Models.SegoAponte2020.ViralInfectionVTMSteppables import ViralSecretionSteppable
 
