@@ -279,4 +279,4 @@ class ODEManagerSteppable(nCoVSteppableBase):
         else:
             for cell in self.cell_list_by_type(*self.cell_types_by_model(model_name)):
                 dict_attrib = CompuCell.getPyAttrib(cell)
-                dict_attrib['SBMLSolver'].timestep()
+                dict_attrib['SBMLSolver'][model_name].timestep()
