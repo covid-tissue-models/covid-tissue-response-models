@@ -277,6 +277,6 @@ class ODEManagerSteppable(nCoVSteppableBase):
             from cc3d.CompuCellSetup import persistent_globals as pg
             pg.free_floating_sbml_simulators[model_name].timestep()
         else:
-            for cell in self.cell_list_by_type(*o.cell_types):
+            for cell in self.cell_list_by_type(*self.cell_types_by_model(model_name)):
                 dict_attrib = CompuCell.getPyAttrib(cell)
                 dict_attrib['SBMLSolver'].timestep()
