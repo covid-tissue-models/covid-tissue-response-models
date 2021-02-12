@@ -19,32 +19,32 @@ from ViralInfectionVTMSteppables import CellInitializerSteppable
 
 CompuCellSetup.register_steppable(steppable=CellInitializerSteppable(frequency=1))
 
-from ViralInfectionVTMSteppables import VirusFieldInitializerSteppable
+from ..Models.IFNSIgnaling.IFNSteppables import IFNVirusFieldInitializerSteppable
 
-CompuCellSetup.register_steppable(steppable=VirusFieldInitializerSteppable(frequency=1))
+CompuCellSetup.register_steppable(steppable=IFNVirusFieldInitializerSteppable(frequency=1))
 
-from Models.RecoveryNeighbor.RecoverySteppables import SimpleRecoverySteppable
+from ..Models.IFNSIgnaling.IFNSteppables import IFNViralDeathSteppable
 
-CompuCellSetup.register_steppable(steppable=SimpleRecoverySteppable(frequency=1))
+CompuCellSetup.register_steppable(steppable=IFNViralDeathSteppable(frequency=1))
 
-from ViralInfectionVTMSteppables import ViralDeathSteppable
+from ..Models.IFNSIgnaling.IFNSteppables import IFNEclipsePhaseSteppable
 
-CompuCellSetup.register_steppable(steppable=ViralDeathSteppable(frequency=1))
+CompuCellSetup.register_steppable(steppable=IFNEclipsePhaseSteppable(frequency=1))
 
-from ViralInfectionVTMSteppables import EclipsePhaseSteppable
+from ..Models.IFNSIgnaling.IFNSteppables import IFNViralInternalizationSteppable
 
-CompuCellSetup.register_steppable(steppable=EclipsePhaseSteppable(frequency=1))
+CompuCellSetup.register_steppable(steppable=IFNViralInternalizationSteppable(frequency=1))
 
-from ViralInfectionVTMSteppables import ViralInternalizationSteppable
+from ..Models.IFNSIgnaling.IFNSteppables import IFNViralReleaseSteppable
 
-CompuCellSetup.register_steppable(steppable=ViralInternalizationSteppable(frequency=1))
+CompuCellSetup.register_steppable(steppable=IFNViralReleaseSteppable(frequency=1))
 
-from ViralInfectionVTMSteppables import ViralReleaseSteppable
+from ..Models.IFNSIgnaling.IFNSteppables import IFNSimDataSteppable
 
-CompuCellSetup.register_steppable(steppable=ViralReleaseSteppable(frequency=1))
+CompuCellSetup.register_steppable(steppable=IFNSimDataSteppable(frequency=1))
 
-from ViralInfectionVTMSteppables import SimDataSteppable
+from ..Models.IFNSIgnaling.IFNSteppables import IFNSteppable
 
-CompuCellSetup.register_steppable(steppable=SimDataSteppable(frequency=1))
+CompuCellSetup.register_steppable(steppable=IFNSteppable(frequency=1))
 
 CompuCellSetup.run()
