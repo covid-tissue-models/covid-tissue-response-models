@@ -22,11 +22,14 @@ from . import IFNInputs
 IFN_model_name = 'IFN_model'
 IFN_field_name = 'IFNe'
 viral_replication_model_name = 'viral_replication_model'
+ifn_release_key = 'std_ifn_release_steppable'  # IFNReleaseSteppable
+ifn_field_initializer_key = 'std_ifn_field_initializer_steppable'  # IFNFieldInitializerSteppable
 initial_amount_virus = 6.9e-8
 min_to_mcs = s_to_mcs / 60.0
 hours_to_mcs = min_to_mcs / 60.0
 days_to_mcs = hours_to_mcs / 24.0
-
+ifn_model_vars = ["IFN", "STATP", "IRF7", "IRF7P"]
+viral_replication_model_vars = ["H", "V"]
 
 def IFN_model_string():
     """
@@ -105,10 +108,6 @@ def viral_replication_model_string():
     return model_string
 
 
-ifn_model_vars = ["IFN", "STATP", "IRF7", "IRF7P"]
-viral_replication_model_vars = ["H", "V"]
-
-
 def get_cell_viral_replication_model(cell):
     """
     Convenience method to get the viral replication model of a cell
@@ -139,20 +138,20 @@ class IFNSteppable(nCoVSteppableBase):
 
         # Internal data
         self._registered_types = []  # List of cell type names for use with IFN model
+        self._uninfected_type_name = ''
+        self._infected_type_name = ''
         self._virus_releasing_type_name = ''  # Name of virus-releasing cell type
-        self._dead_type_name = ''  # Name of dead type
         self._virus_field_name = ''  # Name of virus field
         self._virus_diffusion_id = ''  # CC3DML id for diffusion coefficient
         self._virus_decay_id = ''  # CC3DML id for decay coefficient
-        self._ifn_field_name = ''  # Name of IFN field
-        self._ifn_diffusion_id = ''  # CC3DML id for diffusion coefficient
-        self._ifn_decay_id = ''  # CC3DML id for decay coefficient
 
         # Initialize default data
         self.set_virus_field_data(field_name=MainSteppables.virus_field_name, diffusion='virus_dc', decay='virus_decay')
         self.set_ifn_field_data(field_name=IFN_field_name, diffusion='IFNe_dc', decay='IFNe_decay')
+        self.set_target_field_name(IFN_field_name)
+        self.set_uninfected_type_name(MainSteppables.uninfected_type_name)
+        self.set_infected_type_name(MainSteppables.infected_type_name)
         self.set_virus_releasing_type_name(MainSteppables.virus_releasing_type_name)
-        self.set_dead_type_name(MainSteppables.dead_type_name)
         self.register_type(MainSteppables.uninfected_type_name)
         self.register_type(MainSteppables.infected_type_name)
         self.register_type(MainSteppables.virus_releasing_type_name)
@@ -163,83 +162,33 @@ class IFNSteppable(nCoVSteppableBase):
         self.set_sbml_global_options(self.sbml_options)
 
         # Load IFN sbml model
-
-        # Framework expects a model string generator that takes the argument of a cell
-        # Maybe put this on the steppable for derived classes to customize
         def ifn_model_fcn(cell):
             return IFN_model_string()
 
         self.register_ode_model(model_name=IFN_model_name,
                                 model_fcn=ifn_model_fcn,
+                                # todo: which one? cell_types=self._registered_type_ids
                                 cell_types=self._registered_types,
-                                #TODO: this was a variable, but given that the model is rescaled
-                                # inside the Antimony string, is reduntant
                                 step_size=1.0)
 
         # Load viral replication sbml model
-
-        # Framework expects a model string generator that takes the argument of a cell
-        # Maybe put this on the steppable for derived classes to customize
         def vr_model_fcn(cell):
             return viral_replication_model_string()
 
         self.register_ode_model(model_name=viral_replication_model_name,
                                 model_fcn=vr_model_fcn,
                                 cell_types=self._registered_types,
-                                #TODO: this was a variable, but given that the model is rescaled
-                                # inside the Antimony string, is reduntant
                                 step_size=1.0)
 
-        # Set IFNe diffusion parameters
-        self.get_xml_element(self._ifn_diffusion_id).cdata = IFNInputs.IFNe_diffusion_coefficient * min_to_mcs
-        self.get_xml_element(self._ifn_decay_id).cdata = IFNInputs.t2 * hours_to_mcs
-
-        # Set Virus diffusion parameters
-        self.get_xml_element(self._virus_diffusion_id).cdata = IFNInputs.virus_diffusion_coefficient * min_to_mcs
-        self.get_xml_element(self._virus_decay_id).cdata = IFNInputs.c * days_to_mcs
-
     def step(self, mcs):
-        #TODO: Cut the repetition of the references to SBMLs
-
-        # Get secretors once for the step
-        secretor_virus = self.secretor_virus
-        secretor_ifn = self.secretor_ifn
-
-        # Production of extracellular virus
-        for cell in self.cell_list_by_type(self.virus_releasing_type_id):
-            virus_cell_sbml = get_cell_viral_replication_model(cell)
-            k73 = virus_cell_sbml['k73']
-            internalVirus = virus_cell_sbml['V']
-            p = k73 * internalVirus * 1094460.28
-            secretor_virus.secreteInsideCellTotalCount(cell, p / cell.volume)
-
-        # Production of IFNe
-        for cell in self.cell_list_by_type(*self._registered_types):
-            IFN_cell_sbml = get_cell_ifn_model(cell)
-            k21 = IFN_cell_sbml['k21']
-            intracellularIFN = IFN_cell_sbml['IFN']
-            p = k21 * intracellularIFN
-            secretor_ifn.secreteInsideCellTotalCount(cell, p / cell.volume)
-
-        # Viral cell death
-        # Other death mechanisms apply, according to whatever other steppables are registered
-        for cell in self.cell_list_by_type(self.virus_releasing_type_id):
-            virus_cell_sbml = get_cell_viral_replication_model(cell)
-            k61 = virus_cell_sbml['k61']
-            H = virus_cell_sbml['H']
-            V = virus_cell_sbml['V']
-            viral_death_rate = k61 * V * (1 - H)
-            pr = nCoVUtils.ul_rate_to_prob(viral_death_rate)
-            if random.random() <= pr:
-                self.set_cell_type(cell, self.dead_type_id)
-
         # Connect viral replication model and IFN model and read IFNe field
-        for cell in self.cell_list_by_type(*self._registered_types):
+        secretor = self.get_field_secretor(field_name=self._target_field_name)
+        for cell in self.cell_types_by_ode_model(IFN_model_name):
             IFN_cell_sbml = get_cell_ifn_model(cell)
             virus_cell_sbml = get_cell_viral_replication_model(cell)
             IFN_cell_sbml['H'] = virus_cell_sbml['H']
             IFN_cell_sbml['V'] = virus_cell_sbml['V']
-            ifn_seen = secretor_ifn.amountSeenByCell(cell)  # Calculate once, apply twice
+            ifn_seen = secretor.amountSeenByCell(cell)  # Calculate once, apply twice
             IFN_cell_sbml['IFNe'] = ifn_seen
             virus_cell_sbml['IFNe'] = ifn_seen
 
@@ -258,30 +207,17 @@ class IFNSteppable(nCoVSteppableBase):
     def registered_type_ids(self):
         return [getattr(self, x.upper()) for x in self._registered_types]
 
+    def set_uninfected_type_name(self, _name: str):
+        self._uninfected_type_name = _name
+
+    def set_infected_type_name(self, _name: str):
+        self._infected_type_name = _name
+
     def set_virus_releasing_type_name(self, _name: str):
         self._virus_releasing_type_name = _name
 
-    def set_dead_type_name(self, _name: str):
-        self._dead_type_name = _name
-
-    @property
-    def virus_releasing_type_id(self) -> int:
-        return getattr(self, self._virus_releasing_type_name.upper())
-
-    @property
-    def dead_type_id(self) -> int:
-        return getattr(self, self._dead_type_name.upper())
-
-    def set_virus_field_name(self, _name: str):
-        self._virus_field_name = _name
-
-    def set_virus_field_data(self, field_name: str = None, diffusion: str = None, decay: str = None):
-        if field_name is not None:
-            self.set_virus_field_name(field_name)
-        if diffusion is not None:
-            self._virus_diffusion_id = diffusion
-        if decay is not None:
-            self._virus_decay_id = decay
+    def set_target_field_name(self, _name: str):
+        self._target_field_name = _name
 
     def set_ifn_field_name(self, _name: str):
         self._ifn_field_name = _name
@@ -294,13 +230,222 @@ class IFNSteppable(nCoVSteppableBase):
         if decay is not None:
             self._ifn_decay_id = decay
 
-    @property
-    def secretor_virus(self):
-        return self.get_field_secretor(field_name=self._virus_field_name)
+
+class IFNViralInternalizationSteppable(MainSteppables.ViralInternalizationSteppable):
+    def __init__(self, frequency):
+        super().__init__(self, frequency)
+
+        self._registered_types = []
+        self._virus_releasing_type_name = ''
+        self._dead_type_name = ''
+
+        self.set_virus_releasing_type_name(MainSteppables.virus_releasing_type_name)
+        self.set_dead_type_name(MainSteppables.dead_type_name)
+        self.register_type(MainSteppables.uninfected_type_name)
+        self.register_type(MainSteppables.infected_type_name)
+        self.register_type(MainSteppables.virus_releasing_type_name)
+        self.register_type(MainSteppables.dead_type_name)
+
+    def start(self):
+        # Rescale internalization rate
+        initial_number_registered_cells = self.cell_list_by_type(self._registered_types)
+        self.set_internalization_rate(IFNInputs.b * initial_number_registered_cells * days_to_mcs)
+
+    def step(self, mcs):
+        secretor = self.get_field_secretor(field_name=self._target_field_name)
+        for cell in self.cell_list_by_type(self.uninfected_type_id):
+            seen_amount = secretor.amountSeenByCell(cell)
+            rate = seen_amount * self._internalization_rate
+            if random.random() <= nCoVUtils.ul_rate_to_prob(rate):
+                self.set_cell_type(cell, self.infected_type_id)
+                virus_cell_sbml = get_cell_viral_replication_model(cell)
+                virus_cell_sbml['V'] = initial_amount_virus
+
+    def set_virus_releasing_type_name(self, _name: str):
+        self._virus_releasing_type_name = _name
+
+    def set_dead_type_name(self, _name: str):
+        self._dead_type_name = _name
+
+    def register_type(self, _name: str):
+        if _name not in self._registered_types:
+            self._registered_types.append(_name)
+
+    def unregister_type(self, _name: str):
+        self._registered_types.remove(_name)
+
+
+class IFNEclipsePhaseSteppable(MainSteppables.EclipsePhaseSteppable):
+    def __init__(self, frequency=1):
+        super().__init__(self,frequency)
+        self.set_eclipse_phase(1.0 / (IFNInputs.k * days_to_mcs))
+
+
+class IFNViralReleaseSteppable(MainSteppables.ViralReleaseSteppable):
+    def __init__(self, frequency):
+        super().__init__(self,frequency)
+
+    def step(self, mcs):
+        secretor = self.get_field_secretor(field_name=self._target_field_name)
+        min_dim = min(self.dim.x, self.dim.y, self.dim.z)
+        fact = 1.0
+        if min_dim < 3:
+            fact = float(min_dim)
+
+        for cell in self.cell_list_by_type(self.virus_releasing_type_id):
+            virus_cell_sbml = get_cell_viral_replication_model(cell)
+            # Scaling Factor from unitless virus to PFU/mL
+            self.set_release_rate(virus_cell_sbml['k73'] * virus_cell_sbml['V'] * 1094460.28)
+            secretor.secreteInsideCell(cell, self._release_rate * fact / cell.volume)
+
+
+class IFNViralDeathSteppable(MainSteppables.ViralDeathSteppable):
+    def __init__(self, frequency):
+        super().__init__(self,frequency)
+
+    def step(self, mcs):
+        for cell in self.cell_list_by_type(self.virus_releasing_type_id):
+            virus_cell_sbml = get_cell_viral_replication_model(cell)
+            self.set_viral_death_rate(virus_cell_sbml['k61'] * virus_cell_sbml['V'] * (1 - virus_cell_sbml['H']))
+            pr = nCoVUtils.ul_rate_to_prob(self._viral_death_rate)
+            if random.random() <= pr:
+                self.set_cell_type(cell, self.dead_type_id)
+
+
+class IFNReleaseSteppable(nCoVSteppableBase):
+    """
+    Performs IFN release
+
+    If the simulation domain is quasi-2D, then release will be multiplied by the height of the domain
+    """
+
+    unique_key = ifn_release_key
+
+    def __init__(self, frequency):
+        nCoVSteppableBase.nCoVSteppableBase.__init__(self, frequency)
+
+        self.runBeforeMCS = 1
+
+        self._registered_types = []
+        self._target_field_name = ''
+        self._uninfected_type_name = ''
+        self._infected_type_name = ''
+        self._virus_releasing_type_name = ''
+        self._release_rate = 0.0
+
+        self.set_target_field_name(IFN_field_name)
+        self.set_uninfected_type_name(MainSteppables.uninfected_type_name)
+        self.set_infected_type_name(MainSteppables.infected_type_name)
+        self.set_virus_releasing_type_name(MainSteppables.virus_releasing_type_name)
+        self.register_type(MainSteppables.uninfected_type_name)
+        self.register_type(MainSteppables.infected_type_name)
+        self.register_type(MainSteppables.virus_releasing_type_name)
+
+    def step(self, mcs):
+        secretor = self.get_field_secretor(field_name=self._target_field_name)
+        min_dim = min(self.dim.x, self.dim.y, self.dim.z)
+        fact = 1.0
+        if min_dim < 3:
+            fact = float(min_dim)
+
+        for cell in self.cell_list_by_type(self.virus_releasing_type_id):
+            IFN_cell_sbml = get_cell_ifn_model(cell)
+            self.set_release_rate(IFN_cell_sbml['k21'] * IFN_cell_sbml['IFN'])
+            secretor.secreteInsideCell(cell, self._release_rate * fact / cell.volume)
+
+    def register_type(self, _name: str):
+        if _name not in self._registered_types:
+            self._registered_types.append(_name)
+
+    def unregister_type(self, _name: str):
+        self._registered_types.remove(_name)
 
     @property
-    def secretor_ifn(self):
-        return self.get_field_secretor(field_name=self._ifn_field_name)
+    def registered_type_ids(self):
+        return [getattr(self, x.upper()) for x in self._registered_types]
+
+    def set_uninfected_type_name(self, _name: str):
+        self._uninfected_type_name = _name
+
+    def set_infected_type_name(self, _name: str):
+        self._infected_type_name = _name
+
+    def set_virus_releasing_type_name(self, _name: str):
+        self._virus_releasing_type_name = _name
+
+    def set_target_field_name(self, _name: str):
+        self._target_field_name = _name
+
+    def set_release_rate(self, _val: float):
+        if _val < 0:
+            raise ValueError("Viral release must be non-negative")
+        self._release_rate = _val
+
+class IFNVirusFieldInitializerSteppable(MainSteppables.VirusFieldInitializerSteppable):
+    def __init__(self, frequency):
+        super().__init__(self,frequency)
+
+    def start(self):
+        self.diffusion_coefficient =  IFNInputs.virus_diffusion_coefficient * min_to_mcs
+        self.decay_coefficient = IFNInputs.c * days_to_mcs
+
+class IFNFieldInitializerSteppable(nCoVSteppableBase):
+    """
+    Initializes IFN field data and properties
+
+    By default, requires CC3DML ids "ifn_dc" for virus field diffusion coefficient and "ifn_decay" for virus field
+    decay
+    """
+
+    unique_key = ifn_field_initializer_key
+
+    def __init__(self, frequency):
+        nCoVSteppableBase.nCoVSteppableBase.__init__(self, frequency)
+
+        self.ifn_field_name = IFN_field_name
+
+        self._ifn_diffusion_id = 'ifn_dc'
+        self._ifn_decay_id = 'virus_decay'
+
+    def start(self):
+        self.diffusion_coefficient = IFNInputs.virus_diffusion_coefficient * min_to_mcs
+        self.decay_coefficient = IFNInputs.c * days_to_mcs
+
+    @property
+    def diffusion_coefficient(self) -> float:
+        return self.get_xml_element(self._virus_diffusion_id).cdata
+
+    @diffusion_coefficient.setter
+    def diffusion_coefficient(self, _val: float):
+        if _val <= 0:
+            raise ValueError("Diffusion coefficient must be positive")
+        self.get_xml_element(self._virus_diffusion_id).cdata = _val
+
+    @property
+    def decay_coefficient(self) -> float:
+        return self.get_xml_element(self._virus_decay_id).cdata
+
+    @decay_coefficient.setter
+    def decay_coefficient(self, _val: float):
+        if _val < 0:
+            raise ValueError("Decay coefficient must be non-negative")
+        self.get_xml_element(self._virus_decay_id).cdata = _val
+
+    def set_field_data(self, field_name: str = None, diffusion: str = None, decay: str = None):
+        if field_name is not None:
+            self.virus_field_name = field_name
+        if diffusion is not None:
+            self._virus_diffusion_id = diffusion
+        if decay is not None:
+            self._virus_decay_id = decay
+
+    @property
+    def field_secretor(self):
+        return self.get_field_secretor(self.virus_field_name)
+
+    @property
+    def field_object(self):
+        return getattr(self.field, self.virus_field_name)
 
 
 class IFNDataSteppable(nCoVSteppableBase):
@@ -351,18 +496,17 @@ class IFNDataSteppable(nCoVSteppableBase):
         # todo: rebase to use cell_types_by_ode_model
         if plot_ifn_data or write_ifn_data:
             for i in range(len(ifn_model_vars)):
-                L = 0.0
+                L = self.cell_types_by_ode_model(IFN_model_name)
                 total_var = 0.0
-                for cell in self.cell_list_by_type(*self.cell_types_by_ode_model(IFN_model_name)):
+                for cell in self.cell_types_by_ode_model(IFN_model_name):
                     cell_sbml = get_cell_ifn_model(cell)
-                    L += 1.0
                     total_var += cell_sbml[ifn_model_vars[i]]
                 if plot_ifn_data:
                     window_name = getattr(self, 'ifn_data_win' + str(i))
                     window_name.add_data_point(ifn_model_vars[i], mcs * hours_to_mcs, total_var / L)
                 if write_ifn_data:
                     # todo: fix ifn data tracking; currently, values are overwritten rather than appended
-                    self.ifn_data[mcs] = mcs * s_to_mcs / 60.0 / 60.0
+                    self.ifn_data[mcs] =[mcs * hours_to_mcs]
                     self.ifn_data[mcs].append(total_var / L)
 
         # Flush outputs at quarter simulation lengths
@@ -386,4 +530,4 @@ class IFNDataSteppable(nCoVSteppableBase):
                 fout.write(MainSteppables.SimDataSteppable.data_output_string(self, self.ifn_data))
                 self.ifn_data.clear()
 
-# TODO: ADD VIRUS REPLICATION PLOT AND WRITE, CHANGE PLOT WIN NUMBERS TO NAMES
+#TODO: ADD VIRUS REPLICATION PLOT AND WRITE, CHANGE PLOT WIN NUMBERS TO NAMES
