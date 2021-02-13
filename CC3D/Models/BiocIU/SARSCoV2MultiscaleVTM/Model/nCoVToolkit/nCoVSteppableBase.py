@@ -8,6 +8,7 @@ from cc3d.core.PySteppables import *
 from cc3d.cpp import CompuCell
 
 ode_manager_key = 'std_ode_manager_steppable'
+_registry_key = 'nCoVSteppableBase_registry'
 
 
 class NoODEManagerException(Exception):
@@ -23,9 +24,6 @@ class nCoVSteppableBase(SteppableBasePy):
     This must be set by a derived class so that other steppables can find it if registered with CC3D
     """
 
-    def __init__(self, frequency=1):
-        SteppableBasePy.__init__(self, frequency)
-
     def core_init(self, reinitialize_cell_types=True):
         super().core_init(reinitialize_cell_types)
 
@@ -33,24 +31,32 @@ class nCoVSteppableBase(SteppableBasePy):
         if self.unique_key is None:
             raise AttributeError("Steppable key not set")
         elif self.unique_key in self.shared_steppable_vars.keys():
-            # Currently we can't enforce this, since shared_steppable_vars does not reset at every simulation instance
-            # raise ValueError(f"Steppable key is not unique: {self.unique_key}")
-            pass
+            # Handling the occurence where core_init is called multiple times on consecutive runs for some steppables
+            return
         else:
             print("Registering nCoVSteppableBase:", self.unique_key)
         self.shared_steppable_vars[self.unique_key] = self
+        self._register_base()
 
         # Register ODEManagerSteppable if necessary
-        from cc3d.CompuCellSetup import persistent_globals
-        steppable_registry = persistent_globals.steppable_registry
-        if not any([isinstance(x, ODEManagerSteppable) for x in steppable_registry.allSteppables()]):
-            steppable_registry.registerSteppable(ODEManagerSteppable(frequency=1))
+        from cc3d import CompuCellSetup
+        steppable_registry = CompuCellSetup.persistent_globals.steppable_registry
+        if ODEManagerSteppable.__name__ not in steppable_registry.steppableDict.keys():
+            CompuCellSetup.register_steppable(ODEManagerSteppable(frequency=1))
 
-    def step(self, mcs):
-        pass
+    @property
+    def _base_registry(self):
+        if _registry_key not in self.shared_steppable_vars.keys():
+            self.shared_steppable_vars[_registry_key] = []
+        return self.shared_steppable_vars[_registry_key]
 
-    def finish(self):
-        pass
+    def _register_base(self):
+        if self not in self._base_registry:
+            self._base_registry.append(self)
+
+    def _unregister_base(self):
+        if self in self._base_registry:
+            self._base_registry.remove(self)
 
     def new_cell(self, cell_type=0):
         new_cell = super().new_cell(cell_type)
@@ -61,9 +67,7 @@ class nCoVSteppableBase(SteppableBasePy):
 
         # Do callback on all registered subclasses
         # If a subclass instance returns False, try again in a subsequent iteration
-        from cc3d.CompuCellSetup import persistent_globals
-        steppables = [x for x in persistent_globals.steppable_registry.allSteppables()
-                      if isinstance(x, nCoVSteppableBase)]
+        steppables = self._base_registry.copy()
         while steppables:
             steppables = [x for x in steppables if x.on_new_cell(new_cell) is False]
 
@@ -103,8 +107,7 @@ class nCoVSteppableBase(SteppableBasePy):
         # Do callback on all registered subclasses
         # If a subclass instance returns False, try again in a subsequent iteration
         from cc3d.CompuCellSetup import persistent_globals
-        steppables = [x for x in persistent_globals.steppable_registry.allSteppables()
-                      if isinstance(x, nCoVSteppableBase)]
+        steppables = self._base_registry.copy()
         while steppables:
             steppables = [x for x in steppables if x.on_set_cell_type(cell, old_type_id) is False]
 
