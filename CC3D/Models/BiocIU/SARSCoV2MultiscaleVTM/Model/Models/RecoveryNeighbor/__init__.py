@@ -23,13 +23,16 @@ Contents
 
 Change log
 ==========
+1.0.0
+-----
+- Deployment per architecture defined in framework v1.0.0
 
 0.0.0
 -----
 - Implementation as described at https://doi.org/10.1371/journal.pcbi.1008451.
 
 """
-version_major = 0
+version_major = 1
 version_minor = 0
 version_build = 0
 version_str = f"{version_major}.{version_minor}.{version_build}"
