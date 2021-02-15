@@ -13,7 +13,7 @@ To download a free, local copy of CompuCell3D, visit https://compucell3d.org.
 
 To deploy this tool in your favorite browser, visit https://nanohub.org/tools/cc3dcovid19.
 
-For documentation of usage and development of the framework, see ``Models.Readme.rst``.
+For documentation of usage and development of the framework, see ``Models.readme.rst``.
 
 For tutorials on the basics of downloading and running the framework in CompuCell3D, see the directory ``Tutorials``.
 
