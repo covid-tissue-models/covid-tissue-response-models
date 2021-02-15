@@ -1,10 +1,17 @@
 __param_desc__ = {}
 
 __param_desc__['plot_ifn_data_freq'] = 'Plot ifn model data frequency'
-plot_ifn_data_freq = 0
+plot_ifn_data_freq = 10
 __param_desc__['write_ifn_data_freq'] = \
     'Write ifn model data to simulation directory frequency'
 write_ifn_data_freq = 0
+
+__param_desc__['plot_med_diff_data_freq'] = 'Plot ifn model medium data frequency'
+plot_med_diff_data_freq = 10
+__param_desc__['write_med_diff_data_freq'] = \
+    'Write ifn model medium data to simulation directory frequency'
+write_med_diff_data_freq = 0
+
 
 # IFN Model Parameters
 __param_desc__["k11"] = "RIGI sensing (μM/h)"
@@ -62,6 +69,6 @@ c = 13.0
 
 # Cell Transition Parameters
 __param_desc__['internalization_rate'] = 'Viral Infectivity (PFU/(mL*days))'
-b = 2.4E4
+b = 2.4E-4
 __param_desc__['eclipse_phase'] = '1/days'
 k = 4.0

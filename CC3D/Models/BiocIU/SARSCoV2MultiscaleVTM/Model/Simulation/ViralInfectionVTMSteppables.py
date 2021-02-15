@@ -55,7 +55,8 @@ class CellInitializerSteppable(nCoVSteppableBase.nCoVSteppableBase):
         self.set_infected_type_name(infected_type_name)
 
         self.initialize_sheet()
-        self.random_infected_fraction(0.01)
+        # self.random_infected_fraction(0.01)
+        self.single_infected_cell()
 
     def start(self):
         # Do cell initialization

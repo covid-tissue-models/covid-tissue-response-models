@@ -20,7 +20,7 @@ from . import IFNInputs
 # Module specific references
 IFN_model_name = 'IFN_model'
 IFN_field_name = 'IFNe'
-viral_replication_model_name = 'viral_replication_model'
+viral_replication_model_name = 'ifn_viral_replication_model'
 ifn_signaling_key = 'std_ifn_signaling_steppable'
 ifn_release_key = 'std_ifn_release_steppable'  # IFNReleaseSteppable
 ifn_field_initializer_key = 'std_ifn_field_initializer_steppable'  # IFNFieldInitializerSteppable
@@ -482,6 +482,7 @@ class IFNFieldInitializerSteppable(nCoVSteppableBase):
 
 class IFNSimDataSteppable(nCoVSteppableBase):
     # todo: generate docstring for IFNSimDataSteppable
+    # todo: add extracellular virus and IFN plot and write
 
     unique_key = ifn_sim_data_key
 
@@ -498,14 +499,38 @@ class IFNSimDataSteppable(nCoVSteppableBase):
         self.plot_ifn_data = IFNInputs.plot_ifn_data_freq > 0
         self.write_ifn_data = IFNInputs.write_ifn_data_freq > 0
 
+        self.med_diff_data_win = None
+        self.med_diff_data_path = None
+        self.med_diff_data = dict()
+
+        self.plot_med_diff_data = IFNInputs.plot_med_diff_data_freq > 0
+        self.write_med_diff_data = IFNInputs.write_med_diff_data_freq > 0
+        self.med_diff_key = "MedDiff"
+
         # For flushing outputs every quarter simulation length
         self.__flush_counter = 1
+
+        self._registered_types = []
+        self._target_field_name = ''
+        self._uninfected_type_name = ''
+        self._infected_type_name = ''
+        self._virus_releasing_type_name = ''
+        self._virus_field_name = ''
+        self._ifn_field_name = ''
+
+        self.set_uninfected_type_name(MainSteppables.uninfected_type_name)
+        self.set_infected_type_name(MainSteppables.infected_type_name)
+        self.set_virus_releasing_type_name(MainSteppables.virus_releasing_type_name)
+        self.register_type(MainSteppables.uninfected_type_name)
+        self.register_type(MainSteppables.infected_type_name)
+        self.register_type(MainSteppables.virus_releasing_type_name)
+        #self.set_target_field_name(IFN_field_name)
 
     def start(self):
         if self.plot_ifn_data:
             colors = ['magenta', 'blue', 'green', 'purple']
             for i in range(len(ifn_model_vars)):
-                attr_name = 'ifn_data_win' + str(i)
+                attr_name = 'ifn_data_win' + ifn_model_vars[i]
                 new_window = self.add_new_plot_window(title=ifn_model_vars[i],
                                                       x_axis_title='Time (hrs)',
                                                       y_axis_title='Variables', x_scale_type='linear',
@@ -513,6 +538,18 @@ class IFNSimDataSteppable(nCoVSteppableBase):
                                                       grid=False,
                                                       config_options={'legend': True})
                 new_window.add_plot(ifn_model_vars[i], style='Dots', color=colors[i], size=5)
+                setattr(self, attr_name, new_window)
+
+            colors = ['yellow', 'white']
+            for i in range(len(viral_replication_model_vars)):
+                attr_name = 'ifn_data_win' + viral_replication_model_vars[i]
+                new_window = self.add_new_plot_window(title=viral_replication_model_vars[i],
+                                                      x_axis_title='Time (hrs)',
+                                                      y_axis_title='Variables', x_scale_type='linear',
+                                                      y_scale_type='linear',
+                                                      grid=False,
+                                                      config_options={'legend': True})
+                new_window.add_plot(viral_replication_model_vars[i], style='Dots', color=colors[i], size=5)
                 setattr(self, attr_name, new_window)
 
         if self.write_ifn_data:
@@ -532,16 +569,28 @@ class IFNSimDataSteppable(nCoVSteppableBase):
         if plot_ifn_data or write_ifn_data:
             for i in range(len(ifn_model_vars)):
                 # todo: make types counted in data steppable dynamic and settable
-                L = len(self.cell_list_by_type(MainSteppables.infected_type_name,MainSteppables.uninfected_type_name,MainSteppables.virus_releasing_type_name))
+                L = len(self.cell_list_by_type(*self.registered_type_ids))
                 total_var = 0.0
-                for cell in self.cell_list_by_type(MainSteppables.infected_type_name,MainSteppables.uninfected_type_name,MainSteppables.virus_releasing_type_name):
+                for cell in self.cell_list_by_type(*self.registered_type_ids):
                     cell_sbml = get_cell_ifn_model(cell)
                     total_var += cell_sbml[ifn_model_vars[i]]
                 if plot_ifn_data:
-                    window_name = getattr(self, 'ifn_data_win' + str(i))
+                    window_name = getattr(self, 'ifn_data_win' + ifn_model_vars[i])
                     window_name.add_data_point(ifn_model_vars[i], mcs * hours_to_mcs, total_var / L)
                 if write_ifn_data:
                     self.ifn_data[mcs] = [mcs * hours_to_mcs]
+                    self.ifn_data[mcs].append(total_var / L)
+
+            for i in range(len(viral_replication_model_vars)):
+                # todo: make types counted in data steppable dynamic and settable
+                total_var = 0.0
+                for cell in self.cell_list_by_type(*self.registered_type_ids):
+                    cell_sbml = get_cell_viral_replication_model(cell)
+                    total_var += cell_sbml[viral_replication_model_vars[i]]
+                if plot_ifn_data:
+                    window_name = getattr(self, 'ifn_data_win' + viral_replication_model_vars[i])
+                    window_name.add_data_point(viral_replication_model_vars[i], mcs * hours_to_mcs, total_var / L)
+                if write_ifn_data:
                     self.ifn_data[mcs].append(total_var / L)
 
         # Flush outputs at quarter simulation lengths
@@ -565,4 +614,22 @@ class IFNSimDataSteppable(nCoVSteppableBase):
                 fout.write(MainSteppables.SimDataSteppable.data_output_string(self, self.ifn_data))
                 self.ifn_data.clear()
 
-#TODO: ADD VIRUS REPLICATION PLOT AND WRITE, CHANGE PLOT WIN NUMBERS TO NAMES
+    def register_type(self, _name: str):
+        if _name not in self._registered_types:
+            self._registered_types.append(_name)
+
+    def unregister_type(self, _name: str):
+        self._registered_types.remove(_name)
+
+    @property
+    def registered_type_ids(self):
+        return [getattr(self, x.upper()) for x in self._registered_types]
+
+    def set_uninfected_type_name(self, _name: str):
+        self._uninfected_type_name = _name
+
+    def set_infected_type_name(self, _name: str):
+        self._infected_type_name = _name
+
+    def set_virus_releasing_type_name(self, _name: str):
+        self._virus_releasing_type_name = _name
