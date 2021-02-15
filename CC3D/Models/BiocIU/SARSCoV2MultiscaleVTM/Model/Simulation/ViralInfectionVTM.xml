@@ -1,4 +1,4 @@
-<!--To cite this model please use the following:-->
+<!--To cite this framework please use the following:-->
 
 <!--T.J. Sego, Josua O. Aponte-Serrano, Juliano Ferrari Gianlupi, Samuel R. Heaps, Kira Breithaupt, Lutz Brusch, -->
 <!--Jessica Crawshaw, James M. Osborne, Ellen M. Quardokus, Richard K. Plemper, James A. Glazier,-->
@@ -27,10 +27,10 @@
     <Plugin Name="CellType">
     <!-- Listing all cell types in the simulation -->
         <CellType TypeId="0" TypeName="Medium"/>
-        <CellType Freeze="" TypeId="1" TypeName="Uninfected"/>
-        <CellType Freeze="" TypeId="2" TypeName="Infected"/>
-        <CellType Freeze="" TypeId="3" TypeName="VirusReleasing"/>
-        <CellType Freeze="" TypeId="4" TypeName="Dying"/>
+        <CellType TypeId="1" TypeName="Uninfected"/>
+        <CellType TypeId="2" TypeName="Infected"/>
+        <CellType TypeId="3" TypeName="VirusReleasing"/>
+        <CellType TypeId="4" TypeName="Dying"/>
     </Plugin>
 
     <Plugin Name="Volume"/>

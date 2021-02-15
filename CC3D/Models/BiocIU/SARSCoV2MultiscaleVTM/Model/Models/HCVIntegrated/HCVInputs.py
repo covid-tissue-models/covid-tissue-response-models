@@ -1,10 +1,7 @@
+"""
+Defines default module model parameters
+"""
 __param_desc__ = {}
-
-__param_desc__['plot_ihcv_data_freq'] = 'Plot integrated HCV viral replication model data frequency'
-plot_ihcv_data_freq = 0
-__param_desc__['write_ihcv_data_freq'] = \
-    'Write integrated HCV viral replication model data to simulation directory frequency'
-write_ihcv_data_freq = 0
 
 __param_desc__["k1"] = "Tc formation (1/h)"
 k1 = 80

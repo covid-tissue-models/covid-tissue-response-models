@@ -1,12 +1,12 @@
-###############################################################################################################
-# To cite this model please use the following:
-#
-# T.J. Sego, Josua O. Aponte-Serrano, Juliano Ferrari Gianlupi, Samuel R. Heaps, Kira Breithaupt, Lutz Brusch,
-# Jessica Crawshaw, James M. Osborne, Ellen M. Quardokus, Richard K. Plemper, James A. Glazier,
-# "A modular framework for multiscale, multicellular, spatiotemporal modeling of acute primary viral infection and
-# immune response in epithelial tissues and its application to drug therapy timing and effectiveness",
-# PLoS Comput Biol 16(12): e1008451. https://doi.org/10.1371/journal.pcbi.1008451
-###############################################################################################################
+"""
+To cite this framework please use the following:
+
+T.J. Sego, Josua O. Aponte-Serrano, Juliano Ferrari Gianlupi, Samuel R. Heaps, Kira Breithaupt, Lutz Brusch,
+Jessica Crawshaw, James M. Osborne, Ellen M. Quardokus, Richard K. Plemper, James A. Glazier,
+"A modular framework for multiscale, multicellular, spatiotemporal modeling of acute primary viral infection and
+immune response in epithelial tissues and its application to drug therapy timing and effectiveness",
+PLoS Comput Biol 16(12): e1008451. https://doi.org/10.1371/journal.pcbi.1008451
+"""
 
 import os
 from ViralInfectionVTMModelInputs import __file__ as f
@@ -22,6 +22,11 @@ CompuCellSetup.register_steppable(steppable=ViralReplicationSteppable(frequency=
 from Models.SegoAponte2020.ViralInfectionVTMSteppables import ViralInternalizationSteppable
 
 CompuCellSetup.register_steppable(steppable=ViralInternalizationSteppable(frequency=1))
+
+from Models.RandomSusceptibility.SusceptibilitySteppables import RandomSusceptibilitySteppable
+steppable = RandomSusceptibilitySteppable(frequency=1)
+steppable.track_susc = True
+CompuCellSetup.register_steppable(steppable=steppable)
 
 from Models.SegoAponte2020.ViralInfectionVTMSteppables import CellsInitializerSteppable
 
@@ -62,9 +67,5 @@ CompuCellSetup.register_steppable(steppable=oxidationAgentModelSteppable(frequen
 from Models.SegoAponte2020.ViralInfectionVTMSteppables import VirusFieldInitializerSteppable
 
 CompuCellSetup.register_steppable(steppable=VirusFieldInitializerSteppable(frequency=1))
-
-from Models.RandomSusceptibility.SusceptibilitySteppables import RandomSusceptibilitySteppable
-
-CompuCellSetup.register_steppable(RandomSusceptibilitySteppable(frequency=1))
 
 CompuCellSetup.run()

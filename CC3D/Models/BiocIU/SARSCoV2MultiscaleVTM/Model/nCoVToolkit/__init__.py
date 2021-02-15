@@ -1,3 +1,30 @@
+"""
+Framework Toolkit
+=================
+
+This module defines the basic functionality and utilities of the framework.
+
+Written by T.J. Sego, Ph.D.
+
+Maintainer(s)
+=============
+- T.J. Sego, Ph.D., Biocomplexity Institute, Indiana University, Bloomington, IN, U.S.A.
+
+Contents
+========
+- nCoVSteppableBase.py: defines the CompuCell3D base steppable class for the framework
+
+- nCoVUtils.py: defines basic utility functions of the framework
+
+Change log
+==========
+
+0.0.0
+-----
+- Implementation as deployed to perform simulations shown at https://doi.org/10.1371/journal.pcbi.1008451.
+
+"""
+
 __all__ = ["nCoVSteppableBase",
            "nCoVUtils"]
 

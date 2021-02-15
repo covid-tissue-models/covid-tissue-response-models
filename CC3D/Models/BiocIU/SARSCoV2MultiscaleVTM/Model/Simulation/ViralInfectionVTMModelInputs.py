@@ -1,10 +1,17 @@
-# Info for documentation of parameter values goes here, in *__param_desc__*
-# The parameter name and assigned description can be quickly exported to csv along with specified values using
-# *export_parameters*, in export_parameters.py
-# To use, assign the name of the code variable as a key, and a string description as its value
-# e.g.,     __param_desc__['my_var'] = 'My variable'
-#           my_var = 1
-# The generated csv will read, "my_var, 1, My variable'
+"""
+Info for documentation of parameter values goes here, in *__param_desc__*
+
+The parameter name and assigned description can be quickly exported to csv along with specified values using
+*export_parameters*, in export_parameters.py
+
+To use, assign the name of the code variable as a key, and a string description as its value
+e.g.,
+    __param_desc__['my_var'] = 'My variable'
+
+    my_var = 1
+
+The generated csv will read, "my_var, 1, My variable'
+"""
 __param_desc__ = {}
 
 # Data control options

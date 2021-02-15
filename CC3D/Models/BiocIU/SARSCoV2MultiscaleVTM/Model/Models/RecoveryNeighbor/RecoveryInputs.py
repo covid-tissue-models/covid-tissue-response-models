@@ -1,3 +1,6 @@
+"""
+Defines default module model parameters
+"""
 __param_desc__ = {}
 
 # Data control options

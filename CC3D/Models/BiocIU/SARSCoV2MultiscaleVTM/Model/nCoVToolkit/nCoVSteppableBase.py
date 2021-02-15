@@ -1,5 +1,8 @@
-# This is a general library of CompuCell3D steppable classes for the shared coronavirus modeling and simulation project
-# hosted by the Biocomplexity Institute at Indiana University
+"""
+This module defines the CompuCell3D base steppable class for the framework.
+
+Written by T.J. Sego, Ph.D.
+"""
 
 from collections import namedtuple
 from typing import *
@@ -16,6 +19,43 @@ class NoODEManagerException(Exception):
 
 
 class nCoVSteppableBase(SteppableBasePy):
+    """
+    The base class of all steppables in the viral infection framework.
+
+    This is an intermediate base class between SteppableBasePy, which is the base class used in model implementation
+    in the typical cc3d fashion, and a steppable-based model implementation in this framework.
+    This class defines methods and features that support basic model implementation via a steppable without complete
+    knowledge or control of how, or in what context, the steppable will be used.
+    For example, in a typical cc3d model implementation, a modeler can define and call routines associated with the
+    creation of a new cell (e.g., attach an attribute in the cell dictionary). However, a steppable derived from this
+    class defines routines associated with the creation of a new cell independently of what steppable creates the cell.
+
+    Every derived class must define the class attribute *unique_key*, which makes it accessible by all other derived
+    steppable instances when registered in the shared steppable dictionary.
+    All registered steppables derived from this class are available in *shared_steppable_vars* to all steppables at,
+    and after, cc3d calls the steppable method *start*.
+
+    Defines a callback *on_new_cell*, which is called on every registered derived class when any derived class
+    creates a new cell in the typical cc3d fashion using *new_cell*.
+    Derived classes override this method to implement routines associated with the creation of a new cell.
+    Calls are made in order of registration with cc3d.
+
+    Defines a callback *on_set_cell*, which is called on every registered derived class when any derived class
+    sets the type of a cell to a new value using *set_cell_type* (rather than the typical cc3d fasion of setting the
+    attribute *type* on a cell instance).
+    As such, all derived class should use *set_cell_type* to broadcast changes in cell type to all registered
+    derived classes of a simulation.
+    Derived classes override this method to implement routines associated with the change in a cell type.
+    Calls are made in order of registration with cc3d.
+
+    Defines an interface to an ODE manager, which automatically instantiates and destroys instances of ODE models
+    attached to cells when they are created or their type is changed.
+    ODE models, whether free-floating or attached to cells of a specific type, should be registered using
+    *register_ode_model*.
+    A steppable that defines and registers an ODE model, whether free-floating or attached to cells, should perform
+    stepping of the ODE model using *timestep_ode_model*, rather than the typical cc3d fashion of one steppable
+    performing stepping all ODE models using *timestep_sbml*.
+    """
 
     unique_key = None
     """
@@ -58,7 +98,7 @@ class nCoVSteppableBase(SteppableBasePy):
         if self in self._base_registry:
             self._base_registry.remove(self)
 
-    def new_cell(self, cell_type=0):
+    def new_cell(self, cell_type=0) -> CompuCell.CellG:
         new_cell = super().new_cell(cell_type)
 
         if self.ode_manager is not None:
@@ -83,7 +123,18 @@ class nCoVSteppableBase(SteppableBasePy):
         """
         pass
 
-    def set_cell_type(self, cell: CompuCell.CellG, _type_id: int):
+    def set_cell_type(self, cell: CompuCell.CellG, _type_id: int) -> None:
+        """
+        Sets the type of a cell.
+
+        This is a supplement to the typical cc3d fasion of setting the type of a cell using *cell.type*.
+
+        A subsequent call to *on_set_cell_type* is made on all registered derived classes.
+
+        :param cell: a cell
+        :param _type_id: the new type id of the cell
+        :return: None
+        """
         if cell.type == _type_id:
             return
 
@@ -113,10 +164,12 @@ class nCoVSteppableBase(SteppableBasePy):
 
     def on_set_cell_type(self, cell: CompuCell.CellG, old_type: int) -> Union[None, bool]:
         """
-        A callback on every occasion that a subclass calls set_cell_type. If the returned value is False, then the
-        callback is deferred and will be called again in a subsequent iteration over all subclasses registered with
-        cc3d. The callback is called after the cell type has been changed and all ODE models have been updated
-        according to the ode manager
+        A callback on every occasion that a subclass calls *set_cell_type*.
+
+        If the returned value is False, then the callback is deferred and will be called again in a subsequent
+        iteration over all subclasses registered with cc3d.
+        The callback is called after the cell type has been changed and all ODE models have been updated according to
+        the ode manager.
 
         :param cell: a cell with a newly assigned type
         :param old_type: previous type of the cell
@@ -147,16 +200,34 @@ class nCoVSteppableBase(SteppableBasePy):
 
     @property
     def ode_manager(self):
+        """
+        Reference to the ODEManagerSteppable instance of a simulation.
+        """
         if ode_manager_key in self.shared_steppable_vars.keys():
             return self.shared_steppable_vars[ode_manager_key]
         return None
 
+    @property
+    def ode_model_names(self) -> List[str]:
+        """
+        List of registered ode models
+        """
+        if self.ode_manager is not None:
+            return self.ode_manager.mode_names
+        raise NoODEManagerException
+
     def ode_models_by_cell_type(self, _cell_type: str):
+        """
+        List of registered ode model names associated with a cell type name in a simulation.
+        """
         if self.ode_manager is not None:
             return self.ode_manager.models_by_cell_type(_cell_type)
         raise NoODEManagerException
 
     def cell_types_by_ode_model(self, _model_name: str) -> Union[None, List[int]]:
+        """
+        List of cell type ids associated with a registered ode model in a simulation.
+        """
         if self.ode_manager is not None:
             return self.ode_manager.cell_types_by_model(_model_name)
         raise NoODEManagerException
@@ -167,7 +238,37 @@ class nCoVSteppableBase(SteppableBasePy):
                            ics_fcn: Callable = None,
                            cell_types: Union[str, Iterable[str], None] = None,
                            model_type: str = 'antimony',
-                           step_size: float = 1.0):
+                           step_size: float = 1.0) -> None:
+        """
+        Registers an ode model with the framework and cc3d.
+
+        This can be used to register a free-floating ode model, or an ode model attached to cells of a set of types.
+
+        Free-floating ode models are automatically instantiated on registration.
+
+        Ode models attached to cells are automatically managed by the framework by their type.
+        *E.g.*, if an ode model is registered for cell type "B" and a cell of type "A" is changed to type "B" using
+        *set_cell_type*, then the framework automatically instantiates an instance of the ode model and attaches it to
+        the cell.
+
+        :param model_name: name of the ode model
+        :param model_fcn: model string generator function.
+            Free-floating ode model generator functions take no arguments.
+            Generator functions for ode models attached to cells take the argument of the cell to which the ode model is
+            being attached.
+            Generator functions return a multiline string of the ode model in antimony, cellml or sbml model syntax.
+        :param ics_fcn: initial conditions generator function (optional).
+            Free-floating ode model initial conditions generator functions take no arguments.
+            Generator functions for ode model initial conditions attached to cells take the argument of the cell to
+            which the ode model is being attached.
+            Generator functions return a dictionary with key: value pairs of sbml model variable string name: variable
+            value.
+        :param cell_types: corresponding name of cell type or list of names of cell types if attached to cells;
+            if not specified, the ode model is registered as free-flaoting.
+        :param model_type: string name of model language ('antimony', 'cellml' or 'sbml'); default 'antimony'
+        :param step_size: step size of ode model; default 1.0.
+        :return: None
+        """
         if self.ode_manager is not None:
             return self.ode_manager.register_model(model_name=model_name,
                                                    model_fcn=model_fcn,
@@ -177,7 +278,13 @@ class nCoVSteppableBase(SteppableBasePy):
                                                    step_size=step_size)
         raise NoODEManagerException
 
-    def timestep_ode_model(self, model_name: str):
+    def timestep_ode_model(self, model_name: str) -> None:
+        """
+        Integrate an ode model one step in time.
+
+        :param model_name: name of the ode model
+        :return: None
+        """
         if self.ode_manager is None:
             raise NoODEManagerException
         self.ode_manager.timestep_model(model_name=model_name)
@@ -209,9 +316,15 @@ class ODEManagerSteppable(nCoVSteppableBase):
 
     @property
     def model_names(self) -> List[str]:
+        """
+        List of registered ode models
+        """
         return [x for x in self._ode_models.keys()]
 
     def models_by_cell_type(self, _cell_type: str) -> List[ODEModelEntry]:
+        """
+        List of registered ode model names associated with a cell type in a simulation
+        """
         x = []
         for y in self._ode_models.values():
             cell_types = y.cell_types
@@ -223,6 +336,9 @@ class ODEManagerSteppable(nCoVSteppableBase):
         return x
 
     def cell_types_by_model(self, _model_name: str) -> Union[None, List[int]]:
+        """
+        List of cell type ids associated with a registered ode model in a simulation.
+        """
         ode_model_entry = self._ode_models[_model_name]
         if ode_model_entry.cell_types is None:
             return None
@@ -237,6 +353,36 @@ class ODEManagerSteppable(nCoVSteppableBase):
                        cell_types: Union[str, Iterable[str], None] = None,
                        model_type: str = 'antimony',
                        step_size: float = 1.0):
+        """
+        Registers an ode model with the framework and cc3d.
+
+        This can be used to register a free-floating ode model, or an ode model attached to cells of a set of types.
+
+        Free-floating ode models are automatically instantiated on registration.
+
+        Ode models attached to cells are automatically managed by the framework by their type.
+        *E.g.*, if an ode model is registered for cell type "B" and a cell of type "A" is changed to type "B" using
+        *set_cell_type*, then the framework automatically instantiates an instance of the ode model and attaches it to
+        the cell.
+
+        :param model_name: name of the ode model
+        :param model_fcn: model string generator function.
+            Free-floating ode model generator functions take no arguments.
+            Generator functions for ode models attached to cells take the argument of the cell to which the ode model is
+            being attached.
+            Generator functions return a multiline string of the ode model in antimony, cellml or sbml model syntax.
+        :param ics_fcn: initial conditions generator function (optional).
+            Free-floating ode model initial conditions generator functions take no arguments.
+            Generator functions for ode model initial conditions attached to cells take the argument of the cell to
+            which the ode model is being attached.
+            Generator functions return a dictionary with key: value pairs of sbml model variable string name: variable
+            value.
+        :param cell_types: corresponding name of cell type or list of names of cell types if attached to cells;
+            if not specified, the ode model is registered as free-flaoting.
+        :param model_type: string name of model language ('antimony', 'cellml' or 'sbml'); default 'antimony'
+        :param step_size: step size of ode model; default 1.0.
+        :return: None
+        """
         if model_type.lower() not in ['antimony', 'sbml', 'cellml']:
             raise TypeError('Valid model types are antimony, sbml and cellml')
         elif model_name in self.model_names:
@@ -273,6 +419,12 @@ class ODEManagerSteppable(nCoVSteppableBase):
         self._ode_models[model_name] = ode_model_entry
 
     def timestep_model(self, model_name: str):
+        """
+        Integrate an ode model one step in time.
+
+        :param model_name: name of the ode model
+        :return: None
+        """
         if model_name not in self.model_names:
             raise ValueError('Model not registered:', model_name)
         o = self._ode_models[model_name]

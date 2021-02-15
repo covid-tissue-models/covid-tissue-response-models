@@ -1,12 +1,12 @@
-###############################################################################################################
-# To cite this model please use the following:
-#
-# T.J. Sego, Josua O. Aponte-Serrano, Juliano Ferrari Gianlupi, Samuel R. Heaps, Kira Breithaupt, Lutz Brusch,
-# Jessica Crawshaw, James M. Osborne, Ellen M. Quardokus, Richard K. Plemper, James A. Glazier,
-# "A modular framework for multiscale, multicellular, spatiotemporal modeling of acute primary viral infection and
-# immune response in epithelial tissues and its application to drug therapy timing and effectiveness",
-# PLoS Comput Biol 16(12): e1008451. https://doi.org/10.1371/journal.pcbi.1008451
-###############################################################################################################
+"""
+To cite this framework please use the following:
+
+T.J. Sego, Josua O. Aponte-Serrano, Juliano Ferrari Gianlupi, Samuel R. Heaps, Kira Breithaupt, Lutz Brusch,
+Jessica Crawshaw, James M. Osborne, Ellen M. Quardokus, Richard K. Plemper, James A. Glazier,
+"A modular framework for multiscale, multicellular, spatiotemporal modeling of acute primary viral infection and
+immune response in epithelial tissues and its application to drug therapy timing and effectiveness",
+PLoS Comput Biol 16(12): e1008451. https://doi.org/10.1371/journal.pcbi.1008451
+"""
 
 import os
 from ViralInfectionVTMModelInputs import __file__ as f

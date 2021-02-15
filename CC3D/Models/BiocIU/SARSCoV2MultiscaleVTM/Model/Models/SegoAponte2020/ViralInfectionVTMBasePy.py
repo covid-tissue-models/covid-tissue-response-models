@@ -1,14 +1,33 @@
-# This is a library of steppable classes for the viral infection modeling project using CompuCell3D
-# by the Biocomplexity Institute at Indiana University using CompuCell3D
+"""
+Defines steppable base class
+"""
 
 # Import project libraries
 from . import ViralInfectionVTMLib
+from . import ViralInfectionVTMModelInputs
 
 # Import toolkit
 from nCoVToolkit.nCoVSteppableBase import nCoVSteppableBase
 
 
 class ViralInfectionVTMSteppableBasePy(nCoVSteppableBase):
+    """
+    Base class of all steppables defined in this module.
+
+    Each steppable, at most, expects the following objects with corresponding settable names as attribute
+
+    - an uninfected cell type: ``uninfected_type_name``
+    - an infected cell type: ``infected_type_name``
+    - a virus-releasing cell type: ``virus_releasing_type_name``
+    - a dead cell type: ``dead_type_name``
+    - an immune cell type: ``immune_type_name``
+    - a virus field: ``virus_field_name``
+    - a cytokine field: ``cytokine_field_name``
+    - an oxidative agent field: ``oxidator_field_name``
+
+    Some steppables refer to model parameters that are defined in units of seconds.
+    Conversions with these parameters are made on the fly with a settable conversion parameter ``s_to_mcs``.
+    """
 
     vr_model_name = ViralInfectionVTMLib.vr_model_name
     _viral_replication_model_string_gen = ViralInfectionVTMLib.viral_replication_model_string
@@ -26,14 +45,7 @@ class ViralInfectionVTMSteppableBasePy(nCoVSteppableBase):
         self._cytokine_field_name = ''
         self._oxidator_field_name = ''
 
-    def start(self):
-        pass
-
-    def step(self, mcs):
-        pass
-
-    def finish(self):
-        pass
+        self.s_to_mcs = ViralInfectionVTMModelInputs.s_to_mcs
 
     def viral_replication_model_string(self, *args, **kwargs):
         """
@@ -194,63 +206,240 @@ class ViralInfectionVTMSteppableBasePy(nCoVSteppableBase):
             cell.dict[ViralInfectionVTMLib.vrl_key] = False
 
     def set_uninfected_type_name(self, _name: str):
+        """
+        Set the name of the uninfected cell type according to a cc3d simulation
+
+        :param _name: Name of the uninfected cell type according to a cc3d simulation
+        :return: None
+        """
         self._uninfected_type_name = _name
 
+    @property
+    def uninfected_type_name(self):
+        """
+        Name of the uninfected cell type according to a cc3d simulation
+        """
+        return self._uninfected_type_name
+
+    @uninfected_type_name.setter
+    def uninfected_type_name(self, _name: str):
+        self.set_uninfected_type_name(_name)
+
     def set_infected_type_name(self, _name: str):
+        """
+        Set the name of the infected cell type according to a cc3d simulation
+
+        :param _name: Name of the infected cell type according to a cc3d simulation
+        :return: None
+        """
         self._infected_type_name = _name
 
+    @property
+    def infected_type_name(self):
+        """
+        Name of the infected cell type according to a cc3d simulation
+        """
+        return self._infected_type_name
+
+    @infected_type_name.setter
+    def infected_type_name(self, _name: str):
+        self.set_infected_type_name(_name)
+
     def set_virus_releasing_type_name(self, _name: str):
+        """
+        Set the name of the virus-releasing cell type according to a cc3d simulation
+
+        :param _name: Name of the virus-releasing cell type according to a cc3d simulation
+        :return: None
+        """
         self._virus_releasing_type_name = _name
 
+    @property
+    def virus_releasing_type_name(self):
+        """
+        Name of the virus-releasing cell type according to a cc3d simulation
+        """
+        return self._virus_releasing_type_name
+
+    @virus_releasing_type_name.setter
+    def virus_releasing_type_name(self, _name: str):
+        self.set_virus_releasing_type_name(_name)
+
     def set_dead_type_name(self, _name: str):
+        """
+        Set the name of the dead cell type according to a cc3d simulation
+
+        :param _name: Name of the dead cell type according to a cc3d simulation
+        :return: None
+        """
         self._dead_type_name = _name
 
+    @property
+    def dead_type_name(self):
+        """
+        Name of the dead cell type according to a cc3d simulation
+        """
+        return self._dead_type_name
+
+    @dead_type_name.setter
+    def dead_type_name(self, _name: str):
+        self.set_dead_type_name(_name)
+
     def set_immune_type_name(self, _name: str):
+        """
+        Set the name of the immune cell type according to a cc3d simulation
+
+        :param _name: Name of the immune cell type according to a cc3d simulation
+        :return: None
+        """
         self._immune_type_name = _name
 
     @property
+    def immune_type_name(self):
+        """
+        Name of the immune cell type according to a cc3d simulation
+        """
+        return self._immune_type_name
+
+    @immune_type_name.setter
+    def immune_type_name(self, _name: str):
+        self.set_immune_type_name(_name)
+
+    @property
     def uninfected_type_id(self) -> int:
+        """
+        Id of the uninfected cell type according to a cc3d simulation
+        """
         return getattr(self, self._uninfected_type_name.upper())
 
     @property
     def infected_type_id(self) -> int:
+        """
+        Id of the infected cell type according to a cc3d simulation
+        """
         return getattr(self, self._infected_type_name.upper())
 
     @property
     def virus_releasing_type_id(self) -> int:
+        """
+        Id of the virus-releasing cell type according to a cc3d simulation
+        """
         return getattr(self, self._virus_releasing_type_name.upper())
 
     @property
     def dead_type_id(self) -> int:
+        """
+        Id of the dead cell type according to a cc3d simulation
+        """
         return getattr(self, self._dead_type_name.upper())
 
     @property
     def immune_type_id(self) -> int:
+        """
+        Id of the immune cell type according to a cc3d simulation
+        """
         return getattr(self, self._immune_type_name.upper())
 
     def set_virus_field_name(self, _name: str):
+        """
+        Set the virus field name
+
+        :param _name: Virus field name
+        :return: None
+        """
         self._virus_field_name = _name
 
+    @property
+    def virus_field_name(self):
+        """
+        Virus field name
+        """
+        return self._virus_field_name
+
+    @virus_field_name.setter
+    def virus_field_name(self, _name: str):
+        self.set_virus_field_name(_name)
+
     def set_cytokine_field_name(self, _name: str):
+        """
+        Set the cytokine field name
+
+        :param _name: Cytokine field name
+        :return: None
+        """
         self._cytokine_field_name = _name
 
+    @property
+    def cytokine_field_name(self):
+        """
+        Cytokine field name
+        """
+        return self._cytokine_field_name
+
+    @cytokine_field_name.setter
+    def cytokine_field_name(self, _name: str):
+        self.set_cytokine_field_name(_name)
+
     def set_oxidator_field_name(self, _name: str):
+        """
+        Set the oxidative agent field name
+
+        :param _name: Oxidative agent field name
+        :return: None
+        """
         self._oxidator_field_name = _name
 
     @property
+    def oxidator_field_name(self):
+        """
+        Oxidative agent field name
+        """
+        return self._oxidator_field_name
+
+    @oxidator_field_name.setter
+    def oxidator_field_name(self, _name: str):
+        self.set_oxidator_field_name(_name)
+
+    @property
     def virus_field(self):
+        """
+        Reference to the virus field
+        """
         if self._virus_field_name:
             return getattr(self.field, self._virus_field_name)
         return None
 
     @property
     def cytokine_field(self):
+        """
+        Reference to the cytokine field
+        """
         if self._cytokine_field_name:
             return getattr(self.field, self._cytokine_field_name)
         return None
 
     @property
     def oxidator_field(self):
+        """
+        Reference to the oxidative agent field
+        """
         if self._oxidator_field_name:
             return getattr(self.field, self._oxidator_field_name)
         return None
+
+    def set_time_step(self, _val: float):
+        """
+        Set the time step, in units seconds per step
+
+        :param _val: Time step
+        :return: None
+        """
+        if _val <= 0.0:
+            raise ValueError("Step period must be positive")
+        self.s_to_mcs = _val
+
+    def get_time_step(self) -> float:
+        """
+        Time step, in units seconds per step
+        """
+        return self.s_to_mcs

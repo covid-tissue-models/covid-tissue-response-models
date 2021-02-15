@@ -1,35 +1,34 @@
-# Integrated model of hepatitis c virus
-# Written by T.J. Sego, Ph.D.
-# Genomic replication in the module SegoAponte2020 is replaced by a model of hepatitis c virus replication from
-#
-#   Dahari, Harel, et al. "Mathematical modeling of subgenomic hepatitis C virus replication in Huh-7 cells."
-#   Journal of virology 81.2 (2007): 750-760.
-#
-# Model parameters of the hepatitis c virus model are specified in HCVInputs.py
-#
-# HCVIntegrator
-#   Description: implements integrated model
-#   Usage:
-#       In ViralInfectionVTM.py, add the following
-#           from Models.HCVIntegrated.HCVSteppables import HCVIntegrator
-#           CompuCellSetup.register_steppable(steppable=HCVIntegrator(frequency=1))
-# HCVDataSteppable
-#   Description: performs data tracking
-#   Usage:
-#       In ViralInfectionVTM.py, add the following
-#           from Models.HCVIntegrated.HCVSteppables import HCVDataSteppable
-#           CompuCellSetup.register_steppable(steppable=HCVDataSteppable(frequency=1))
-# HCVCellsInitializerSteppable
-#   Description: changes all initially infected cells' intracellular state to conditions described in Dahari, Harel,
-#                et. al., where infection begins with cytoplasmic viral RNA molecules
-#   Usage:
-#       In ViralInfectionVTM.py, add the following
-#           from Models.HCVIntegrated.HCVSteppables import HCVCellsInitializerSteppable
-#           CompuCellSetup.register_steppable(steppable=HCVCellsInitializerSteppable(frequency=1))
+"""
+Defines module steppables
+
+Steppables
+==========
+
+HCVIntegrator
+-------------
+Description: implements integrated model
+
+Usage: In ViralInfectionVTM.py, add the following
+
+from Models.HCVIntegrated.HCVSteppables import HCVIntegrator
+
+CompuCellSetup.register_steppable(steppable=HCVIntegrator(frequency=1))
+
+HCVCellsInitializerSteppable
+----------------------------
+Description: changes all initially infected cells' intracellular state to conditions described in Dahari, Harel,
+et. al., where infection begins with cytoplasmic viral RNA molecules
+
+Usage: In ViralInfectionVTM.py, add the following
+
+from Models.HCVIntegrated.HCVSteppables import HCVCellsInitializerSteppable
+
+CompuCellSetup.register_steppable(steppable=HCVCellsInitializerSteppable(frequency=1))
+"""
 
 from Models.SegoAponte2020 import ViralInfectionVTMLib
 from Models.SegoAponte2020.ViralInfectionVTMModelInputs import s_to_mcs
-from Models.SegoAponte2020.ViralInfectionVTMSteppables import SimDataSteppable, CellsInitializerSteppable
+from Models.SegoAponte2020.ViralInfectionVTMSteppables import CellsInitializerSteppable
 from Models.SegoAponte2020 import ViralInfectionVTMBasePy
 
 from . import HCVInputs
@@ -37,10 +36,8 @@ from . import HCVInputs
 ViralInfectionVTMSteppableBasePy = ViralInfectionVTMBasePy.ViralInfectionVTMSteppableBasePy
 
 module_prefix = 'ihcv_'
-output_basename = module_prefix + 'ihcv_data.dat'
 
 integrator_steppable_key = module_prefix + 'hcv_integrator'  # HCVIntegrator
-data_steppable_key = module_prefix + 'hcv_data_steppable'  # HCVDataSteppable
 cell_initializer_key = module_prefix + 'cell_initializer'  # HCVCellsInitializerSteppable
 
 
@@ -141,6 +138,7 @@ ihcv_model_vars = ["E", "ECYT", "PCYT", "RDS", "RIBO", "RIDS", "RIP", "RP", "TC"
 
 
 class HCVIntegrator(ViralInfectionVTMSteppableBasePy):
+    """Integrates HCV model with module in SegoAponte2020"""
 
     unique_key = integrator_steppable_key
 
@@ -149,100 +147,52 @@ class HCVIntegrator(ViralInfectionVTMSteppableBasePy):
         self.set_viral_replication_model(hcv_viral_replication_model_string)
 
 
-class HCVDataSteppable(ViralInfectionVTMSteppableBasePy):
-
-    unique_key = data_steppable_key
-
-    def __init__(self, frequency=1):
-        super().__init__(frequency)
-
-        # Reference to SimDataSteppable
-        self.simdata_steppable = None
-
-        self.ihcv_data_win = None
-        self.ihcv_data_path = None
-        self.ihcv_data = dict()
-
-        self.plot_ihcv_data = HCVInputs.plot_ihcv_data_freq > 0
-        self.write_ihcv_data = HCVInputs.write_ihcv_data_freq > 0
-
-        # For flushing outputs every quarter simulation length
-        self.__flush_counter = 1
-
-    def start(self):
-        if self.plot_ihcv_data:
-            self.ihcv_data_win = self.add_new_plot_window(title='Integrated HCV',
-                                                          x_axis_title='MonteCarlo Step (MCS)',
-                                                          y_axis_title='Variables', x_scale_type='linear',
-                                                          y_scale_type='linear',
-                                                          grid=False,
-                                                          config_options={'legend': True})
-
-            colors = ['blue', 'red', 'green', 'yellow', 'white', 'cyan', 'purple', 'magenta', 'darkgreen']
-            for x in range(len(ihcv_model_vars)):
-                self.ihcv_data_win.add_plot(ihcv_model_vars[x], style='Dots', color=colors[x], size=5)
-
-        if self.write_ihcv_data:
-            from pathlib import Path
-            self.ihcv_data_path = Path(self.output_dir).joinpath(output_basename)
-            with open(self.ihcv_data_path, 'w'):
-                pass
-
-    def step(self, mcs):
-        if self.simdata_steppable is None:
-            self.simdata_steppable = self.shared_steppable_vars[SimDataSteppable.unique_key]
-
-        plot_ihcv_data = self.plot_ihcv_data and mcs % HCVInputs.plot_ihcv_data_freq == 0
-        write_ihcv_data = self.write_ihcv_data and mcs % HCVInputs.write_ihcv_data_freq == 0
-
-        vrm_tracked_cell = self.simdata_steppable.vrm_tracked_cell
-        if vrm_tracked_cell is not None and (plot_ihcv_data or write_ihcv_data):
-            try:
-                cell_sbml = getattr(vrm_tracked_cell.sbml, self.vr_model_name)
-                if plot_ihcv_data:
-                    [self.ihcv_data_win.add_data_point(x, mcs, cell_sbml[x]) for x in ihcv_model_vars]
-
-                if write_ihcv_data:
-                    self.ihcv_data[mcs] = [vrm_tracked_cell.id]
-                    [self.ihcv_data[mcs].append(cell_sbml[x]) for x in ihcv_model_vars]
-            except KeyError:
-                pass
-
-        # Flush outputs at quarter simulation lengths
-        if mcs >= int(self.simulator.getNumSteps() / 4 * self.__flush_counter):
-            self.flush_stored_outputs()
-            self.__flush_counter += 1
-
-    def on_stop(self):
-        self.finish()
-
-    def finish(self):
-        self.flush_stored_outputs()
-
-    def flush_stored_outputs(self):
-        """
-        Write stored outputs to file and clear output storage
-        :return: None
-        """
-        if self.write_ihcv_data and self.ihcv_data:
-            with open(self.ihcv_data_path, 'a') as fout:
-                fout.write(SimDataSteppable.data_output_string(self, self.ihcv_data))
-                self.ihcv_data.clear()
-
-
 class HCVCellsInitializerSteppable(CellsInitializerSteppable):
+    """Initializes cells with initial HCV model data"""
 
     unique_key = cell_initializer_key
 
     def __init__(self, frequency=1):
         super().__init__(frequency)
 
+        self._init_rna = HCVInputs.init_rna
+        self._virus_from_ul = HCVInputs.virus_from_ul
+
     def start(self):
+        """
+        Called once to initialize simulation
+        """
         super().start()
         for cell in self.cell_list_by_type(self.infected_type_id):
             var_unpacking = ViralInfectionVTMLib.vr_cell_dict_to_sym[ViralInfectionVTMLib.vrm_unpacking]
             getattr(cell.sbml, self.vr_model_name)[var_unpacking] = 0
 
             var_replicating = ViralInfectionVTMLib.vr_cell_dict_to_sym[ViralInfectionVTMLib.vrm_replicating]
-            init_replicating = HCVInputs.init_rna / HCVInputs.virus_from_ul
+            init_replicating = self.init_rna / self.virus_from_ul
             getattr(cell.sbml, self.vr_model_name)[var_replicating] = init_replicating
+
+    @property
+    def init_rna(self):
+        """
+        Initial number of RNA molecules in initially infected cells
+        """
+        return self._init_rna
+
+    @init_rna.setter
+    def init_rna(self, _val: float):
+        if _val <= 0:
+            raise ValueError("Value must be non-negative")
+        self._init_rna = _val
+
+    @property
+    def virus_from_ul(self):
+        """
+        Conversion from unitless original model quantities to HCV model units
+        """
+        return self._virus_from_ul
+
+    @virus_from_ul.setter
+    def virus_from_ul(self, _val: float):
+        if _val <= 0:
+            raise ValueError("Value must be positive")
+        self._virus_from_ul = _val
