@@ -259,11 +259,22 @@ class IFNViralInternalizationSteppable(MainSteppables.ViralInternalizationSteppa
         self.register_type(MainSteppables.virus_releasing_type_name)
         self.register_type(MainSteppables.dead_type_name)
 
-    def start(self):
-        super().start()
-        # Rescale internalization rate
-        initial_number_registered_cells = len(self.cell_list_by_type(*[getattr(self, x.upper()) for x in self._registered_types]))
-        self.set_internalization_rate(IFNInputs.b * initial_number_registered_cells * days_to_mcs)
+        # To detect if the user specifies an internalization rate, or if we're calculating it with default data
+        self._internalization_rate = None
+
+    def step(self, mcs):
+        # Calculate internalization rate if necessary
+        if self._internalization_rate is None:
+            initial_number_registered_cells = len(self.cell_list_by_type(*[getattr(self, x.upper())
+                                                                           for x in self._registered_types]))
+            self.set_internalization_rate(IFNInputs.b * initial_number_registered_cells * days_to_mcs)
+
+        secretor = self.get_field_secretor(field_name=self._target_field_name)
+        for cell in self.cell_list_by_type(self.uninfected_type_id):
+            seen_amount = secretor.amountSeenByCell(cell)
+            rate = seen_amount * self._internalization_rate
+            if random.random() <= nCoVUtils.ul_rate_to_prob(rate):
+                self.set_cell_type(cell, self.infected_type_id)
 
     def set_virus_releasing_type_name(self, _name: str):
         self._virus_releasing_type_name = _name
@@ -483,6 +494,7 @@ class IFNFieldInitializerSteppable(nCoVSteppableBase):
 class IFNSimDataSteppable(nCoVSteppableBase):
     # todo: generate docstring for IFNSimDataSteppable
     # todo: add extracellular virus and IFN plot and write
+    # todo: make data plot/write frequencies settable
 
     unique_key = ifn_sim_data_key
 
