@@ -25,9 +25,9 @@ from ViralInfectionVTMSteppables import VirusFieldInitializerSteppable
 
 CompuCellSetup.register_steppable(steppable=VirusFieldInitializerSteppable(frequency=1))
 
-from Models.RecoveryNeighbor.RecoverySteppables import SimpleRecoverySteppable
+from Models.RecoveryNeighbor.RecoverySteppables import NeighborRecoverySteppable
 
-CompuCellSetup.register_steppable(steppable=SimpleRecoverySteppable(frequency=1))
+CompuCellSetup.register_steppable(steppable=NeighborRecoverySteppable(frequency=1))
 
 from ViralInfectionVTMSteppables import ViralDeathSteppable
 
