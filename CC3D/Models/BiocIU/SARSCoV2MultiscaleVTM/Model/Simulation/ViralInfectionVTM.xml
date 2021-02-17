@@ -17,7 +17,7 @@
     <Potts>
         <!-- Basic properties of CPM (GGH) algorithm -->
         <Dimensions x="90" y="90" z="1"/>
-        <Steps>4033</Steps>
+        <Steps>100000</Steps>
         <Temperature>10.0</Temperature>
         <NeighborOrder>3</NeighborOrder>
         <Boundary_x>Periodic</Boundary_x>

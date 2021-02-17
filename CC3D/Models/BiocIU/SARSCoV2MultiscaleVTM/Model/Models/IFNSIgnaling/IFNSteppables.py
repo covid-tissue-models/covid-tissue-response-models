@@ -19,7 +19,7 @@ from . import IFNInputs
 
 # Module specific references
 IFN_model_name = 'IFN_model'
-IFN_field_name = 'IFNe'
+ifn_field_name = 'IFNe'
 viral_replication_model_name = 'ifn_viral_replication_model'
 ifn_signaling_key = 'std_ifn_signaling_steppable'
 ifn_release_key = 'std_ifn_release_steppable'  # IFNReleaseSteppable
@@ -51,26 +51,23 @@ def IFN_model_string():
         E6a: -> IRF7P       ; H*k51*IRF7                                        ;
         E6b: IRF7P ->       ; t5*IRF7P                                          ;
         
-        // Conversion factors
-        s_t = {hours_to_mcs} ;
-        
         //Parameters
-        k11 = {IFNInputs.k11} * s_t ;
-        k12 = {IFNInputs.k12} * s_t ;
-        k13 = {IFNInputs.k13}       ;
-        k14 = {IFNInputs.k14} * s_t ;
-        k21 = {IFNInputs.k21} * s_t ;
-        k31 = {IFNInputs.k31} * s_t ;
-        k32 = {IFNInputs.k32}       ;
-        k33 = {IFNInputs.k33}       ;
-        t3  = {IFNInputs.t3}  * s_t ;
-        k41 = {IFNInputs.k41} * s_t ;
-        k42 = {IFNInputs.k42} * s_t ;
-        t4  = {IFNInputs.t4}  * s_t ;
-        k51 = {IFNInputs.k51} * s_t ;
-        t5  = {IFNInputs.t5}  * s_t ;
-        n   = {IFNInputs.n}         ;
-        RIGI = {IFNInputs.RIGI}     ;
+        k11 = {IFNInputs.k11}    ;
+        k12 = {IFNInputs.k12}    ;
+        k13 = {IFNInputs.k13}    ;
+        k14 = {IFNInputs.k14}    ;
+        k21 = {IFNInputs.k21}    ;
+        k31 = {IFNInputs.k31}    ;
+        k32 = {IFNInputs.k32}    ;
+        k33 = {IFNInputs.k33}    ;
+        t3  = {IFNInputs.t3}     ;
+        k41 = {IFNInputs.k41}    ;
+        k42 = {IFNInputs.k42}    ;
+        t4  = {IFNInputs.t4}     ;
+        k51 = {IFNInputs.k51}    ;
+        t5  = {IFNInputs.t5}     ;
+        n   = {IFNInputs.n}      ;
+        RIGI = {IFNInputs.RIGI}  ;
 
         // Inputs
         H    = 0.0     ;
@@ -94,14 +91,11 @@ def viral_replication_model_string():
         E8a: -> V           ; H*k71*V/(1.0+k72*IFNe*7E-5) ;
         E8b: V ->           ; k73*V                       ;
         
-        // Conversion factors
-        s_t = {hours_to_mcs} ;
-        
         //Parameters
-        k61 = {IFNInputs.k61} * s_t ;
-        k71 = {IFNInputs.k71} * s_t ;
-        k72 = {IFNInputs.k72}       ;
-        k73 = {IFNInputs.k73} * s_t ;
+        k61 = {IFNInputs.k61} ;
+        k71 = {IFNInputs.k71} ;
+        k72 = {IFNInputs.k72} ;
+        k73 = {IFNInputs.k73} ;
         
         //Initial Conditions
         V = 0.0      ;
@@ -159,7 +153,7 @@ class IFNSteppable(nCoVSteppableBase):
         self._target_field_name = ''
 
         # Initialize default data
-        self.set_target_field_name(IFN_field_name)
+        self.set_target_field_name(ifn_field_name)
         self.set_uninfected_type_name(MainSteppables.uninfected_type_name)
         self.set_infected_type_name(MainSteppables.infected_type_name)
         self.set_virus_releasing_type_name(MainSteppables.virus_releasing_type_name)
@@ -179,7 +173,7 @@ class IFNSteppable(nCoVSteppableBase):
         self.register_ode_model(model_name=IFN_model_name,
                                 model_fcn=ifn_model_fcn,
                                 cell_types=self._registered_types,
-                                step_size=1.0)
+                                step_size=hours_to_mcs)
 
         # Load viral replication sbml model
         def vr_model_fcn(cell):
@@ -188,18 +182,18 @@ class IFNSteppable(nCoVSteppableBase):
         self.register_ode_model(model_name=viral_replication_model_name,
                                 model_fcn=vr_model_fcn,
                                 cell_types=self._registered_types,
-                                step_size=1.0)
+                                step_size=hours_to_mcs)
 
     def step(self, mcs):
         # Connect viral replication model and IFN model and read IFNe field
         secretor = self.get_field_secretor(field_name=self._target_field_name)
         for cell in self.cell_list_by_type(*self.registered_type_ids):
-            IFN_cell_sbml = get_cell_ifn_model(cell)
+            ifn_cell_sbml = get_cell_ifn_model(cell)
             virus_cell_sbml = get_cell_viral_replication_model(cell)
-            IFN_cell_sbml['H'] = virus_cell_sbml['H']
-            IFN_cell_sbml['V'] = virus_cell_sbml['V']
+            ifn_cell_sbml['H'] = virus_cell_sbml['H']
+            ifn_cell_sbml['V'] = virus_cell_sbml['V']
             ifn_seen = secretor.amountSeenByCell(cell)  # Calculate once, apply twice
-            IFN_cell_sbml['IFNe'] = ifn_seen
+            ifn_cell_sbml['IFNe'] = ifn_seen
             virus_cell_sbml['IFNe'] = ifn_seen
 
         # Step the models for all registered types
@@ -267,7 +261,8 @@ class IFNViralInternalizationSteppable(MainSteppables.ViralInternalizationSteppa
         if self._internalization_rate is None:
             initial_number_registered_cells = len(self.cell_list_by_type(*[getattr(self, x.upper())
                                                                            for x in self._registered_types]))
-            self.set_internalization_rate(IFNInputs.b * initial_number_registered_cells * days_to_mcs)
+            b = IFNInputs.b * initial_number_registered_cells * days_to_mcs
+            self.set_internalization_rate(b)
 
         secretor = self.get_field_secretor(field_name=self._target_field_name)
         for cell in self.cell_list_by_type(self.uninfected_type_id):
@@ -296,7 +291,6 @@ class IFNViralInternalizationSteppable(MainSteppables.ViralInternalizationSteppa
             virus_cell_sbml = get_cell_viral_replication_model(cell)
             virus_cell_sbml['V'] = initial_amount_virus
 
-
 class IFNEclipsePhaseSteppable(MainSteppables.EclipsePhaseSteppable):
     # todo: implement unique_key in IFNEclipsePhaseSteppable
     # todo: generate docstring for IFNEclipsePhaseSteppable
@@ -322,8 +316,11 @@ class IFNViralReleaseSteppable(MainSteppables.ViralReleaseSteppable):
 
         for cell in self.cell_list_by_type(self.virus_releasing_type_id):
             virus_cell_sbml = get_cell_viral_replication_model(cell)
+            k73 =IFNInputs.k73 * hours_to_mcs
+            intracellularVirus = virus_cell_sbml['V']
             # Scaling Factor from unitless virus to PFU/mL
-            self.set_release_rate(virus_cell_sbml['k73'] * virus_cell_sbml['V'] * 1094460.28)
+            p = k73 * intracellularVirus * 1094460.28
+            self.set_release_rate(p)
             secretor.secreteInsideCell(cell, self._release_rate * fact / cell.volume)
 
 
@@ -340,11 +337,13 @@ class IFNViralDeathSteppable(MainSteppables.ViralDeathSteppable):
     def step(self, mcs):
         for cell in self.cell_list_by_type(self.virus_releasing_type_id):
             virus_cell_sbml = get_cell_viral_replication_model(cell)
-            self.set_viral_death_rate(virus_cell_sbml['k61'] * virus_cell_sbml['V'] * (1 - virus_cell_sbml['H']))
+            k61 = IFNInputs.k61 * hours_to_mcs
+            H = virus_cell_sbml['H']
+            V = virus_cell_sbml['V']
+            self.set_viral_death_rate(k61 * V * (1-H))
             pr = nCoVUtils.ul_rate_to_prob(self._viral_death_rate)
             if random.random() <= pr:
                 self.set_cell_type(cell, self.dead_type_id)
-
 
 class IFNReleaseSteppable(nCoVSteppableBase):
     """
@@ -367,7 +366,7 @@ class IFNReleaseSteppable(nCoVSteppableBase):
         self._virus_releasing_type_name = ''
         self._release_rate = 0.0
 
-        self.set_target_field_name(IFN_field_name)
+        self.set_target_field_name(ifn_field_name)
         self.set_uninfected_type_name(MainSteppables.uninfected_type_name)
         self.set_infected_type_name(MainSteppables.infected_type_name)
         self.set_virus_releasing_type_name(MainSteppables.virus_releasing_type_name)
@@ -383,8 +382,11 @@ class IFNReleaseSteppable(nCoVSteppableBase):
             fact = float(min_dim)
 
         for cell in self.cell_list_by_type(self.virus_releasing_type_id):
-            IFN_cell_sbml = get_cell_ifn_model(cell)
-            self.set_release_rate(IFN_cell_sbml['k21'] * IFN_cell_sbml['IFN'])
+            ifn_cell_sbml = get_cell_ifn_model(cell)
+            k21 = IFNInputs.k21 * hours_to_mcs
+            intracellularIFN = ifn_cell_sbml['IFN']
+            p = k21 * intracellularIFN
+            self.set_release_rate(p)
             secretor.secreteInsideCell(cell, self._release_rate * fact / cell.volume)
 
     def register_type(self, _name: str):
@@ -445,14 +447,14 @@ class IFNFieldInitializerSteppable(nCoVSteppableBase):
     def __init__(self, frequency):
         nCoVSteppableBase.nCoVSteppableBase.__init__(self, frequency)
 
-        self.ifn_field_name = IFN_field_name
+        self.ifn_field_name = ifn_field_name
 
         self._ifn_diffusion_id = 'ifn_dc'
         self._ifn_decay_id = 'ifn_decay'
 
     def start(self):
         self.diffusion_coefficient = IFNInputs.IFNe_diffusion_coefficient * min_to_mcs
-        self.decay_coefficient = IFNInputs.c * days_to_mcs
+        self.decay_coefficient = IFNInputs.t2 * hours_to_mcs
 
     @property
     def diffusion_coefficient(self) -> float:
