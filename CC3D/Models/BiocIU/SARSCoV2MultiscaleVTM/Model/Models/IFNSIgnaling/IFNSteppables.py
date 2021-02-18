@@ -29,6 +29,7 @@ initial_amount_virus = 6.9e-8
 min_to_mcs = s_to_mcs / 60.0
 hours_to_mcs = min_to_mcs / 60.0
 days_to_mcs = hours_to_mcs / 24.0
+hours_to_simulate = 80.0  # 10 in the original model
 ifn_model_vars = ["IFN", "STATP", "IRF7", "IRF7P"]
 viral_replication_model_vars = ["H", "V"]
 
@@ -445,7 +446,7 @@ class IFNFieldInitializerSteppable(nCoVSteppableBase):
     unique_key = ifn_field_initializer_key
 
     def __init__(self, frequency):
-        nCoVSteppableBase.nCoVSteppableBase.__init__(self, frequency)
+        nCoVSteppableBase.__init__(self, frequency)
 
         self.ifn_field_name = ifn_field_name
 
@@ -519,7 +520,6 @@ class IFNSimDataSteppable(nCoVSteppableBase):
 
         self.plot_med_diff_data = IFNInputs.plot_med_diff_data_freq > 0
         self.write_med_diff_data = IFNInputs.write_med_diff_data_freq > 0
-        self.med_diff_key = "MedDiff"
 
         # For flushing outputs every quarter simulation length
         self.__flush_counter = 1
@@ -538,7 +538,8 @@ class IFNSimDataSteppable(nCoVSteppableBase):
         self.register_type(MainSteppables.uninfected_type_name)
         self.register_type(MainSteppables.infected_type_name)
         self.register_type(MainSteppables.virus_releasing_type_name)
-        #self.set_target_field_name(IFN_field_name)
+        self.set_virus_field_name(MainSteppables.virus_field_name)
+        self.set_ifn_field_name(ifn_field_name)
 
     def start(self):
         if self.plot_ifn_data:
@@ -566,51 +567,134 @@ class IFNSimDataSteppable(nCoVSteppableBase):
                 new_window.add_plot(viral_replication_model_vars[i], style='Dots', color=colors[i], size=5)
                 setattr(self, attr_name, new_window)
 
-        if self.write_ifn_data:
+            attr_name = 'ifn_data_win' + self._ifn_field_name
+            new_window = self.add_new_plot_window(title=self._ifn_field_name,
+                                                  x_axis_title='Time (hrs)',
+                                                  y_axis_title='Variables', x_scale_type='linear',
+                                                  y_scale_type='linear',
+                                                  grid=False,
+                                                  config_options={'legend': True})
+            new_window.add_plot(self._ifn_field_name, style='Dots', color='red', size=5)
+            setattr(self, attr_name, new_window)
+
+        # Check that output directory is available
+        if self.output_dir is not None:
             from pathlib import Path
-            self.ifn_data_path = Path(self.output_dir).joinpath('ifn_data.dat')
-            with open(self.ifn_data_path, 'w'):
-                pass
+            if self.write_ifn_data:
+                self.ifn_data_path = Path(self.output_dir).joinpath('ifn_data.dat')
+                with open(self.ifn_data_path, 'w'):
+                    pass
+
+                self.ifn_data[-1] = ['Time'] + ifn_model_vars + viral_replication_model_vars + ['IFNe']
+
+        if self.plot_med_diff_data:
+            self.med_diff_data_win = self.add_new_plot_window(title='Total diffusive species',
+                                                              x_axis_title='MCS',
+                                                              y_axis_title='Number of diffusive species per volume',
+                                                              x_scale_type='linear',
+                                                              y_scale_type='log',
+                                                              grid=True,
+                                                              config_options={'legend': True})
+
+            self.med_diff_data_win.add_plot("Ve", style='Dots', color='red', size=5)
+            self.med_diff_data_win.add_plot("IFNe", style='Dots', color='green', size=5)
+
+        # Check that output directory is available
+        if self.output_dir is not None:
+            from pathlib import Path
+            if self.write_med_diff_data:
+                self.med_diff_data_path = Path(self.output_dir).joinpath('med_diff_data.dat')
+                with open(self.med_diff_data_path, 'w'):
+                    pass
+
+                self.med_diff_data[-1] = ['Time', 'Ve','IFNe']
 
     def step(self, mcs):
         if self.simdata_steppable is None:
             self.simdata_steppable = self.shared_steppable_vars[ifn_sim_data_key]
 
         plot_ifn_data = self.plot_ifn_data and mcs % IFNInputs.plot_ifn_data_freq == 0
-        write_ifn_data = self.write_ifn_data and mcs % IFNInputs.write_ifn_data_freq == 0
+        plot_med_diff_data = self.plot_med_diff_data and mcs % IFNInputs.plot_med_diff_data_freq == 0
+        if self.output_dir is not None:
+            write_ifn_data = self.write_ifn_data and mcs % IFNInputs.write_ifn_data_freq == 0
+            write_med_diff_data = self.write_med_diff_data and mcs % IFNInputs.write_med_diff_data_freq == 0
+        else:
+            write_ifn_data = False
+            write_med_diff_data = False
 
         # Plotting and writing average values of IFN model variables
         if plot_ifn_data or write_ifn_data:
+            data_dict = [mcs * hours_to_mcs]
             for i in range(len(ifn_model_vars)):
-                # todo: make types counted in data steppable dynamic and settable
                 L = len(self.cell_list_by_type(*self.registered_type_ids))
                 total_var = 0.0
                 for cell in self.cell_list_by_type(*self.registered_type_ids):
                     cell_sbml = get_cell_ifn_model(cell)
                     total_var += cell_sbml[ifn_model_vars[i]]
+                data_dict.append(total_var / L)
                 if plot_ifn_data:
                     window_name = getattr(self, 'ifn_data_win' + ifn_model_vars[i])
                     window_name.add_data_point(ifn_model_vars[i], mcs * hours_to_mcs, total_var / L)
-                if write_ifn_data:
-                    self.ifn_data[mcs] = [mcs * hours_to_mcs]
-                    self.ifn_data[mcs].append(total_var / L)
 
             for i in range(len(viral_replication_model_vars)):
-                # todo: make types counted in data steppable dynamic and settable
                 total_var = 0.0
                 for cell in self.cell_list_by_type(*self.registered_type_ids):
                     cell_sbml = get_cell_viral_replication_model(cell)
                     total_var += cell_sbml[viral_replication_model_vars[i]]
+                data_dict.append(total_var / L)
                 if plot_ifn_data:
                     window_name = getattr(self, 'ifn_data_win' + viral_replication_model_vars[i])
                     window_name.add_data_point(viral_replication_model_vars[i], mcs * hours_to_mcs, total_var / L)
-                if write_ifn_data:
-                    self.ifn_data[mcs].append(total_var / L)
 
-        # Flush outputs at quarter simulation lengths
-        if mcs >= int(self.simulator.getNumSteps() / 4 * self.__flush_counter):
-            self.flush_stored_outputs()
-            self.__flush_counter += 1
+            ## Measure amount of IFNe in the Field
+            secretor = self.get_field_secretor(field_name=self._ifn_field_name)
+            total_var = 0
+            for cell in self.cell_list_by_type(*self.registered_type_ids):
+                total_var += secretor.amountSeenByCell(cell)
+            if plot_ifn_data:
+                window_name = getattr(self, 'ifn_data_win' + self._target_field_name)
+                window_name.add_data_point(self._target_field_name, mcs * hours_to_mcs, total_var / L)
+            data_dict.append(total_var / L)
+
+            if write_ifn_data:
+                self.ifn_data[mcs] = data_dict
+
+        if plot_med_diff_data or write_med_diff_data:
+            # Gather total diffusive amounts
+            try:
+                med_viral_total = self.get_field_secretor(self._virus_field_name).totalFieldIntegral()
+            except AttributeError:  # Pre-v4.2.1 CC3D
+                med_viral_total = 0.0
+                field = getattr(self.field, self._virus_field_name)
+                for x, y, z in self.every_pixel():
+                    med_viral_total += field[x, y, z]
+
+            # Plot total diffusive viral amount if requested
+            if plot_med_diff_data:
+                if med_viral_total > 0:
+                    self.med_diff_data_win.add_data_point("Ve", mcs * hours_to_mcs, med_viral_total)
+
+            # Gather total diffusive amounts
+            try:
+                med_ifn_total = self.get_field_secretor(self._ifn_field_name).totalFieldIntegral()
+            except AttributeError:  # Pre-v4.2.1 CC3D
+                med_ifn_total = 0.0
+                field = getattr(self.field, self._ifn_field_name)
+                for x, y, z in self.every_pixel():
+                    med_ifn_total += field[x, y, z]
+
+            # Plot total diffusive viral amount if requested
+            if plot_med_diff_data:
+                if med_viral_total > 0:
+                    self.med_diff_data_win.add_data_point("Ve", mcs * hours_to_mcs, med_viral_total)
+                if med_ifn_total > 0:
+                    self.med_diff_data_win.add_data_point("IFNe", mcs * hours_to_mcs, med_ifn_total)
+
+            # Write total diffusive viral amount if requested
+            if write_med_diff_data:
+                self.med_diff_data[mcs] = [mcs * hours_to_mcs, med_viral_total, med_ifn_total]
+
+        self.flush_stored_outputs()
 
     def on_stop(self):
         self.finish()
@@ -627,6 +711,11 @@ class IFNSimDataSteppable(nCoVSteppableBase):
             with open(self.ifn_data_path, 'a') as fout:
                 fout.write(MainSteppables.SimDataSteppable.data_output_string(self, self.ifn_data))
                 self.ifn_data.clear()
+
+        if self.write_med_diff_data and self.med_diff_data:
+            with open(self.med_diff_data_path, 'a') as fout:
+                fout.write(MainSteppables.SimDataSteppable.data_output_string(self, self.med_diff_data))
+                self.med_diff_data.clear()
 
     def register_type(self, _name: str):
         if _name not in self._registered_types:
@@ -647,3 +736,11 @@ class IFNSimDataSteppable(nCoVSteppableBase):
 
     def set_virus_releasing_type_name(self, _name: str):
         self._virus_releasing_type_name = _name
+
+    def set_virus_field_name(self, _name: str):
+        self._virus_field_name = _name
+
+    def set_ifn_field_name(self, _name: str):
+        self._ifn_field_name = _name
+
+#TODO: Write Plaque Assay SimData Steppable
