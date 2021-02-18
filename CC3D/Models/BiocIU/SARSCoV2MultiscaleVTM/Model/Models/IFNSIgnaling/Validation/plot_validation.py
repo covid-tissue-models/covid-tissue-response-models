@@ -1,0 +1,35 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+ODEnames = ['Time','V','H','P','IFNe','STATP','IRF7','IRF7P','IFN']
+ODE = np.genfromtxt('JordanOriginalODE_1.txt', skip_header=1, delimiter=',', names=ODEnames)
+CC3Dnames = ['mcs', 'Time', 'IFN', 'STATP', 'IRF7', 'IRF7P', 'H', 'V', 'IFNe']
+CC3D = np.genfromtxt('ifn_data.dat', skip_header=1, delimiter=',', names=CC3Dnames)
+
+fig, axs = plt.subplots(3,3)
+axs[0, 0].plot(ODE['Time'],ODE['STATP'],color='#0033FF')
+axs[0, 0].plot(CC3D['Time'],CC3D['STATP'],color='#0033FF',linestyle='dotted')
+axs[0, 0].set_title('STATP')
+axs[0, 1].plot(ODE['Time'],ODE['IRF7'],color='#FF6600')
+axs[0, 1].plot(CC3D['Time'],CC3D['IRF7'],color='#FF6600',linestyle='dotted')
+axs[0, 1].set_title('IRF7')
+axs[0, 2].plot(ODE['Time'],ODE['IRF7P'],color='#666666')
+axs[0, 2].plot(CC3D['Time'],CC3D['IRF7P'],color='#666666',linestyle='dotted')
+axs[0, 2].set_title('IRF7P')
+axs[1, 0].plot(ODE['Time'],ODE['V'],color='#6600FF')
+axs[1, 0].plot(CC3D['Time'],CC3D['V'],color='#6600FF',linestyle='dotted')
+axs[1, 0].set_title('Virus Level')
+axs[1, 1].plot(ODE['Time'],ODE['IFN'],color='#CC0033')
+axs[1, 1].plot(CC3D['Time'],CC3D['IFN'],color='#CC0033',linestyle='dotted')
+axs[1, 1].set_title('IFN')
+axs[1, 2].plot(ODE['Time'],ODE['IFNe'],color='#993300')
+axs[1, 2].plot(CC3D['Time'],CC3D['IFNe'],color='#993300',linestyle='dotted')
+axs[1, 2].set_title('IFN')
+axs[2, 1].plot(ODE['Time'],ODE['H'],color='#339900')
+axs[2, 1].plot(CC3D['Time'],CC3D['H'],color='#339900',linestyle='dotted')
+axs[2, 1].set_title('Cell Viability')
+axs[2,0].set_visible(False)
+axs[2,2].set_visible(False)
+plt.tight_layout()
+plt.savefig('validation.pdf',transparent=True)
+plt.show()

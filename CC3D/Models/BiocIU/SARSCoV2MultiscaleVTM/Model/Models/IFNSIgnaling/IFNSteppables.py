@@ -29,7 +29,7 @@ initial_amount_virus = 6.9e-8
 min_to_mcs = s_to_mcs / 60.0
 hours_to_mcs = min_to_mcs / 60.0
 days_to_mcs = hours_to_mcs / 24.0
-hours_to_simulate = 80.0  # 10 in the original model
+hours_to_simulate = 40.0  # 10 in the original model
 ifn_model_vars = ["IFN", "STATP", "IRF7", "IRF7P"]
 viral_replication_model_vars = ["H", "V"]
 
@@ -165,6 +165,7 @@ class IFNSteppable(nCoVSteppableBase):
         self.sbml_options = {'relative': 1e-10, 'absolute': 1e-12}
 
     def start(self):
+        self.get_xml_element('simulation_steps').cdata = hours_to_simulate / hours_to_mcs
         self.set_sbml_global_options(self.sbml_options)
 
         # Load IFN sbml model
