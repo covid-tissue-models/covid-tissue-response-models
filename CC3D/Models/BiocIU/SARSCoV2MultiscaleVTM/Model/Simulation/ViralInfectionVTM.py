@@ -18,8 +18,10 @@ from cc3d import CompuCellSetup
 # All imports, manipulations and registrations should occur after this line
 
 from ViralInfectionVTMSteppables import CellInitializerSteppable
-
-CompuCellSetup.register_steppable(steppable=CellInitializerSteppable(frequency=1))
+steppable = CellInitializerSteppable(frequency=1)
+steppable.voxel_length = 4.0
+steppable.step_period = 5.0 * 60
+CompuCellSetup.register_steppable(steppable=steppable)
 
 from ViralInfectionVTMSteppables import VirusFieldInitializerSteppable
 

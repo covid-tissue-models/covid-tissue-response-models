@@ -35,6 +35,11 @@ class nCoVSteppableBase(SteppableBasePy):
     All registered steppables derived from this class are available in *shared_steppable_vars* to all steppables at,
     and after, cc3d calls the steppable method *start*.
 
+    Defines attributes ``step_period`` and ``voxel_length`` for unit conversion of time and length.
+    These attributes are connected to class variables, so their values are the same across all instances of
+    derived classes.
+    Derived classes should convert their parameters to cc3d units (`e.g.`, from minutes to steps) using these.
+
     Defines a callback *on_new_cell*, which is called on every registered derived class when any derived class
     creates a new cell in the typical cc3d fashion using *new_cell*.
     Derived classes override this method to implement routines associated with the creation of a new cell.
@@ -63,6 +68,36 @@ class nCoVSteppableBase(SteppableBasePy):
     
     This must be set by a derived class so that other steppables can find it if registered with CC3D
     """
+
+    _step_period = 60.0
+
+    @property
+    def step_period(self) -> float:
+        """
+        Unit conversion for time, in units seconds per step
+        """
+        return nCoVSteppableBase._step_period
+
+    @step_period.setter
+    def step_period(self, _val: float):
+        if _val <= 0:
+            raise ValueError('Step period must be positive')
+        nCoVSteppableBase._step_period = _val
+
+    _voxel_length = 1.0
+
+    @property
+    def voxel_length(self) -> float:
+        """
+        Unit conversion for space, in micrometers per voxel side length
+        """
+        return nCoVSteppableBase._voxel_length
+
+    @voxel_length.setter
+    def voxel_length(self, _val: float):
+        if _val <= 0:
+            raise ValueError('Site length must be positive')
+        nCoVSteppableBase._voxel_length = _val
 
     def core_init(self, reinitialize_cell_types=True):
         super().core_init(reinitialize_cell_types)

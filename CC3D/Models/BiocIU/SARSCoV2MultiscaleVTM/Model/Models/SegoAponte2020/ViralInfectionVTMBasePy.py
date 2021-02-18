@@ -4,7 +4,6 @@ Defines steppable base class
 
 # Import project libraries
 from . import ViralInfectionVTMLib
-from . import ViralInfectionVTMModelInputs
 
 # Import toolkit
 from nCoVToolkit.nCoVSteppableBase import nCoVSteppableBase
@@ -25,8 +24,8 @@ class ViralInfectionVTMSteppableBasePy(nCoVSteppableBase):
     - a cytokine field: ``cytokine_field_name``
     - an oxidative agent field: ``oxidator_field_name``
 
-    Some steppables refer to model parameters that are defined in units of seconds.
-    Conversions with these parameters are made on the fly with a settable conversion parameter ``s_to_mcs``.
+    All module model parameter values are converted to cc3d units on the fly according to unit conversion data
+    from the main framework
     """
 
     vr_model_name = ViralInfectionVTMLib.vr_model_name
@@ -44,8 +43,6 @@ class ViralInfectionVTMSteppableBasePy(nCoVSteppableBase):
         self._virus_field_name = ''
         self._cytokine_field_name = ''
         self._oxidator_field_name = ''
-
-        self.s_to_mcs = ViralInfectionVTMModelInputs.s_to_mcs
 
     def viral_replication_model_string(self, *args, **kwargs):
         """
@@ -426,20 +423,3 @@ class ViralInfectionVTMSteppableBasePy(nCoVSteppableBase):
         if self._oxidator_field_name:
             return getattr(self.field, self._oxidator_field_name)
         return None
-
-    def set_time_step(self, _val: float):
-        """
-        Set the time step, in units seconds per step
-
-        :param _val: Time step
-        :return: None
-        """
-        if _val <= 0.0:
-            raise ValueError("Step period must be positive")
-        self.s_to_mcs = _val
-
-    def get_time_step(self) -> float:
-        """
-        Time step, in units seconds per step
-        """
-        return self.s_to_mcs

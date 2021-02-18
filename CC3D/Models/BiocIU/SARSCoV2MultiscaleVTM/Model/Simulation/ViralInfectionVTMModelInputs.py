@@ -31,50 +31,35 @@ __param_desc__['um_to_lat_width'] = 'Lattice width'
 um_to_lat_width = 4.0  # um/lattice_length
 
 # Experimental Parameters
-__param_desc__['exp_cell_diameter'] = 'Cell diameter'
-exp_cell_diameter = 12.0  # um
+__param_desc__['cell_diameter'] = 'Cell diameter'
+cell_diameter = 12.0  # um
 
-__param_desc__['exp_secretion_rate'] = 'Secretion rate of virus'
-exp_secretion_rate = 1.0 / (24.0 * 60.0 * 60.0)  # units virus/s
+__param_desc__['secretion_rate'] = 'Secretion rate of virus'
+secretion_rate = 1.0 / (24.0 * 60.0 * 60.0)  # units virus/s
 
-__param_desc__['exp_virus_dc'] = 'Viral diffusion coefficient'
-exp_virus_dc = 10.0 / 1000.0  # um^2/s
+__param_desc__['virus_dc'] = 'Viral diffusion coefficient'
+virus_dc = 10.0 / 1000.0  # um^2/s
+
+__param_desc__['virus_dl'] = 'Virus diffusion length'
+virus_dl = cell_diameter * 3.0  # um
+
+__param_desc__['virus_decay'] = 'Virus decay coefficient'
+virus_decay = virus_dc / (virus_dl ** 2)  # 1/s
 
 # Viral Internalization parameter
-__param_desc__['exp_internalization_rate'] = 'Internalization rate'
-exp_internalization_rate = 500.0 / (24.0 * 60.0 * 60.0)  # 1/(unit virus*s)
+__param_desc__['internalization_rate'] = 'Internalization rate'
+internalization_rate = 500.0 / (24.0 * 60.0 * 60.0)  # 1/(unit virus*s)
 
 # Viral eclipse phase parameter
-__param_desc__['exp_eclipse_phase'] = 'Eclipse phase'
-exp_eclipse_phase = 0.25 * (24.0 * 60.0 * 60.0)  # s
+__param_desc__['eclipse_phase'] = 'Eclipse phase'
+eclipse_phase = 0.25 * (24.0 * 60.0 * 60.0)  # s
 
 # Viral death rate parameter
-__param_desc__['exp_viral_death_rate'] = 'Viral death rate parameter'
-exp_viral_death_rate = 3.0 / exp_eclipse_phase  # 1/s
+__param_desc__['viral_death_rate'] = 'Viral death rate parameter'
+viral_death_rate = 3.0 / eclipse_phase  # 1/s
 
 # =============================
 # CompuCell Parameters
 # cell
-__param_desc__['cell_diameter'] = 'Unitless cell diameter'
-cell_diameter = exp_cell_diameter * 1.0 / um_to_lat_width
-__param_desc__['cell_volume'] = 'Unitless cell volume'
-cell_volume = cell_diameter ** 2
 __param_desc__['volume_lm'] = 'Volume constraint LM'
 volume_lm = 9
-# Conversions to unitless parameters
-# virus diffusion
-__param_desc__['virus_dc'] = 'Unitless virus diffusion coefficient'
-virus_dc = exp_virus_dc * s_to_mcs / (um_to_lat_width ** 2)  # virus diffusion constant
-__param_desc__['virus_dl'] = 'Unitless virus diffusion length'
-virus_dl = cell_diameter * 3.0  # virus diffusion length
-__param_desc__['virus_decay'] = 'Unitless virus decay coefficient'
-virus_decay = virus_dc / (virus_dl ** 2)  # virus decay rate
-# virus intra-cellular
-__param_desc__['secretion_rate'] = 'Unitless secretion rate'
-secretion_rate = exp_secretion_rate * s_to_mcs
-__param_desc__['internalization_rate'] = 'Unitless internalization rate'
-internalization_rate = exp_internalization_rate * s_to_mcs
-__param_desc__['eclipse_phase'] = 'Unitless eclipse phase'
-eclipse_phase = exp_eclipse_phase / s_to_mcs
-__param_desc__['viral_death_rate'] = 'Unitless viral death rate'
-viral_death_rate = exp_viral_death_rate * s_to_mcs

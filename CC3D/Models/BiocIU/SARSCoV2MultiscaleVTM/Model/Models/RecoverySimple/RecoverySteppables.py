@@ -33,7 +33,6 @@ import sys
 from typing import *
 
 sys.path.append(os.path.join(os.environ["ViralInfectionVTM"], "Simulation"))
-from ViralInfectionVTMModelInputs import s_to_mcs
 from nCoVToolkit.nCoVSteppableBase import nCoVSteppableBase
 from ViralInfectionVTMSteppables import SimDataSteppable
 
@@ -42,7 +41,7 @@ rec_steppable_key = "sprec_steppable"
 rec_data_steppable_key = "sprec_data_steppable"
 
 
-RecoveryData = namedtuple(typename='RecoveryData', field_names=['recovered_type_name', 'recovery_prob'])
+RecoveryData = namedtuple(typename='RecoveryData', field_names=['recovered_type_name', 'recovery_rate'])
 
 
 class SimpleRecoverySteppable(nCoVSteppableBase):
@@ -63,7 +62,7 @@ class SimpleRecoverySteppable(nCoVSteppableBase):
         from ViralInfectionVTMSteppables import uninfected_type_name, dead_type_name
         self.register_recovery(dead_type_name=dead_type_name,
                                recovered_type_name=uninfected_type_name,
-                               recovery_prob=RecoveryInputs.recovery_rate * s_to_mcs)
+                               recovery_rate=RecoveryInputs.recovery_rate)
 
     def step(self, mcs):
         [self.recover_cell(cell) for cell in self.cell_list_by_type(*self.dead_type_ids) if self.cell_recovers(cell)]
@@ -102,7 +101,7 @@ class SimpleRecoverySteppable(nCoVSteppableBase):
         :param _cell: a cell
         :return: Probability of recovery for a cell
         """
-        return self._registered_recovery[self.get_type_name_by_cell(_cell)].recovery_prob
+        return self._registered_recovery[self.get_type_name_by_cell(_cell)].recovery_rate * self.step_period
 
     def recovery_type(self, _cell) -> int:
         """
@@ -113,17 +112,17 @@ class SimpleRecoverySteppable(nCoVSteppableBase):
         """
         return getattr(self, self._registered_recovery[self.get_type_name_by_cell(_cell)].recovered_type_name.upper())
 
-    def register_recovery(self, dead_type_name: str, recovered_type_name: str, recovery_prob: float):
+    def register_recovery(self, dead_type_name: str, recovered_type_name: str, recovery_rate: float):
         """
         Register a recovery data entry
 
         :param dead_type_name: name of dead cell type
         :param recovered_type_name: name of recovered cell type
-        :param recovery_prob: probability of recovery
+        :param recovery_rate: rate of recovery (1/s)
         :return: None
         """
         self._registered_recovery[dead_type_name] = RecoveryData(recovered_type_name=recovered_type_name,
-                                                                 recovery_prob=recovery_prob)
+                                                                 recovery_rate=recovery_rate)
         self.num_recovered_by_type[dead_type_name] = 0
 
     def unregister_recovery(self, _name: str):

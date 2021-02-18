@@ -42,6 +42,23 @@ class NeighborRecoverySteppable(SimpleRecoverySteppable):
 
     unique_key = rec_steppable_key
 
+    def __init__(self, frequency=1):
+        super().__init__(frequency)
+
+        self._voxel_area = self.voxel_length * self.voxel_length
+
+        # Initialize default data
+        from ViralInfectionVTMSteppables import uninfected_type_name, dead_type_name
+        self.register_recovery(dead_type_name=dead_type_name,
+                               recovered_type_name=uninfected_type_name,
+                               recovery_rate=RecoveryInputs.recovery_rate)
+
+    def start(self):
+        super().start()
+
+        # Reducing a little computational cost here
+        self._voxel_area = self.voxel_length * self.voxel_length
+
     def cell_recovers(self, _cell) -> bool:
         """
         Recovery criterion
@@ -51,7 +68,9 @@ class NeighborRecoverySteppable(SimpleRecoverySteppable):
         """
         recovery_type = self.recovery_type(_cell)
         ca = sum([a for n, a in self.get_cell_neighbor_data_list(_cell) if n is not None and n.type == recovery_type])
-        return random.random() < ca * self.recovery_prob(_cell)
+        if ca == 0:
+            return False
+        return random.random() < ca * self._voxel_area * self.recovery_prob(_cell)
 
 
 class NeighborRecoveryDataSteppable(SimpleRecoveryDataSteppable):

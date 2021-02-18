@@ -127,7 +127,7 @@ class CellInitializerSteppable(nCoVSteppableBase.nCoVSteppableBase):
         self._infection_mode = None
         self._uninfected_type_name = ''
         self._infected_type_name = ''
-        self._cell_volume = 0.0
+        self._cell_diameter = 0
         self._volume_lm = 0.0
 
         self._aux_infect_vars = None
@@ -135,7 +135,7 @@ class CellInitializerSteppable(nCoVSteppableBase.nCoVSteppableBase):
         # Set default data
         self.set_uninfected_type_name(uninfected_type_name)
         self.set_infected_type_name(infected_type_name)
-        self.set_cell_volume(ViralInfectionVTMModelInputs.cell_volume)
+        self.set_cell_diameter(ViralInfectionVTMModelInputs.cell_diameter)
         self.set_volume_parameter(ViralInfectionVTMModelInputs.volume_lm)
         self.initialize_sheet()
         self.random_infected_fraction(0.01)
@@ -170,14 +170,14 @@ class CellInitializerSteppable(nCoVSteppableBase.nCoVSteppableBase):
 
     def _initialize_sheet(self):
         # Enforce compatible lattice dimensions with epithelial cell size
-        cdiam = ViralInfectionVTMModelInputs.cell_diameter
+        cdiam = int(self.cell_diameter / self.voxel_length)
         assert self.dim.x % cdiam == 0 and self.dim.y % cdiam == 0, \
             f'Lattice dimensions must be multiples of the unitless cell diameter (currently cell_diameter = {cdiam})'
 
-        for x in range(0, self.dim.x, int(cdiam)):
-            for y in range(0, self.dim.y, int(cdiam)):
+        for x in range(0, self.dim.x, cdiam):
+            for y in range(0, self.dim.y, cdiam):
                 cell = self.new_cell(self.uninfected_type_id)
-                self.cellField[x:x + int(cdiam), y:y + int(cdiam), 0] = cell
+                self.cellField[x:x + cdiam, y:y + cdiam, 0] = cell
 
                 cell.targetVolume = self.cell_volume
                 cell.lambdaVolume = self.volume_parameter
@@ -314,27 +314,37 @@ class CellInitializerSteppable(nCoVSteppableBase.nCoVSteppableBase):
     def infected_type_name(self, _name: str):
         self.set_infected_type_name(_name)
 
-    def set_cell_volume(self, _val: float):
+    def set_cell_diameter(self, _val: float):
         """
-        Set the target volume for newly created cells
+        Set the target cell diameter, in units of microns.
+        Target volume for cells is interpreted as this value squared.
 
-        :param _val: Target volume for newly created cells
+        :param _val: target cell diameter
         :return: None
         """
         if _val < 0:
-            raise ValueError("Cell target volume must be non-negative")
-        self._cell_volume = _val
+            raise ValueError('Cell target diameter must be non-negative')
+        self._cell_diameter = _val
+
+    @property
+    def cell_diameter(self) -> float:
+        """
+        Target cell diameter, in units of microns
+
+        :return: None
+        """
+        return self._cell_diameter
+
+    @cell_diameter.setter
+    def cell_diameter(self, _val: float):
+        self.set_cell_diameter(_val)
 
     @property
     def cell_volume(self):
         """
-        Target volume for newly created cells
+        Target volume for newly created cells; calculated from cell diameter
         """
-        return self._cell_volume
-
-    @cell_volume.setter
-    def cell_volume(self, _val: float):
-        self.set_cell_volume(_val)
+        return self.cell_diameter * self.cell_diameter
 
     def set_volume_parameter(self, _val: float):
         """
@@ -383,18 +393,20 @@ class VirusFieldInitializerSteppable(nCoVSteppableBase.nCoVSteppableBase):
         """
         Called once to initialize simulation
         """
+        diff_factor = self.step_period / (self.voxel_length * self.voxel_length)
+        decay_factor = self.step_period
         if self._diffusion_coefficient is None:
-            self.get_xml_element(self._virus_diffusion_id).cdata = ViralInfectionVTMModelInputs.virus_dc
+            self.get_xml_element(self._virus_diffusion_id).cdata = ViralInfectionVTMModelInputs.virus_dc * diff_factor
         else:
-            self.get_xml_element(self._virus_diffusion_id).cdata = self._diffusion_coefficient
+            self.get_xml_element(self._virus_diffusion_id).cdata = self._diffusion_coefficient * diff_factor
         if self._decay_coefficient is None:
-            self.get_xml_element(self._virus_decay_id).cdata = ViralInfectionVTMModelInputs.virus_decay
+            self.get_xml_element(self._virus_decay_id).cdata = ViralInfectionVTMModelInputs.virus_decay * decay_factor
         else:
-            self.get_xml_element(self._virus_decay_id).cdata = self._decay_coefficient
+            self.get_xml_element(self._virus_decay_id).cdata = self._decay_coefficient * decay_factor
 
     def set_diffusion_coefficient(self, _val: float):
         """
-        Set diffusion coefficient
+        Set diffusion coefficient, in units microns^2/s
 
         :param _val: Diffusion coefficient
         :return: None
@@ -406,7 +418,7 @@ class VirusFieldInitializerSteppable(nCoVSteppableBase.nCoVSteppableBase):
     @property
     def diffusion_coefficient(self) -> float:
         """
-        Diffusion coefficient
+        Diffusion coefficient, in units microns^2/s
         """
         return self._diffusion_coefficient
 
@@ -418,7 +430,7 @@ class VirusFieldInitializerSteppable(nCoVSteppableBase.nCoVSteppableBase):
 
     def set_decay_coefficient(self, _val: float):
         """
-        Set decay coefficient
+        Set decay coefficient, in units 1/s
 
         :param _val: Decay coefficient
         :return: None
@@ -430,7 +442,7 @@ class VirusFieldInitializerSteppable(nCoVSteppableBase.nCoVSteppableBase):
     @property
     def decay_coefficient(self) -> float:
         """
-        Decay coefficient
+        Decay coefficient, in units 1/s
         """
         return self._decay_coefficient
 
@@ -508,7 +520,7 @@ class ViralInternalizationSteppable(nCoVSteppableBase.nCoVSteppableBase):
         secretor = self.get_field_secretor(field_name=self._target_field_name)
         for cell in self.cell_list_by_type(self.uninfected_type_id):
             seen_amount = secretor.amountSeenByCell(cell) / cell.volume
-            rate = seen_amount * self._internalization_rate
+            rate = seen_amount * self._internalization_rate * self.step_period
             if random.random() <= nCoVUtils.ul_rate_to_prob(rate):
                 self.set_cell_type(cell, self.infected_type_id)
 
@@ -588,7 +600,7 @@ class ViralInternalizationSteppable(nCoVSteppableBase.nCoVSteppableBase):
 
     def set_internalization_rate(self, _val: float):
         """
-        Set internalization rate
+        Set internalization rate, in units virus/cell/s
 
         :param _val: Internalization rate
         :return: None
@@ -600,7 +612,7 @@ class ViralInternalizationSteppable(nCoVSteppableBase.nCoVSteppableBase):
     @property
     def internalization_rate(self):
         """
-        Internalization rate
+        Internalization rate, in units virus/cell/s
         """
         return self._internalization_rate
 
@@ -641,7 +653,7 @@ class EclipsePhaseSteppable(nCoVSteppableBase.nCoVSteppableBase):
         :param mcs: current simulation step
         :return: None
         """
-        pr = nCoVUtils.ul_rate_to_prob(1.0 / self._eclipse_phase)
+        pr = nCoVUtils.ul_rate_to_prob(self.step_period / self.eclipse_phase)
         for cell in self.cell_list_by_type(self.infected_type_id):
             if random.random() <= pr:
                 self.set_cell_type(cell, self.virus_releasing_type_id)
@@ -702,7 +714,7 @@ class EclipsePhaseSteppable(nCoVSteppableBase.nCoVSteppableBase):
 
     def set_eclipse_phase(self, _val: float):
         """
-        Set eclipse phase
+        Set eclipse phase, in units of seconds
 
         :param _val: Eclipse phase
         :return: None
@@ -714,7 +726,7 @@ class EclipsePhaseSteppable(nCoVSteppableBase.nCoVSteppableBase):
     @property
     def eclipse_phase(self):
         """
-        Eclipse phase
+        Eclipse phase, in units of seconds
         """
         return self._eclipse_phase
 
@@ -755,7 +767,7 @@ class ViralDeathSteppable(nCoVSteppableBase.nCoVSteppableBase):
         :param mcs: current simulation step
         :return: None
         """
-        pr = nCoVUtils.ul_rate_to_prob(self._viral_death_rate)
+        pr = nCoVUtils.ul_rate_to_prob(self.viral_death_rate * self.step_period)
         for cell in self.cell_list_by_type(self.virus_releasing_type_id):
             if random.random() <= pr:
                 self.set_cell_type(cell, self.dead_type_id)
@@ -816,7 +828,7 @@ class ViralDeathSteppable(nCoVSteppableBase.nCoVSteppableBase):
 
     def set_viral_death_rate(self, _val: float):
         """
-        Set the rate of viral death
+        Set the rate of viral death, in units 1/s
 
         :param _val: Rate of viral death
         :return: None
@@ -828,7 +840,7 @@ class ViralDeathSteppable(nCoVSteppableBase.nCoVSteppableBase):
     @property
     def viral_death_rate(self):
         """
-        Rate of viral death
+        Rate of viral death, in units 1/s
         """
         return self._viral_death_rate
 
@@ -880,7 +892,7 @@ class ViralReleaseSteppable(nCoVSteppableBase.nCoVSteppableBase):
             fact = float(min_dim)
 
         for cell in self.cell_list_by_type(self.virus_releasing_type_id):
-            secretor.secreteInsideCell(cell, self._release_rate * fact / cell.volume)
+            secretor.secreteInsideCell(cell, self.release_rate * fact / cell.volume * self.step_period)
 
     @property
     def virus_releasing_type_id(self) -> int:
@@ -931,7 +943,7 @@ class ViralReleaseSteppable(nCoVSteppableBase.nCoVSteppableBase):
 
     def set_release_rate(self, _val: float):
         """
-        Set the virus release rate
+        Set the virus release rate, in units virus/cell/s
 
         :param _val: Virus release rate
         :return: None
@@ -943,7 +955,7 @@ class ViralReleaseSteppable(nCoVSteppableBase.nCoVSteppableBase):
     @property
     def release_rate(self):
         """
-        Virus release rate
+        Virus release rate, in units virus/cell/s
         """
         return self._release_rate
 

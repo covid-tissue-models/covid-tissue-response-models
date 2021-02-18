@@ -16,8 +16,10 @@ os.environ["ViralInfectionVTM"] = os.path.dirname(os.path.dirname(f))
 from cc3d import CompuCellSetup
 
 from Models.SegoAponte2020.ViralInfectionVTMSteppables import ViralReplicationSteppable
-
-CompuCellSetup.register_steppable(steppable=ViralReplicationSteppable(frequency=1))
+steppable = ViralReplicationSteppable(frequency=1)
+steppable.step_period = 20.0 * 60
+steppable.voxel_length = 4.0
+CompuCellSetup.register_steppable(steppable=steppable)
 
 from Models.SegoAponte2020.ViralInfectionVTMSteppables import CellsInitializerSteppable
 

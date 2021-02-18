@@ -41,7 +41,7 @@ __param_desc__["uecyt"] = "ECYT degradation (1/h)"
 uecyt = 0.06
 
 # Initial conditions
-__param_desc__["RIBOTOT"] = ""
+__param_desc__["RIBOTOT"] = "Total ribosomes"
 RIBOTOT = 700.0
 __param_desc__["init_rna"] = "Initial number of RNA molecules in initially infected cells"
 init_rna = 500
@@ -49,5 +49,3 @@ init_rna = 500
 # Conversion factor
 __param_desc__["virus_from_ul"] = "Conversion from unitless original model quantities to HCV model units"
 virus_from_ul = 100
-__param_desc__["translating_rate"] = "Production of VRM model *P* from *R*"
-translating_rate = 100

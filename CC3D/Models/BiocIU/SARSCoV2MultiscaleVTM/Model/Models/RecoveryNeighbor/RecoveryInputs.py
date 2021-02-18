@@ -11,4 +11,4 @@ write_rec_data_freq = 0  # Write recovery model data to simulation directory fre
 
 # Model inputs
 __param_desc__['recovery_rate'] = "Recovery rate per common surface area with uninfected neighbors"
-recovery_rate = 1.0 / (7.0 * 24.0 * 60.0 * 60.0)
+recovery_rate = 1.0 / (7.0 * 24.0 * 60.0 * 60.0) / (4.0 ** 2)  # 1/s/um2

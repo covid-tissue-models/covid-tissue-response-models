@@ -165,7 +165,7 @@ class CellsInitializerSteppable(ViralInfectionVTMSteppableBasePy, MainSteppables
         MainSteppables.CellInitializerSteppable.__init__(self, frequency)
 
         # Initialize default data
-        self.set_cell_volume(ViralInfectionVTMModelInputs.cell_volume)
+        self.set_cell_diameter(ViralInfectionVTMModelInputs.cell_diameter)
         self.set_volume_parameter(ViralInfectionVTMModelInputs.volume_lm)
         self.single_infected_cell()
 
@@ -352,12 +352,12 @@ class ViralReplicationSteppable(ViralInfectionVTMSteppableBasePy):
                       ViralInfectionVTMLib.vrm_uptake]:
                 if k not in _cell.dict.keys():
                     _cell.dict[k] = 0.0
-            return self.viral_replication_model_string(self._vrm_params['unpacking_rate'],
-                                                       self._vrm_params['replicating_rate'],
+            return self.viral_replication_model_string(self._vrm_params['unpacking_rate'] * self.step_period,
+                                                       self._vrm_params['replicating_rate'] * self.step_period,
                                                        self._vrm_params['r_half'],
-                                                       self._vrm_params['translating_rate'],
-                                                       self._vrm_params['packing_rate'],
-                                                       self._vrm_params['secretion_rate'],
+                                                       self._vrm_params['translating_rate'] * self.step_period,
+                                                       self._vrm_params['packing_rate'] * self.step_period,
+                                                       self._vrm_params['secretion_rate'] * self.step_period,
                                                        _cell.dict[ViralInfectionVTMLib.vrm_unpacking],
                                                        _cell.dict[ViralInfectionVTMLib.vrm_replicating],
                                                        _cell.dict[ViralInfectionVTMLib.vrm_packing],
@@ -492,7 +492,14 @@ class ViralReplicationSteppable(ViralInfectionVTMSteppableBasePy):
         """
         Set parameters in viral replication model for newly created cells
 
-        Keywords are unpacking_rate, replicating_rate, r_half, translating_rate, packing_rate, secretion_rate
+        Keywords are
+
+        - unpacking_rate (units 1/s)
+        - replicating_rate (units 1/s)
+        - r_half (ul)
+        - translating_rate (units 1/s)
+        - packing_rate (units 1/s)
+        - secretion_rate (units 1/s)
 
         Any model parameter can be set, so long as the value is non-negative
 
@@ -573,7 +580,12 @@ class ViralInternalizationSteppable(ViralInfectionVTMSteppableBasePy):
         if cell.dict[ViralInfectionVTMLib.unbound_receptors_cellg_key] == 0:
             return False, 0.0
 
-        _k = self._kon * cell.volume / self._koff
+        # Conversion to cc3d units
+        pmol_to_cc3d_au = ViralInfectionVTMModelInputs.pmol_to_cc3d_au
+        kon = self._kon * self.step_period / self.voxel_length**3 / pmol_to_cc3d_au
+        koff = self._koff * self.step_period
+
+        _k = kon * cell.volume / koff
         hill_coeff_uptake_pr = self._hill_coeff_uptake
         receptors = cell.dict[ViralInfectionVTMLib.unbound_receptors_cellg_key]
         diss_coeff_uptake_pr = (self._initial_unbound_receptors / 2.0 / _k / receptors) ** (1.0 / hill_coeff_uptake_pr)
@@ -582,7 +594,7 @@ class ViralInternalizationSteppable(ViralInfectionVTMSteppableBasePy):
                                                      hill_coeff_uptake_pr)
 
         cell_does_uptake = np.random.rand() < uptake_probability
-        uptake_amount = self.s_to_mcs / self._rate_coeff_uptake * uptake_probability
+        uptake_amount = self.step_period / self._rate_coeff_uptake * uptake_probability
 
         if cell_does_uptake and cell.type == self.uninfected_type_id:
             self.set_cell_type(cell, self.infected_type_id)
@@ -632,7 +644,7 @@ class ViralInternalizationSteppable(ViralInfectionVTMSteppableBasePy):
 
     def set_kon(self, _val: float):
         """
-        Set virus-receptor association affinity
+        Set virus-receptor association affinity, in units 1/(M * s)
 
         :param _val: Virus-receptor association affinity
         :return: None
@@ -644,7 +656,7 @@ class ViralInternalizationSteppable(ViralInfectionVTMSteppableBasePy):
     @property
     def kon(self):
         """
-        Virus-receptor association affinity
+        Virus-receptor association affinity, in units 1/(M * s)
         """
         return self._kon
 
@@ -654,7 +666,7 @@ class ViralInternalizationSteppable(ViralInfectionVTMSteppableBasePy):
 
     def set_koff(self, _val: float):
         """
-        Set virus-receptor dissociation affinity
+        Set virus-receptor dissociation affinity, in units 1/s
 
         :param _val: virus-receptor dissociation affinity
         :return: None
@@ -666,7 +678,7 @@ class ViralInternalizationSteppable(ViralInfectionVTMSteppableBasePy):
     @property
     def koff(self):
         """
-        Virus-receptor dissociation affinity
+        Virus-receptor dissociation affinity, in units 1/s
         """
         return self._koff
 
@@ -698,7 +710,7 @@ class ViralInternalizationSteppable(ViralInfectionVTMSteppableBasePy):
 
     def set_rate_coeff_uptake(self, _val):
         """
-        Set uptake rate coefficient
+        Set uptake rate coefficient, in units s
 
         :param _val: uptake rate coefficient
         :return: None
@@ -710,7 +722,7 @@ class ViralInternalizationSteppable(ViralInfectionVTMSteppableBasePy):
     @property
     def rate_coeff_uptake(self):
         """
-        Uptake rate coefficient
+        Uptake rate coefficient, in units s
         """
         return self._rate_coeff_uptake
 
@@ -812,7 +824,7 @@ class ViralSecretionSteppable(ViralInfectionVTMSteppableBasePy):
             _cell.dict[ViralInfectionVTMLib.vrm_uptake] = abs(uptake.tot_amount)
             self.vim_steppable.update_cell_receptors(
                 cell=_cell,
-                receptors_increment=-_cell.dict[ViralInfectionVTMLib.vrm_uptake]*self.s_to_mcs)
+                receptors_increment=-_cell.dict[ViralInfectionVTMLib.vrm_uptake]*self.step_period)
             ViralInfectionVTMLib.set_viral_replication_cell_uptake(cell=_cell,
                                                                    uptake=_cell.dict[ViralInfectionVTMLib.vrm_uptake])
 
@@ -841,7 +853,7 @@ class ViralSecretionSteppable(ViralInfectionVTMSteppableBasePy):
 
     def set_viral_secretion_rate(self, _val: float):
         """
-        Set viral release rate for virus-releasing cell type
+        Set viral release rate for virus-releasing cell type, in units 1/s
 
         :param _val: viral release rate
         :return: None
@@ -851,7 +863,7 @@ class ViralSecretionSteppable(ViralInfectionVTMSteppableBasePy):
     @property
     def viral_secretion_rate(self):
         """
-        Viral release rate for virus-releasing cell type
+        Viral release rate for virus-releasing cell type, in units 1/s
         """
         return self._secretion_rate
 
@@ -872,7 +884,7 @@ class ViralSecretionSteppable(ViralInfectionVTMSteppableBasePy):
         """
         if cell.type == self.virus_releasing_type_id:
             ViralInfectionVTMLib.enable_viral_secretion(cell=cell,
-                                                        secretion_rate=self._secretion_rate)
+                                                        secretion_rate=self._secretion_rate * self.step_period)
 
 
 class ImmuneCellKillingSteppable(ViralInfectionVTMSteppableBasePy):
@@ -1198,18 +1210,19 @@ class ImmuneCellSeedingSteppable(ViralInfectionVTMSteppableBasePy):
         Called once to initialize simulation
         """
 
+        cell_diameter = int(self.cell_diameter / self.voxel_length)
         for iteration in range(int(self._initial_immune_seeding)):
             cell = True
             while cell:
-                xi = np.random.randint(0, self.dim.x - 2 * self._cell_diameter)
-                yi = np.random.randint(0, self.dim.y - 2 * self._cell_diameter)
-                for x in range(xi, xi + int(self._cell_diameter)):
-                    for y in range(yi, yi + int(self._cell_diameter)):
+                xi = np.random.randint(0, self.dim.x - 2 * cell_diameter)
+                yi = np.random.randint(0, self.dim.y - 2 * cell_diameter)
+                for x in range(xi, xi + cell_diameter):
+                    for y in range(yi, yi + cell_diameter):
                         cell = self.cell_field[x, y, 1]
                         break
                 cell = False
             cell = self.new_cell(self.immune_type_id)
-            self.cell_field[x:x + int(self._cell_diameter), y:y + int(self._cell_diameter), 1] = cell
+            self.cell_field[x:x + cell_diameter, y:y + cell_diameter, 1] = cell
 
     def step(self, mcs):
         """
@@ -1234,7 +1247,7 @@ class ImmuneCellSeedingSteppable(ViralInfectionVTMSteppableBasePy):
         if p_immune_seeding < self.get_immune_seeding_prob():
             open_space = True
             viral_concentration = 0
-            cell_diameter = self.cell_diameter
+            cell_diameter = int(self.cell_diameter / self.voxel_length)
             for iteration in range(10):
                 radius = 10
                 length = 0
@@ -1307,7 +1320,7 @@ class ImmuneCellSeedingSteppable(ViralInfectionVTMSteppableBasePy):
 
     def on_new_cell(self, _new_cell):
         if _new_cell.type == self.immune_type_id:
-            _new_cell.targetVolume = self._cell_volume
+            _new_cell.targetVolume = self._cell_volume / self.voxel_length ** 2
             _new_cell.lambdaVolume = self._volume_lm
 
     def set_cell_volume(self, _val: float):
@@ -1337,7 +1350,7 @@ class ImmuneCellSeedingSteppable(ViralInfectionVTMSteppableBasePy):
         """
         Approximate cell diameter
         """
-        return int(math.sqrt(self._cell_volume))
+        return math.sqrt(self._cell_volume)
 
     def set_volume_parameter(self, _val: float):
         """
@@ -2110,14 +2123,18 @@ class CytokineProductionAbsorptionSteppable(ViralInfectionVTMSteppableBasePy):
             self.track_cell_level_scalar_attribute(field_name=field_name, attribute_name=attribute_name)
 
         # cytokine diff parameters
+        diff_factor = self.step_period / (self.voxel_length * self.voxel_length)
+        decay_factor = self.step_period
         if self._diffusion_coefficient is None:
-            self.get_xml_element(self._cytokine_diffusion_id).cdata = ViralInfectionVTMModelInputs.cytokine_dc
+            self.get_xml_element(self._cytokine_diffusion_id).cdata = \
+                ViralInfectionVTMModelInputs.cytokine_dc * diff_factor
         else:
-            self.get_xml_element(self._cytokine_diffusion_id).cdata = self._diffusion_coefficient
+            self.get_xml_element(self._cytokine_diffusion_id).cdata = self._diffusion_coefficient * diff_factor
         if self._decay_coefficient is None:
-            self.get_xml_element(self._cytokine_decay_id).cdata = ViralInfectionVTMModelInputs.cytokine_field_decay
+            self.get_xml_element(self._cytokine_decay_id).cdata = \
+                ViralInfectionVTMModelInputs.cytokine_field_decay * decay_factor
         else:
-            self.get_xml_element(self._cytokine_decay_id).cdata = self._decay_coefficient
+            self.get_xml_element(self._cytokine_decay_id).cdata = self._decay_coefficient * decay_factor
 
     def step(self, mcs):
         """
@@ -2164,7 +2181,7 @@ class CytokineProductionAbsorptionSteppable(ViralInfectionVTMSteppableBasePy):
         ck_secretor = self.get_field_secretor(self._cytokine_field_name)
         viral_load = ViralInfectionVTMLib.get_assembled_viral_load_inside_cell(_cell, self._step_size)
         produced = _cell.dict[ViralInfectionVTMLib.ck_production_cellg_key] * nCoVUtils.hill_equation(
-            viral_load, self._ec50_infecte_ck_prod, 2)
+            viral_load, self.ec50_infected_ck_production, 2)
         res = ck_secretor.secreteInsideCellTotalCount(_cell, produced / _cell.volume)
         return res.tot_amount
 
@@ -2179,15 +2196,18 @@ class CytokineProductionAbsorptionSteppable(ViralInfectionVTMSteppableBasePy):
         up_res = ck_secretor.uptakeInsideCellTotalCount(
             _cell, _cell.dict[ViralInfectionVTMLib.ck_consumption_cellg_key] / _cell.volume, 0.1)
         # decay seen ck
-        _cell.dict[ViralInfectionVTMLib.tot_ck_upt_cellg_key] *= self._ck_memory_immune
+        _cell.dict[ViralInfectionVTMLib.tot_ck_upt_cellg_key] *= self.ck_memory_immune * self.step_period
 
         # uptake ck
 
         # from POV of secretion uptake is negative
         _cell.dict[ViralInfectionVTMLib.tot_ck_upt_cellg_key] -= up_res.tot_amount
         total_ck_inc += up_res.tot_amount
+        ec50_ck_immune = self.ec50_ck_immune_activation * (
+                self.voxel_length ** 3 * ViralInfectionVTMModelInputs.mol_p_L_2_mol_p_um3 *
+                ViralInfectionVTMModelInputs.pmol_to_cc3d_au)
         p_activate = nCoVUtils.hill_equation(_cell.dict[ViralInfectionVTMLib.tot_ck_upt_cellg_key],
-                                             self._ec50_ck_immune,
+                                             ec50_ck_immune,
                                              2)
 
         if rng.uniform() < p_activate and not _cell.dict[ViralInfectionVTMLib.activated_cellg_key]:
@@ -2195,14 +2215,18 @@ class CytokineProductionAbsorptionSteppable(ViralInfectionVTMSteppableBasePy):
             _cell.dict[ViralInfectionVTMLib.activated_cellg_key] = True
             _cell.dict[ViralInfectionVTMLib.time_activation_cellg_key] = _mcs
         elif (_cell.dict[ViralInfectionVTMLib.activated_cellg_key]
-              and _mcs - _cell.dict[ViralInfectionVTMLib.time_activation_cellg_key] > self._minimum_activated_time):
+              and _mcs - _cell.dict[ViralInfectionVTMLib.time_activation_cellg_key] >
+              self._minimum_activated_time / self.step_period):
             _cell.dict[ViralInfectionVTMLib.activated_cellg_key] = False
             _cell.dict[ViralInfectionVTMLib.time_activation_cellg_key] = - 99
 
         if _cell.dict[ViralInfectionVTMLib.activated_cellg_key]:
             seen_field = self.total_seen_field(self.field.cytokine, _cell)
+            ec50_immune_ck_prod = self.ec50_immune_ck_production * (self.voxel_length ** 3 *
+                                                                    ViralInfectionVTMModelInputs.mol_p_L_2_mol_p_um3 *
+                                                                    ViralInfectionVTMModelInputs.pmol_to_cc3d_au)
             produced = _cell.dict[ViralInfectionVTMLib.ck_production_cellg_key] * nCoVUtils.hill_equation(
-                seen_field, self._ec50_immune_ck_prod, 1)
+                seen_field, ec50_immune_ck_prod, 1)
             sec_res = ck_secretor.secreteInsideCellTotalCount(_cell, produced / _cell.volume)
 
             total_ck_inc += sec_res.tot_amount
@@ -2252,14 +2276,18 @@ class CytokineProductionAbsorptionSteppable(ViralInfectionVTMSteppableBasePy):
         """
         if cell.type in [self.infected_type_id, self.virus_releasing_type_id]:
             # update cytokine param
-            cell.dict[ViralInfectionVTMLib.ck_production_cellg_key] = self._max_ck_secrete_infect
+            cell.dict[ViralInfectionVTMLib.ck_production_cellg_key] = self._max_ck_secrete_infect * (
+                    self.step_period * ViralInfectionVTMModelInputs.mol_p_L_2_mol_p_um3 *
+                    self.voxel_length ** 3 * ViralInfectionVTMModelInputs.pmol_to_cc3d_au)
         elif cell.type == self.immune_type_id:
-            cell.dict[ViralInfectionVTMLib.ck_production_cellg_key] = self._max_ck_secrete_im
-            cell.dict[ViralInfectionVTMLib.ck_consumption_cellg_key] = self._max_ck_consume
+            conv_fact = (self.step_period * ViralInfectionVTMModelInputs.mol_p_L_2_mol_p_um3 *
+                         self.voxel_length ** 3 * ViralInfectionVTMModelInputs.pmol_to_cc3d_au)
+            cell.dict[ViralInfectionVTMLib.ck_production_cellg_key] = self._max_ck_secrete_im * conv_fact
+            cell.dict[ViralInfectionVTMLib.ck_consumption_cellg_key] = self._max_ck_consume * conv_fact
 
     def set_diffusion_coefficient(self, _val: float):
         """
-        Set diffusion coefficient
+        Set diffusion coefficient, in units microns^2/s
 
         :param _val: Diffusion coefficient
         :return: None
@@ -2271,7 +2299,7 @@ class CytokineProductionAbsorptionSteppable(ViralInfectionVTMSteppableBasePy):
     @property
     def diffusion_coefficient(self):
         """
-        Diffusion coefficient
+        Diffusion coefficient, in units microns^2/s
         """
         return self._diffusion_coefficient
 
@@ -2281,7 +2309,7 @@ class CytokineProductionAbsorptionSteppable(ViralInfectionVTMSteppableBasePy):
 
     def set_decay_coefficient(self, _val: float):
         """
-        Set decay coefficient
+        Set decay coefficient, in units 1/s
 
         :param _val: Decay coefficient
         :return: None
@@ -2293,7 +2321,7 @@ class CytokineProductionAbsorptionSteppable(ViralInfectionVTMSteppableBasePy):
     @property
     def decay_coefficient(self):
         """
-        Decay coefficient
+        Decay coefficient, in units 1/s
         """
         return self._decay_coefficient
 
@@ -2347,7 +2375,7 @@ class CytokineProductionAbsorptionSteppable(ViralInfectionVTMSteppableBasePy):
 
     def set_ec50_ck_immune_activation(self, _val: float):
         """
-        Set immune cell activation EC50 parameter
+        Set immune cell activation EC50 parameter, in units pM
 
         :param _val: Immune cell activation EC50 parameter
         :return: None
@@ -2359,7 +2387,7 @@ class CytokineProductionAbsorptionSteppable(ViralInfectionVTMSteppableBasePy):
     @property
     def ec50_ck_immune_activation(self):
         """
-        Immune cell activation EC50 parameter
+        Immune cell activation EC50 parameter, in units pM
         """
         return self._ec50_ck_immune
 
@@ -2369,7 +2397,7 @@ class CytokineProductionAbsorptionSteppable(ViralInfectionVTMSteppableBasePy):
 
     def set_ec50_immune_ck_production(self, _val: float):
         """
-        Set immune cell cytokine production EC50 parameter
+        Set immune cell cytokine production EC50 parameter, in units pM
 
         :param _val: Immune cell cytokine production EC50 parameter
         :return: None
@@ -2381,7 +2409,7 @@ class CytokineProductionAbsorptionSteppable(ViralInfectionVTMSteppableBasePy):
     @property
     def ec50_immune_ck_production(self):
         """
-        Immune cell cytokine production EC50 parameter
+        Immune cell cytokine production EC50 parameter, in units pM
         """
         return self._ec50_immune_ck_prod
 
@@ -2413,7 +2441,7 @@ class CytokineProductionAbsorptionSteppable(ViralInfectionVTMSteppableBasePy):
 
     def set_minimum_activated_time(self, _val: float):
         """
-        Set immune cell minimum activated time
+        Set immune cell minimum activated time, in units s
 
         :param _val: Immune cell minimum activated time
         :return: None
@@ -2425,7 +2453,7 @@ class CytokineProductionAbsorptionSteppable(ViralInfectionVTMSteppableBasePy):
     @property
     def minimum_activated_time(self):
         """
-        Immune cell minimum activated time
+        Immune cell minimum activated time, in units s
         """
         return self._minimum_activated_time
 
@@ -2435,7 +2463,7 @@ class CytokineProductionAbsorptionSteppable(ViralInfectionVTMSteppableBasePy):
 
     def set_max_ck_production_infected(self, _val: float):
         """
-        Set maximum cytokine production by infected cells
+        Set maximum cytokine production by infected cells, in units pM/s
 
         :param _val: Maximum cytokine production by infected cells
         :return: None
@@ -2447,7 +2475,7 @@ class CytokineProductionAbsorptionSteppable(ViralInfectionVTMSteppableBasePy):
     @property
     def max_ck_production_infected(self):
         """
-        Maximum cytokine production by infected cells
+        Maximum cytokine production by infected cells, in units pM/s
         """
         return self._max_ck_secrete_infect
 
@@ -2457,7 +2485,7 @@ class CytokineProductionAbsorptionSteppable(ViralInfectionVTMSteppableBasePy):
 
     def set_max_ck_production_immune(self, _val: float):
         """
-        Set maximum cytokine production by immune cells
+        Set maximum cytokine production by immune cells, in units pM/s
 
         :param _val: Maximum cytokine production by immune cells
         :return: None
@@ -2469,7 +2497,7 @@ class CytokineProductionAbsorptionSteppable(ViralInfectionVTMSteppableBasePy):
     @property
     def max_ck_production_immune(self):
         """
-        Maximum cytokine production by immune cells
+        Maximum cytokine production by immune cells, in units pM/s
         """
         return self._max_ck_secrete_im
 
@@ -2479,7 +2507,7 @@ class CytokineProductionAbsorptionSteppable(ViralInfectionVTMSteppableBasePy):
 
     def set_max_ck_consumption_immune(self, _val: float):
         """
-        Set maximum cytokine consumption by immune cells
+        Set maximum cytokine consumption by immune cells, in units pM/s
 
         :param _val: Maximum cytokine consumption by immune cells
         :return: None
@@ -2491,7 +2519,7 @@ class CytokineProductionAbsorptionSteppable(ViralInfectionVTMSteppableBasePy):
     @property
     def max_ck_consumption_immune(self):
         """
-        Maximum cytokine consumption by immune cells
+        Maximum cytokine consumption by immune cells, in units pM/s
         """
         return self._max_ck_consume
 
@@ -2635,10 +2663,10 @@ class ImmuneRecruitmentSteppable(ViralInfectionVTMSteppableBasePy):
             Callback to the model string generator
             """
             return ViralInfectionVTMLib.immune_recruitment_model_string(
-                self._add_coeff,
-                self._subtract_coeff,
-                self._delay_coeff,
-                self._decay_coeff)
+                self._add_coeff * self.step_period,
+                self._subtract_coeff * self.step_period,
+                self._delay_coeff / self.step_period,
+                self._decay_coeff * self.step_period)
         return model_fcn
 
     def update_running_recruitment_model(self, num_immune_cells, total_cytokine):
@@ -2949,7 +2977,7 @@ class oxidationAgentModelSteppable(ViralInfectionVTMSteppableBasePy):
         self.set_field_data(field_name=oxidator_field_name, diffusion='oxi_dc', decay='oxi_decay')
         self.set_death_threshold(ViralInfectionVTMModelInputs.oxi_death_thr)
         self.set_secr_rate(ViralInfectionVTMModelInputs.max_oxi_secrete)
-        self.set_oxi_secr_thr(ViralInfectionVTMModelInputs.oxi_sec_thr)
+        self.set_oxi_secr_thr(ViralInfectionVTMModelInputs.oxi_secr_thr)
         self.set_track_model_variables(ViralInfectionVTMModelInputs.track_model_variables)
         self.register_secretion_by_type(MainSteppables.uninfected_type_name, self.secr_func_epithelial)
         self.register_secretion_by_type(MainSteppables.infected_type_name, self.secr_func_epithelial)
@@ -2965,14 +2993,16 @@ class oxidationAgentModelSteppable(ViralInfectionVTMSteppableBasePy):
             field_name = attribute_name.replace(ViralInfectionVTMLib.module_prefix, '')
             self.track_cell_level_scalar_attribute(field_name=field_name, attribute_name=attribute_name)
 
+        diff_factor = self.step_period / (self.voxel_length * self.voxel_length)
+        decay_factor = self.step_period
         if self._diffusion_coefficient is None:
-            self.get_xml_element(self._oxidator_diffusion_id).cdata = ViralInfectionVTMModelInputs.oxi_dc
+            self.get_xml_element(self._oxidator_diffusion_id).cdata = ViralInfectionVTMModelInputs.oxi_dc * diff_factor
         else:
-            self.get_xml_element(self._oxidator_diffusion_id).cdata = self._diffusion_coefficient
+            self.get_xml_element(self._oxidator_diffusion_id).cdata = self._diffusion_coefficient * diff_factor
         if self._decay_coefficient is None:
-            self.get_xml_element(self._oxidator_decay_id).cdata = ViralInfectionVTMModelInputs.oxi_decay
+            self.get_xml_element(self._oxidator_decay_id).cdata = ViralInfectionVTMModelInputs.oxi_decay * decay_factor
         else:
-            self.get_xml_element(self._oxidator_decay_id).cdata = self._decay_coefficient
+            self.get_xml_element(self._oxidator_decay_id).cdata = self._decay_coefficient * decay_factor
 
     def step(self, mcs):
         """
@@ -3039,7 +3069,9 @@ class oxidationAgentModelSteppable(ViralInfectionVTMSteppableBasePy):
         Secretion function callback for cells registered as epithelial types by default
         """
         seen_field = self.total_seen_field(self.oxidator_field, _cell)
-        if seen_field >= self._oxi_death_thr:
+        oxi_death_thr = self._oxi_death_thr * self.voxel_length ** 3 * (
+                ViralInfectionVTMModelInputs.mol_p_L_2_mol_p_um3 * ViralInfectionVTMModelInputs.pmol_to_cc3d_au)
+        if seen_field >= oxi_death_thr:
             self.kill_cell(cell=_cell)
             _cell.dict[ViralInfectionVTMLib.oxi_killed_cellg_key] = True
             if self.simdata_steppable is not None:
@@ -3053,12 +3085,15 @@ class oxidationAgentModelSteppable(ViralInfectionVTMSteppableBasePy):
         oxi_secretor = self.get_field_secretor(self._oxidator_field_name)
         if _cell.dict[ViralInfectionVTMLib.activated_cellg_key]:
             seen_field = self.total_seen_field(self.cytokine_field, _cell)
-            if seen_field > self._oxi_secr_thr:
-                oxi_secretor.secreteInsideCellTotalCount(_cell, self._secr_rate / _cell.volume)
+            m_to_au = self.voxel_length ** 3 * (ViralInfectionVTMModelInputs.mol_p_L_2_mol_p_um3 *
+                                                ViralInfectionVTMModelInputs.pmol_to_cc3d_au)
+            if seen_field > self._oxi_secr_thr * m_to_au:
+                secr_rate = self._secr_rate * self.step_period * m_to_au
+                oxi_secretor.secreteInsideCellTotalCount(_cell, secr_rate / _cell.volume)
 
     def set_death_threshold(self, _val: float):
         """
-        Set threshold for death by oxidative killing
+        Set threshold for death by oxidative killing, in units pM
 
         :param _val: Threshold for death by oxidative killing
         :return: None
@@ -3070,7 +3105,7 @@ class oxidationAgentModelSteppable(ViralInfectionVTMSteppableBasePy):
     @property
     def death_threshold(self):
         """
-        Threshold for death by oxidative killing
+        Threshold for death by oxidative killing, in units pM
         """
         return self._oxi_death_thr
 
@@ -3080,7 +3115,7 @@ class oxidationAgentModelSteppable(ViralInfectionVTMSteppableBasePy):
 
     def set_secr_rate(self, _val: float):
         """
-        Set oxidative field release rate
+        Set oxidative field release rate, in units pM/s
 
         :param _val: Oxidative field release rate
         :return: None
@@ -3092,7 +3127,7 @@ class oxidationAgentModelSteppable(ViralInfectionVTMSteppableBasePy):
     @property
     def secr_rate(self):
         """
-        Oxidative field release rate
+        Oxidative field release rate, in units pM/s
         """
         return self._secr_rate
 
@@ -3102,7 +3137,7 @@ class oxidationAgentModelSteppable(ViralInfectionVTMSteppableBasePy):
 
     def set_oxi_secr_thr(self, _val: float):
         """
-        Set cytokine threshold for oxidative release
+        Set cytokine threshold for oxidative release, in units pM
 
         :param _val: Cytokine threshold for oxidative release
         :return: None
@@ -3114,7 +3149,7 @@ class oxidationAgentModelSteppable(ViralInfectionVTMSteppableBasePy):
     @property
     def oxi_secr_thr(self):
         """
-        Cytokine threshold for oxidative release
+        Cytokine threshold for oxidative release, in units pM
         """
         return self._oxi_secr_thr
 
