@@ -202,15 +202,6 @@ class ViralInfectionVTMSteppableBasePy(nCoVSteppableBase):
             self.delete_sbml_from_cell(ViralInfectionVTMSteppableBasePy.vr_model_name, cell)
             cell.dict[ViralInfectionVTMLib.vrl_key] = False
 
-    def set_uninfected_type_name(self, _name: str):
-        """
-        Set the name of the uninfected cell type according to a cc3d simulation
-
-        :param _name: Name of the uninfected cell type according to a cc3d simulation
-        :return: None
-        """
-        self._uninfected_type_name = _name
-
     @property
     def uninfected_type_name(self):
         """
@@ -220,16 +211,7 @@ class ViralInfectionVTMSteppableBasePy(nCoVSteppableBase):
 
     @uninfected_type_name.setter
     def uninfected_type_name(self, _name: str):
-        self.set_uninfected_type_name(_name)
-
-    def set_infected_type_name(self, _name: str):
-        """
-        Set the name of the infected cell type according to a cc3d simulation
-
-        :param _name: Name of the infected cell type according to a cc3d simulation
-        :return: None
-        """
-        self._infected_type_name = _name
+        self._uninfected_type_name = _name
 
     @property
     def infected_type_name(self):
@@ -240,16 +222,7 @@ class ViralInfectionVTMSteppableBasePy(nCoVSteppableBase):
 
     @infected_type_name.setter
     def infected_type_name(self, _name: str):
-        self.set_infected_type_name(_name)
-
-    def set_virus_releasing_type_name(self, _name: str):
-        """
-        Set the name of the virus-releasing cell type according to a cc3d simulation
-
-        :param _name: Name of the virus-releasing cell type according to a cc3d simulation
-        :return: None
-        """
-        self._virus_releasing_type_name = _name
+        self._infected_type_name = _name
 
     @property
     def virus_releasing_type_name(self):
@@ -260,16 +233,7 @@ class ViralInfectionVTMSteppableBasePy(nCoVSteppableBase):
 
     @virus_releasing_type_name.setter
     def virus_releasing_type_name(self, _name: str):
-        self.set_virus_releasing_type_name(_name)
-
-    def set_dead_type_name(self, _name: str):
-        """
-        Set the name of the dead cell type according to a cc3d simulation
-
-        :param _name: Name of the dead cell type according to a cc3d simulation
-        :return: None
-        """
-        self._dead_type_name = _name
+        self._virus_releasing_type_name = _name
 
     @property
     def dead_type_name(self):
@@ -280,16 +244,7 @@ class ViralInfectionVTMSteppableBasePy(nCoVSteppableBase):
 
     @dead_type_name.setter
     def dead_type_name(self, _name: str):
-        self.set_dead_type_name(_name)
-
-    def set_immune_type_name(self, _name: str):
-        """
-        Set the name of the immune cell type according to a cc3d simulation
-
-        :param _name: Name of the immune cell type according to a cc3d simulation
-        :return: None
-        """
-        self._immune_type_name = _name
+        self._dead_type_name = _name
 
     @property
     def immune_type_name(self):
@@ -300,7 +255,7 @@ class ViralInfectionVTMSteppableBasePy(nCoVSteppableBase):
 
     @immune_type_name.setter
     def immune_type_name(self, _name: str):
-        self.set_immune_type_name(_name)
+        self._immune_type_name = _name
 
     @property
     def uninfected_type_id(self) -> int:
@@ -337,15 +292,6 @@ class ViralInfectionVTMSteppableBasePy(nCoVSteppableBase):
         """
         return getattr(self, self._immune_type_name.upper())
 
-    def set_virus_field_name(self, _name: str):
-        """
-        Set the virus field name
-
-        :param _name: Virus field name
-        :return: None
-        """
-        self._virus_field_name = _name
-
     @property
     def virus_field_name(self):
         """
@@ -355,16 +301,7 @@ class ViralInfectionVTMSteppableBasePy(nCoVSteppableBase):
 
     @virus_field_name.setter
     def virus_field_name(self, _name: str):
-        self.set_virus_field_name(_name)
-
-    def set_cytokine_field_name(self, _name: str):
-        """
-        Set the cytokine field name
-
-        :param _name: Cytokine field name
-        :return: None
-        """
-        self._cytokine_field_name = _name
+        self._virus_field_name = _name
 
     @property
     def cytokine_field_name(self):
@@ -375,16 +312,7 @@ class ViralInfectionVTMSteppableBasePy(nCoVSteppableBase):
 
     @cytokine_field_name.setter
     def cytokine_field_name(self, _name: str):
-        self.set_cytokine_field_name(_name)
-
-    def set_oxidator_field_name(self, _name: str):
-        """
-        Set the oxidative agent field name
-
-        :param _name: Oxidative agent field name
-        :return: None
-        """
-        self._oxidator_field_name = _name
+        self._cytokine_field_name = _name
 
     @property
     def oxidator_field_name(self):
@@ -395,7 +323,7 @@ class ViralInfectionVTMSteppableBasePy(nCoVSteppableBase):
 
     @oxidator_field_name.setter
     def oxidator_field_name(self, _name: str):
-        self.set_oxidator_field_name(_name)
+        self._oxidator_field_name = _name
 
     @property
     def virus_field(self):

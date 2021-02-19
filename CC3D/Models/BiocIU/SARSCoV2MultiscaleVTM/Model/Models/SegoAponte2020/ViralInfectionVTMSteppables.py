@@ -165,8 +165,8 @@ class CellsInitializerSteppable(ViralInfectionVTMSteppableBasePy, MainSteppables
         MainSteppables.CellInitializerSteppable.__init__(self, frequency)
 
         # Initialize default data
-        self.set_cell_diameter(ViralInfectionVTMModelInputs.cell_diameter)
-        self.set_volume_parameter(ViralInfectionVTMModelInputs.volume_lm)
+        self.cell_diameter = ViralInfectionVTMModelInputs.cell_diameter
+        self.volume_parameter = ViralInfectionVTMModelInputs.volume_lm
         self.single_infected_cell()
 
     def start(self):
@@ -195,8 +195,8 @@ class VirusFieldInitializerSteppable(MainSteppables.VirusFieldInitializerSteppab
         super().__init__(frequency=frequency)
 
         # Initialize default data
-        self.set_diffusion_coefficient(ViralInfectionVTMModelInputs.virus_dc)
-        self.set_decay_coefficient(ViralInfectionVTMModelInputs.virus_decay)
+        self.diffusion_coefficient = ViralInfectionVTMModelInputs.virus_dc
+        self.decay_coefficient = ViralInfectionVTMModelInputs.virus_decay
 
 
 class ViralReplicationSteppable(ViralInfectionVTMSteppableBasePy):
@@ -257,17 +257,17 @@ class ViralReplicationSteppable(ViralInfectionVTMSteppableBasePy):
 
         # Initialize default data
         self.sbml_options = {'relative': 1e-10, 'absolute': 1e-12}
-        self.set_step_size(ViralInfectionVTMModelInputs.vr_step_size)
-        self.set_uninfected_type_name(MainSteppables.uninfected_type_name)
-        self.set_infected_type_name(MainSteppables.infected_type_name)
-        self.set_virus_releasing_type_name(MainSteppables.virus_releasing_type_name)
-        self.set_dead_type_name(MainSteppables.dead_type_name)
+        self.step_size = ViralInfectionVTMModelInputs.vr_step_size
+        self.uninfected_type_name = MainSteppables.uninfected_type_name
+        self.infected_type_name = MainSteppables.infected_type_name
+        self.virus_releasing_type_name = MainSteppables.virus_releasing_type_name
+        self.dead_type_name = MainSteppables.dead_type_name
         self.register_type(MainSteppables.uninfected_type_name)
         self.register_type(MainSteppables.infected_type_name, infected=True)
         self.register_type(MainSteppables.virus_releasing_type_name, infected=True)
-        self.set_cell_infection_threshold(ViralInfectionVTMModelInputs.cell_infection_threshold)
-        self.set_diss_coeff_death(ViralInfectionVTMModelInputs.diss_coeff_uptake_apo)
-        self.set_hill_coeff_death(ViralInfectionVTMModelInputs.hill_coeff_uptake_apo)
+        self.cell_infection_threshold = ViralInfectionVTMModelInputs.cell_infection_threshold
+        self.diss_coeff_death = ViralInfectionVTMModelInputs.diss_coeff_uptake_apo
+        self.hill_coeff_death = ViralInfectionVTMModelInputs.hill_coeff_uptake_apo
         self.set_vrm_param(unpacking_rate=ViralInfectionVTMModelInputs.unpacking_rate,
                            replicating_rate=ViralInfectionVTMModelInputs.replicating_rate,
                            r_half=ViralInfectionVTMModelInputs.r_half,
@@ -403,17 +403,6 @@ class ViralReplicationSteppable(ViralInfectionVTMSteppableBasePy):
         if _new_cell.type in self.registered_type_ids and ViralInfectionVTMLib.vrl_key not in _new_cell.dict.keys():
             _new_cell.dict[ViralInfectionVTMLib.vrl_key] = False
 
-    def set_step_size(self, _val: float):
-        """
-        Set viral replication model step size
-
-        :param _val: step size
-        :return: None
-        """
-        if _val <= 0.0:
-            raise ValueError("Step size must be positive")
-        self._step_size = _val
-
     @property
     def step_size(self):
         """
@@ -423,18 +412,9 @@ class ViralReplicationSteppable(ViralInfectionVTMSteppableBasePy):
 
     @step_size.setter
     def step_size(self, _val: float):
-        self.set_step_size(_val)
-
-    def set_cell_infection_threshold(self, _val: float):
-        """
-        Set threshold above which cells become virus-releasing
-
-        :param _val: infection threshold
-        :return: None
-        """
         if _val <= 0.0:
-            raise ValueError("Cell infection threshold must be positive")
-        self._cell_infection_threshold = _val
+            raise ValueError("Step size must be positive")
+        self._step_size = _val
 
     @property
     def cell_infection_threshold(self):
@@ -442,18 +422,9 @@ class ViralReplicationSteppable(ViralInfectionVTMSteppableBasePy):
 
     @cell_infection_threshold.setter
     def cell_infection_threshold(self, _val: float):
-        self.set_cell_infection_threshold(_val)
-
-    def set_diss_coeff_death(self, _val: float):
-        """
-        Set dissociation coefficient for virally-induced death
-
-        :param _val: dissociation coefficient
-        :return: None
-        """
         if _val <= 0.0:
-            raise ValueError("Dissociation coefficient must be positive")
-        self._diss_coeff_uptake_apo = _val
+            raise ValueError("Cell infection threshold must be positive")
+        self._cell_infection_threshold = _val
 
     @property
     def diss_coeff_death(self):
@@ -464,18 +435,9 @@ class ViralReplicationSteppable(ViralInfectionVTMSteppableBasePy):
 
     @diss_coeff_death.setter
     def diss_coeff_death(self, _val):
-        self.set_diss_coeff_death(_val)
-
-    def set_hill_coeff_death(self, _val: float):
-        """
-        Set Hill coefficient for virally-induced death
-
-        :param _val: Hill coefficient
-        :return: None
-        """
-        if _val < 0.0:
-            raise ValueError("Hill coefficient must be non-negative")
-        self._hill_coeff_uptake_apo = _val
+        if _val <= 0.0:
+            raise ValueError("Dissociation coefficient must be positive")
+        self._diss_coeff_uptake_apo = _val
 
     @property
     def hill_coeff_death(self):
@@ -486,7 +448,9 @@ class ViralReplicationSteppable(ViralInfectionVTMSteppableBasePy):
 
     @hill_coeff_death.setter
     def hill_coeff_death(self, _val):
-        self.set_hill_coeff_death(_val)
+        if _val < 0.0:
+            raise ValueError("Hill coefficient must be non-negative")
+        self._hill_coeff_uptake_apo = _val
 
     def set_vrm_param(self, **kwargs):
         """
@@ -560,13 +524,13 @@ class ViralInternalizationSteppable(ViralInfectionVTMSteppableBasePy):
         self._rate_coeff_uptake = 1.0
 
         # Initialize default data
-        self.set_uninfected_type_name(MainSteppables.uninfected_type_name)
-        self.set_infected_type_name(MainSteppables.infected_type_name)
-        self.set_initial_unbound_receptors(ViralInfectionVTMModelInputs.initial_unbound_receptors)
-        self.set_kon(ViralInfectionVTMModelInputs.kon)
-        self.set_koff(ViralInfectionVTMModelInputs.koff)
-        self.set_hill_coeff_uptake(ViralInfectionVTMModelInputs.hill_coeff_uptake_pr)
-        self.set_rate_coeff_uptake(ViralInfectionVTMModelInputs.rate_coeff_uptake_pr)
+        self.uninfected_type_name = MainSteppables.uninfected_type_name
+        self.infected_type_name = MainSteppables.infected_type_name
+        self.initial_unbound_receptors = ViralInfectionVTMModelInputs.initial_unbound_receptors
+        self.kon = ViralInfectionVTMModelInputs.kon
+        self.koff = ViralInfectionVTMModelInputs.koff
+        self.hill_coeff_uptake = ViralInfectionVTMModelInputs.hill_coeff_uptake_pr
+        self.rate_coeff_uptake = ViralInfectionVTMModelInputs.rate_coeff_uptake_pr
 
     def do_cell_internalization(self, cell, viral_amount_com):
         """
@@ -620,17 +584,6 @@ class ViralInternalizationSteppable(ViralInfectionVTMSteppableBasePy):
                 ViralInfectionVTMLib.unbound_receptors_cellg_key not in _new_cell.dict.keys():
             _new_cell.dict[ViralInfectionVTMLib.unbound_receptors_cellg_key] = self._initial_unbound_receptors
 
-    def set_initial_unbound_receptors(self, _val: float):
-        """
-        Set number of initial unbound receptors on newly created cells
-
-        :param _val: number of initial unbound receptors
-        :return: None
-        """
-        if _val < 0.0:
-            raise ValueError("Initial unbound receptors must be positive")
-        self._initial_unbound_receptors = _val
-
     @property
     def initial_unbound_receptors(self):
         """
@@ -640,18 +593,9 @@ class ViralInternalizationSteppable(ViralInfectionVTMSteppableBasePy):
 
     @initial_unbound_receptors.setter
     def initial_unbound_receptors(self, _val: float):
-        self.set_initial_unbound_receptors(_val)
-
-    def set_kon(self, _val: float):
-        """
-        Set virus-receptor association affinity, in units 1/(M * s)
-
-        :param _val: Virus-receptor association affinity
-        :return: None
-        """
-        if _val <= 0.0:
-            raise ValueError("kon must be positive")
-        self._kon = _val
+        if _val < 0.0:
+            raise ValueError("Initial unbound receptors must be positive")
+        self._initial_unbound_receptors = _val
 
     @property
     def kon(self):
@@ -662,18 +606,9 @@ class ViralInternalizationSteppable(ViralInfectionVTMSteppableBasePy):
 
     @kon.setter
     def kon(self, _val: float):
-        self.set_kon(_val)
-
-    def set_koff(self, _val: float):
-        """
-        Set virus-receptor dissociation affinity, in units 1/s
-
-        :param _val: virus-receptor dissociation affinity
-        :return: None
-        """
         if _val <= 0.0:
-            raise ValueError("koff must be positive")
-        self._koff = _val
+            raise ValueError("kon must be positive")
+        self._kon = _val
 
     @property
     def koff(self):
@@ -684,18 +619,9 @@ class ViralInternalizationSteppable(ViralInfectionVTMSteppableBasePy):
 
     @koff.setter
     def koff(self, _val: float):
-        self.set_koff(_val)
-
-    def set_hill_coeff_uptake(self, _val: float):
-        """
-        Set internalization Hill coefficient
-
-        :param _val: internalization Hill coefficient
-        :return: None
-        """
-        if _val < 0.0:
-            raise ValueError("Hill coefficient must non-negative")
-        self._hill_coeff_uptake = _val
+        if _val <= 0.0:
+            raise ValueError("koff must be positive")
+        self._koff = _val
 
     @property
     def hill_coeff_uptake(self):
@@ -706,18 +632,9 @@ class ViralInternalizationSteppable(ViralInfectionVTMSteppableBasePy):
 
     @hill_coeff_uptake.setter
     def hill_coeff_uptake(self, _val: float):
-        self.set_hill_coeff_uptake(_val)
-
-    def set_rate_coeff_uptake(self, _val):
-        """
-        Set uptake rate coefficient, in units s
-
-        :param _val: uptake rate coefficient
-        :return: None
-        """
-        if _val <= 0.0:
-            raise ValueError("Uptake rate coefficient must be positive")
-        self._rate_coeff_uptake = _val
+        if _val < 0.0:
+            raise ValueError("Hill coefficient must non-negative")
+        self._hill_coeff_uptake = _val
 
     @property
     def rate_coeff_uptake(self):
@@ -728,7 +645,9 @@ class ViralInternalizationSteppable(ViralInfectionVTMSteppableBasePy):
 
     @rate_coeff_uptake.setter
     def rate_coeff_uptake(self, _val: float):
-        self.set_rate_coeff_uptake(_val)
+        if _val <= 0.0:
+            raise ValueError("Uptake rate coefficient must be positive")
+        self._rate_coeff_uptake = _val
 
 
 class ViralSecretionSteppable(ViralInfectionVTMSteppableBasePy):
@@ -782,14 +701,14 @@ class ViralSecretionSteppable(ViralInfectionVTMSteppableBasePy):
         self._secretion_rate = 0.0
 
         # Initialize default data
-        self.set_uninfected_type_name(MainSteppables.uninfected_type_name)
-        self.set_infected_type_name(MainSteppables.infected_type_name)
-        self.set_virus_releasing_type_name(MainSteppables.virus_releasing_type_name)
-        self.set_virus_field_name(MainSteppables.virus_field_name)
+        self.uninfected_type_name = MainSteppables.uninfected_type_name
+        self.infected_type_name = MainSteppables.infected_type_name
+        self.virus_releasing_type_name = MainSteppables.virus_releasing_type_name
+        self.virus_field_name = MainSteppables.virus_field_name
         self.register_secretion_by_type(MainSteppables.uninfected_type_name, self.secr_func_epithelial)
         self.register_secretion_by_type(MainSteppables.infected_type_name, self.secr_func_epithelial)
         self.register_secretion_by_type(MainSteppables.virus_releasing_type_name, self.secr_func_epithelial)
-        self.set_viral_secretion_rate(ViralInfectionVTMModelInputs.secretion_rate)
+        self.viral_secretion_rate = ViralInfectionVTMModelInputs.secretion_rate
 
     def step(self, mcs):
         """
@@ -851,15 +770,6 @@ class ViralSecretionSteppable(ViralInfectionVTMSteppableBasePy):
         """
         return self._secretors_by_type.pop(_type_name)
 
-    def set_viral_secretion_rate(self, _val: float):
-        """
-        Set viral release rate for virus-releasing cell type, in units 1/s
-
-        :param _val: viral release rate
-        :return: None
-        """
-        self._secretion_rate = _val
-
     @property
     def viral_secretion_rate(self):
         """
@@ -869,7 +779,7 @@ class ViralSecretionSteppable(ViralInfectionVTMSteppableBasePy):
 
     @viral_secretion_rate.setter
     def viral_secretion_rate(self, _val: float):
-        self.set_viral_secretion_rate(_val)
+        self._secretion_rate = _val
 
     def on_new_cell(self, _new_cell):
         """
@@ -922,8 +832,8 @@ class ImmuneCellKillingSteppable(ViralInfectionVTMSteppableBasePy):
         self._bystander_targets = {}
 
         # Initialize defaults
-        self.set_dead_type_name(MainSteppables.dead_type_name)
-        self.set_immune_type_name(immune_type_name)
+        self.dead_type_name = MainSteppables.dead_type_name
+        self.immune_type_name = immune_type_name
         # Infected and virus-releasing types are contact targets
         self.append_contact_target(MainSteppables.infected_type_name)
         self.append_contact_target(MainSteppables.virus_releasing_type_name)
@@ -1063,9 +973,9 @@ class ChemotaxisSteppable(ViralInfectionVTMSteppableBasePy):
         self._lamda_chemotaxis = 0.0
 
         # Initialize defaults
-        self.set_immune_type_name(immune_type_name)
-        self.set_target_field_name(cytokine_field_name)
-        self.set_lamda_chemotaxis(ViralInfectionVTMModelInputs.lamda_chemotaxis)
+        self.immune_type_name = immune_type_name
+        self.target_field_name = cytokine_field_name
+        self.lamda_chemotaxis = ViralInfectionVTMModelInputs.lamda_chemotaxis
 
     def start(self):
         """
@@ -1090,15 +1000,6 @@ class ChemotaxisSteppable(ViralInfectionVTMSteppableBasePy):
             else:
                 cd.setLambda(0)
 
-    def set_target_field_name(self, _name: str):
-        """
-        Set name of chemotaxis target field
-
-        :param _name: name of chemotaxis target field
-        :return: None
-        """
-        self._target_field_name = _name
-
     @property
     def target_field_name(self):
         """
@@ -1108,16 +1009,7 @@ class ChemotaxisSteppable(ViralInfectionVTMSteppableBasePy):
 
     @target_field_name.setter
     def target_field_name(self, _name: str):
-        self.set_target_field_name(_name)
-
-    def set_lamda_chemotaxis(self, _val: float):
-        """
-        Set chemotaxis parameter value
-
-        :param _val: chemotaxis parameter value
-        :return: None
-        """
-        self._lamda_chemotaxis = _val
+        self._target_field_name = _name
 
     @property
     def lamda_chemotaxis(self):
@@ -1128,7 +1020,7 @@ class ChemotaxisSteppable(ViralInfectionVTMSteppableBasePy):
 
     @lamda_chemotaxis.setter
     def lamda_chemotaxis(self, _val: float):
-        self.set_lamda_chemotaxis(_val)
+        self._lamda_chemotaxis = _val
 
     @property
     def target_field(self):
@@ -1199,11 +1091,11 @@ class ImmuneCellSeedingSteppable(ViralInfectionVTMSteppableBasePy):
         self._initial_immune_seeding = 0
 
         # Initialize defaults
-        self.set_immune_type_name(immune_type_name)
-        self.set_seeding_field_name(MainSteppables.virus_field_name)
-        self.set_cell_volume(ViralInfectionVTMModelInputs.cell_volume)
-        self.set_volume_parameter(ViralInfectionVTMModelInputs.volume_lm)
-        self.set_initial_immune_seeding(ViralInfectionVTMModelInputs.initial_immune_seeding)
+        self.immune_type_name = immune_type_name
+        self.seeding_field_name = MainSteppables.virus_field_name
+        self.cell_volume = ViralInfectionVTMModelInputs.cell_volume
+        self.volume_parameter = ViralInfectionVTMModelInputs.volume_lm
+        self.initial_immune_seeding = ViralInfectionVTMModelInputs.initial_immune_seeding
 
     def start(self):
         """
@@ -1271,15 +1163,6 @@ class ImmuneCellSeedingSteppable(ViralInfectionVTMSteppableBasePy):
                 cell = self.new_cell(self.immune_type_id)
                 self.cell_field[x_seed:x_seed + int(cell_diameter), y_seed:y_seed + int(cell_diameter), 1] = cell
 
-    def set_seeding_field_name(self, _name: str):
-        """
-        Set the name of the seeding field
-
-        :param _name: seeding field name
-        :return: None
-        """
-        self._seeding_field_name = _name
-
     @property
     def seeding_field_name(self):
         """
@@ -1289,7 +1172,7 @@ class ImmuneCellSeedingSteppable(ViralInfectionVTMSteppableBasePy):
 
     @seeding_field_name.setter
     def seeding_field_name(self, _name: str):
-        self.set_seeding_field_name(_name)
+        self._seeding_field_name = _name
 
     @property
     def seeding_field(self):
@@ -1323,27 +1206,18 @@ class ImmuneCellSeedingSteppable(ViralInfectionVTMSteppableBasePy):
             _new_cell.targetVolume = self._cell_volume / self.voxel_length ** 2
             _new_cell.lambdaVolume = self._volume_lm
 
-    def set_cell_volume(self, _val: float):
-        """
-        Set target volume for newly created cells
-
-        :param _val: target volume for newly created cells
-        :return: None
-        """
-        if _val < 0:
-            raise ValueError("Cell target volume must be non-negative")
-        self._cell_volume = _val
-
     @property
     def cell_volume(self):
         """
-        Target volume for newly created cells
+        Target volume for newly created cells, in um^2
         """
         return self._cell_volume
 
     @cell_volume.setter
     def cell_volume(self, _val: float):
-        self.set_cell_volume(_val)
+        if _val < 0:
+            raise ValueError("Cell target volume must be non-negative")
+        self._cell_volume = _val
 
     @property
     def cell_diameter(self):
@@ -1351,17 +1225,6 @@ class ImmuneCellSeedingSteppable(ViralInfectionVTMSteppableBasePy):
         Approximate cell diameter
         """
         return math.sqrt(self._cell_volume)
-
-    def set_volume_parameter(self, _val: float):
-        """
-        Set the volume parameter of newly created cells
-
-        :param _val: Volume parameter of newly created cells
-        :return: None
-        """
-        if _val < 0:
-            raise ValueError("Volume parameter must be positive")
-        self._volume_lm = _val
 
     @property
     def volume_parameter(self):
@@ -1372,18 +1235,9 @@ class ImmuneCellSeedingSteppable(ViralInfectionVTMSteppableBasePy):
 
     @volume_parameter.setter
     def volume_parameter(self, _val: float):
-        self.set_volume_parameter(_val)
-
-    def set_initial_immune_seeding(self, _val: int):
-        """
-        Set initial immune cell seeding value
-
-        :param _val: Initial immune cell seeding value
-        :return: None
-        """
         if _val < 0:
-            raise ValueError('Initial immune cell seeding must be non-negative')
-        self._initial_immune_seeding = _val
+            raise ValueError("Volume parameter must be positive")
+        self._volume_lm = _val
 
     @property
     def initial_immune_seeding(self):
@@ -1394,7 +1248,9 @@ class ImmuneCellSeedingSteppable(ViralInfectionVTMSteppableBasePy):
 
     @initial_immune_seeding.setter
     def initial_immune_seeding(self, _val: int):
-        self.set_initial_immune_seeding(_val)
+        if _val < 0:
+            raise ValueError('Initial immune cell seeding must be non-negative')
+        self._initial_immune_seeding = _val
 
 
 class SimDataSteppable(ViralInfectionVTMSteppableBasePy):
@@ -1501,23 +1357,23 @@ class SimDataSteppable(ViralInfectionVTMSteppableBasePy):
         self.__flush_counter = 1
 
         # Initialize defaults
-        self.set_uninfected_type_name(MainSteppables.uninfected_type_name)
-        self.set_infected_type_name(MainSteppables.infected_type_name)
-        self.set_virus_releasing_type_name(MainSteppables.virus_releasing_type_name)
-        self.set_dead_type_name(MainSteppables.dead_type_name)
-        self.set_immune_type_name(immune_type_name)
-        self.set_virus_field_name(MainSteppables.virus_field_name)
-        self.set_cytokine_field_name(cytokine_field_name)
-        self.set_oxidator_field_name(oxidator_field_name)
+        self.uninfected_type_name = MainSteppables.uninfected_type_name
+        self.infected_type_name = MainSteppables.infected_type_name
+        self.virus_releasing_type_name = MainSteppables.virus_releasing_type_name
+        self.dead_type_name = MainSteppables.dead_type_name
+        self.immune_type_name = immune_type_name
+        self.virus_field_name = MainSteppables.virus_field_name
+        self.cytokine_field_name = cytokine_field_name
+        self.oxidator_field_name = oxidator_field_name
 
-        self.set_plot_pop_data_freq(ViralInfectionVTMModelInputs.plot_pop_data_freq)
-        self.set_write_pop_data_freq(ViralInfectionVTMModelInputs.write_pop_data_freq)
-        self.set_plot_med_diff_data_freq(ViralInfectionVTMModelInputs.plot_med_diff_data_freq)
-        self.set_write_med_diff_data_freq(ViralInfectionVTMModelInputs.write_med_diff_data_freq)
-        self.set_plot_ir_data_freq(ViralInfectionVTMModelInputs.plot_ir_data_freq)
-        self.set_write_ir_data_freq(ViralInfectionVTMModelInputs.write_ir_data_freq)
-        self.set_plot_death_data_freq(ViralInfectionVTMModelInputs.plot_death_data_freq)
-        self.set_write_death_data_freq(ViralInfectionVTMModelInputs.write_death_data_freq)
+        self.plot_pop_data_freq = ViralInfectionVTMModelInputs.plot_pop_data_freq
+        self.write_pop_data_freq = ViralInfectionVTMModelInputs.write_pop_data_freq
+        self.plot_med_diff_data_freq = ViralInfectionVTMModelInputs.plot_med_diff_data_freq
+        self.write_med_diff_data_freq = ViralInfectionVTMModelInputs.write_med_diff_data_freq
+        self.plot_ir_data_freq = ViralInfectionVTMModelInputs.plot_ir_data_freq
+        self.write_ir_data_freq = ViralInfectionVTMModelInputs.write_ir_data_freq
+        self.plot_death_data_freq = ViralInfectionVTMModelInputs.plot_death_data_freq
+        self.write_death_data_freq = ViralInfectionVTMModelInputs.write_death_data_freq
 
     def start(self):
         """
@@ -1825,17 +1681,6 @@ class SimDataSteppable(ViralInfectionVTMSteppableBasePy):
         """
         return self._death_mech.copy()
 
-    def set_plot_pop_data_freq(self, _val):
-        """
-        Set frequency of plotting population data
-
-        :param _val: Frequency of plotting population data
-        :return: None
-        """
-        if _val < 0:
-            raise ValueError("Value must be non-negative")
-        self._plot_pop_data_freq = _val
-
     @property
     def plot_pop_data_freq(self):
         """
@@ -1845,18 +1690,9 @@ class SimDataSteppable(ViralInfectionVTMSteppableBasePy):
 
     @plot_pop_data_freq.setter
     def plot_pop_data_freq(self, _val: int):
-        self.set_plot_pop_data_freq(_val)
-
-    def set_write_pop_data_freq(self, _val: int):
-        """
-        Set frequency of writing population data
-
-        :param _val: Frequency of writing population data
-        :return: None
-        """
         if _val < 0:
             raise ValueError("Value must be non-negative")
-        self._write_pop_data_freq = _val
+        self._plot_pop_data_freq = _val
 
     @property
     def write_pop_data_freq(self):
@@ -1867,18 +1703,9 @@ class SimDataSteppable(ViralInfectionVTMSteppableBasePy):
 
     @write_pop_data_freq.setter
     def write_pop_data_freq(self, _val: int):
-        self.set_write_pop_data_freq(_val)
-
-    def set_plot_med_diff_data_freq(self, _val: int):
-        """
-        Set frequency of plotting diffusion field data
-
-        :param _val: Frequency of plotting diffusion field data
-        :return: None
-        """
         if _val < 0:
             raise ValueError("Value must be non-negative")
-        self._plot_med_diff_data_freq = _val
+        self._write_pop_data_freq = _val
 
     @property
     def plot_med_diff_data_freq(self):
@@ -1889,18 +1716,9 @@ class SimDataSteppable(ViralInfectionVTMSteppableBasePy):
 
     @plot_med_diff_data_freq.setter
     def plot_med_diff_data_freq(self, _val: int):
-        self.set_plot_med_diff_data_freq(_val)
-
-    def set_write_med_diff_data_freq(self, _val):
-        """
-        Set frequency of writing diffusion field data
-
-        :param _val: Frequency of writing diffusion field data
-        :return: None
-        """
         if _val < 0:
             raise ValueError("Value must be non-negative")
-        self._write_med_diff_data_freq = _val
+        self._plot_med_diff_data_freq = _val
 
     @property
     def write_med_diff_data_freq(self):
@@ -1911,18 +1729,9 @@ class SimDataSteppable(ViralInfectionVTMSteppableBasePy):
 
     @write_med_diff_data_freq.setter
     def write_med_diff_data_freq(self, _val: int):
-        self.set_write_med_diff_data_freq(_val)
-
-    def set_plot_ir_data_freq(self, _val: int):
-        """
-        Set frequency of plotting immune response model data
-
-        :param _val: Frequency of plotting immune response model data
-        :return: None
-        """
         if _val < 0:
             raise ValueError("Value must be non-negative")
-        self._plot_ir_data_freq = _val
+        self._write_med_diff_data_freq = _val
 
     @property
     def plot_ir_data_freq(self):
@@ -1933,18 +1742,9 @@ class SimDataSteppable(ViralInfectionVTMSteppableBasePy):
 
     @plot_ir_data_freq.setter
     def plot_ir_data_freq(self, _val: int):
-        self.set_plot_ir_data_freq(_val)
-
-    def set_write_ir_data_freq(self, _val: int):
-        """
-        Set frequency of writing immune response model data
-
-        :param _val: Frequency of writing immune response model data
-        :return: None
-        """
         if _val < 0:
             raise ValueError("Value must be non-negative")
-        self._write_ir_data_freq = _val
+        self._plot_ir_data_freq = _val
 
     @property
     def write_ir_data_freq(self):
@@ -1955,18 +1755,9 @@ class SimDataSteppable(ViralInfectionVTMSteppableBasePy):
 
     @write_ir_data_freq.setter
     def write_ir_data_freq(self, _val: int):
-        self.set_write_ir_data_freq(_val)
-
-    def set_plot_death_data_freq(self, _val: int):
-        """
-        Set frequency of plotting death data
-
-        :param _val: Frequency of plotting death data
-        :return: None
-        """
         if _val < 0:
             raise ValueError("Value must be non-negative")
-        self._plot_death_data_freq = _val
+        self._write_ir_data_freq = _val
 
     @property
     def plot_death_data_freq(self):
@@ -1977,18 +1768,9 @@ class SimDataSteppable(ViralInfectionVTMSteppableBasePy):
 
     @plot_death_data_freq.setter
     def plot_death_data_freq(self, _val: int):
-        self.set_plot_death_data_freq(_val)
-
-    def set_write_death_data_freq(self, _val: int):
-        """
-        Set frequency of writing death data
-
-        :param _val: Frequency of writing death data
-        :return: None
-        """
         if _val < 0:
             raise ValueError("Value must be non-negative")
-        self._write_death_data_freq = _val
+        self._plot_death_data_freq = _val
 
     @property
     def write_death_data_freq(self):
@@ -1999,7 +1781,9 @@ class SimDataSteppable(ViralInfectionVTMSteppableBasePy):
 
     @write_death_data_freq.setter
     def write_death_data_freq(self, _val: int):
-        self.set_write_death_data_freq(_val)
+        if _val < 0:
+            raise ValueError("Value must be non-negative")
+        self._write_death_data_freq = _val
 
 
 class CytokineProductionAbsorptionSteppable(ViralInfectionVTMSteppableBasePy):
@@ -2095,20 +1879,20 @@ class CytokineProductionAbsorptionSteppable(ViralInfectionVTMSteppableBasePy):
         self.ir_steppable = None
 
         # Initialize defaults
-        self.set_infected_type_name(MainSteppables.infected_type_name)
-        self.set_virus_releasing_type_name(MainSteppables.virus_releasing_type_name)
-        self.set_immune_type_name(immune_type_name)
+        self.infected_type_name = MainSteppables.infected_type_name
+        self.virus_releasing_type_name = MainSteppables.virus_releasing_type_name
+        self.immune_type_name = immune_type_name
         self.set_field_data(field_name=cytokine_field_name, diffusion='cytokine_dc', decay='cytokine_decay')
-        self.set_step_size(ViralInfectionVTMModelInputs.vr_step_size)
-        self.set_ck_memory_immune(ViralInfectionVTMModelInputs.ck_memory_immune)
-        self.set_ec50_ck_immune_activation(ViralInfectionVTMModelInputs.EC50_ck_immune)
-        self.set_ec50_immune_ck_production(ViralInfectionVTMModelInputs.ec50_immune_ck_prod)
-        self.set_ec50_infected_ck_production(ViralInfectionVTMModelInputs.ec50_infecte_ck_prod)
-        self.set_minimum_activated_time(ViralInfectionVTMModelInputs.minimum_activated_time)
-        self.set_max_ck_production_infected(ViralInfectionVTMModelInputs.max_ck_secrete_infect)
-        self.set_max_ck_production_immune(ViralInfectionVTMModelInputs.max_ck_secrete_im)
-        self.set_max_ck_consumption_immune(ViralInfectionVTMModelInputs.max_ck_consume)
-        self.set_track_model_variables(ViralInfectionVTMModelInputs.track_model_variables)
+        self.step_size = ViralInfectionVTMModelInputs.vr_step_size
+        self.ck_memory_immune = ViralInfectionVTMModelInputs.ck_memory_immune
+        self.ec50_ck_immune_activation = ViralInfectionVTMModelInputs.EC50_ck_immune
+        self.ec50_immune_ck_production = ViralInfectionVTMModelInputs.ec50_immune_ck_prod
+        self.ec50_infected_ck_production = ViralInfectionVTMModelInputs.ec50_infecte_ck_prod
+        self.minimum_activated_time = ViralInfectionVTMModelInputs.minimum_activated_time
+        self.max_ck_production_infected = ViralInfectionVTMModelInputs.max_ck_secrete_infect
+        self.max_ck_production_immune = ViralInfectionVTMModelInputs.max_ck_secrete_im
+        self.max_ck_consumption_immune = ViralInfectionVTMModelInputs.max_ck_consume
+        self.track_model_variables = ViralInfectionVTMModelInputs.track_model_variables
         self.register_secretion_by_type(MainSteppables.infected_type_name, self.secr_func_infected)
         self.register_secretion_by_type(MainSteppables.virus_releasing_type_name, self.secr_func_infected)
         self.register_secretion_by_type(immune_type_name, self.secr_func_immune)
@@ -2167,7 +1951,7 @@ class CytokineProductionAbsorptionSteppable(ViralInfectionVTMSteppableBasePy):
         :return: None
         """
         if field_name is not None:
-            self.set_cytokine_field_name(field_name)
+            self.cytokine_field_name = field_name
         if diffusion is not None:
             self._cytokine_diffusion_id = diffusion
         if decay is not None:
@@ -2285,17 +2069,6 @@ class CytokineProductionAbsorptionSteppable(ViralInfectionVTMSteppableBasePy):
             cell.dict[ViralInfectionVTMLib.ck_production_cellg_key] = self._max_ck_secrete_im * conv_fact
             cell.dict[ViralInfectionVTMLib.ck_consumption_cellg_key] = self._max_ck_consume * conv_fact
 
-    def set_diffusion_coefficient(self, _val: float):
-        """
-        Set diffusion coefficient, in units microns^2/s
-
-        :param _val: Diffusion coefficient
-        :return: None
-        """
-        if _val <= 0.0:
-            raise ValueError("Diffusion coefficient must be positive")
-        self._diffusion_coefficient = _val
-
     @property
     def diffusion_coefficient(self):
         """
@@ -2305,18 +2078,9 @@ class CytokineProductionAbsorptionSteppable(ViralInfectionVTMSteppableBasePy):
 
     @diffusion_coefficient.setter
     def diffusion_coefficient(self, _val: float):
-        self.set_diffusion_coefficient(_val)
-
-    def set_decay_coefficient(self, _val: float):
-        """
-        Set decay coefficient, in units 1/s
-
-        :param _val: Decay coefficient
-        :return: None
-        """
         if _val <= 0.0:
-            raise ValueError("Decay coefficient must be positive")
-        self._decay_coefficient = _val
+            raise ValueError("Diffusion coefficient must be positive")
+        self._diffusion_coefficient = _val
 
     @property
     def decay_coefficient(self):
@@ -2327,18 +2091,9 @@ class CytokineProductionAbsorptionSteppable(ViralInfectionVTMSteppableBasePy):
 
     @decay_coefficient.setter
     def decay_coefficient(self, _val: float):
-        self.set_decay_coefficient(_val)
-
-    def set_step_size(self, _val: float):
-        """
-        Set viral replication model step size
-
-        :param _val: step size
-        :return: None
-        """
         if _val <= 0.0:
-            raise ValueError("Step size must be positive")
-        self._step_size = _val
+            raise ValueError("Decay coefficient must be positive")
+        self._decay_coefficient = _val
 
     @property
     def step_size(self):
@@ -2349,18 +2104,9 @@ class CytokineProductionAbsorptionSteppable(ViralInfectionVTMSteppableBasePy):
 
     @step_size.setter
     def step_size(self, _val: float):
-        self.set_step_size(_val)
-
-    def set_ck_memory_immune(self, _val: float):
-        """
-        Set immune cell bound cytokine memory parameter
-
-        :param _val: Immune cell bound cytokine memory parameter
-        :return: None
-        """
-        if not 0.0 <= _val < 1.0:
-            raise ValueError("Value must be in [0, 1)")
-        self._ck_memory_immune = _val
+        if _val <= 0.0:
+            raise ValueError("Step size must be positive")
+        self._step_size = _val
 
     @property
     def ck_memory_immune(self):
@@ -2371,18 +2117,9 @@ class CytokineProductionAbsorptionSteppable(ViralInfectionVTMSteppableBasePy):
 
     @ck_memory_immune.setter
     def ck_memory_immune(self, _val: float):
-        self.set_ck_memory_immune(_val)
-
-    def set_ec50_ck_immune_activation(self, _val: float):
-        """
-        Set immune cell activation EC50 parameter, in units pM
-
-        :param _val: Immune cell activation EC50 parameter
-        :return: None
-        """
-        if _val <= 0.0:
-            raise ValueError("Value must be positive")
-        self._ec50_ck_immune = _val
+        if not 0.0 <= _val < 1.0:
+            raise ValueError("Value must be in [0, 1)")
+        self._ck_memory_immune = _val
 
     @property
     def ec50_ck_immune_activation(self):
@@ -2393,18 +2130,9 @@ class CytokineProductionAbsorptionSteppable(ViralInfectionVTMSteppableBasePy):
 
     @ec50_ck_immune_activation.setter
     def ec50_ck_immune_activation(self, _val: float):
-        self.set_ec50_ck_immune_activation(_val)
-
-    def set_ec50_immune_ck_production(self, _val: float):
-        """
-        Set immune cell cytokine production EC50 parameter, in units pM
-
-        :param _val: Immune cell cytokine production EC50 parameter
-        :return: None
-        """
-        if _val < 0.0:
-            raise ValueError("Value must be non-negative")
-        self._ec50_immune_ck_prod = _val
+        if _val <= 0.0:
+            raise ValueError("Value must be positive")
+        self._ec50_ck_immune = _val
 
     @property
     def ec50_immune_ck_production(self):
@@ -2415,18 +2143,9 @@ class CytokineProductionAbsorptionSteppable(ViralInfectionVTMSteppableBasePy):
 
     @ec50_immune_ck_production.setter
     def ec50_immune_ck_production(self, _val: float):
-        self.set_ec50_immune_ck_production(_val)
-
-    def set_ec50_infected_ck_production(self, _val: float):
-        """
-        Set infected cell cytokine production EC50 parameter
-
-        :param _val: Infected cell cytokine production EC50 parameter
-        :return: None
-        """
         if _val < 0.0:
             raise ValueError("Value must be non-negative")
-        self._ec50_infecte_ck_prod = _val
+        self._ec50_immune_ck_prod = _val
 
     @property
     def ec50_infected_ck_production(self):
@@ -2437,18 +2156,9 @@ class CytokineProductionAbsorptionSteppable(ViralInfectionVTMSteppableBasePy):
 
     @ec50_infected_ck_production.setter
     def ec50_infected_ck_production(self, _val: float):
-        self.set_ec50_infected_ck_production(_val)
-
-    def set_minimum_activated_time(self, _val: float):
-        """
-        Set immune cell minimum activated time, in units s
-
-        :param _val: Immune cell minimum activated time
-        :return: None
-        """
-        if _val < 0:
-            raise ValueError("Value must be positive")
-        self._minimum_activated_time = _val
+        if _val < 0.0:
+            raise ValueError("Value must be non-negative")
+        self._ec50_infecte_ck_prod = _val
 
     @property
     def minimum_activated_time(self):
@@ -2459,18 +2169,9 @@ class CytokineProductionAbsorptionSteppable(ViralInfectionVTMSteppableBasePy):
 
     @minimum_activated_time.setter
     def minimum_activated_time(self, _val: float):
-        self.set_minimum_activated_time(_val)
-
-    def set_max_ck_production_infected(self, _val: float):
-        """
-        Set maximum cytokine production by infected cells, in units pM/s
-
-        :param _val: Maximum cytokine production by infected cells
-        :return: None
-        """
         if _val < 0:
             raise ValueError("Value must be positive")
-        self._max_ck_secrete_infect = _val
+        self._minimum_activated_time = _val
 
     @property
     def max_ck_production_infected(self):
@@ -2481,18 +2182,9 @@ class CytokineProductionAbsorptionSteppable(ViralInfectionVTMSteppableBasePy):
 
     @max_ck_production_infected.setter
     def max_ck_production_infected(self, _val: float):
-        self.set_max_ck_production_infected(_val)
-
-    def set_max_ck_production_immune(self, _val: float):
-        """
-        Set maximum cytokine production by immune cells, in units pM/s
-
-        :param _val: Maximum cytokine production by immune cells
-        :return: None
-        """
         if _val < 0:
             raise ValueError("Value must be positive")
-        self._max_ck_secrete_im = _val
+        self._max_ck_secrete_infect = _val
 
     @property
     def max_ck_production_immune(self):
@@ -2503,18 +2195,9 @@ class CytokineProductionAbsorptionSteppable(ViralInfectionVTMSteppableBasePy):
 
     @max_ck_production_immune.setter
     def max_ck_production_immune(self, _val: float):
-        self.set_max_ck_production_immune(_val)
-
-    def set_max_ck_consumption_immune(self, _val: float):
-        """
-        Set maximum cytokine consumption by immune cells, in units pM/s
-
-        :param _val: Maximum cytokine consumption by immune cells
-        :return: None
-        """
         if _val < 0:
             raise ValueError("Value must be positive")
-        self._max_ck_consume = _val
+        self._max_ck_secrete_im = _val
 
     @property
     def max_ck_consumption_immune(self):
@@ -2525,16 +2208,9 @@ class CytokineProductionAbsorptionSteppable(ViralInfectionVTMSteppableBasePy):
 
     @max_ck_consumption_immune.setter
     def max_ck_consumption_immune(self, _val: float):
-        self.set_max_ck_consumption_immune(_val)
-
-    def set_track_model_variables(self, _val: bool):
-        """
-        Set flag to track model variables in cells
-
-        :param _val: flag value: enables when True
-        :return: None
-        """
-        self._track_model_variables = _val
+        if _val < 0:
+            raise ValueError("Value must be positive")
+        self._max_ck_consume = _val
 
     @property
     def track_model_variables(self):
@@ -2545,7 +2221,7 @@ class CytokineProductionAbsorptionSteppable(ViralInfectionVTMSteppableBasePy):
 
     @track_model_variables.setter
     def track_model_variables(self, _val: bool):
-        self.set_track_model_variables(_val)
+        self._track_model_variables = _val
 
 
 class ImmuneRecruitmentSteppable(ViralInfectionVTMSteppableBasePy):
@@ -2602,14 +2278,14 @@ class ImmuneRecruitmentSteppable(ViralInfectionVTMSteppableBasePy):
         self._prob_scaling_factor = 0.0
 
         # Initialize defaults
-        self.set_immune_type_name(immune_type_name)
-        self.set_step_size(ViralInfectionVTMModelInputs.vr_step_size)
-        self.set_add_coeff(ViralInfectionVTMModelInputs.ir_add_coeff)
-        self.set_subtract_coeff(ViralInfectionVTMModelInputs.ir_subtract_coeff)
-        self.set_delay_coeff(ViralInfectionVTMModelInputs.ir_delay_coeff)
-        self.set_decay_coeff(ViralInfectionVTMModelInputs.ir_decay_coeff)
-        self.set_transmission_coeff(ViralInfectionVTMModelInputs.ir_transmission_coeff)
-        self.set_prob_scaling_factor(ViralInfectionVTMModelInputs.ir_prob_scaling_factor)
+        self.immune_type_name = immune_type_name
+        self.step_size = ViralInfectionVTMModelInputs.vr_step_size
+        self.add_coeff = ViralInfectionVTMModelInputs.ir_add_coeff
+        self.subtract_coeff = ViralInfectionVTMModelInputs.ir_subtract_coeff
+        self.delay_coeff = ViralInfectionVTMModelInputs.ir_delay_coeff
+        self.decay_coeff = ViralInfectionVTMModelInputs.ir_decay_coeff
+        self.transmission_coeff = ViralInfectionVTMModelInputs.ir_transmission_coeff
+        self.prob_scaling_factor = ViralInfectionVTMModelInputs.ir_prob_scaling_factor
 
     def start(self):
         """
@@ -2728,17 +2404,6 @@ class ImmuneRecruitmentSteppable(ViralInfectionVTMSteppableBasePy):
         """
         self.__total_cytokine = max(0.0, self.__total_cytokine + _inc_amount)
 
-    def set_add_coeff(self, _val: float):
-        """
-        Set immune recruitment model add coefficient
-
-        :param _val: Immune recruitment model add coefficient
-        :return: None
-        """
-        if _val < 0.0:
-            raise ValueError("Value must be non-negative")
-        self._add_coeff = _val
-
     @property
     def add_coeff(self):
         """
@@ -2748,18 +2413,9 @@ class ImmuneRecruitmentSteppable(ViralInfectionVTMSteppableBasePy):
 
     @add_coeff.setter
     def add_coeff(self, _val: float):
-        self.set_add_coeff(_val)
-
-    def set_subtract_coeff(self, _val: float):
-        """
-        Set immune recruitment model subtract coefficient
-
-        :param _val: Immune recruitment model subtract coefficient
-        :return: None
-        """
         if _val < 0.0:
             raise ValueError("Value must be non-negative")
-        self._subtract_coeff = _val
+        self._add_coeff = _val
 
     @property
     def subtract_coeff(self):
@@ -2770,18 +2426,9 @@ class ImmuneRecruitmentSteppable(ViralInfectionVTMSteppableBasePy):
 
     @subtract_coeff.setter
     def subtract_coeff(self, _val: float):
-        self.set_subtract_coeff(_val)
-
-    def set_delay_coeff(self, _val: float):
-        """
-        Set immune recruitment model delay coefficient
-
-        :param _val: Immune recruitment model delay coefficient
-        :return: None
-        """
         if _val < 0.0:
             raise ValueError("Value must be non-negative")
-        self._delay_coeff = _val
+        self._subtract_coeff = _val
 
     @property
     def delay_coeff(self):
@@ -2792,18 +2439,9 @@ class ImmuneRecruitmentSteppable(ViralInfectionVTMSteppableBasePy):
 
     @delay_coeff.setter
     def delay_coeff(self, _val: float):
-        self.set_delay_coeff(_val)
-
-    def set_decay_coeff(self, _val: float):
-        """
-        Set immune recruitment model decay coefficient
-
-        :param _val: Immune recruitment model decay coefficient
-        :return: None
-        """
         if _val < 0.0:
             raise ValueError("Value must be non-negative")
-        self._decay_coeff = _val
+        self._delay_coeff = _val
 
     @property
     def decay_coeff(self):
@@ -2814,18 +2452,9 @@ class ImmuneRecruitmentSteppable(ViralInfectionVTMSteppableBasePy):
 
     @decay_coeff.setter
     def decay_coeff(self, _val: float):
-        self.set_decay_coeff(_val)
-
-    def set_transmission_coeff(self, _val: float):
-        """
-        Set immune recruitment model transmission coefficient
-
-        :param _val: Immune recruitment model transmission coefficient
-        :return: None
-        """
         if _val < 0.0:
             raise ValueError("Value must be non-negative")
-        self._transmission_coeff = _val
+        self._decay_coeff = _val
 
     @property
     def transmission_coeff(self):
@@ -2836,18 +2465,9 @@ class ImmuneRecruitmentSteppable(ViralInfectionVTMSteppableBasePy):
 
     @transmission_coeff.setter
     def transmission_coeff(self, _val: float):
-        self.set_transmission_coeff(_val)
-
-    def set_prob_scaling_factor(self, _val: float):
-        """
-        Set immune recruitment model probability scaling coefficient
-
-        :param _val: Immune recruitment model probability scaling coefficient
-        :return: None
-        """
         if _val < 0.0:
             raise ValueError("Value must be non-negative")
-        self._prob_scaling_factor = _val
+        self._transmission_coeff = _val
 
     @property
     def prob_scaling_factor(self):
@@ -2858,18 +2478,9 @@ class ImmuneRecruitmentSteppable(ViralInfectionVTMSteppableBasePy):
 
     @prob_scaling_factor.setter
     def prob_scaling_factor(self, _val: float):
-        self.set_prob_scaling_factor(_val)
-
-    def set_cytokine_decay(self, _val: float):
-        """
-        Set cytokine decay rate
-
-        :param _val: cytokine decay rate
-        :return: None
-        """
-        if _val < 0:
-            raise ValueError('Cytokine decay rate must be non-negative')
-        self.__ck_decay = _val
+        if _val < 0.0:
+            raise ValueError("Value must be non-negative")
+        self._prob_scaling_factor = _val
 
     @property
     def cytokine_decay(self):
@@ -2880,18 +2491,9 @@ class ImmuneRecruitmentSteppable(ViralInfectionVTMSteppableBasePy):
 
     @cytokine_decay.setter
     def cytokine_decay(self, _val: float):
-        self.set_cytokine_decay(_val)
-
-    def set_step_size(self, _val: float):
-        """
-        Set recruitment model step size
-
-        :param _val: step size
-        :return: None
-        """
-        if _val <= 0.0:
-            raise ValueError("Step size must be positive")
-        self._step_size = _val
+        if _val < 0:
+            raise ValueError('Cytokine decay rate must be non-negative')
+        self.__ck_decay = _val
 
     @property
     def step_size(self):
@@ -2902,7 +2504,9 @@ class ImmuneRecruitmentSteppable(ViralInfectionVTMSteppableBasePy):
 
     @step_size.setter
     def step_size(self, _val: float):
-        self.set_step_size(_val)
+        if _val <= 0.0:
+            raise ValueError("Step size must be positive")
+        self._step_size = _val
 
 
 class oxidationAgentModelSteppable(ViralInfectionVTMSteppableBasePy):
@@ -2972,13 +2576,13 @@ class oxidationAgentModelSteppable(ViralInfectionVTMSteppableBasePy):
         self._track_model_variables = False
 
         # Initialize default data
-        self.set_dead_type_name(MainSteppables.dead_type_name)
-        self.set_cytokine_field_name(cytokine_field_name)
+        self.dead_type_name = MainSteppables.dead_type_name
+        self.cytokine_field_name = cytokine_field_name
         self.set_field_data(field_name=oxidator_field_name, diffusion='oxi_dc', decay='oxi_decay')
-        self.set_death_threshold(ViralInfectionVTMModelInputs.oxi_death_thr)
-        self.set_secr_rate(ViralInfectionVTMModelInputs.max_oxi_secrete)
-        self.set_oxi_secr_thr(ViralInfectionVTMModelInputs.oxi_secr_thr)
-        self.set_track_model_variables(ViralInfectionVTMModelInputs.track_model_variables)
+        self.death_threshold = ViralInfectionVTMModelInputs.oxi_death_thr
+        self.secr_rate = ViralInfectionVTMModelInputs.max_oxi_secrete
+        self.oxi_secr_thr = ViralInfectionVTMModelInputs.oxi_secr_thr
+        self.track_model_variables = ViralInfectionVTMModelInputs.track_model_variables
         self.register_secretion_by_type(MainSteppables.uninfected_type_name, self.secr_func_epithelial)
         self.register_secretion_by_type(MainSteppables.infected_type_name, self.secr_func_epithelial)
         self.register_secretion_by_type(MainSteppables.virus_releasing_type_name, self.secr_func_epithelial)
@@ -3038,7 +2642,7 @@ class oxidationAgentModelSteppable(ViralInfectionVTMSteppableBasePy):
         :return: None
         """
         if field_name is not None:
-            self.set_oxidator_field_name(field_name)
+            self.oxidator_field_name = field_name
         if diffusion is not None:
             self._oxidator_diffusion_id = diffusion
         if decay is not None:
@@ -3091,17 +2695,6 @@ class oxidationAgentModelSteppable(ViralInfectionVTMSteppableBasePy):
                 secr_rate = self._secr_rate * self.step_period * m_to_au
                 oxi_secretor.secreteInsideCellTotalCount(_cell, secr_rate / _cell.volume)
 
-    def set_death_threshold(self, _val: float):
-        """
-        Set threshold for death by oxidative killing, in units pM
-
-        :param _val: Threshold for death by oxidative killing
-        :return: None
-        """
-        if _val < 0.0:
-            raise ValueError("Oxidative agent death threshold must be non-negative")
-        self._oxi_death_thr = _val
-
     @property
     def death_threshold(self):
         """
@@ -3111,18 +2704,9 @@ class oxidationAgentModelSteppable(ViralInfectionVTMSteppableBasePy):
 
     @death_threshold.setter
     def death_threshold(self, _val: float):
-        self.set_death_threshold(_val)
-
-    def set_secr_rate(self, _val: float):
-        """
-        Set oxidative field release rate, in units pM/s
-
-        :param _val: Oxidative field release rate
-        :return: None
-        """
         if _val < 0.0:
-            raise ValueError("Oxidative agent secretion rate must be non-negative")
-        self._secr_rate = _val
+            raise ValueError("Oxidative agent death threshold must be non-negative")
+        self._oxi_death_thr = _val
 
     @property
     def secr_rate(self):
@@ -3133,18 +2717,9 @@ class oxidationAgentModelSteppable(ViralInfectionVTMSteppableBasePy):
 
     @secr_rate.setter
     def secr_rate(self, _val: float):
-        self.set_secr_rate(_val)
-
-    def set_oxi_secr_thr(self, _val: float):
-        """
-        Set cytokine threshold for oxidative release, in units pM
-
-        :param _val: Cytokine threshold for oxidative release
-        :return: None
-        """
         if _val < 0.0:
-            raise ValueError("Oxidative agent threshold must be non-negative")
-        self._oxi_secr_thr = _val
+            raise ValueError("Oxidative agent secretion rate must be non-negative")
+        self._secr_rate = _val
 
     @property
     def oxi_secr_thr(self):
@@ -3155,18 +2730,9 @@ class oxidationAgentModelSteppable(ViralInfectionVTMSteppableBasePy):
 
     @oxi_secr_thr.setter
     def oxi_secr_thr(self, _val: float):
-        self.set_oxi_secr_thr(_val)
-
-    def set_diffusion_coefficient(self, _val: float):
-        """
-        Set oxidative agent diffusion coefficient
-
-        :param _val: Oxidative agent diffusion coefficient
-        :return: None
-        """
-        if _val <= 0.0:
-            raise ValueError("Diffusion coefficient must be positive")
-        self._diffusion_coefficient = _val
+        if _val < 0.0:
+            raise ValueError("Oxidative agent threshold must be non-negative")
+        self._oxi_secr_thr = _val
 
     @property
     def diffusion_coefficient(self):
@@ -3177,18 +2743,9 @@ class oxidationAgentModelSteppable(ViralInfectionVTMSteppableBasePy):
 
     @diffusion_coefficient.setter
     def diffusion_coefficient(self, _val: float):
-        self.set_diffusion_coefficient(_val)
-
-    def set_decay_coefficient(self, _val: float):
-        """
-        Set oxidative agent decay coefficient
-
-        :param _val: Oxidative agent decay coefficient
-        :return: None
-        """
         if _val <= 0.0:
-            raise ValueError("Decay coefficient must be positive")
-        self._decay_coefficient = _val
+            raise ValueError("Diffusion coefficient must be positive")
+        self._diffusion_coefficient = _val
 
     @property
     def decay_coefficient(self):
@@ -3199,16 +2756,9 @@ class oxidationAgentModelSteppable(ViralInfectionVTMSteppableBasePy):
 
     @decay_coefficient.setter
     def decay_coefficient(self, _val: float):
-        self.set_decay_coefficient(_val)
-
-    def set_track_model_variables(self, _val: bool):
-        """
-        Set flag to track model variables in cells
-
-        :param _val: flag value: enables when True
-        :return: None
-        """
-        self._track_model_variables = _val
+        if _val <= 0.0:
+            raise ValueError("Decay coefficient must be positive")
+        self._decay_coefficient = _val
 
     @property
     def track_model_variables(self):
@@ -3219,4 +2769,4 @@ class oxidationAgentModelSteppable(ViralInfectionVTMSteppableBasePy):
 
     @track_model_variables.setter
     def track_model_variables(self, _val: bool):
-        self.set_track_model_variables(_val)
+        self._track_model_variables = _val

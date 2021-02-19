@@ -133,10 +133,10 @@ class CellInitializerSteppable(nCoVSteppableBase.nCoVSteppableBase):
         self._aux_infect_vars = None
 
         # Set default data
-        self.set_uninfected_type_name(uninfected_type_name)
-        self.set_infected_type_name(infected_type_name)
-        self.set_cell_diameter(ViralInfectionVTMModelInputs.cell_diameter)
-        self.set_volume_parameter(ViralInfectionVTMModelInputs.volume_lm)
+        self.uninfected_type_name = uninfected_type_name
+        self.infected_type_name = infected_type_name
+        self.cell_diameter = ViralInfectionVTMModelInputs.cell_diameter
+        self.volume_parameter = ViralInfectionVTMModelInputs.volume_lm
         self.initialize_sheet()
         self.random_infected_fraction(0.01)
 
@@ -274,15 +274,6 @@ class CellInitializerSteppable(nCoVSteppableBase.nCoVSteppableBase):
         """
         return getattr(self, self._infected_type_name.upper())
 
-    def set_uninfected_type_name(self, _name: str):
-        """
-        Set the uninfected cell type name
-
-        :param _name: Uninfected cell type name
-        :return: None
-        """
-        self._uninfected_type_name = _name
-
     @property
     def uninfected_type_name(self) -> str:
         """
@@ -292,16 +283,7 @@ class CellInitializerSteppable(nCoVSteppableBase.nCoVSteppableBase):
 
     @uninfected_type_name.setter
     def uninfected_type_name(self, _name: str):
-        self.set_uninfected_type_name(_name)
-
-    def set_infected_type_name(self, _name: str):
-        """
-        Set the infected cell type name
-
-        :param _name: Infected cell type name
-        :return: None
-        """
-        self._infected_type_name = _name
+        self._uninfected_type_name = _name
 
     @property
     def infected_type_name(self) -> str:
@@ -312,19 +294,7 @@ class CellInitializerSteppable(nCoVSteppableBase.nCoVSteppableBase):
 
     @infected_type_name.setter
     def infected_type_name(self, _name: str):
-        self.set_infected_type_name(_name)
-
-    def set_cell_diameter(self, _val: float):
-        """
-        Set the target cell diameter, in units of microns.
-        Target volume for cells is interpreted as this value squared.
-
-        :param _val: target cell diameter
-        :return: None
-        """
-        if _val < 0:
-            raise ValueError('Cell target diameter must be non-negative')
-        self._cell_diameter = _val
+        self._infected_type_name = _name
 
     @property
     def cell_diameter(self) -> float:
@@ -337,7 +307,9 @@ class CellInitializerSteppable(nCoVSteppableBase.nCoVSteppableBase):
 
     @cell_diameter.setter
     def cell_diameter(self, _val: float):
-        self.set_cell_diameter(_val)
+        if _val < 0:
+            raise ValueError('Cell target diameter must be non-negative')
+        self._cell_diameter = _val
 
     @property
     def cell_volume(self):
@@ -345,17 +317,6 @@ class CellInitializerSteppable(nCoVSteppableBase.nCoVSteppableBase):
         Target volume for newly created cells; calculated from cell diameter
         """
         return self.cell_diameter * self.cell_diameter
-
-    def set_volume_parameter(self, _val: float):
-        """
-        Set the volume parameter of newly created cells
-
-        :param _val: Volume parameter of newly created cells
-        :return: None
-        """
-        if _val < 0:
-            raise ValueError("Volume parameter must be positive")
-        self._volume_lm = _val
 
     @property
     def volume_parameter(self):
@@ -366,7 +327,9 @@ class CellInitializerSteppable(nCoVSteppableBase.nCoVSteppableBase):
 
     @volume_parameter.setter
     def volume_parameter(self, _val):
-        self.set_volume_parameter(_val)
+        if _val < 0:
+            raise ValueError("Volume parameter must be positive")
+        self._volume_lm = _val
 
 
 class VirusFieldInitializerSteppable(nCoVSteppableBase.nCoVSteppableBase):
@@ -404,17 +367,6 @@ class VirusFieldInitializerSteppable(nCoVSteppableBase.nCoVSteppableBase):
         else:
             self.get_xml_element(self._virus_decay_id).cdata = self._decay_coefficient * decay_factor
 
-    def set_diffusion_coefficient(self, _val: float):
-        """
-        Set diffusion coefficient, in units microns^2/s
-
-        :param _val: Diffusion coefficient
-        :return: None
-        """
-        if _val <= 0.0:
-            raise ValueError("Diffusion coefficient must be positive")
-        self._diffusion_coefficient = _val
-
     @property
     def diffusion_coefficient(self) -> float:
         """
@@ -428,17 +380,6 @@ class VirusFieldInitializerSteppable(nCoVSteppableBase.nCoVSteppableBase):
             raise ValueError("Diffusion coefficient must be positive")
         self._diffusion_coefficient = _val
 
-    def set_decay_coefficient(self, _val: float):
-        """
-        Set decay coefficient, in units 1/s
-
-        :param _val: Decay coefficient
-        :return: None
-        """
-        if _val < 0.0:
-            raise ValueError("Decay coefficient must be non-negative")
-        self._decay_coefficient = _val
-
     @property
     def decay_coefficient(self) -> float:
         """
@@ -448,7 +389,9 @@ class VirusFieldInitializerSteppable(nCoVSteppableBase.nCoVSteppableBase):
 
     @decay_coefficient.setter
     def decay_coefficient(self, _val: float):
-        self.set_diffusion_coefficient(_val)
+        if _val < 0.0:
+            raise ValueError("Decay coefficient must be non-negative")
+        self._decay_coefficient = _val
 
     def set_field_data(self, field_name: str = None, diffusion: str = None, decay: str = None):
         """
@@ -505,10 +448,10 @@ class ViralInternalizationSteppable(nCoVSteppableBase.nCoVSteppableBase):
         self._infected_type_name = ''
         self._internalization_rate = 0.0
 
-        self.set_target_field_name(virus_field_name)
-        self.set_uninfected_type_name(uninfected_type_name)
-        self.set_infected_type_name(infected_type_name)
-        self.set_internalization_rate(ViralInfectionVTMModelInputs.internalization_rate)
+        self.target_field_name = virus_field_name
+        self.uninfected_type_name = uninfected_type_name
+        self.infected_type_name = infected_type_name
+        self.internalization_rate = ViralInfectionVTMModelInputs.internalization_rate
 
     def step(self, mcs):
         """
@@ -538,15 +481,6 @@ class ViralInternalizationSteppable(nCoVSteppableBase.nCoVSteppableBase):
         """
         return getattr(self, self._infected_type_name.upper())
 
-    def set_target_field_name(self, _name: str):
-        """
-        Set name of infecting field
-
-        :param _name: Name of infecting field
-        :return: None
-        """
-        self._target_field_name = _name
-
     @property
     def target_field_name(self):
         """
@@ -556,16 +490,7 @@ class ViralInternalizationSteppable(nCoVSteppableBase.nCoVSteppableBase):
 
     @target_field_name.setter
     def target_field_name(self, _name: str):
-        self.set_target_field_name(_name)
-
-    def set_uninfected_type_name(self, _name: str):
-        """
-        Set the uninfected cell type name
-
-        :param _name: Uninfected cell type name
-        :return: None
-        """
-        self._uninfected_type_name = _name
+        self._target_field_name = _name
 
     @property
     def uninfected_type_name(self):
@@ -576,16 +501,7 @@ class ViralInternalizationSteppable(nCoVSteppableBase.nCoVSteppableBase):
 
     @uninfected_type_name.setter
     def uninfected_type_name(self, _name: str):
-        self.set_uninfected_type_name(_name)
-
-    def set_infected_type_name(self, _name: str):
-        """
-        Set the infected cell type name
-
-        :param _name: Infected cell type name
-        :return: None
-        """
-        self._infected_type_name = _name
+        self._uninfected_type_name = _name
 
     @property
     def infected_type_name(self):
@@ -596,18 +512,7 @@ class ViralInternalizationSteppable(nCoVSteppableBase.nCoVSteppableBase):
 
     @infected_type_name.setter
     def infected_type_name(self, _name: str):
-        self.set_infected_type_name(_name)
-
-    def set_internalization_rate(self, _val: float):
-        """
-        Set internalization rate, in units virus/cell/s
-
-        :param _val: Internalization rate
-        :return: None
-        """
-        if _val < 0:
-            raise ValueError("Internalization rate must be non-negative")
-        self._internalization_rate = _val
+        self._infected_type_name = _name
 
     @property
     def internalization_rate(self):
@@ -618,7 +523,9 @@ class ViralInternalizationSteppable(nCoVSteppableBase.nCoVSteppableBase):
 
     @internalization_rate.setter
     def internalization_rate(self, _val):
-        self.set_internalization_rate(_val)
+        if _val < 0:
+            raise ValueError("Internalization rate must be non-negative")
+        self._internalization_rate = _val
 
 
 class EclipsePhaseSteppable(nCoVSteppableBase.nCoVSteppableBase):
@@ -642,9 +549,9 @@ class EclipsePhaseSteppable(nCoVSteppableBase.nCoVSteppableBase):
         self._virus_releasing_type_name = ''
         self._eclipse_phase = 1.0
 
-        self.set_infected_type_name(infected_type_name)
-        self.set_virus_releasing_type_name(virus_releasing_type_name)
-        self.set_eclipse_phase(ViralInfectionVTMModelInputs.eclipse_phase)
+        self.infected_type_name = infected_type_name
+        self.virus_releasing_type_name = virus_releasing_type_name
+        self.eclipse_phase = ViralInfectionVTMModelInputs.eclipse_phase
 
     def step(self, mcs):
         """
@@ -672,15 +579,6 @@ class EclipsePhaseSteppable(nCoVSteppableBase.nCoVSteppableBase):
         """
         return getattr(self, self._virus_releasing_type_name.upper())
 
-    def set_infected_type_name(self, _name: str):
-        """
-        Set the infected cell type name
-
-        :param _name: Infected cell type name
-        :return: None
-        """
-        self._infected_type_name = _name
-
     @property
     def infected_type_name(self):
         """
@@ -690,16 +588,7 @@ class EclipsePhaseSteppable(nCoVSteppableBase.nCoVSteppableBase):
 
     @infected_type_name.setter
     def infected_type_name(self, _name: str):
-        self.set_infected_type_name(_name)
-
-    def set_virus_releasing_type_name(self, _name: str):
-        """
-        Set virus-releasing type name
-
-        :param _name: Virus-releasing type name
-        :return: None
-        """
-        self._virus_releasing_type_name = _name
+        self._infected_type_name = _name
 
     @property
     def virus_releasing_type_name(self):
@@ -710,18 +599,7 @@ class EclipsePhaseSteppable(nCoVSteppableBase.nCoVSteppableBase):
 
     @virus_releasing_type_name.setter
     def virus_releasing_type_name(self, _name: str):
-        self.set_virus_releasing_type_name(_name)
-
-    def set_eclipse_phase(self, _val: float):
-        """
-        Set eclipse phase, in units of seconds
-
-        :param _val: Eclipse phase
-        :return: None
-        """
-        if _val <= 0:
-            raise ValueError("Eclipse phase must be positive")
-        self._eclipse_phase = _val
+        self._virus_releasing_type_name = _name
 
     @property
     def eclipse_phase(self):
@@ -732,7 +610,9 @@ class EclipsePhaseSteppable(nCoVSteppableBase.nCoVSteppableBase):
 
     @eclipse_phase.setter
     def eclipse_phase(self, _val: float):
-        self.set_eclipse_phase(_val)
+        if _val <= 0:
+            raise ValueError("Eclipse phase must be positive")
+        self._eclipse_phase = _val
 
 
 class ViralDeathSteppable(nCoVSteppableBase.nCoVSteppableBase):
@@ -756,9 +636,9 @@ class ViralDeathSteppable(nCoVSteppableBase.nCoVSteppableBase):
         self._dead_type_name = ''
         self._viral_death_rate = 0.0
 
-        self.set_virus_releasing_type_name(virus_releasing_type_name)
-        self.set_dead_type_name(dead_type_name)
-        self.set_viral_death_rate(ViralInfectionVTMModelInputs.viral_death_rate)
+        self.virus_releasing_type_name = virus_releasing_type_name
+        self.dead_type_name = dead_type_name
+        self.viral_death_rate = ViralInfectionVTMModelInputs.viral_death_rate
 
     def step(self, mcs):
         """
@@ -786,15 +666,6 @@ class ViralDeathSteppable(nCoVSteppableBase.nCoVSteppableBase):
         """
         return getattr(self, self._dead_type_name.upper())
 
-    def set_virus_releasing_type_name(self, _name: str):
-        """
-        Set the name of the virus-releasing cell type according to a cc3d simulation
-
-        :param _name: Name of the virus-releasing cell type according to a cc3d simulation
-        :return: None
-        """
-        self._virus_releasing_type_name = _name
-
     @property
     def virus_releasing_type_name(self):
         """
@@ -804,16 +675,7 @@ class ViralDeathSteppable(nCoVSteppableBase.nCoVSteppableBase):
 
     @virus_releasing_type_name.setter
     def virus_releasing_type_name(self, _name: str):
-        self.set_virus_releasing_type_name(_name)
-
-    def set_dead_type_name(self, _name: str):
-        """
-        Set the name of the dead cell type
-
-        :param _name: Name of the dead cell type
-        :return: None
-        """
-        self._dead_type_name = _name
+        self._virus_releasing_type_name = _name
 
     @property
     def dead_type_name(self):
@@ -824,18 +686,7 @@ class ViralDeathSteppable(nCoVSteppableBase.nCoVSteppableBase):
 
     @dead_type_name.setter
     def dead_type_name(self, _name: str):
-        self.set_dead_type_name(_name)
-
-    def set_viral_death_rate(self, _val: float):
-        """
-        Set the rate of viral death, in units 1/s
-
-        :param _val: Rate of viral death
-        :return: None
-        """
-        if _val < 0:
-            raise ValueError("Death rate must be non-negative")
-        self._viral_death_rate = _val
+        self._dead_type_name = _name
 
     @property
     def viral_death_rate(self):
@@ -846,7 +697,9 @@ class ViralDeathSteppable(nCoVSteppableBase.nCoVSteppableBase):
 
     @viral_death_rate.setter
     def viral_death_rate(self, _val: float):
-        self.set_viral_death_rate(_val)
+        if _val < 0:
+            raise ValueError("Death rate must be non-negative")
+        self._viral_death_rate = _val
 
 
 class ViralReleaseSteppable(nCoVSteppableBase.nCoVSteppableBase):
@@ -874,9 +727,9 @@ class ViralReleaseSteppable(nCoVSteppableBase.nCoVSteppableBase):
         self._virus_releasing_type_name = ''
         self._release_rate = 0.0
 
-        self.set_target_field_name(virus_field_name)
-        self.set_virus_releasing_type_name(virus_releasing_type_name)
-        self.set_release_rate(ViralInfectionVTMModelInputs.secretion_rate)
+        self.target_field_name = virus_field_name
+        self.virus_releasing_type_name = virus_releasing_type_name
+        self.release_rate = ViralInfectionVTMModelInputs.secretion_rate
 
     def step(self, mcs):
         """
@@ -901,15 +754,6 @@ class ViralReleaseSteppable(nCoVSteppableBase.nCoVSteppableBase):
         """
         return getattr(self, self._virus_releasing_type_name.upper())
 
-    def set_target_field_name(self, _name: str):
-        """
-        Set the name of virus field
-
-        :param _name: Name of virus field
-        :return: None
-        """
-        self._target_field_name = _name
-
     @property
     def target_field_name(self):
         """
@@ -919,16 +763,7 @@ class ViralReleaseSteppable(nCoVSteppableBase.nCoVSteppableBase):
 
     @target_field_name.setter
     def target_field_name(self, _name: str):
-        self.set_target_field_name(_name)
-
-    def set_virus_releasing_type_name(self, _name: str):
-        """
-        Set virus-releasing type name
-
-        :param _name: Virus-releasing type name
-        :return: None
-        """
-        self._virus_releasing_type_name = _name
+        self._target_field_name = _name
 
     @property
     def virus_releasing_type_name(self):
@@ -939,18 +774,7 @@ class ViralReleaseSteppable(nCoVSteppableBase.nCoVSteppableBase):
 
     @virus_releasing_type_name.setter
     def virus_releasing_type_name(self, _name: str):
-        self.set_virus_releasing_type_name(_name)
-
-    def set_release_rate(self, _val: float):
-        """
-        Set the virus release rate, in units virus/cell/s
-
-        :param _val: Virus release rate
-        :return: None
-        """
-        if _val < 0:
-            raise ValueError("Viral release must be non-negative")
-        self._release_rate = _val
+        self._virus_releasing_type_name = _name
 
     @property
     def release_rate(self):
@@ -961,7 +785,9 @@ class ViralReleaseSteppable(nCoVSteppableBase.nCoVSteppableBase):
 
     @release_rate.setter
     def release_rate(self, _val: float):
-        self.set_release_rate(_val)
+        if _val < 0:
+            raise ValueError("Viral release must be non-negative")
+        self._release_rate = _val
 
 
 class SimDataSteppable(nCoVSteppableBase.nCoVSteppableBase):
@@ -1025,15 +851,15 @@ class SimDataSteppable(nCoVSteppableBase.nCoVSteppableBase):
         self._dead_type_name = ''
         self._virus_field_name = ''
 
-        self.set_uninfected_type_name(uninfected_type_name)
-        self.set_infected_type_name(infected_type_name)
-        self.set_virus_releasing_type_name(virus_releasing_type_name)
-        self.set_dead_type_name(dead_type_name)
-        self.set_virus_field_name(virus_field_name)
-        self.set_plot_pop_data_freq(ViralInfectionVTMModelInputs.plot_pop_data_freq)
-        self.set_write_pop_data_freq(ViralInfectionVTMModelInputs.write_pop_data_freq)
-        self.set_plot_med_diff_data_freq(ViralInfectionVTMModelInputs.plot_med_diff_data_freq)
-        self.set_write_med_diff_data_freq(ViralInfectionVTMModelInputs.write_med_diff_data_freq)
+        self.uninfected_type_name = uninfected_type_name
+        self.infected_type_name = infected_type_name
+        self.virus_releasing_type_name = virus_releasing_type_name
+        self.dead_type_name = dead_type_name
+        self.virus_field_name = virus_field_name
+        self.plot_pop_data_freq = ViralInfectionVTMModelInputs.plot_pop_data_freq
+        self.write_pop_data_freq = ViralInfectionVTMModelInputs.write_pop_data_freq
+        self.plot_med_diff_data_freq = ViralInfectionVTMModelInputs.plot_med_diff_data_freq
+        self.write_med_diff_data_freq = ViralInfectionVTMModelInputs.write_med_diff_data_freq
 
     def start(self):
         """
@@ -1192,15 +1018,6 @@ class SimDataSteppable(nCoVSteppableBase.nCoVSteppableBase):
         """
         return getattr(self, self._dead_type_name.upper())
 
-    def set_uninfected_type_name(self, _name: str):
-        """
-        Set the uninfected cell type name
-
-        :param _name: Uninfected cell type name
-        :return: None
-        """
-        self._uninfected_type_name = _name
-
     @property
     def uninfected_type_name(self):
         """
@@ -1210,16 +1027,7 @@ class SimDataSteppable(nCoVSteppableBase.nCoVSteppableBase):
 
     @uninfected_type_name.setter
     def uninfected_type_name(self, _name: str):
-        self.set_uninfected_type_name(_name)
-
-    def set_infected_type_name(self, _name: str):
-        """
-        Set the infected cell type name
-
-        :param _name: Infected cell type name
-        :return: None
-        """
-        self._infected_type_name = _name
+        self._uninfected_type_name = _name
 
     @property
     def infected_type_name(self):
@@ -1230,16 +1038,7 @@ class SimDataSteppable(nCoVSteppableBase.nCoVSteppableBase):
 
     @infected_type_name.setter
     def infected_type_name(self, _name: str):
-        self.set_infected_type_name(_name)
-
-    def set_virus_releasing_type_name(self, _name: str):
-        """
-        Set virus-releasing type name
-
-        :param _name: Virus-releasing type name
-        :return: None
-        """
-        self._virus_releasing_type_name = _name
+        self._infected_type_name = _name
 
     @property
     def virus_releasing_type_name(self):
@@ -1250,16 +1049,7 @@ class SimDataSteppable(nCoVSteppableBase.nCoVSteppableBase):
 
     @virus_releasing_type_name.setter
     def virus_releasing_type_name(self, _name: str):
-        self.set_virus_releasing_type_name(_name)
-
-    def set_dead_type_name(self, _name: str):
-        """
-        Set the name of the dead cell type
-
-        :param _name: Name of the dead cell type
-        :return: None
-        """
-        self._dead_type_name = _name
+        self._virus_releasing_type_name = _name
 
     @property
     def dead_type_name(self):
@@ -1270,16 +1060,7 @@ class SimDataSteppable(nCoVSteppableBase.nCoVSteppableBase):
 
     @dead_type_name.setter
     def dead_type_name(self, _name: str):
-        self.set_dead_type_name(_name)
-
-    def set_virus_field_name(self, _name: str):
-        """
-        Set the name of the virus field
-
-        :param _name: Name of the virus field
-        :return: None
-        """
-        self._virus_field_name = _name
+        self._dead_type_name = _name
 
     @property
     def virus_field_name(self):
@@ -1290,18 +1071,7 @@ class SimDataSteppable(nCoVSteppableBase.nCoVSteppableBase):
 
     @virus_field_name.setter
     def virus_field_name(self, _name: str):
-        self.set_virus_field_name(_name)
-
-    def set_plot_pop_data_freq(self, _val: int):
-        """
-        Set frequency of plotting population data
-
-        :param _val: Frequency of plotting population data
-        :return: None
-        """
-        if _val < 0:
-            raise ValueError("Value must be non-negative")
-        self._plot_pop_data_freq = _val
+        self._virus_field_name = _name
 
     @property
     def plot_pop_data_freq(self):
@@ -1312,18 +1082,9 @@ class SimDataSteppable(nCoVSteppableBase.nCoVSteppableBase):
 
     @plot_pop_data_freq.setter
     def plot_pop_data_freq(self, _val: int):
-        self.set_plot_pop_data_freq(_val)
-
-    def set_write_pop_data_freq(self, _val: int):
-        """
-        Set frequency of writing population data
-
-        :param _val: Frequency of writing population data
-        :return: None
-        """
         if _val < 0:
             raise ValueError("Value must be non-negative")
-        self._write_pop_data_freq = _val
+        self._plot_pop_data_freq = _val
 
     @property
     def write_pop_data_freq(self):
@@ -1334,18 +1095,9 @@ class SimDataSteppable(nCoVSteppableBase.nCoVSteppableBase):
 
     @write_pop_data_freq.setter
     def write_pop_data_freq(self, _val: int):
-        self.set_write_pop_data_freq(_val)
-
-    def set_plot_med_diff_data_freq(self, _val: int):
-        """
-        Set frequency of plotting diffusion field data
-
-        :param _val: Frequency of plotting diffusion field data
-        :return: None
-        """
         if _val < 0:
             raise ValueError("Value must be non-negative")
-        self._plot_med_diff_data_freq = _val
+        self._write_pop_data_freq = _val
 
     @property
     def plot_med_diff_data_freq(self):
@@ -1356,18 +1108,9 @@ class SimDataSteppable(nCoVSteppableBase.nCoVSteppableBase):
 
     @plot_med_diff_data_freq.setter
     def plot_med_diff_data_freq(self, _val: int):
-        self.set_plot_med_diff_data_freq(_val)
-
-    def set_write_med_diff_data_freq(self, _val: int):
-        """
-        Set frequency of writing diffusion field data
-
-        :param _val: Frequency of writing diffusion field data
-        :return: None
-        """
         if _val < 0:
             raise ValueError("Value must be non-negative")
-        self._write_med_diff_data_freq = _val
+        self._plot_med_diff_data_freq = _val
 
     @property
     def write_med_diff_data_freq(self):
@@ -1378,7 +1121,9 @@ class SimDataSteppable(nCoVSteppableBase.nCoVSteppableBase):
 
     @write_med_diff_data_freq.setter
     def write_med_diff_data_freq(self, _val: int):
-        self.set_write_med_diff_data_freq(_val)
+        if _val < 0:
+            raise ValueError("Value must be non-negative")
+        self._write_med_diff_data_freq = _val
 
     def data_output_string(self, _data: dict):
         """
