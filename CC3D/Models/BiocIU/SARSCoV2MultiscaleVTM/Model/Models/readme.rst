@@ -122,8 +122,8 @@ Framework Event System
 Say you've deployed a steppable from the shared library that creates a new cell, and say that you'd
 like to do something with that cell when it is created. How would you know when it was created?
 The computationally expensive solution is to check the cell inventory and look for changes.
-However, some steppables in the shared library also issue procedures during such events, and tracking down where all
-each steppable does such things can be tedious, confusing and even more computationally expensive.
+However, some steppables in the shared library also issue procedures during such events, and tracking down every place
+where each steppable does such things can be tedious, confusing and even more computationally expensive.
 Instead, ``nCoVSteppableBase`` provides an interface so that you can tell CC3D what additional things to do when such
 events occur, whether they occur by a steppable from the shared library that you're using, or by one that you've
 designed.
