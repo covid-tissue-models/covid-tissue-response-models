@@ -159,7 +159,7 @@ def full_ddm_for_testing(_init_drug_plasma, _init_drug_periphery, _init_drug_lun
     J3: Dpls -> Dlung ; k0 * Dpls
         
     // flow from periphery    
-    J4: Dperi -> Dpls ; kpp * Dpls // to plasma     
+    J4: Dperi -> Dpls ; kpp * Dperi // to plasma     
     
     // Drug reactions / flow in lung    
     J5: Dlung -> Dpls ; k0 * Dlung    
@@ -242,7 +242,7 @@ def set_cst_drug_ddm_string(_init_drug_plasma, _init_drug_periphery, _init_drug_
     J3: Dpls -> Dlung ; k0 * Dpls
         
     // flow from periphery    
-    J4: Dperi -> Dpls ; kpp * Dpls // to plasma     
+    J4: Dperi -> Dpls ; kpp * Dperi // to plasma     
     
     // Drug reactions / flow in lung    
     J5: Dlung -> Dpls ; k0 * Dlung    
@@ -335,7 +335,7 @@ def set_cell_drug_metabolization(_init_met_alanine, _init_met_NMP, _init_met_NTP
         //J3: Dpls -> Dlung ; k0 * Dpls
             
         // flow from periphery    
-        //J4: Dperi -> Dpls ; kpp * Dpls // to plasma     
+        //J4: Dperi -> Dpls ; kpp * Dperi // to plasma     
         
         // Drug reactions / flow in lung    
         //J5: Dlung -> Dpls ; k0 * Dlung    
