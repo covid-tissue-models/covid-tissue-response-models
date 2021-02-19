@@ -1,25 +1,13 @@
 """
-Simple population model of infection
-====================================
+Model of acute primary viral infection and immune response in epithelial tissues
+================================================================================
 
-Written by T.J. Sego, Ph.D.
+Written by T.J. Sego, Ph.D., Josua Aponte-Serrano and Juliano Gianlupi, with assistance from Kira Breithaupt,
+Samuel Heaps, Jairaj Mathur and James Glazier, Ph.D.
 
-Module steppables define a spatiotemporal, multicellular implementation of the following ODE model of susceptible `S`,
-exposed `E`, infectious `I`, and dead `D` cells, and viral load `V`,
+For details of specific models of this module, see https://doi.org/10.1371/journal.pcbi.1008451.
 
-dS/dt = -a * S * V
-
-dE/dt = a * S * V - b * E
-
-dI/dt = b * E - c * I
-
-dD/dt = c * I
-
-dV / dt = f * I - g * V
-
-Default parameters are specified in ViralInfectionVTMModelInputs.py.
-
-To cite this framework please use the following:
+To cite this model please use the following:
 
 T.J. Sego, Josua O. Aponte-Serrano, Juliano Ferrari Gianlupi, Samuel R. Heaps, Kira Breithaupt, Lutz Brusch,
 Jessica Crawshaw, James M. Osborne, Ellen M. Quardokus, Richard K. Plemper, James A. Glazier,
@@ -37,13 +25,19 @@ Maintainer(s)
 
 Contents
 ========
-- ViralInfectionVTM.py: the cc3d execution script of this framework
+- ViralInfectionVTMBasePy.py: defines a base class defining common data and methods to all steppables
 
-- ViralInfectionVTMModelInputs.py: default parameters of this module
+- ViralInfectionVTMLib.py: defines basic definitions and methods
 
-- ViralInfectionVTMSteppables.py: steppables
+- ViralInfectionVTMModelInputs.py: defines default model parameters
 
-- ViralInfectionVTM.xml: cc3dml script of this framework
+- ViralInfectionVTMSteppables.py: defines all steppables implementing all model modules
+
+- example/
+
+    - ViralInfectionVTM.py: a simulation script for running the entire module in its default configuration
+
+    - ViralInfectionVTM.xml: a cc3dml script for running the entire module in its default configuration
 
 Change log
 ==========
@@ -56,6 +50,9 @@ Change log
 - Implementation as described at https://doi.org/10.1371/journal.pcbi.1008451.
 
 """
+
+module_prefix = "vivtm_"
+
 version_major = 1
 version_minor = 0
 version_build = 0

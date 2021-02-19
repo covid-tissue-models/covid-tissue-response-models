@@ -1,78 +1,150 @@
-# Model of simple recovery
-# Written by T.J. Sego, Ph.D., and presented in the Interactive Two-Part Virtual Mini-workshop on
-# Open-Source CompuCell3D Multiscale, Virtual-Tissue Spatiotemporal Modeling and Simulations of COVID-19 Infection,
-# Viral Spread and Immune Response and Treatment Regimes, June 11-12 & Jun 18-19, 2020.
-# Dead cells "resurrect" and become uninfected with a constant probability "recovery_rate" defined in RecoveryInputs.py
-#
-# SimpleRecoverySteppable
-#   Description: implements recovery model
-#   Usage:
-#       In ViralInfectionVTM.py, add the following
-#           from Models.RecoverySimple.RecoverySteppables import SimpleRecoverySteppable
-#           CompuCellSetup.register_steppable(steppable=SimpleRecoverySteppable(frequency=1))
-# SimpleRecoveryDataSteppable
-#   Description: performs data tracking
-#   Usage:
-#       In ViralInfectionVTM.py, add the following
-#           from Models.RecoverySimple.RecoverySteppables import SimpleRecoveryDataSteppable
-#           CompuCellSetup.register_steppable(steppable=SimpleRecoveryDataSteppable(frequency=1))
+"""
+Defines module steppables
 
+Steppables
+==========
+
+SimpleRecoverySteppable
+-----------------------
+Description: implements recovery model
+
+Usage: In ViralInfectionVTM.py, add the following
+
+from Models.RecoverySimple.RecoverySteppables import SimpleRecoverySteppable
+
+CompuCellSetup.register_steppable(steppable=SimpleRecoverySteppable(frequency=1))
+
+SimpleRecoveryDataSteppable
+---------------------------
+
+Description: performs data tracking
+
+Usage: In ViralInfectionVTM.py, add the following
+
+from Models.RecoverySimple.RecoverySteppables import SimpleRecoveryDataSteppable
+
+CompuCellSetup.register_steppable(steppable=SimpleRecoveryDataSteppable(frequency=1))
+"""
+
+from collections import namedtuple
 import random
-import sys
 import os
-from cc3d.core.PySteppables import *
+import sys
+from typing import *
 
 sys.path.append(os.path.join(os.environ["ViralInfectionVTM"], "Simulation"))
-from ViralInfectionVTMModelInputs import s_to_mcs
-import ViralInfectionVTMLib
+from nCoVToolkit.nCoVSteppableBase import nCoVSteppableBase
 from ViralInfectionVTMSteppables import SimDataSteppable
 
-from .RecoveryInputs import *
+from . import RecoveryInputs
 rec_steppable_key = "sprec_steppable"
+rec_data_steppable_key = "sprec_data_steppable"
 
 
-class SimpleRecoverySteppable(SteppableBasePy):
+RecoveryData = namedtuple(typename='RecoveryData', field_names=['recovered_type_name', 'recovery_rate'])
+
+
+class SimpleRecoverySteppable(nCoVSteppableBase):
     """
     Implements simple recovery
     """
+
+    unique_key = rec_steppable_key
+
     def __init__(self, frequency=1):
-        super().__init__(self, frequency)
+        super().__init__(frequency)
         self.num_recovered = 0
+        self.num_recovered_by_type: Dict[str, int] = {}
 
-        self.rec_steppable_key = rec_steppable_key
+        self._registered_recovery: Dict[str, RecoveryData] = {}
 
-    def start(self):
-        # Post reference to self
-        self.shared_steppable_vars[self.rec_steppable_key] = self
+        # Initialize default data
+        from ViralInfectionVTMSteppables import uninfected_type_name, dead_type_name
+        self.register_recovery(dead_type_name=dead_type_name,
+                               recovered_type_name=uninfected_type_name,
+                               recovery_rate=RecoveryInputs.recovery_rate)
 
     def step(self, mcs):
-        [self.recover_cell(cell) for cell in self.cell_list_by_type(self.DYING) if self.cell_recovers(cell)]
+        [self.recover_cell(cell) for cell in self.cell_list_by_type(*self.dead_type_ids) if self.cell_recovers(cell)]
 
     def cell_recovers(self, _cell) -> bool:
         """
         Recovery criterion
+
         :param _cell: dead cell to test for recovery
         :return: True if cell recovers
         """
-        return random.random() < recovery_rate * s_to_mcs
+        return random.random() < self.recovery_prob(_cell)
 
     def recover_cell(self, _cell):
         """
         Implement recovery
+
         :param _cell: dead cell to recover
         :return: None
         """
-        _cell.type = self.UNINFECTED
-        _cell.dict[ViralInfectionVTMLib.vrl_key] = False
         self.num_recovered += 1
+        self.num_recovered_by_type[self.get_type_name_by_cell(_cell)] += 1
+        self.set_cell_type(_cell, self.recovery_type(_cell))
+
+    @property
+    def dead_type_ids(self) -> List[int]:
+        """
+        Ids of dead cell types according to a cc3d simulation
+        """
+        return [getattr(self, x.upper()) for x in self._registered_recovery.keys()]
+
+    def recovery_prob(self, _cell) -> float:
+        """
+        Returns probability of recovery for a cell
+
+        :param _cell: a cell
+        :return: Probability of recovery for a cell
+        """
+        return self._registered_recovery[self.get_type_name_by_cell(_cell)].recovery_rate * self.step_period
+
+    def recovery_type(self, _cell) -> int:
+        """
+        Id of recovered type that corresponds to a cell according to a cc3d simulation
+
+        :param _cell: a cell
+        :return: Id of recovered type
+        """
+        return getattr(self, self._registered_recovery[self.get_type_name_by_cell(_cell)].recovered_type_name.upper())
+
+    def register_recovery(self, dead_type_name: str, recovered_type_name: str, recovery_rate: float):
+        """
+        Register a recovery data entry
+
+        :param dead_type_name: name of dead cell type
+        :param recovered_type_name: name of recovered cell type
+        :param recovery_rate: rate of recovery (1/s)
+        :return: None
+        """
+        self._registered_recovery[dead_type_name] = RecoveryData(recovered_type_name=recovered_type_name,
+                                                                 recovery_rate=recovery_rate)
+        self.num_recovered_by_type[dead_type_name] = 0
+
+    def unregister_recovery(self, _name: str):
+        """
+        Unregister a recovery data entry
+
+        :param _name: name of dead cell type
+        :return: None
+        """
+        self._registered_recovery.pop(_name)
+        self.num_recovered_by_type.pop(_name)
 
 
-class SimpleRecoveryDataSteppable(SteppableBasePy):
+class SimpleRecoveryDataSteppable(nCoVSteppableBase):
     """
     Implements simple recovery data tracking; like SimDataSteppable in main framework
     """
+
+    unique_key = rec_data_steppable_key
+
     def __init__(self, frequency=1, plot_freq=None, write_freq=None):
-        super().__init__(self, frequency)
+        super().__init__(frequency)
 
         self.rec_steppable = None
 
@@ -82,8 +154,8 @@ class SimpleRecoveryDataSteppable(SteppableBasePy):
 
         self._flush_counter = 1
 
-        self.plot_rec_data_freq = plot_rec_data_freq
-        self.write_rec_data_freq = write_rec_data_freq
+        self.plot_rec_data_freq = RecoveryInputs.plot_rec_data_freq
+        self.write_rec_data_freq = RecoveryInputs.write_rec_data_freq
 
         # Subclass support
         if plot_freq is not None:
@@ -97,6 +169,9 @@ class SimpleRecoveryDataSteppable(SteppableBasePy):
         self.plot_title = 'Simple Recovery'
 
     def start(self):
+        """
+        Called once to initialize simulation
+        """
         # Initialze plot window if requested
         if self.plot_rec_data_freq > 0:
             self.rec_data_win = self.add_new_plot_window(title=self.plot_title,
@@ -116,6 +191,12 @@ class SimpleRecoveryDataSteppable(SteppableBasePy):
                 pass
 
     def step(self, mcs):
+        """
+        Called every simulation step
+
+        :param mcs: current simulation step
+        :return: None
+        """
         if self.rec_steppable is None:
             self.rec_steppable = self.shared_steppable_vars[self.rec_steppable_key]
 
@@ -133,14 +214,21 @@ class SimpleRecoveryDataSteppable(SteppableBasePy):
             self._flush_counter += 1
 
     def on_stop(self):
+        """
+        Called once when simulation is terminated before completions
+        """
         self.finish()
 
     def finish(self):
+        """
+        Called once when simulation completes
+        """
         self.flush_stored_outputs()
 
     def flush_stored_outputs(self):
         """
         Write stored outputs to file and clear output storage
+
         :return: None
         """
         if self.write_rec_data_freq > 0:

@@ -16,8 +16,8 @@
 
     <Potts>
         <!-- Basic properties of CPM (GGH) algorithm -->
-        <Dimensions x="210" y="210" z="1"/>
-        <Steps>4033</Steps>
+        <Dimensions x="90" y="90" z="2"/>
+        <Steps>1001</Steps>
         <Temperature>10.0</Temperature>
         <NeighborOrder>3</NeighborOrder>
         <Boundary_x>Periodic</Boundary_x>
@@ -27,10 +27,11 @@
     <Plugin Name="CellType">
     <!-- Listing all cell types in the simulation -->
         <CellType TypeId="0" TypeName="Medium"/>
-        <CellType TypeId="1" TypeName="Uninfected"/>
-        <CellType TypeId="2" TypeName="Infected"/>
-        <CellType TypeId="3" TypeName="VirusReleasing"/>
-        <CellType TypeId="4" TypeName="Dying"/>
+        <CellType Freeze="" TypeId="1" TypeName="Uninfected"/>
+        <CellType Freeze="" TypeId="2" TypeName="Infected"/>
+        <CellType Freeze="" TypeId="3" TypeName="VirusReleasing"/>
+        <CellType Freeze="" TypeId="4" TypeName="Dying"/>
+        <CellType TypeId="5" TypeName="Immunecell"/>
     </Plugin>
 
     <Plugin Name="Volume"/>
@@ -48,18 +49,31 @@
         <Energy Type1="Medium" Type2="Infected">10.0</Energy>
         <Energy Type1="Medium" Type2="VirusReleasing">10.0</Energy>
         <Energy Type1="Medium" Type2="Dying">10.0</Energy>
+        <Energy Type1="Medium" Type2="Immunecell">10.0</Energy>
         <Energy Type1="Uninfected" Type2="Uninfected">10.0</Energy>
         <Energy Type1="Uninfected" Type2="Infected">10.0</Energy>
         <Energy Type1="Uninfected" Type2="VirusReleasing">10.0</Energy>
         <Energy Type1="Uninfected" Type2="Dying">10.0</Energy>
+        <Energy Type1="Uninfected" Type2="Immunecell">10.0</Energy>
         <Energy Type1="Infected" Type2="Infected">10.0</Energy>
         <Energy Type1="Infected" Type2="VirusReleasing">10.0</Energy>
         <Energy Type1="Infected" Type2="Dying">10.0</Energy>
+        <Energy Type1="Infected" Type2="Immunecell">10.0</Energy>
         <Energy Type1="VirusReleasing" Type2="VirusReleasing">10.0</Energy>
         <Energy Type1="VirusReleasing" Type2="Dying">10.0</Energy>
+        <Energy Type1="VirusReleasing" Type2="Immunecell">10.0</Energy>
         <Energy Type1="Dying" Type2="Dying">10.0</Energy>
+        <Energy Type1="Dying" Type2="Immunecell">10.0</Energy>
+        <Energy Type1="Immunecell" Type2="Immunecell">25.0</Energy>
         <NeighborOrder>3</NeighborOrder>
     </Plugin>
+
+   <Plugin Name="Chemotaxis">
+        <ChemicalField Name="Virus">
+        </ChemicalField>
+        <ChemicalField Name="cytokine">
+        </ChemicalField>
+   </Plugin>
 
    <Plugin Name="Secretion">
    </Plugin>
@@ -81,6 +95,43 @@
             <Plane Axis="Z">
                <ConstantDerivative PlanePosition="Min" Value="0.0"/>
                <ConstantDerivative PlanePosition="Max" Value="0.0"/>
+            </Plane>
+         </BoundaryConditions>
+      </DiffusionField>
+      <DiffusionField Name="cytokine">
+         <DiffusionData>
+            <FieldName>cytokine</FieldName>
+            <GlobalDiffusionConstant id = "cytokine_dc">10.0</GlobalDiffusionConstant>
+            <GlobalDecayConstant id = "cytokine_decay">0</GlobalDecayConstant>
+         </DiffusionData>
+         <BoundaryConditions>
+            <Plane Axis="X">
+               <Periodic/>
+            </Plane>
+            <Plane Axis="Y">
+               <Periodic/>
+            </Plane>
+            <Plane Axis="Z">
+               <ConstantDerivative PlanePosition="Min" Value="0.0"/>
+               <ConstantDerivative PlanePosition="Max" Value="0.0"/>
+            </Plane>
+         </BoundaryConditions>
+      </DiffusionField>
+      <DiffusionField Name="oxidator">
+         <DiffusionData>
+            <FieldName>oxidator</FieldName>
+            <GlobalDiffusionConstant id = "oxi_dc">10.0</GlobalDiffusionConstant>
+            <GlobalDecayConstant id = "oxi_decay">0</GlobalDecayConstant>
+         </DiffusionData>
+         <BoundaryConditions>
+            <Plane Axis="X">
+               <Periodic/>
+            </Plane>
+            <Plane Axis="Y">
+               <Periodic/>
+            </Plane>
+            <Plane Axis="Z">
+                <Periodic/>
             </Plane>
          </BoundaryConditions>
       </DiffusionField>

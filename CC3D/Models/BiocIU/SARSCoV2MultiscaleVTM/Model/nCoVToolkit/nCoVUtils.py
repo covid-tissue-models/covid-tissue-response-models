@@ -1,5 +1,7 @@
-# This is a general library for the shared coronavirus modeling and simulation project
-# hosted by the Biocomplexity Institute at Indiana University
+"""
+Defines basic utility functions of the framework
+"""
+import math
 
 
 def export_parameters(param_module, export_file):
@@ -38,6 +40,7 @@ def export_parameters(param_module, export_file):
                 row_to_write = [k, v]
             csv_data_writer.writerow(row_to_write)
 
+
 def hill_equation(val, diss_cf, hill_cf):
     """
     Hill equation
@@ -50,3 +53,18 @@ def hill_equation(val, diss_cf, hill_cf):
         return 0
     else:
         return 1 / (1 + (diss_cf / val) ** hill_cf)
+
+
+def ul_rate_to_prob(_rate: float):
+    """
+    Returns a probability from a unitless rate according to the Poisson distribution
+
+    See Sego, T. J., et al., "Generating Agent-Based Multiscale Multicellular Spatiotemporal Models from Ordinary
+    Differential Equations of Biological Systems, with Applications in Viral Infection." bioRxiv (2021).
+
+    :param _rate: unitless rate
+    :type _rate: float
+    :return: probability
+    :rtype: float
+    """
+    return 1 - math.exp(-_rate)

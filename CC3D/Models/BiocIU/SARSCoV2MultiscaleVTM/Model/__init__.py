@@ -1,3 +1,4 @@
+"""
 Modular viral infection modeling and simulation framework project
 =================================================================
 
@@ -23,3 +24,4 @@ Jessica Crawshaw, James M. Osborne, Ellen M. Quardokus, Richard K. Plemper, Jame
 "A modular framework for multiscale, multicellular, spatiotemporal modeling of acute primary viral infection and
 immune response in epithelial tissues and its application to drug therapy timing and effectiveness",
 PLoS Comput Biol 16(12): e1008451. https://doi.org/10.1371/journal.pcbi.1008451
+"""
