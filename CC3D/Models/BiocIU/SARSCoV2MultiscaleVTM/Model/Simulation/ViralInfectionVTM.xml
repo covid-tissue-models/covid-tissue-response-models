@@ -10,7 +10,7 @@
 
     <Metadata>
         <!-- Basic properties simulation -->
-        <NumberOfProcessors>1</NumberOfProcessors>
+        <NumberOfProcessors>8</NumberOfProcessors>
         <DebugOutputFrequency>100</DebugOutputFrequency>
     </Metadata>
 
@@ -19,6 +19,7 @@
         <Dimensions x="90" y="90" z="2"/>
 <!--        <Steps>1001</Steps>-->
         <Steps>4001</Steps>
+<!--        <Steps>11</Steps>-->
         <Temperature>10.0</Temperature>
         <NeighborOrder>3</NeighborOrder>
         <Boundary_x>Periodic</Boundary_x>
@@ -136,5 +137,26 @@
             </Plane>
          </BoundaryConditions>
       </DiffusionField>
+
+       <DiffusionField Name="prodrug">
+           <DiffusionData>
+               <FieldName>prodrug</FieldName>
+               <GlobalDiffusionConstant id = 'prodr_dc'>10.0</GlobalDiffusionConstant>
+               <GlobalDecayConstant id="prodr_decay">0.0</GlobalDecayConstant>
+           </DiffusionData>
+           <BoundaryConditions>
+               <Plane Axis="X">
+                   <Periodic/>
+               </Plane>
+               <Plane Axis="Y">
+               <Periodic/>
+            </Plane>
+            <Plane Axis="Z">
+               <ConstantDerivative PlanePosition="Min" Value="0.0"/>
+               <ConstantDerivative PlanePosition="Max" Value="0.0"/>
+            </Plane>
+           </BoundaryConditions>
+       </DiffusionField>
+
    </Steppable>
 </CompuCell3D>

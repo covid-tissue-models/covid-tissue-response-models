@@ -1,11 +1,11 @@
-#!/bin/sh
+#!/bin/bash
 
 # Set PREFIX_CC3D to the root directory of your CC3D installation!
-export PREFIX_CC3D=/Applications/CC3D_4.2.1
+export PREFIX_CC3D=/N/u/jferrari/Carbonate/cc3d_compile/vMaster/install
 
 # If Python is not installed in the CC3D root directory, then replace this with the path to the Python root directory
-export PYTHON_INSTALL_PATH=${PREFIX_CC3D}/Python37/bin
-
+# export PYTHON_INSTALL_PATH=${PREFIX_CC3D}/Python37/bin
+export PYTHON_INSTALL_PATH=/N/u/jferrari/Carbonate/.conda/envs/cc3d_master/bin
 
 # Environment setup
 
@@ -30,5 +30,7 @@ export PYTHONPATH=${PREFIX_CC3D}/lib/site-packages
 # Run it!
 
 export exit_code=0
-${PYTHON_INSTALL_PATH}/python batch_run.py
+BATCHSCRIPT=$(cd `dirname $0` && pwd)/batch_exec.py
+echo $BATCHSCRIPT
+${PYTHON_INSTALL_PATH}/python $BATCHSCRIPT
 exit_code=$?

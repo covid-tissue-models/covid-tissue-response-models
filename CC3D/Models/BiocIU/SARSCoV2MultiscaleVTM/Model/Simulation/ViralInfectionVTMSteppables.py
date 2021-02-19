@@ -175,7 +175,8 @@ class ViralInternalizationSteppable(ViralInfectionVTMSteppableBasePy):
             return False, 0.0
 
         _k = kon * cell.volume / koff
-        diss_coeff_uptake_pr = (initial_unbound_receptors / 2.0 / _k / cell.dict['Receptors']) ** (1.0 / hill_coeff_uptake_pr)
+        diss_coeff_uptake_pr = (initial_unbound_receptors / 2.0 / _k / cell.dict['Receptors']) ** (
+                    1.0 / hill_coeff_uptake_pr)
         uptake_probability = nCoVUtils.hill_equation(viral_amount_com,
                                                      diss_coeff_uptake_pr,
                                                      hill_coeff_uptake_pr)
@@ -212,6 +213,7 @@ class ViralSecretionSteppable(ViralInfectionVTMSteppableBasePy):
         self.vim_steppable = None
 
     def start(self):
+        self.shared_steppable_vars['total_virus_release_this_mcs'] = 0
         if track_model_variables:
             self.track_cell_level_scalar_attribute(field_name='Uptake', attribute_name='Uptake')
             self.track_cell_level_scalar_attribute(field_name='Assembled', attribute_name='Assembled')
@@ -225,6 +227,7 @@ class ViralSecretionSteppable(ViralInfectionVTMSteppableBasePy):
             self.vim_steppable: ViralInternalizationSteppable = \
                 self.shared_steppable_vars[ViralInfectionVTMLib.vim_steppable_key]
 
+        self.shared_steppable_vars['total_virus_release_this_mcs'] = 0
         secretor = self.get_field_secretor("Virus")
         for cell in self.cell_list_by_type(self.UNINFECTED, self.INFECTED, self.VIRUSRELEASING):
 
@@ -241,12 +244,14 @@ class ViralSecretionSteppable(ViralInfectionVTMSteppableBasePy):
             if cell.type == self.VIRUSRELEASING:
                 sec_amount = ViralInfectionVTMLib.get_viral_replication_cell_secretion(cell=cell)
                 secretor.secreteInsideCellTotalCount(cell, sec_amount / cell.volume)
+                self.shared_steppable_vars['total_virus_release_this_mcs'] += sec_amount
 
 
 class ImmuneCellKillingSteppable(ViralInfectionVTMSteppableBasePy):
     """
     Implements immune cell direct cytotoxicity and bystander effect module
     """
+
     def __init__(self, frequency=1):
         ViralInfectionVTMSteppableBasePy.__init__(self, frequency)
 
@@ -667,7 +672,11 @@ class SimDataSteppable(SteppableBasePy):
         if plot_med_diff_data or write_med_diff_data:
 
             # Gather total diffusive amounts
-            if True:  # Pre-v4.2.1 CC3D
+            try:
+                med_viral_total = self.get_field_secretor("Virus").totalFieldIntegral()
+                med_cyt_total = self.get_field_secretor("cytokine").totalFieldIntegral()
+                med_oxi_total = self.get_field_secretor("oxidator").totalFieldIntegral()
+            except AttributeError:  # Pre-v4.2.1 CC3D
                 med_viral_total = 0.0
                 med_cyt_total = 0.0
                 med_oxi_total = 0.0
@@ -675,10 +684,6 @@ class SimDataSteppable(SteppableBasePy):
                     med_viral_total += self.field.Virus[x, y, z]
                     med_cyt_total += self.field.cytokine[x, y, z]
                     med_oxi_total += self.field.oxidator[x, y, z]
-            else:  # v4.2.1+ CC3D
-                med_viral_total = self.get_field_secretor("Virus").totalFieldIntegral()
-                med_cyt_total = self.get_field_secretor("cytokine").totalFieldIntegral()
-                med_oxi_total = self.get_field_secretor("oxidator").totalFieldIntegral()
 
             # Plot total diffusive viral amount if requested
             if plot_med_diff_data:
@@ -1039,6 +1044,7 @@ class oxidationAgentModelSteppable(ViralInfectionVTMSteppableBasePy):
     """
     Implements immune cell oxidizing agent cytotoxicity module
     """
+
     def __init__(self, frequency=1):
         SteppableBasePy.__init__(self, frequency)
         if track_model_variables:

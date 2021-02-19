@@ -1,6 +1,18 @@
 from numpy import log
+from .DDMUtils import SetImporter
+
+rate_sets_dict = SetImporter.import_sets_as_dict()
 
 __param_desc__ = {}
+
+# what rates set to use
+
+__param_desc__['set_numb'] = 'chooses which rates to use'
+set_numb = 1
+
+set_name = 'set' + str(set_numb)
+
+rs = rate_sets_dict[set_name]  # rates now can be accessed by rs.rate
 
 # remdesivir metabolites names
 
@@ -21,7 +33,7 @@ active_met_name = 'GS-443902'
 
 # Data control options
 __param_desc__['plot_ddm_data_freq'] = 'Plot drug model data frequency'
-plot_ddm_data_freq = 1  # Plot recovery model data frequency (disable with 0)
+plot_ddm_data_freq = 0  # Plot recovery model data frequency (disable with 0)
 __param_desc__['write_ddm_data_freq'] = 'Write drug model data to simulation directory frequency'
 write_ddm_data_freq = 1  # Write recovery model data to simulation directory frequency (disable with 0)
 
@@ -44,54 +56,65 @@ sanity_run = False
 __param_desc__['double_sbml_step'] = 'bool for doing 2 sbmls calls'
 double_sbml_step = False
 
+__param_desc__['double_loading_dose'] = 'bool for having the loading dose be double'
+double_loading_dose = False
+
+__param_desc__['first_dose_doubler'] = 'multiplier to double loading dose'
+first_dose_doubler = 1
+if double_loading_dose:
+    first_dose_doubler = 2
+
 # initial drug concentrations
-__param_desc__['Drug'] = 'Amount of Drug already in the system'
-Drug = 0
+__param_desc__['Drug_pls'] = 'Concentration of Drug already in plasma'
+Drug_pls = 0
 
-__param_desc__['Available1'] = 'Bioavailable drug already in the system'
-Available1 = 0
+__param_desc__['Drug_peri'] = 'Concentration of Drug already in the periphery'
+Drug_peri = 0
 
-__param_desc__['Available2'] = 'bioavailable metabolite 2 already in the system'
-Available2 = 0
+__param_desc__['Drug_lung'] = 'Concentration of Drug already in the lungs'
+Drug_lung = 0
 
-__param_desc__['Available3'] = 'bioavailable metabolite 3 already in the system'
-Available3 = 0
+__param_desc__['Ala_met'] = 'Concentration of alanine metabolite already in the system'
+Ala_met = 0
 
-__param_desc__['Available4'] = 'bioavailable metabolite 4 already in the system'
-Available4 = 0
+__param_desc__['NMP_met'] = 'Concentration of NMP metabolite already in the system'
+NMP_met = 0
+
+__param_desc__['NTP_met'] = 'Concentration of NTP metabolite already in the system'
+NTP_met = 0
 
 # rates
-# rates matched to pk of remdesivir
-__param_desc__['k0'] = 'bioavailability rate, units /day. 100/day <-> 15 minutes'
-k0 = 10.0
+__param_desc__['kp'] = 'rate of remdesivir from plasma to periphery, units /day'
+kp = rs.kp
 
-__param_desc__['d0'] = 'clearance time of drug, units /day'
-d0 = 16.635
+__param_desc__['kpp'] = 'rate of remdesivir from periphery to plasma, units /day'
+kpp = rs.kpp
 
-__param_desc__['k1'] = 'metabolism of primary drug rate, units /day'
-k1 = 1.0
+__param_desc__['k01'] = 'plasma -> lung rate, units /day'
+k01 = rs.k0  # todo: replace k0 on the right here and in k10 with new rates
 
-__param_desc__['d1'] = 'clearance time of avail1, units /day'
-d1 = 8.317
+__param_desc__['k10'] = 'lung -> plasma rate, units /day'
+k10 = rs.k0
 
-__param_desc__['k2'] = 'metabolism of secondary product, units /day'
-k2 = 989.6
+__param_desc__['k12'] = 'drug -> metabolite alanine rate, units /day'
+k12 = rs.k12
 
-__param_desc__['d2'] = 'clearance time of avail2, units /day'
-d2 = 8.317
+__param_desc__['k23'] = 'metabolite alanine -> metabolite NMP rate, units /day'
+k23 = rs.k23
 
-__param_desc__['k3'] = 'metabolism of tertiary product, units /day'
-k3 = 158.4
+__param_desc__['k34'] = 'metabolite NMP -> metabolite NTP rate, units /day'
+k34 = rs.k34
 
-__param_desc__['d3'] = 'clearance time of avail3, units /day'
-d3 = 0.693
-
-__param_desc__['active_metabolite_half_life'] = 'half life of active metabolite, available 4, in days. from ' \
-                                                'https://doi.org/10.1111/cts.12840 '
-active_metabolite_half_life = 22 / 24  # NOT USED. range from 17.2 to 26.9h
-
-__param_desc__['d4'] = 'clearance time of avail4, units /day'
-d4 = 0.693
+__param_desc__['kE0'] = 'elimination rate of drug from plasma, units /day'
+kE0 = rs.kE0
+__param_desc__['kE1'] = 'elimination rate of drug from lungs, units /day'
+kE1 = rs.kE1
+__param_desc__['kE2'] = 'elimination rate of metabolite alanine, units /day'
+kE2 = rs.kE2
+__param_desc__['kE3'] = 'elimination rate of metabolite NMP, units /day'
+kE3 = rs.kE3
+__param_desc__['kE4'] = 'elimination rate of metabolite NTP, units /day'
+kE4 = rs.kE4
 
 # dosing
 __param_desc__['first_dose'] = 'time of first dose in days'
@@ -129,22 +152,20 @@ if not treatment_ends:
 # rate reduction parameters
 
 # parameters
-__param_desc__['auto_ec50'] = 'bool for auto scaling of EC50 by max(avail4) and rel_avail4_EC50'
-auto_ec50 = False
+
+__param_desc__['vary_IC50'] = 'bool to indicate if varying the IC50 or vary a max drug'
+vary_IC50 = True
 
 __param_desc__['drug_ic50'] = 'value for drug ic50'
 drug_ic50 = 1
 
-__param_desc__['drug_2_a4_factor'] = 'factor to go from drug to max a4 for constant drug' \
-                                     'concentration. obtained by fitting max(a4) vs drug'
-drug_2_a4_factor = 1.5291823098746118
+__param_desc__['active_met_ic50'] = 'value for the active metabolite ic50. parameters obtained by running the PK for ' \
+                                    'each set of rates with constant plasma drug concentration, while varying the ' \
+                                    'concentration of drug (it is always linear)'
+active_met_ic50 = rs.a * drug_ic50 + rs.b
 
-__param_desc__['ec50'] = 'value for ec50 in the hill equation, only used if auto_ec50 is false'
-ec50 = drug_2_a4_factor * drug_ic50
-
-__param_desc__['rel_avail4_EC50'] = 'EC50 value for rmax reduction in therms of max available 4,' \
-                                    ' ie EC50 = rel_avail4_EC50 * max(available 4)'
-rel_avail4_EC50 = 1
+__param_desc__['diffusing_drug'] = 'bool to use scalar prodrug or as diffusive species'
+diffusing_drug = False
 
 __param_desc__['hill_coef'] = 'Hill coeficient for diminishing hill function of rmax'
 hill_coef = 2
