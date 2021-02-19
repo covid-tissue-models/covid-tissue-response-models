@@ -1,7 +1,7 @@
 from numpy import log
-from .rate_sets import set_importer
+from .DDMUtils import SetImporter
 
-rate_sets_dict = set_importer.import_sets_as_dict()
+rate_sets_dict = SetImporter.import_sets_as_dict()
 
 __param_desc__ = {}
 
@@ -33,7 +33,7 @@ active_met_name = 'GS-443902'
 
 # Data control options
 __param_desc__['plot_ddm_data_freq'] = 'Plot drug model data frequency'
-plot_ddm_data_freq = 1  # Plot recovery model data frequency (disable with 0)
+plot_ddm_data_freq = 0  # Plot recovery model data frequency (disable with 0)
 __param_desc__['write_ddm_data_freq'] = 'Write drug model data to simulation directory frequency'
 write_ddm_data_freq = 1  # Write recovery model data to simulation directory frequency (disable with 0)
 
@@ -90,8 +90,11 @@ kp = rs.kp
 __param_desc__['kpp'] = 'rate of remdesivir from periphery to plasma, units /day'
 kpp = rs.kpp
 
-__param_desc__['k0'] = 'reversible lung-plasma rate, units /day'
-k0 = rs.k0
+__param_desc__['k01'] = 'plasma -> lung rate, units /day'
+k01 = rs.k0  # todo: replace k0 on the right here and in k10 with new rates
+
+__param_desc__['k10'] = 'lung -> plasma rate, units /day'
+k10 = rs.k0
 
 __param_desc__['k12'] = 'drug -> metabolite alanine rate, units /day'
 k12 = rs.k12
@@ -161,6 +164,8 @@ __param_desc__['active_met_ic50'] = 'value for the active metabolite ic50. param
                                     'concentration of drug (it is always linear)'
 active_met_ic50 = rs.a * drug_ic50 + rs.b
 
+__param_desc__['diffusing_drug'] = 'bool to use scalar prodrug or as diffusive species'
+diffusing_drug = False
 
 __param_desc__['hill_coef'] = 'Hill coeficient for diminishing hill function of rmax'
 hill_coef = 2

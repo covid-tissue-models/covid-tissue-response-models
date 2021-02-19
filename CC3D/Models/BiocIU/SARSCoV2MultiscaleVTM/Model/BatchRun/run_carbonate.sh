@@ -36,11 +36,15 @@ do
 done
 
 # Set PREFIX_CC3D to the root directory of your CC3D installation!
-export PREFIX_CC3D=/geode2/home/u100/tjsego/Carbonate/cc3d/423_auto
+
+#export PREFIX_CC3D=/geode2/home/u100/tjsego/Carbonate/cc3d/423_auto
+export PREFIX_CC3D=/N/u/jferrari/Carbonate/cc3d_compile/vMaster/install
 
 # If Python is not installed in the CC3D root directory, then replace this with the path to the Python root directory
 # export PYTHON_INSTALL_PATH=${PREFIX_CC3D}/Python37/bin
-export PYTHON_INSTALL_PATH=/geode2/home/u100/tjsego/Carbonate/.conda/envs/cc3d_2020/bin
+#export PYTHON_INSTALL_PATH=/geode2/home/u100/tjsego/Carbonate/.conda/envs/cc3d_2020/bin
+export PYTHON_INSTALL_PATH=/N/u/jferrari/Carbonate/.conda/envs/cc3d_master/bin
+
 
 # Environment setup
 

@@ -96,3 +96,6 @@ model_str = '''
 r = te.loada(model_str)
 r.simulate(0, 3, 1000)
 r.plot()
+
+
+
