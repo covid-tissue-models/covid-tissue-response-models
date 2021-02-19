@@ -677,7 +677,6 @@ class SimDataSteppable(SteppableBasePy):
                 med_cyt_total = self.get_field_secretor("cytokine").totalFieldIntegral()
                 med_oxi_total = self.get_field_secretor("oxidator").totalFieldIntegral()
             except AttributeError:  # Pre-v4.2.1 CC3D
-
                 med_viral_total = 0.0
                 med_cyt_total = 0.0
                 med_oxi_total = 0.0
