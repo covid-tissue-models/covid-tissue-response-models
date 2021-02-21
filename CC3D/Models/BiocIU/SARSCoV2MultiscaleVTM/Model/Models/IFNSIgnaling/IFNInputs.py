@@ -1,3 +1,5 @@
+# todo: update usage of __param_desc__; all keys should match the name of their corresponding variable
+# todo: disable all data plotting/writing before release
 __param_desc__ = {}
 
 __param_desc__['plot_ifn_data_freq'] = 'Plot ifn model data frequency'
@@ -61,6 +63,7 @@ __param_desc__["t2"] = "IFNe_decay (1/hr)"
 t2 = 3.481
 __param_desc__["Virus_diffusion_coefficient"] = "Virus diffusion coefficient (vl^2/s)"
 virus_diffusion_coefficient = 1.0/10.0
+# todo: update __param_desc__ entry for "c" to reflect virus, rather than IFN
 __param_desc__["c"] = "IFNe_decay (1/days)"
 c = 13.0
 

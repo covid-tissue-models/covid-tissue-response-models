@@ -21,14 +21,15 @@ from . import IFNInputs
 IFN_model_name = 'IFN_model'
 ifn_field_name = 'IFNe'
 viral_replication_model_name = 'ifn_viral_replication_model'
-ifn_signaling_key = 'std_ifn_signaling_steppable'
-ifn_release_key = 'std_ifn_release_steppable'  # IFNReleaseSteppable
-ifn_field_initializer_key = 'std_ifn_field_initializer_steppable'  # IFNFieldInitializerSteppable
-ifn_sim_data_key = 'std_ifn_sim_data_steppable'  # SimDataSteppable
+ifn_signaling_key = 'ifn_signaling_steppable'
+ifn_release_key = 'ifn_release_steppable'  # IFNReleaseSteppable
+ifn_field_initializer_key = 'ifn_field_initializer_steppable'  # IFNFieldInitializerSteppable
+ifn_sim_data_key = 'ifn_sim_data_steppable'  # SimDataSteppable
 initial_amount_virus = 6.9e-8
 min_to_mcs = s_to_mcs / 60.0
 hours_to_mcs = min_to_mcs / 60.0
 days_to_mcs = hours_to_mcs / 24.0
+# todo: remove simulation control from this module before release
 hours_to_simulate = 40.0  # 10 in the original model
 ifn_model_vars = ["IFN", "STATP", "IRF7", "IRF7P"]
 viral_replication_model_vars = ["H", "V"]
@@ -165,10 +166,14 @@ class IFNSteppable(nCoVSteppableBase):
         self.sbml_options = {'relative': 1e-10, 'absolute': 1e-12}
 
     def start(self):
+        # todo: remove control of simulation steps from this module before release
         self.get_xml_element('simulation_steps').cdata = hours_to_simulate / hours_to_mcs
         self.set_sbml_global_options(self.sbml_options)
 
         # Load IFN sbml model
+        # todo: make model parameters of IFN sbml model settable;
+        #  see usage of _vrm_params in Models.SegoAponte2020.ViralInfectionVTMSteppables.ViralReplicationSteppable
+        #  on master branch for reference
         def ifn_model_fcn(cell):
             return IFN_model_string()
 
@@ -178,6 +183,9 @@ class IFNSteppable(nCoVSteppableBase):
                                 step_size=hours_to_mcs)
 
         # Load viral replication sbml model
+        # todo: make model parameters of viral replication sbml model settable
+        #  see usage of _vrm_params in Models.SegoAponte2020.ViralInfectionVTMSteppables.ViralReplicationSteppable
+        #  on master branch for reference
         def vr_model_fcn(cell):
             return viral_replication_model_string()
 
@@ -293,6 +301,7 @@ class IFNViralInternalizationSteppable(MainSteppables.ViralInternalizationSteppa
             virus_cell_sbml = get_cell_viral_replication_model(cell)
             virus_cell_sbml['V'] = initial_amount_virus
 
+
 class IFNEclipsePhaseSteppable(MainSteppables.EclipsePhaseSteppable):
     # todo: implement unique_key in IFNEclipsePhaseSteppable
     # todo: generate docstring for IFNEclipsePhaseSteppable
@@ -320,6 +329,7 @@ class IFNViralReleaseSteppable(MainSteppables.ViralReleaseSteppable):
             virus_cell_sbml = get_cell_viral_replication_model(cell)
             k73 =IFNInputs.k73 * hours_to_mcs
             intracellularVirus = virus_cell_sbml['V']
+            # todo: make Scaling Factor from unitless virus to PFU/mL a parameter
             # Scaling Factor from unitless virus to PFU/mL
             p = k73 * intracellularVirus * 1094460.28
             self.set_release_rate(p)
@@ -346,6 +356,7 @@ class IFNViralDeathSteppable(MainSteppables.ViralDeathSteppable):
             pr = nCoVUtils.ul_rate_to_prob(self._viral_death_rate)
             if random.random() <= pr:
                 self.set_cell_type(cell, self.dead_type_id)
+
 
 class IFNReleaseSteppable(nCoVSteppableBase):
     """
@@ -383,9 +394,9 @@ class IFNReleaseSteppable(nCoVSteppableBase):
         if min_dim < 3:
             fact = float(min_dim)
 
+        k21 = IFNInputs.k21 * hours_to_mcs
         for cell in self.cell_list_by_type(self.virus_releasing_type_id):
             ifn_cell_sbml = get_cell_ifn_model(cell)
-            k21 = IFNInputs.k21 * hours_to_mcs
             intracellularIFN = ifn_cell_sbml['IFN']
             p = k21 * intracellularIFN
             self.set_release_rate(p)
@@ -432,6 +443,7 @@ class IFNVirusFieldInitializerSteppable(MainSteppables.VirusFieldInitializerStep
         super().__init__(frequency)
 
     def start(self):
+        # todo: verify units; IFNInputs.py says virus_diffusion_coefficient has units of seconds
         self.diffusion_coefficient = IFNInputs.virus_diffusion_coefficient * min_to_mcs
         self.decay_coefficient = IFNInputs.c * days_to_mcs
 
@@ -455,6 +467,7 @@ class IFNFieldInitializerSteppable(nCoVSteppableBase):
         self._ifn_decay_id = 'ifn_decay'
 
     def start(self):
+        # todo: verify units; IFNInputs.py says IFNe_diffusion_coefficient has units of seconds
         self.diffusion_coefficient = IFNInputs.IFNe_diffusion_coefficient * min_to_mcs
         self.decay_coefficient = IFNInputs.t2 * hours_to_mcs
 
@@ -626,8 +639,8 @@ class IFNSimDataSteppable(nCoVSteppableBase):
         # Plotting and writing average values of IFN model variables
         if plot_ifn_data or write_ifn_data:
             data_dict = [mcs * hours_to_mcs]
+            L = len(self.cell_list_by_type(*self.registered_type_ids))
             for i in range(len(ifn_model_vars)):
-                L = len(self.cell_list_by_type(*self.registered_type_ids))
                 total_var = 0.0
                 for cell in self.cell_list_by_type(*self.registered_type_ids):
                     cell_sbml = get_cell_ifn_model(cell)
@@ -647,7 +660,35 @@ class IFNSimDataSteppable(nCoVSteppableBase):
                     window_name = getattr(self, 'ifn_data_win' + viral_replication_model_vars[i])
                     window_name.add_data_point(viral_replication_model_vars[i], mcs * hours_to_mcs, total_var / L)
 
-            ## Measure amount of IFNe in the Field
+            # BEGIN RECOMMENDATION
+            # Try replacing the previous code with what's in this block
+            # It should be much faster, due to only iterating over the cell inventory once
+            # - TJS
+            #
+            # total_vars = {k: 0.0 for k in ifn_model_vars + viral_replication_model_vars}
+            # L = 0.0
+            #
+            # for cell in self.cell_list_by_type(*self.registered_type_ids):
+            #     L += 1.0
+            #
+            #     cell_sbml = get_cell_ifn_model(cell)
+            #     for model_var in ifn_model_vars:
+            #         total_vars[model_var] += cell_sbml[model_var]
+            #
+            #     cell_sbml = get_cell_viral_replication_model(cell)
+            #     for model_var in viral_replication_model_vars:
+            #         total_vars[model_var] += cell_sbml[model_var]
+            #
+            # for model_var in ifn_model_vars + viral_replication_model_vars:
+            #     mean_var = total_vars[model_var] / L
+            #     data_dict.append(mean_var)
+            #     if plot_ifn_data:
+            #         window_name = getattr(self, 'ifn_data_win' + model_var)
+            #         window_name.add_data_point(model_var, mcs * hours_to_mcs, mean_var)
+            #
+            # END RECOMMENDATION
+
+            # Measure amount of IFNe in the Field
             secretor = self.get_field_secretor(field_name=self._ifn_field_name)
             total_var = 0
             for cell in self.cell_list_by_type(*self.registered_type_ids):
@@ -664,25 +705,15 @@ class IFNSimDataSteppable(nCoVSteppableBase):
             # Gather total diffusive amounts
             try:
                 med_viral_total = self.get_field_secretor(self._virus_field_name).totalFieldIntegral()
-            except AttributeError:  # Pre-v4.2.1 CC3D
-                med_viral_total = 0.0
-                field = getattr(self.field, self._virus_field_name)
-                for x, y, z in self.every_pixel():
-                    med_viral_total += field[x, y, z]
-
-            # Plot total diffusive viral amount if requested
-            if plot_med_diff_data:
-                if med_viral_total > 0:
-                    self.med_diff_data_win.add_data_point("Ve", mcs * hours_to_mcs, med_viral_total)
-
-            # Gather total diffusive amounts
-            try:
                 med_ifn_total = self.get_field_secretor(self._ifn_field_name).totalFieldIntegral()
             except AttributeError:  # Pre-v4.2.1 CC3D
+                med_viral_total = 0.0
                 med_ifn_total = 0.0
-                field = getattr(self.field, self._ifn_field_name)
+                field_virus = getattr(self.field, self._virus_field_name)
+                field_ifn = getattr(self.field, self._ifn_field_name)
                 for x, y, z in self.every_pixel():
-                    med_ifn_total += field[x, y, z]
+                    med_viral_total += field_virus[x, y, z]
+                    med_ifn_total += field_ifn[x, y, z]
 
             # Plot total diffusive viral amount if requested
             if plot_med_diff_data:
