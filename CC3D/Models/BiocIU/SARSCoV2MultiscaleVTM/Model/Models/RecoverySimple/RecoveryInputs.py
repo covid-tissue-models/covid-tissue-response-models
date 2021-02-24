@@ -1,3 +1,6 @@
+"""
+Defines default module model parameters
+"""
 __param_desc__ = {}
 
 # Data control options
@@ -8,4 +11,4 @@ write_rec_data_freq = 0  # Write recovery model data to simulation directory fre
 
 # Model inputs
 __param_desc__['recovery_rate'] = "Recovery rate"
-recovery_rate = 1.0 / (7.0 * 24.0 * 60.0 * 60.0)
+recovery_rate = 1.0 / (7.0 * 24.0 * 60.0 * 60.0)  # 1/s
