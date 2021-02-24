@@ -395,7 +395,7 @@ class IFNReleaseSteppable(nCoVSteppableBase):
             fact = float(min_dim)
 
         k21 = IFNInputs.k21 * hours_to_mcs
-        for cell in self.cell_list_by_type(self.virus_releasing_type_id):
+        for cell in self.cell_list_by_type(*self.registered_type_ids):
             ifn_cell_sbml = get_cell_ifn_model(cell)
             intracellularIFN = ifn_cell_sbml['IFN']
             p = k21 * intracellularIFN
