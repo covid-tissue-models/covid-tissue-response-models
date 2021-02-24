@@ -57,14 +57,13 @@ __param_desc__["k73"] = "Viral export rate (1/hr)"
 k73 = 0.197
 
 # Diffusible Particles Parameters
-__param_desc__["IFNe_diffusion_coefficient"] = "IFNe diffusion coefficient (vl^2/s)"
+__param_desc__["IFNe_diffusion_coefficient"] = "IFNe diffusion coefficient (vl^2/min)"
 IFNe_diffusion_coefficient = 1.0/10.0
-__param_desc__["t2"] = "IFNe_decay (1/hr)"
+__param_desc__["t2"] = "IFNe decay rate (1/hr)"
 t2 = 3.481
-__param_desc__["Virus_diffusion_coefficient"] = "Virus diffusion coefficient (vl^2/s)"
+__param_desc__["Virus_diffusion_coefficient"] = "Virus diffusion coefficient (vl^2/min)"
 virus_diffusion_coefficient = 1.0/10.0
-# todo: update __param_desc__ entry for "c" to reflect virus, rather than IFN
-__param_desc__["c"] = "IFNe_decay (1/days)"
+__param_desc__["c"] = "virus decay rate (1/days)"
 c = 13.0
 
 # Cell Transition Parameters
