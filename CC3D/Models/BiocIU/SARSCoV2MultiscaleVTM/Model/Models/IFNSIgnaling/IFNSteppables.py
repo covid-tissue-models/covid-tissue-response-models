@@ -245,6 +245,40 @@ class IFNSteppable(nCoVSteppableBase):
             self._ifn_decay_id = decay
 
 
+class IFNCellInitializerSteppable(MainSteppables.CellInitializerSteppable):
+    """
+    Simple steppable to make initially infected cells have module virus releasing type
+    """
+
+    # todo: implement unique_key in IFNCellInitializerSteppable
+
+    def __init__(self, frequency=1):
+        super().__init__(frequency=frequency)
+
+        self._virus_releasing_type_name = ''
+
+        # Initialize default data
+        self.virus_releasing_type_name = MainSteppables.virus_releasing_type_name
+
+    def start(self):
+        super().start()
+
+        for cell in self.cell_list_by_type(self.infected_type_id):
+            self.set_cell_type(cell, self.virus_releasing_type_id)
+
+    @property
+    def virus_releasing_type_name(self) -> str:
+        return self._virus_releasing_type_name
+
+    @virus_releasing_type_name.setter
+    def virus_releasing_type_name(self, _name: str) -> None:
+        self._virus_releasing_type_name = _name
+
+    @property
+    def virus_releasing_type_id(self) -> int:
+        return getattr(self, self.virus_releasing_type_name.upper())
+
+
 class IFNViralInternalizationSteppable(MainSteppables.ViralInternalizationSteppable):
     # todo: implement unique_key in IFNViralInternalizationSteppable
     # todo: generate docstring for IFNViralInternalizationSteppable
