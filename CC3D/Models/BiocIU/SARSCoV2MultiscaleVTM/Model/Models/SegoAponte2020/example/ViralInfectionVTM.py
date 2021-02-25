@@ -1,12 +1,12 @@
-###############################################################################################################
-# To cite this model please use the following:
-#
-# T.J. Sego, Josua O. Aponte-Serrano, Juliano Ferrari Gianlupi, Samuel R. Heaps, Kira Breithaupt, Lutz Brusch,
-# Jessica Crawshaw, James M. Osborne, Ellen M. Quardokus, Richard K. Plemper, James A. Glazier,
-# "A modular framework for multiscale, multicellular, spatiotemporal modeling of acute primary viral infection and
-# immune response in epithelial tissues and its application to drug therapy timing and effectiveness",
-# PLoS Comput Biol 16(12): e1008451. https://doi.org/10.1371/journal.pcbi.1008451
-###############################################################################################################
+"""
+To cite this model please use the following:
+
+T.J. Sego, Josua O. Aponte-Serrano, Juliano Ferrari Gianlupi, Samuel R. Heaps, Kira Breithaupt, Lutz Brusch,
+Jessica Crawshaw, James M. Osborne, Ellen M. Quardokus, Richard K. Plemper, James A. Glazier,
+"A modular framework for multiscale, multicellular, spatiotemporal modeling of acute primary viral infection and
+immune response in epithelial tissues and its application to drug therapy timing and effectiveness",
+PLoS Comput Biol 16(12): e1008451. https://doi.org/10.1371/journal.pcbi.1008451
+"""
 
 import os
 from ViralInfectionVTMModelInputs import __file__ as f
@@ -16,8 +16,10 @@ os.environ["ViralInfectionVTM"] = os.path.dirname(os.path.dirname(f))
 from cc3d import CompuCellSetup
 
 from Models.SegoAponte2020.ViralInfectionVTMSteppables import ViralReplicationSteppable
-
-CompuCellSetup.register_steppable(steppable=ViralReplicationSteppable(frequency=1))
+steppable = ViralReplicationSteppable(frequency=1)
+steppable.step_period = 20.0 * 60
+steppable.voxel_length = 4.0
+CompuCellSetup.register_steppable(steppable=steppable)
 
 from Models.SegoAponte2020.ViralInfectionVTMSteppables import CellsInitializerSteppable
 

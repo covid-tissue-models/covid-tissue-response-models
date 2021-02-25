@@ -1,137 +1,25 @@
+Modular viral infection modeling and simulation framework project
+=================================================================
 
-.. _title_start:
+Hosted by the Biocomplexity Institute at Indiana University.
 
-===============================
-Model of Viral Tissue Infection
-===============================
-
-.. note::
-
-    To cite this model please use the following:
-
-    T.J. Sego, Josua O. Aponte-Serrano, Juliano Ferrari Gianlupi, Samuel R. Heaps, Kira Breithaupt, Lutz Brusch, James M. Osborne, Ellen M. Quardokus, James A. Glazier,
-    "A Modular Framework for Multiscale Spatial Modeling of Viral Infection and Immune Response in Epithelial Tissue",
-    bioRxiv 2020.04.27.064139; doi: https://doi.org/10.1101/2020.04.27.064139
-
-.. _title_end:
-
-.. _model_description_start:
-
-Model Description
+Basic information
 =================
 
-This model describes select interactions between generalized epithelial
-and immune cells and their extracellular environment associated with
-viral infection and immune response at the cellular and intracellular
-levels, and in the context of spatiotemporal dynamics. While at the
-moment, the model is a generic viral infection model our hope is to
-collaboratively develop it into a model of SARS-CoV-2 tissue infection
-and Covid-19 progression. As such, it is intended to serve as a base
-model for constructing and implementing more advanced models of targeted
-cellular- and intracellular-level phenomena in tissue after initial
-exposure. In its current state, it has not been formally peer-reviewed,
-and should not be used for patient diagnostics or predicting clinical
-outcomes. Rather, the model and its implementation can be used to
-develop and interrogate mechanistic hypotheses about the spread of a
-virus and how the interplay between viral spreading and immune response
-determine the outcome of the disease, such as: 
+For more information on the purpose and scope of the framework, see https://doi.org/10.1371/journal.pcbi.1008451.
 
--  Why does the progression of the disease seem to be dependent on the
-   initial viral exposure level?
+To download a free, local copy of CompuCell3D, visit https://compucell3d.org.
 
--  Why is the start time of symptoms and immune response so variable?
+To deploy this tool in your favorite browser, visit https://nanohub.org/tools/cc3dcovid19.
 
--  What is the role of cytokine signaling in explaining immune response
-   variability?
+For documentation of usage and development of the framework, see ``Models.readme.rst``.
 
--  What are the specific factors determining early immune response? What
-   are the key players on early immune response?
+For tutorials on the basics of downloading and running the framework in CompuCell3D, see the directory ``Tutorials``.
 
--  Does the collapse observed in individuals who develop complications
-   result from viral replication in a secondary location or is it
-   primarily a delayed hyper-inflammatory response? 
+To cite this framework please use the following:
 
--  Could we build a personalized model for immune response to predict
-   who is likely to develop immune complications and use it to design
-   a personalized immunosuppressive therapy to determine timing and
-   dosage of an immunosuppressive regime?
-
-Some factors to be included in future developments of the model are:
-
--  How is the virus transported in the extracellular environment and
-   mucus?
-
--  What is the role of the humoral immune response in controlling the
-   viral spreading?
-
-The model includes a representation of extracellular virus in the mucus,
-epithelial cells and immune cells. It also includes the processes of
-epithelial cell infection by extracellular virus, viral replication and
-cell damage inside epithelial cells, release of viruses by epithelial
-cells, immune cell response to infected epithelial cells and immune cell
-killing of infected and non-infected epithelial cells. 
-
-At the epithelial cell level, the model accounts for internalization,
-replication, release and clearance of viral particles, as well as for
-induced cell apoptosis by either viral damage or immune cytotoxicity.
-
--  **Viral internalization**: model of viral binding to cell receptors,
-   endocytosis and release of genetic material into the cytoplasm 
-
--  **Viral replication**: model of replication of viral genetic
-   material, transcription, translation and virion packing
-
--  **Viral release**: model of the release of newly assembled virions
-   into the extracellular environment
-
--  **Viral damage:** model of accumulated damage to the cell due to
-   viral load
-
--  **Cell death:** model of cell death due to accumulated damage from
-   viral infection or by cytotoxicity from immune response
-
-At the immune cell level, the model accounts for recruitment and
-chemotaxis of immune cells due to cytokine signaling, the cytotoxic
-effect on infected epithelial cells as well as the clearance of immune
-cells.
-
--  **Immune cell recruitment**: model of immune cell recruitment and
-   infiltration into the tissue by signaling molecules produced in
-   response to viral insult on infected cells
-
--  **Immune cell chemotaxis**: model of immune cell movement guided by
-   the difference in concentration of a signal represented as a
-   chemical field
-
--  **Immune cell cytotoxicity**: model of cell-dependent cytotoxic
-   effect of immune cells on infected cells
-
--  **Immune cell clearance**: model of immune cell-accumulated damage,
-   cell death and clearance from the tissue
-
--  **Immune activation**: model of immune cells changing behaviour based
-   on lung tissue status (amount of cytokine in the environment).
-
-At the tissue level, the model accounts for the extracellular transport
-of viral particles, cytokine transport, and an oxidative burst agent. It
-can be extended to incorporate recovery by reepithelialization. 
-
--  **Viral transport**: model of diffusion and spreading of viral
-   particles in the extracellular environment
-
--  **Cytokine transport**: model of transport of small immune signaling
-   molecules in the extracellular environment (to be included)
-
--  **Tissue recovery**: model of recovery of the tissue by
-   reepithelialization following cell death (to be included)
-
-.. _fig1:
-
-.. figure:: https://raw.githubusercontent.com/covid-tissue-models/covid-tissue-response-models/master/CC3D/Models/BiocIU/SARSCoV2MultiscaleVTM/media/image1.png
-   :width: 4in
-   :height: 3.39167in
-   :align: center
-
-   Conceptual Model
-
-.. _model_description_end:
+T.J. Sego, Josua O. Aponte-Serrano, Juliano Ferrari Gianlupi, Samuel R. Heaps, Kira Breithaupt, Lutz Brusch,
+Jessica Crawshaw, James M. Osborne, Ellen M. Quardokus, Richard K. Plemper, James A. Glazier,
+"A modular framework for multiscale, multicellular, spatiotemporal modeling of acute primary viral infection and
+immune response in epithelial tissues and its application to drug therapy timing and effectiveness",
+PLoS Comput Biol 16(12): e1008451. https://doi.org/10.1371/journal.pcbi.1008451

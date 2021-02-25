@@ -1,5 +1,6 @@
-# This is a general library for the shared coronavirus modeling and simulation project
-# hosted by the Biocomplexity Institute at Indiana University
+"""
+Defines basic utility functions of the framework
+"""
 import math
 
 
