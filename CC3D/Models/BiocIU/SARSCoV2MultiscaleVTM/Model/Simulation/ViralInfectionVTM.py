@@ -19,8 +19,8 @@ from cc3d import CompuCellSetup
 
 from ..Models.IFNSIgnaling.IFNSteppables import IFNVirusFieldInitializerSteppable
 steppable = IFNVirusFieldInitializerSteppable(frequency=1)
-steppable.voxel_length = 4.0
-steppable.step_period = 5.0 * 60
+steppable.voxel_length = 3.0
+steppable.step_period = 10.0 * 60
 CompuCellSetup.register_steppable(steppable=steppable)
 
 from ..Models.IFNSIgnaling.IFNSteppables import IFNViralDeathSteppable

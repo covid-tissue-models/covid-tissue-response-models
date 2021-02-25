@@ -14,7 +14,6 @@ import random
 from nCoVToolkit import nCoVUtils
 from nCoVToolkit.nCoVSteppableBase import nCoVSteppableBase
 import ViralInfectionVTMSteppables as MainSteppables
-from ViralInfectionVTMModelInputs import s_to_mcs
 from . import IFNInputs
 
 # Module specific references
@@ -26,9 +25,6 @@ ifn_release_key = 'ifn_release_steppable'  # IFNReleaseSteppable
 ifn_field_initializer_key = 'ifn_field_initializer_steppable'  # IFNFieldInitializerSteppable
 ifn_sim_data_key = 'ifn_sim_data_steppable'  # SimDataSteppable
 initial_amount_virus = 6.9e-8
-min_to_mcs = s_to_mcs / 60.0
-hours_to_mcs = min_to_mcs / 60.0
-days_to_mcs = hours_to_mcs / 24.0
 # todo: remove simulation control from this module before release
 hours_to_simulate = 40.0  # 10 in the original model
 ifn_model_vars = ["IFN", "STATP", "IRF7", "IRF7P"]
@@ -78,42 +74,6 @@ def IFN_model_string():
     end'''
     return model_string
 
-def IFN_model_string():
-    model_string = f'''model {IFN_model_name}()
-        //Equations
-        E2a: -> IFN         ; H*(k11*RIGI*V+k12*(V^n)/(k13+(V^n))+k14*IRF7P)    ;
-        E2b: IFN ->         ; k21*IFN                                           ;
-        E4a: -> STATP       ; H*k31*IFNe/(k32+k33*IFNe)                         ;
-        E4b: STATP ->       ; t3*STATP                                          ;
-        E5a: -> IRF7        ; H*(k41*STATP+k42*IRF7P)                           ;
-        E5b: IRF7 ->        ; t4*IRF7                                           ;
-        E6a: -> IRF7P       ; H*k51*IRF7                                        ;
-        E6b: IRF7P ->       ; t5*IRF7P                                          ;
-    
-        //Parameters
-        k11 = 0.0       ; 
-        k12 = 9.746     ; 
-        k13 = 12.511    ; 
-        k14 = 13.562    ;
-        k21 = 10.385    ;
-        k31 = 45.922    ; 
-        k32 = 5.464     ;
-        k33 = 0.068     ;
-        t3  = 0.3       ;
-        k41 = 0.115     ;
-        k42 = 1.053     ;
-        t4  = 0.75      ;
-        k51 = 0.202     ;
-        t5  = 0.3       ;
-        n   = 3.0       ;
-        RIGI = 1.0      ;
-    
-        // Inputs
-        H    = 0.0      ;
-        IFNe = 0.0      ;
-        V = 0.0         ;
-    end'''
-    return model_string
 
 def viral_replication_model_string():
     """
@@ -177,6 +137,8 @@ class IFNSteppable(nCoVSteppableBase):
     def __init__(self, frequency=1):
         super().__init__(frequency)
 
+        self.runBeforeMCS = 1
+
         # Internal data
         self._registered_types = []  # List of cell type names for use with IFN model
         self._uninfected_type_name = ''
@@ -197,6 +159,7 @@ class IFNSteppable(nCoVSteppableBase):
 
     def start(self):
         # todo: remove control of simulation steps from this module before release
+        hours_to_mcs = self.step_period / 60.0 / 60.0
         self.get_xml_element('simulation_steps').cdata = hours_to_simulate / hours_to_mcs
         self.set_sbml_global_options(self.sbml_options)
 
@@ -333,6 +296,7 @@ class IFNViralInternalizationSteppable(MainSteppables.ViralInternalizationSteppa
     def step(self, mcs):
         # Calculate internalization rate if necessary
         if self._internalization_rate is None:
+            days_to_mcs = self.step_period / 60.0 / 60.0 / 24.0
             initial_number_registered_cells = len(self.cell_list_by_type(*[getattr(self, x.upper())
                                                                            for x in self._registered_types]))
             b = IFNInputs.b * initial_number_registered_cells * days_to_mcs
@@ -372,7 +336,8 @@ class IFNEclipsePhaseSteppable(MainSteppables.EclipsePhaseSteppable):
 
     def __init__(self, frequency=1):
         super().__init__(frequency)
-        self.set_eclipse_phase(1.0 / (IFNInputs.k * days_to_mcs))
+        days_to_mcs = self.step_period / 60.0 / 60.0 / 24.0
+        self.eclipse_phase = 1.0 / (IFNInputs.k * days_to_mcs)
 
 
 class IFNViralReleaseSteppable(MainSteppables.ViralReleaseSteppable):
@@ -389,6 +354,7 @@ class IFNViralReleaseSteppable(MainSteppables.ViralReleaseSteppable):
         if min_dim < 3:
             fact = float(min_dim)
 
+        hours_to_mcs = self.step_period / 60.0 / 60.0
         for cell in self.cell_list_by_type(self.virus_releasing_type_id):
             virus_cell_sbml = get_cell_viral_replication_model(cell)
             k73 =IFNInputs.k73 * hours_to_mcs
@@ -411,6 +377,7 @@ class IFNViralDeathSteppable(MainSteppables.ViralDeathSteppable):
         super().__init__(frequency)
 
     def step(self, mcs):
+        hours_to_mcs = self.step_period / 60.0 / 60.0
         for cell in self.cell_list_by_type(self.virus_releasing_type_id):
             virus_cell_sbml = get_cell_viral_replication_model(cell)
             k61 = IFNInputs.k61 * hours_to_mcs
@@ -458,6 +425,7 @@ class IFNReleaseSteppable(nCoVSteppableBase):
         if min_dim < 3:
             fact = float(min_dim)
 
+        hours_to_mcs = self.step_period / 60.0 / 60.0
         for cell in self.cell_list_by_type(*self.registered_type_ids):
             ifn_cell_sbml = get_cell_ifn_model(cell)
             k21 = ifn_cell_sbml['k21'] * hours_to_mcs
@@ -508,7 +476,9 @@ class IFNVirusFieldInitializerSteppable(MainSteppables.VirusFieldInitializerStep
 
     def start(self):
         # todo: verify units; IFNInputs.py says virus_diffusion_coefficient has units of seconds
-        self.diffusion_coefficient = IFNInputs.virus_diffusion_coefficient * min_to_mcs
+        min_to_mcs = self.step_period / 60.0
+        days_to_mcs = min_to_mcs / 60.0 / 24.0
+        self.diffusion_coefficient = IFNInputs.virus_diffusion_coefficient * min_to_mcs * self.voxel_length ** 2
         self.decay_coefficient = IFNInputs.c * days_to_mcs
 
 
@@ -532,7 +502,9 @@ class IFNFieldInitializerSteppable(nCoVSteppableBase):
 
     def start(self):
         # todo: verify units; IFNInputs.py says IFNe_diffusion_coefficient has units of seconds
-        self.diffusion_coefficient = IFNInputs.IFNe_diffusion_coefficient * min_to_mcs
+        min_to_mcs = self.step_period / 60.0
+        hours_to_mcs = min_to_mcs / 60.0
+        self.diffusion_coefficient = IFNInputs.IFNe_diffusion_coefficient * min_to_mcs * self.voxel_length ** 2
         self.decay_coefficient = IFNInputs.t2 * hours_to_mcs
 
     @property
@@ -614,7 +586,7 @@ class IFNSimDataSteppable(nCoVSteppableBase):
         self.set_uninfected_type_name(MainSteppables.uninfected_type_name)
         self.set_infected_type_name(MainSteppables.infected_type_name)
         self.set_virus_releasing_type_name(MainSteppables.virus_releasing_type_name)
-        self.set_dead_type_name(MainSteppables.dead_type_name)
+        self.dead_type_name = MainSteppables.dead_type_name
         self.register_type(MainSteppables.uninfected_type_name)
         self.register_type(MainSteppables.infected_type_name)
         self.register_type(MainSteppables.virus_releasing_type_name)
@@ -706,6 +678,8 @@ class IFNSimDataSteppable(nCoVSteppableBase):
         else:
             write_ifn_data = False
             write_med_diff_data = False
+
+        hours_to_mcs = self.step_period / 60.0 / 60.0
 
         # Plotting and writing average values of IFN model variables
         if plot_ifn_data or write_ifn_data:
