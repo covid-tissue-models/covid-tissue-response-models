@@ -5,12 +5,12 @@ __param_desc__ = {}
 __param_desc__['plot_ifn_data_freq'] = 'Plot ifn model data frequency'
 plot_ifn_data_freq = 0
 __param_desc__['write_ifn_data_freq'] = 'Write ifn model data to simulation directory frequency'
-write_ifn_data_freq = 10
+write_ifn_data_freq = 1
 
 __param_desc__['plot_med_diff_data_freq'] = 'Plot ifn model medium data frequency'
 plot_med_diff_data_freq = 0
 __param_desc__['write_med_diff_data_freq'] = 'Write ifn model medium data to simulation directory frequency'
-write_med_diff_data_freq = 10
+write_med_diff_data_freq = 0
 
 # IFN Model Parameters
 __param_desc__["k11"] = "RIGI sensing (μM/h)"
@@ -31,7 +31,7 @@ __param_desc__["k33"] = "JAK/STAT activation from IFNe (unitless)"
 k33 = 0.068
 __param_desc__["t3"] = "STATP dephosphorylation (1/h)"
 t3 = 0.3
-__param_desc__["k31"] = "IRF7 induction via STATP (1/h)"
+__param_desc__["k41"] = "IRF7 induction via STATP (1/h)"
 k41 = 0.115
 __param_desc__["k42"] = "IRF7 induction via IRF7P (1/h)"
 k42 = 1.053
@@ -42,7 +42,7 @@ k51 = 0.202
 __param_desc__["t5"] = "IRF7P dephosphorylation (1/h)"
 t5 = 0.3
 __param_desc__["n"] = "Kinetic order term (unitless)"
-n = 0.3
+n = 3.0
 __param_desc__["RIGI"] = "RIGI levels (unitless)"
 RIGI = 1.0
 
