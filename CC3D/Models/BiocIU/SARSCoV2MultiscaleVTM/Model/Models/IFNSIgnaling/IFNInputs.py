@@ -58,11 +58,11 @@ k73 = 0.197
 
 # Diffusible Particles Parameters
 __param_desc__["IFNe_diffusion_coefficient"] = "IFNe diffusion coefficient (um^2/min)"
-IFNe_diffusion_coefficient = 1.0/90.0
+IFNe_diffusion_coefficient = 9.0/10.0
 __param_desc__["t2"] = "IFNe decay rate (1/hr)"
 t2 = 3.481
 __param_desc__["Virus_diffusion_coefficient"] = "Virus diffusion coefficient (um^2/min)"
-virus_diffusion_coefficient = 1.0/90.0
+virus_diffusion_coefficient = 9.0/10.0
 __param_desc__["c"] = "virus decay rate (1/days)"
 c = 13.0
 

@@ -31,6 +31,85 @@ ifn_model_vars = ["IFN", "STATP", "IRF7", "IRF7P"]
 viral_replication_model_vars = ["H", "V"]
 
 
+class IFNSteppableBase(nCoVSteppableBase):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self._uninfected_type_name = ''
+        self._infected_type_name = ''
+        self._virus_releasing_type_name = ''
+        self._dead_type_name = ''
+        self._virus_field_name = ''
+        self._ifn_field_name = ''
+
+    @property
+    def uninfected_type_name(self):
+        """
+        Uninfected cell type name
+        """
+        return self._uninfected_type_name
+
+    @uninfected_type_name.setter
+    def uninfected_type_name(self, _name: str):
+        self._uninfected_type_name = _name
+
+    @property
+    def infected_type_name(self):
+        """
+        Infected cell type name
+        """
+        return self._infected_type_name
+
+    @infected_type_name.setter
+    def infected_type_name(self, _name: str):
+        self._infected_type_name = _name
+
+    @property
+    def virus_releasing_type_name(self):
+        """
+        Virus-releasing type name
+        """
+        return self._virus_releasing_type_name
+
+    @virus_releasing_type_name.setter
+    def virus_releasing_type_name(self, _name: str):
+        self._virus_releasing_type_name = _name
+
+    @property
+    def dead_type_name(self):
+        """
+        Name of the dead cell type
+        """
+        return self._dead_type_name
+
+    @dead_type_name.setter
+    def dead_type_name(self, _name: str):
+        self._dead_type_name = _name
+
+    @property
+    def virus_field_name(self):
+        """
+        Name of the virus field
+        """
+        return self._virus_field_name
+
+    @virus_field_name.setter
+    def virus_field_name(self, _name: str):
+        self._virus_field_name = _name
+
+    @property
+    def ifn_field_name(self):
+        """
+        Name of the interferon field
+        """
+        return self._ifn_field_name
+
+    @ifn_field_name.setter
+    def ifn_field_name(self, _name: str):
+        self._ifn_field_name = _name
+
+
 def IFN_model_string():
     """
     Antimony model string generator for IFN intracellular signaling model adopted from "Multiscale Model
@@ -126,7 +205,7 @@ def get_cell_ifn_model(cell):
     return getattr(cell.sbml, IFN_model_name)
 
 
-class IFNSteppable(nCoVSteppableBase):
+class IFNSteppable(IFNSteppableBase):
     """
     Implements IFN model
     
@@ -141,16 +220,13 @@ class IFNSteppable(nCoVSteppableBase):
 
         # Internal data
         self._registered_types = []  # List of cell type names for use with IFN model
-        self._uninfected_type_name = ''
-        self._infected_type_name = ''
-        self._virus_releasing_type_name = ''  # Name of virus-releasing cell type
         self._target_field_name = ''
 
         # Initialize default data
-        self.set_target_field_name(ifn_field_name)
-        self.set_uninfected_type_name(MainSteppables.uninfected_type_name)
-        self.set_infected_type_name(MainSteppables.infected_type_name)
-        self.set_virus_releasing_type_name(MainSteppables.virus_releasing_type_name)
+        self.target_field_name = ifn_field_name
+        self.uninfected_type_name = MainSteppables.uninfected_type_name
+        self.infected_type_name = MainSteppables.infected_type_name
+        self.virus_releasing_type_name = MainSteppables.virus_releasing_type_name
         self.register_type(MainSteppables.uninfected_type_name)
         self.register_type(MainSteppables.infected_type_name)
         self.register_type(MainSteppables.virus_releasing_type_name)
@@ -214,31 +290,19 @@ class IFNSteppable(nCoVSteppableBase):
     def registered_type_ids(self):
         return [getattr(self, x.upper()) for x in self._registered_types]
 
-    def set_uninfected_type_name(self, _name: str):
-        self._uninfected_type_name = _name
-
-    def set_infected_type_name(self, _name: str):
-        self._infected_type_name = _name
-
-    def set_virus_releasing_type_name(self, _name: str):
-        self._virus_releasing_type_name = _name
-
     def set_target_field_name(self, _name: str):
         self._target_field_name = _name
 
-    def set_ifn_field_name(self, _name: str):
-        self._ifn_field_name = _name
-
     def set_ifn_field_data(self, field_name: str = None, diffusion: str = None, decay: str = None):
         if field_name is not None:
-            self.set_ifn_field_name(field_name)
+            self.ifn_field_name = field_name
         if diffusion is not None:
             self._ifn_diffusion_id = diffusion
         if decay is not None:
             self._ifn_decay_id = decay
 
 
-class IFNCellInitializerSteppable(MainSteppables.CellInitializerSteppable):
+class IFNCellInitializerSteppable(MainSteppables.CellInitializerSteppable, IFNSteppableBase):
     """
     Simple steppable to make initially infected cells have module virus releasing type
     """
@@ -247,8 +311,6 @@ class IFNCellInitializerSteppable(MainSteppables.CellInitializerSteppable):
 
     def __init__(self, frequency=1):
         super().__init__(frequency=frequency)
-
-        self._virus_releasing_type_name = ''
 
         # Initialize default data
         self.virus_releasing_type_name = MainSteppables.virus_releasing_type_name
@@ -260,19 +322,11 @@ class IFNCellInitializerSteppable(MainSteppables.CellInitializerSteppable):
             self.set_cell_type(cell, self.virus_releasing_type_id)
 
     @property
-    def virus_releasing_type_name(self) -> str:
-        return self._virus_releasing_type_name
-
-    @virus_releasing_type_name.setter
-    def virus_releasing_type_name(self, _name: str) -> None:
-        self._virus_releasing_type_name = _name
-
-    @property
     def virus_releasing_type_id(self) -> int:
         return getattr(self, self.virus_releasing_type_name.upper())
 
 
-class IFNViralInternalizationSteppable(MainSteppables.ViralInternalizationSteppable):
+class IFNViralInternalizationSteppable(MainSteppables.ViralInternalizationSteppable, IFNSteppableBase):
     # todo: implement unique_key in IFNViralInternalizationSteppable
     # todo: generate docstring for IFNViralInternalizationSteppable
 
@@ -280,11 +334,9 @@ class IFNViralInternalizationSteppable(MainSteppables.ViralInternalizationSteppa
         super().__init__(frequency)
 
         self._registered_types = []
-        self._virus_releasing_type_name = ''
-        self._dead_type_name = ''
 
-        self.set_virus_releasing_type_name(MainSteppables.virus_releasing_type_name)
-        self.set_dead_type_name(MainSteppables.dead_type_name)
+        self.virus_releasing_type_name = MainSteppables.virus_releasing_type_name
+        self.dead_type_name = MainSteppables.dead_type_name
         self.register_type(MainSteppables.uninfected_type_name)
         self.register_type(MainSteppables.infected_type_name)
         self.register_type(MainSteppables.virus_releasing_type_name)
@@ -309,12 +361,6 @@ class IFNViralInternalizationSteppable(MainSteppables.ViralInternalizationSteppa
             if random.random() <= nCoVUtils.ul_rate_to_prob(rate):
                 self.set_cell_type(cell, self.infected_type_id)
 
-    def set_virus_releasing_type_name(self, _name: str):
-        self._virus_releasing_type_name = _name
-
-    def set_dead_type_name(self, _name: str):
-        self._dead_type_name = _name
-
     def register_type(self, _name: str):
         if _name not in self._registered_types:
             self._registered_types.append(_name)
@@ -330,7 +376,7 @@ class IFNViralInternalizationSteppable(MainSteppables.ViralInternalizationSteppa
             virus_cell_sbml['V'] = initial_amount_virus
 
 
-class IFNEclipsePhaseSteppable(MainSteppables.EclipsePhaseSteppable):
+class IFNEclipsePhaseSteppable(MainSteppables.EclipsePhaseSteppable, IFNSteppableBase):
     # todo: implement unique_key in IFNEclipsePhaseSteppable
     # todo: generate docstring for IFNEclipsePhaseSteppable
 
@@ -340,7 +386,7 @@ class IFNEclipsePhaseSteppable(MainSteppables.EclipsePhaseSteppable):
         self.eclipse_phase = 1.0 / (IFNInputs.k * days_to_mcs)
 
 
-class IFNViralReleaseSteppable(MainSteppables.ViralReleaseSteppable):
+class IFNViralReleaseSteppable(MainSteppables.ViralReleaseSteppable, IFNSteppableBase):
     # todo: implement unique_key in IFNViralReleaseSteppable
     # todo: generate docstring for IFNViralReleaseSteppable
 
@@ -366,7 +412,7 @@ class IFNViralReleaseSteppable(MainSteppables.ViralReleaseSteppable):
             secretor.secreteInsideCell(cell, self._release_rate * fact / cell.volume)
 
 
-class IFNViralDeathSteppable(MainSteppables.ViralDeathSteppable):
+class IFNViralDeathSteppable(MainSteppables.ViralDeathSteppable, IFNSteppableBase):
     # todo: consider deriving ViralDeathSteppable from nCoVSteppableBase, since ViralDeathSteppable.set_viral_death_rate
     #  is per cell type rather than per cell, which may be confusing to the user; otherwise, override
     #  ViralDeathSteppable.set_viral_death_rate and throw an exception on use with a useful message
@@ -389,7 +435,7 @@ class IFNViralDeathSteppable(MainSteppables.ViralDeathSteppable):
                 self.set_cell_type(cell, self.dead_type_id)
 
 
-class IFNReleaseSteppable(nCoVSteppableBase):
+class IFNReleaseSteppable(IFNSteppableBase):
     """
     Performs IFN release
 
@@ -399,21 +445,18 @@ class IFNReleaseSteppable(nCoVSteppableBase):
     unique_key = ifn_release_key
 
     def __init__(self, frequency):
-        nCoVSteppableBase.__init__(self, frequency)
+        IFNSteppableBase.__init__(self, frequency)
 
         self.runBeforeMCS = 0
 
         self._registered_types = []
         self._target_field_name = ''
-        self._uninfected_type_name = ''
-        self._infected_type_name = ''
-        self._virus_releasing_type_name = ''
         self._release_rate = 0.0
 
         self.set_target_field_name(ifn_field_name)
-        self.set_uninfected_type_name(MainSteppables.uninfected_type_name)
-        self.set_infected_type_name(MainSteppables.infected_type_name)
-        self.set_virus_releasing_type_name(MainSteppables.virus_releasing_type_name)
+        self.uninfected_type_name = MainSteppables.uninfected_type_name
+        self.infected_type_name = MainSteppables.infected_type_name
+        self.virus_releasing_type_name = MainSteppables.virus_releasing_type_name
         self.register_type(MainSteppables.uninfected_type_name)
         self.register_type(MainSteppables.infected_type_name)
         self.register_type(MainSteppables.virus_releasing_type_name)
@@ -445,18 +488,9 @@ class IFNReleaseSteppable(nCoVSteppableBase):
     def registered_type_ids(self):
         return [getattr(self, x.upper()) for x in self._registered_types]
 
-    def set_uninfected_type_name(self, _name: str):
-        self._uninfected_type_name = _name
-
-    def set_infected_type_name(self, _name: str):
-        self._infected_type_name = _name
-
-    def set_virus_releasing_type_name(self, _name: str):
-        self._virus_releasing_type_name = _name
-
     @property
     def virus_releasing_type_id(self):
-        return getattr(self, self._virus_releasing_type_name.upper())
+        return getattr(self, self.virus_releasing_type_name.upper())
 
     def set_target_field_name(self, _name: str):
         self._target_field_name = _name
@@ -467,22 +501,19 @@ class IFNReleaseSteppable(nCoVSteppableBase):
         self._release_rate = _val
 
 
-class IFNVirusFieldInitializerSteppable(MainSteppables.VirusFieldInitializerSteppable):
+class IFNVirusFieldInitializerSteppable(MainSteppables.VirusFieldInitializerSteppable, IFNSteppableBase):
     # todo: implement unique_key in IFNVirusFieldInitializerSteppable
     # todo: generate docstring for IFNVirusFieldInitializerSteppable
-
-    def __init__(self, frequency=1):
-        super().__init__(frequency)
 
     def start(self):
         # todo: verify units; IFNInputs.py says virus_diffusion_coefficient has units of seconds
         min_to_mcs = self.step_period / 60.0
         days_to_mcs = min_to_mcs / 60.0 / 24.0
-        self.diffusion_coefficient = IFNInputs.virus_diffusion_coefficient * min_to_mcs * self.voxel_length ** 2
+        self.diffusion_coefficient = IFNInputs.virus_diffusion_coefficient * min_to_mcs / self.voxel_length ** 2
         self.decay_coefficient = IFNInputs.c * days_to_mcs
 
 
-class IFNFieldInitializerSteppable(nCoVSteppableBase):
+class IFNFieldInitializerSteppable(IFNSteppableBase):
     """
     Initializes IFN field data and properties
 
@@ -493,7 +524,7 @@ class IFNFieldInitializerSteppable(nCoVSteppableBase):
     unique_key = ifn_field_initializer_key
 
     def __init__(self, frequency):
-        nCoVSteppableBase.__init__(self, frequency)
+        IFNSteppableBase.__init__(self, frequency)
 
         self.ifn_field_name = ifn_field_name
 
@@ -504,7 +535,7 @@ class IFNFieldInitializerSteppable(nCoVSteppableBase):
         # todo: verify units; IFNInputs.py says IFNe_diffusion_coefficient has units of seconds
         min_to_mcs = self.step_period / 60.0
         hours_to_mcs = min_to_mcs / 60.0
-        self.diffusion_coefficient = IFNInputs.IFNe_diffusion_coefficient * min_to_mcs * self.voxel_length ** 2
+        self.diffusion_coefficient = IFNInputs.IFNe_diffusion_coefficient * min_to_mcs / self.voxel_length ** 2
         self.decay_coefficient = IFNInputs.t2 * hours_to_mcs
 
     @property
@@ -544,7 +575,7 @@ class IFNFieldInitializerSteppable(nCoVSteppableBase):
         return getattr(self.field, self.ifn_field_name)
 
 
-class IFNSimDataSteppable(nCoVSteppableBase):
+class IFNSimDataSteppable(IFNSteppableBase):
     # todo: generate docstring for IFNSimDataSteppable
     # todo: add extracellular virus and IFN plot and write
     # todo: make data plot/write frequencies settable
@@ -552,7 +583,7 @@ class IFNSimDataSteppable(nCoVSteppableBase):
     unique_key = ifn_sim_data_key
 
     def __init__(self, frequency):
-        nCoVSteppableBase.__init__(self, frequency)
+        IFNSteppableBase.__init__(self, frequency)
 
         # Reference to SimDataSteppable
         self.simdata_steppable = None
@@ -576,22 +607,17 @@ class IFNSimDataSteppable(nCoVSteppableBase):
 
         self._registered_types = []
         self._target_field_name = ''
-        self._uninfected_type_name = ''
-        self._infected_type_name = ''
-        self._virus_releasing_type_name = ''
-        self._virus_field_name = ''
-        self._ifn_field_name = ''
         self._initial_number_cells = 0.0
 
-        self.set_uninfected_type_name(MainSteppables.uninfected_type_name)
-        self.set_infected_type_name(MainSteppables.infected_type_name)
-        self.set_virus_releasing_type_name(MainSteppables.virus_releasing_type_name)
+        self.uninfected_type_name = MainSteppables.uninfected_type_name
+        self.infected_type_name = MainSteppables.infected_type_name
+        self.virus_releasing_type_name = MainSteppables.virus_releasing_type_name
         self.dead_type_name = MainSteppables.dead_type_name
         self.register_type(MainSteppables.uninfected_type_name)
         self.register_type(MainSteppables.infected_type_name)
         self.register_type(MainSteppables.virus_releasing_type_name)
-        self.set_virus_field_name(MainSteppables.virus_field_name)
-        self.set_ifn_field_name(ifn_field_name)
+        self.virus_field_name = MainSteppables.virus_field_name
+        self.ifn_field_name = ifn_field_name
 
     def start(self):
         if self.plot_ifn_data:
@@ -619,14 +645,14 @@ class IFNSimDataSteppable(nCoVSteppableBase):
                 new_window.add_plot(viral_replication_model_vars[i], style='Dots', color=colors[i], size=5)
                 setattr(self, attr_name, new_window)
 
-            attr_name = 'ifn_data_win' + self._ifn_field_name
-            new_window = self.add_new_plot_window(title=self._ifn_field_name,
+            attr_name = 'ifn_data_win' + self.ifn_field_name
+            new_window = self.add_new_plot_window(title=self.ifn_field_name,
                                                   x_axis_title='Time (hrs)',
                                                   y_axis_title='Variables', x_scale_type='linear',
                                                   y_scale_type='linear',
                                                   grid=False,
                                                   config_options={'legend': True})
-            new_window.add_plot(self._ifn_field_name, style='Dots', color='red', size=5)
+            new_window.add_plot(self.ifn_field_name, style='Dots', color='red', size=5)
             setattr(self, attr_name, new_window)
 
         # Check that output directory is available
@@ -734,13 +760,13 @@ class IFNSimDataSteppable(nCoVSteppableBase):
             # END RECOMMENDATION
 
             # Measure amount of IFNe in the Field
-            secretor = self.get_field_secretor(field_name=self._ifn_field_name)
+            secretor = self.get_field_secretor(field_name=self.ifn_field_name)
             total_var = 0
             for cell in self.cell_list_by_type(*self.registered_type_ids):
                 total_var += secretor.amountSeenByCell(cell)
             if plot_ifn_data:
-                window_name = getattr(self, 'ifn_data_win' + self._ifn_field_name)
-                window_name.add_data_point(self._ifn_field_name, mcs * hours_to_mcs, total_var / self._initial_number_cells )
+                window_name = getattr(self, 'ifn_data_win' + self.ifn_field_name)
+                window_name.add_data_point(self.ifn_field_name, mcs * hours_to_mcs, total_var / self._initial_number_cells )
             data_dict.append(total_var / L)
 
             if write_ifn_data:
@@ -749,13 +775,13 @@ class IFNSimDataSteppable(nCoVSteppableBase):
         if plot_med_diff_data or write_med_diff_data:
             # Gather total diffusive amounts
             try:
-                med_viral_total = self.get_field_secretor(self._virus_field_name).totalFieldIntegral()
-                med_ifn_total = self.get_field_secretor(self._ifn_field_name).totalFieldIntegral()
+                med_viral_total = self.get_field_secretor(self.virus_field_name).totalFieldIntegral()
+                med_ifn_total = self.get_field_secretor(self.ifn_field_name).totalFieldIntegral()
             except AttributeError:  # Pre-v4.2.1 CC3D
                 med_viral_total = 0.0
                 med_ifn_total = 0.0
-                field_virus = getattr(self.field, self._virus_field_name)
-                field_ifn = getattr(self.field, self._ifn_field_name)
+                field_virus = getattr(self.field, self.virus_field_name)
+                field_ifn = getattr(self.field, self.ifn_field_name)
                 for x, y, z in self.every_pixel():
                     med_viral_total += field_virus[x, y, z]
                     med_ifn_total += field_ifn[x, y, z]
@@ -805,19 +831,5 @@ class IFNSimDataSteppable(nCoVSteppableBase):
     def registered_type_ids(self):
         return [getattr(self, x.upper()) for x in self._registered_types]
 
-    def set_uninfected_type_name(self, _name: str):
-        self._uninfected_type_name = _name
-
-    def set_infected_type_name(self, _name: str):
-        self._infected_type_name = _name
-
-    def set_virus_releasing_type_name(self, _name: str):
-        self._virus_releasing_type_name = _name
-
-    def set_virus_field_name(self, _name: str):
-        self._virus_field_name = _name
-
-    def set_ifn_field_name(self, _name: str):
-        self._ifn_field_name = _name
 
 #TODO: Write Plaque Assay SimData Steppable
