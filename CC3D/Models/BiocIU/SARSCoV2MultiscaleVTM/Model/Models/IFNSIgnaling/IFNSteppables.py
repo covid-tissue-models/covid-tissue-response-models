@@ -290,7 +290,12 @@ class IFNSteppable(IFNSteppableBase):
     def registered_type_ids(self):
         return [getattr(self, x.upper()) for x in self._registered_types]
 
-    def set_target_field_name(self, _name: str):
+    @property
+    def target_field_name(self):
+        return self._target_field_name
+
+    @target_field_name.setter
+    def target_field_name(self, _name: str):
         self._target_field_name = _name
 
     def set_ifn_field_data(self, field_name: str = None, diffusion: str = None, decay: str = None):
@@ -352,7 +357,7 @@ class IFNViralInternalizationSteppable(MainSteppables.ViralInternalizationSteppa
             initial_number_registered_cells = len(self.cell_list_by_type(*[getattr(self, x.upper())
                                                                            for x in self._registered_types]))
             b = IFNInputs.b * initial_number_registered_cells * days_to_mcs
-            self.set_internalization_rate(b)
+            self.internalization_rate = b
 
         secretor = self.get_field_secretor(field_name=self._target_field_name)
         for cell in self.cell_list_by_type(self.uninfected_type_id):
@@ -408,8 +413,8 @@ class IFNViralReleaseSteppable(MainSteppables.ViralReleaseSteppable, IFNSteppabl
             # todo: make Scaling Factor from unitless virus to PFU/mL a parameter
             # Scaling Factor from unitless virus to PFU/mL
             p = k73 * intracellularVirus * 1094460.28
-            self.set_release_rate(p)
-            secretor.secreteInsideCell(cell, self._release_rate * fact / cell.volume)
+            self.release_rate = p
+            secretor.secreteInsideCell(cell, self.release_rate * fact / cell.volume)
 
 
 class IFNViralDeathSteppable(MainSteppables.ViralDeathSteppable, IFNSteppableBase):
@@ -429,8 +434,8 @@ class IFNViralDeathSteppable(MainSteppables.ViralDeathSteppable, IFNSteppableBas
             k61 = IFNInputs.k61 * hours_to_mcs
             H = virus_cell_sbml['H']
             V = virus_cell_sbml['V']
-            self.set_viral_death_rate(k61 * V * (1-H))
-            pr = nCoVUtils.ul_rate_to_prob(self._viral_death_rate)
+            self.viral_death_rate = k61 * V * (1-H)
+            pr = nCoVUtils.ul_rate_to_prob(self.viral_death_rate)
             if random.random() <= pr:
                 self.set_cell_type(cell, self.dead_type_id)
 
@@ -474,8 +479,8 @@ class IFNReleaseSteppable(IFNSteppableBase):
             k21 = ifn_cell_sbml['k21'] * hours_to_mcs
             intracellularIFN = ifn_cell_sbml['IFN']
             p = k21 * intracellularIFN
-            self.set_release_rate(p)
-            secretor.secreteInsideCell(cell, self._release_rate * fact / cell.volume)
+            self.release_rate = p
+            secretor.secreteInsideCell(cell, self.release_rate * fact / cell.volume)
 
     def register_type(self, _name: str):
         if _name not in self._registered_types:
@@ -495,9 +500,14 @@ class IFNReleaseSteppable(IFNSteppableBase):
     def set_target_field_name(self, _name: str):
         self._target_field_name = _name
 
-    def set_release_rate(self, _val: float):
+    @property
+    def release_rate(self):
+        return self._release_rate
+
+    @release_rate.setter
+    def release_rate(self, _val: float):
         if _val < 0:
-            raise ValueError("Viral release must be non-negative")
+            raise ValueError("IFN release must be non-negative")
         self._release_rate = _val
 
 
@@ -607,6 +617,7 @@ class IFNSimDataSteppable(IFNSteppableBase):
 
         self._registered_types = []
         self._target_field_name = ''
+        self._dead_type_name = ''
         self._initial_number_cells = 0.0
 
         self.uninfected_type_name = MainSteppables.uninfected_type_name
@@ -690,8 +701,7 @@ class IFNSimDataSteppable(IFNSteppableBase):
 
     def step(self, mcs):
         if mcs == 0:
-            self._initial_number_cells = len(self.cell_list_by_type(*self.registered_type_ids)) + \
-                                        len(self.cell_list_by_type(self.dead_type_id))
+            self._initial_number_cells = len(self.cell_list_by_type(*self.registered_type_ids)) + len(self.cell_list_by_type(self.dead_type_id))
 
         if self.simdata_steppable is None:
             self.simdata_steppable = self.shared_steppable_vars[ifn_sim_data_key]
@@ -831,5 +841,22 @@ class IFNSimDataSteppable(IFNSteppableBase):
     def registered_type_ids(self):
         return [getattr(self, x.upper()) for x in self._registered_types]
 
+    @property
+    def dead_type_id(self) -> int:
+        """
+        Id of the dead cell type according to a cc3d simulation
+        """
+        return getattr(self, self._dead_type_name.upper())
+
+    @property
+    def dead_type_name(self):
+        """
+        Name of the dead cell type
+        """
+        return self._dead_type_name
+
+    @dead_type_name.setter
+    def dead_type_name(self, _name: str):
+        self._dead_type_name = _name
 
 #TODO: Write Plaque Assay SimData Steppable
