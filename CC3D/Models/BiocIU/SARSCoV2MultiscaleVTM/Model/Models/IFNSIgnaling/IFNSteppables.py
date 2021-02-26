@@ -167,17 +167,17 @@ def viral_replication_model_string():
         E7a: H ->           ; H*k61*V                     ;
         E8a: -> V           ; H*k71*V/(1.0+k72*IFNe*7E-5) ;
         E8b: V ->           ; k73*V                       ;
-        
+
         //Parameters
         k61 = {IFNInputs.k61} ;
         k71 = {IFNInputs.k71} ;
         k72 = {IFNInputs.k72} ;
         k73 = {IFNInputs.k73} ;
-        
+
         //Initial Conditions
         V = 0.0      ;
         H = 1.0      ;
-    
+
         //Inputs
         IFNe = 0.0   ;
         end
@@ -208,7 +208,7 @@ def get_cell_ifn_model(cell):
 class IFNSteppable(IFNSteppableBase):
     """
     Implements IFN model
-    
+
     """
 
     unique_key = ifn_signaling_key
@@ -408,7 +408,7 @@ class IFNViralReleaseSteppable(MainSteppables.ViralReleaseSteppable, IFNSteppabl
         hours_to_mcs = self.step_period / 60.0 / 60.0
         for cell in self.cell_list_by_type(self.virus_releasing_type_id):
             virus_cell_sbml = get_cell_viral_replication_model(cell)
-            k73 =IFNInputs.k73 * hours_to_mcs
+            k73 = IFNInputs.k73 * hours_to_mcs
             intracellularVirus = virus_cell_sbml['V']
             # todo: make Scaling Factor from unitless virus to PFU/mL a parameter
             # Scaling Factor from unitless virus to PFU/mL
@@ -434,7 +434,7 @@ class IFNViralDeathSteppable(MainSteppables.ViralDeathSteppable, IFNSteppableBas
             k61 = IFNInputs.k61 * hours_to_mcs
             H = virus_cell_sbml['H']
             V = virus_cell_sbml['V']
-            self.viral_death_rate = k61 * V * (1-H)
+            self.viral_death_rate = k61 * V * (1 - H)
             pr = nCoVUtils.ul_rate_to_prob(self.viral_death_rate)
             if random.random() <= pr:
                 self.set_cell_type(cell, self.dead_type_id)
@@ -452,7 +452,7 @@ class IFNReleaseSteppable(IFNSteppableBase):
     def __init__(self, frequency):
         IFNSteppableBase.__init__(self, frequency)
 
-        self.runBeforeMCS = 0
+        self.runBeforeMCS = 1
 
         self._registered_types = []
         self._target_field_name = ''
@@ -685,7 +685,7 @@ class IFNSimDataSteppable(IFNSteppableBase):
                                                               grid=True,
                                                               config_options={'legend': True})
 
-            #TODO: Generalize Field Names
+            # TODO: Generalize Field Names
             self.med_diff_data_win.add_plot("Ve", style='Dots', color='red', size=5)
             self.med_diff_data_win.add_plot("IFNe", style='Dots', color='green', size=5)
 
@@ -697,11 +697,12 @@ class IFNSimDataSteppable(IFNSteppableBase):
                 with open(self.med_diff_data_path, 'w'):
                     pass
 
-                self.med_diff_data[-1] = ['Time', 'Ve','IFNe']
+                self.med_diff_data[-1] = ['Time', 'Ve', 'IFNe']
 
     def step(self, mcs):
         if mcs == 0:
-            self._initial_number_cells = len(self.cell_list_by_type(*self.registered_type_ids)) + len(self.cell_list_by_type(self.dead_type_id))
+            self._initial_number_cells = len(self.cell_list_by_type(*self.registered_type_ids)) + len(
+                self.cell_list_by_type(self.dead_type_id))
 
         if self.simdata_steppable is None:
             self.simdata_steppable = self.shared_steppable_vars[ifn_sim_data_key]
@@ -776,8 +777,9 @@ class IFNSimDataSteppable(IFNSteppableBase):
                 total_var += secretor.amountSeenByCell(cell)
             if plot_ifn_data:
                 window_name = getattr(self, 'ifn_data_win' + self.ifn_field_name)
-                window_name.add_data_point(self.ifn_field_name, mcs * hours_to_mcs, total_var / self._initial_number_cells )
-            data_dict.append(total_var / L)
+                window_name.add_data_point(self.ifn_field_name, mcs * hours_to_mcs,
+                                           total_var / self._initial_number_cells)
+            data_dict.append(total_var / self._initial_number_cells)
 
             if write_ifn_data:
                 self.ifn_data[mcs] = data_dict
@@ -859,4 +861,4 @@ class IFNSimDataSteppable(IFNSteppableBase):
     def dead_type_name(self, _name: str):
         self._dead_type_name = _name
 
-#TODO: Write Plaque Assay SimData Steppable
+# TODO: Write Plaque Assay SimData Steppable
