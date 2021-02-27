@@ -654,12 +654,12 @@ class IFNSimDataSteppable(IFNSteppableBase):
     """
     Plots/writes simulation data of interest
 
-    The frequency of plotting population data in Player can be set with the attribute plot_pop_data_freq.
-    Plotting is disabled when plot_pop_data_freq is set to zero.
+    The frequency of plotting interferon model data in Player can be set with the attribute plot_ifn_data_freq.
+    Plotting is disabled when plot_ifn_data_freq is set to zero.
 
-    The frequency of writing population data to file can be set with the attribute write_pop_data_freq.
-    Data is written to the cc3d output directory with the name 'pop_data.dat'.
-    Writing is disabled when write_pop_data_freq is set to zero.
+    The frequency of writing interferon model data to file can be set with the attribute write_ifn_data_freq.
+    Data is written to the cc3d output directory with the name 'ifn_data.dat'.
+    Writing is disabled when write_ifn_data_freq is set to zero.
 
     The frequency of plotting diffusion field data in Player can be set with the attribute plot_med_diff_data_freq.
     Plotting is disabled when plot_med_diff_data_freq is set to zero.
