@@ -5,7 +5,7 @@ __param_desc__ = {}
 __param_desc__['plot_ifn_data_freq'] = 'Plot ifn model data frequency'
 plot_ifn_data_freq = 0
 __param_desc__['write_ifn_data_freq'] = 'Write ifn model data to simulation directory frequency'
-write_ifn_data_freq = 1
+write_ifn_data_freq = 0
 
 __param_desc__['plot_med_diff_data_freq'] = 'Plot ifn model medium data frequency'
 plot_med_diff_data_freq = 0

@@ -21,7 +21,7 @@ from . import IFNInputs
 IFN_model_name = 'IFN_model'
 viral_replication_model_name = 'ifn_viral_replication_model'
 ifn_field_name = 'IFNe'
-virus_field_name = 'Ve'
+virus_field_name = 'Virus'
 # todo: remove simulation control from this module before release
 hours_to_simulate = 40.0  # 10 in the original model
 ifn_model_vars = ["IFN", "STATP", "IRF7", "IRF7P"]
@@ -600,10 +600,12 @@ class IFNFieldInitializerSteppable(IFNSteppableBase):
     def __init__(self, frequency):
         IFNSteppableBase.__init__(self, frequency)
 
-        # Initialize Defaut Data
-        self.ifn_field_name = ifn_field_name
+        # Internal Data
         self._ifn_diffusion_id = 'ifn_dc'
         self._ifn_decay_id = 'ifn_decay'
+
+        # Initialize Defaut Data
+        self.ifn_field_name = ifn_field_name
 
     def start(self):
         min_to_mcs = self.step_period / 60.0
@@ -701,11 +703,11 @@ class IFNSimDataSteppable(IFNSteppableBase):
         self.infected_type_name = MainSteppables.infected_type_name
         self.virus_releasing_type_name = MainSteppables.virus_releasing_type_name
         self.dead_type_name = MainSteppables.dead_type_name
+        self.virus_field_name = virus_field_name
+        self.ifn_field_name = ifn_field_name
         self.register_type(MainSteppables.uninfected_type_name)
         self.register_type(MainSteppables.infected_type_name)
         self.register_type(MainSteppables.virus_releasing_type_name)
-        self.virus_field_name = virus_field_name
-        self.ifn_field_name = ifn_field_name
 
     def start(self):
         if self.plot_ifn_data:
@@ -762,9 +764,8 @@ class IFNSimDataSteppable(IFNSteppableBase):
                                                               grid=True,
                                                               config_options={'legend': True})
 
-            # TODO: Generalize Field Names
             self.med_diff_data_win.add_plot(self._virus_field_name, style='Dots', color='red', size=5)
-            self.med_diff_data_win.add_plot("IFNe", style='Dots', color='green', size=5)
+            self.med_diff_data_win.add_plot(self._ifn_field_name, style='Dots', color='green', size=5)
 
         # Check that output directory is available
         if self.output_dir is not None:
@@ -836,8 +837,8 @@ class IFNSimDataSteppable(IFNSteppableBase):
         if plot_med_diff_data or write_med_diff_data:
             # Gather total diffusive amounts
             try:
-                med_viral_total = self.get_field_secretor(self._virus_field_name).totalFieldIntegral()
-                med_ifn_total = self.get_field_secretor(self._ifn_field_name).totalFieldIntegral()
+                med_viral_total = self.get_field_secretor(field_name=self._virus_field_name).totalFieldIntegral()
+                med_ifn_total = self.get_field_secretor(field_name=self._ifn_field_name).totalFieldIntegral()
             except AttributeError:  # Pre-v4.2.1 CC3D
                 med_viral_total = 0.0
                 med_ifn_total = 0.0
@@ -852,7 +853,7 @@ class IFNSimDataSteppable(IFNSteppableBase):
                 if med_viral_total > 0:
                     self.med_diff_data_win.add_data_point(self._virus_field_name, mcs * hours_to_mcs, med_viral_total)
                 if med_ifn_total > 0:
-                    self.med_diff_data_win.add_data_point("IFNe", mcs * hours_to_mcs, med_ifn_total)
+                    self.med_diff_data_win.add_data_point(self._ifn_field_name, mcs * hours_to_mcs, med_ifn_total)
 
             # Write total diffusive viral amount if requested
             if write_med_diff_data:
