@@ -1,3 +1,4 @@
+# coding=utf-8
 # IFN intracellular signaling and coupled viral replication models
 # Written by Josua Aponte-Serrano
 # Adds IFN signaling model to cells in the main framework. Replaces viral replication model in the main framework
@@ -18,24 +19,32 @@ from . import IFNInputs
 
 # Module specific references
 IFN_model_name = 'IFN_model'
-ifn_field_name = 'IFNe'
 viral_replication_model_name = 'ifn_viral_replication_model'
-ifn_signaling_key = 'ifn_signaling_steppable'
-ifn_release_key = 'ifn_release_steppable'  # IFNReleaseSteppable
-ifn_field_initializer_key = 'ifn_field_initializer_steppable'  # IFNFieldInitializerSteppable
-ifn_sim_data_key = 'ifn_sim_data_steppable'  # SimDataSteppable
-initial_amount_virus = 6.9e-8
+ifn_field_name = 'IFNe'
+virus_field_name = 'Ve'
 # todo: remove simulation control from this module before release
 hours_to_simulate = 40.0  # 10 in the original model
 ifn_model_vars = ["IFN", "STATP", "IRF7", "IRF7P"]
 viral_replication_model_vars = ["H", "V"]
 
+#Steppable keys
+ifn_signaling_key = 'ifn_signaling_steppable'
+ifn_release_key = 'ifn_release_steppable'  # IFNReleaseSteppable
+ifn_field_initializer_key = 'ifn_field_initializer_steppable'  # IFNFieldInitializerSteppable
+ifn_sim_data_key = 'ifn_sim_data_steppable'  # SimDataSteppable
+ifn_cell_initializer_key = 'ifn_cell_initializer_steppable'
+ifn_viral_internalization_key = 'ifn_viral_internalization_steppable'
+ifn_ecplise_phase_key = 'ifn_ecplise_phase_steppable'
+ifn_viral_release_key = 'ifn_viral_release_steppable'
+ifn_viral_death_key = 'ifn_viral_death_steppable'
+ifn_virus_field_initializer_key = 'ifn_virus_field_initializer_steppable'
 
 class IFNSteppableBase(nCoVSteppableBase):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        # Internal Data
         self._uninfected_type_name = ''
         self._infected_type_name = ''
         self._virus_releasing_type_name = ''
@@ -207,7 +216,8 @@ def get_cell_ifn_model(cell):
 
 class IFNSteppable(IFNSteppableBase):
     """
-    Implements IFN model
+    Implements IFN signaling model by passing information between viral replication model, IFN signaling model
+    and reading the amount of extracellular interferon
 
     """
 
@@ -241,8 +251,7 @@ class IFNSteppable(IFNSteppableBase):
 
         # Load IFN sbml model
         # todo: make model parameters of IFN sbml model settable;
-        #  see usage of _vrm_params in Models.SegoAponte2020.ViralInfectionVTMSteppables.ViralReplicationSteppable
-        #  on master branch for reference
+        #  redundant this can be done using the IFNInputs
         def ifn_model_fcn(cell):
             return IFN_model_string()
 
@@ -252,9 +261,6 @@ class IFNSteppable(IFNSteppableBase):
                                 step_size=hours_to_mcs)
 
         # Load viral replication sbml model
-        # todo: make model parameters of viral replication sbml model settable
-        #  see usage of _vrm_params in Models.SegoAponte2020.ViralInfectionVTMSteppables.ViralReplicationSteppable
-        #  on master branch for reference
         def vr_model_fcn(cell):
             return viral_replication_model_string()
 
@@ -264,7 +270,7 @@ class IFNSteppable(IFNSteppableBase):
                                 step_size=hours_to_mcs)
 
     def step(self, mcs):
-        # Connect viral replication model and IFN model and read IFNe field
+        # Connects viral replication model and IFN model and read IFNe field
         secretor = self.get_field_secretor(field_name=self._target_field_name)
         for cell in self.cell_list_by_type(*self.registered_type_ids):
             ifn_cell_sbml = get_cell_ifn_model(cell)
@@ -309,16 +315,19 @@ class IFNSteppable(IFNSteppableBase):
 
 class IFNCellInitializerSteppable(MainSteppables.CellInitializerSteppable, IFNSteppableBase):
     """
-    Simple steppable to make initially infected cells have module virus releasing type
+    Initalizes cells with the MOI corresponding to the training conditions of the original paper: Weaver JJ,
+    Shoemaker JE. Mathematical Modeling of RNA Virus Sensing Pathways Reveals Paracrine Signaling as the Primary Factor
+    Regulating Excessive Cytokine Production. Processes. 2020 Jun;8(6):719.
     """
 
-    # todo: implement unique_key in IFNCellInitializerSteppable
+    unique_key = ifn_cell_initializer_key
 
     def __init__(self, frequency=1):
         super().__init__(frequency=frequency)
 
         # Initialize default data
         self.virus_releasing_type_name = MainSteppables.virus_releasing_type_name
+        self.random_infected_fraction(1.0)
 
     def start(self):
         super().start()
@@ -332,20 +341,30 @@ class IFNCellInitializerSteppable(MainSteppables.CellInitializerSteppable, IFNSt
 
 
 class IFNViralInternalizationSteppable(MainSteppables.ViralInternalizationSteppable, IFNSteppableBase):
-    # todo: implement unique_key in IFNViralInternalizationSteppable
-    # todo: generate docstring for IFNViralInternalizationSteppable
+    """
+    Convenience steppable to rescale infectivity parameter according to cellularization method proposed in:
+    Sego TJ, Aponte-Serrano JO, Gianlupi JF, Glazier JA. Generating Agent-Based Multiscale Multicellular
+    Spatiotemporal Models from Ordinary Differential Equations of Biological Systems, with Applications
+    in Viral Infection. bioRxiv. 2021 Jan 1.
+    """
+
+    unique_key = ifn_viral_internalization_key
 
     def __init__(self, frequency=1):
         super().__init__(frequency)
 
+        # Internal data
         self._registered_types = []
+        self._initial_amount_virus = 0.0
 
+        # Initialize default data
         self.virus_releasing_type_name = MainSteppables.virus_releasing_type_name
         self.dead_type_name = MainSteppables.dead_type_name
         self.register_type(MainSteppables.uninfected_type_name)
         self.register_type(MainSteppables.infected_type_name)
         self.register_type(MainSteppables.virus_releasing_type_name)
         self.register_type(MainSteppables.dead_type_name)
+        self.initial_amount_virus = 6.9e-8
 
         # To detect if the user specifies an internalization rate, or if we're calculating it with default data
         self._internalization_rate = None
@@ -374,29 +393,50 @@ class IFNViralInternalizationSteppable(MainSteppables.ViralInternalizationSteppa
         self._registered_types.remove(_name)
 
     def on_set_cell_type(self, cell, old_type):
-        # todo: verify IFN internalization implementation: a fixed amount of virus is always introduced to
-        #  the intracellular model of a cell when internalization occurs
         if cell.type == self.infected_type_id and old_type == self.uninfected_type_id:
             virus_cell_sbml = get_cell_viral_replication_model(cell)
-            virus_cell_sbml['V'] = initial_amount_virus
+            virus_cell_sbml['V'] = self._initial_amount_virus
 
+    @property
+    def initial_amount_virus(self):
+        """
+        Initial amnount of unitless virus level when internalization occurs
+        """
+        return self._initial_amount_virus
+
+    @initial_amount_virus.setter
+    def initial_amount_virus(self, _val: str):
+        self._initial_amount_virus = _val
 
 class IFNEclipsePhaseSteppable(MainSteppables.EclipsePhaseSteppable, IFNSteppableBase):
-    # todo: implement unique_key in IFNEclipsePhaseSteppable
-    # todo: generate docstring for IFNEclipsePhaseSteppable
+    """
+    Convenience steppable to rescale ecplise phase parameter
+    """
+
+    unique_key = ifn_ecplise_phase_key
 
     def __init__(self, frequency=1):
         super().__init__(frequency)
+
+        # Initialize default data
         days_to_mcs = self.step_period / 60.0 / 60.0 / 24.0
         self.eclipse_phase = 1.0 / (IFNInputs.k * days_to_mcs)
 
-
 class IFNViralReleaseSteppable(MainSteppables.ViralReleaseSteppable, IFNSteppableBase):
-    # todo: implement unique_key in IFNViralReleaseSteppable
-    # todo: generate docstring for IFNViralReleaseSteppable
+    """
+    Performs virion release according to the intracellular virus level
+    """
+
+    unique_key = ifn_viral_release_key
 
     def __init__(self, frequency=1):
         super().__init__(frequency)
+
+        # Internal data
+        self._virus_level_scaling_factor = 0.0
+
+        # Initialize default data
+        self.virus_level_scaling_factor = 1094460.28
 
     def step(self, mcs):
         secretor = self.get_field_secretor(field_name=self._target_field_name)
@@ -410,19 +450,32 @@ class IFNViralReleaseSteppable(MainSteppables.ViralReleaseSteppable, IFNSteppabl
             virus_cell_sbml = get_cell_viral_replication_model(cell)
             k73 = IFNInputs.k73 * hours_to_mcs
             intracellularVirus = virus_cell_sbml['V']
-            # todo: make Scaling Factor from unitless virus to PFU/mL a parameter
-            # Scaling Factor from unitless virus to PFU/mL
-            p = k73 * intracellularVirus * 1094460.28
+            p = k73 * intracellularVirus * self._virus_level_scaling_factor
             self.release_rate = p
-            secretor.secreteInsideCell(cell, self.release_rate * fact / cell.volume)
+
+            secretor.secreteInsideCell(cell, self._release_rate * fact / cell.volume)
+
+    @property
+    def virus_level_scaling_factor(self):
+        """
+        Scaling Factor from unitless virus level to PFU/mL
+        """
+        return self._virus_level_scaling_factor
+
+    @virus_level_scaling_factor.setter
+    def virus_level_scaling_factor(self, _val: float):
+        self._virus_level_scaling_factor= _val
 
 
 class IFNViralDeathSteppable(MainSteppables.ViralDeathSteppable, IFNSteppableBase):
-    # todo: consider deriving ViralDeathSteppable from nCoVSteppableBase, since ViralDeathSteppable.set_viral_death_rate
-    #  is per cell type rather than per cell, which may be confusing to the user; otherwise, override
-    #  ViralDeathSteppable.set_viral_death_rate and throw an exception on use with a useful message
-    # todo: implement unique_key in IFNViralDeathSteppable
-    # todo: generate docstring for IFNViralDeathSteppable
+    """
+    Performs viral death as a function of the cell's viability determined from the cell' internal
+    viral replication model.
+
+    The derived class specified the death rate as a per cell rate, rather than a rate by cell type
+    """
+
+    unique_key = ifn_viral_death_key
 
     def __init__(self, frequency=1):
         super().__init__(frequency)
@@ -454,11 +507,13 @@ class IFNReleaseSteppable(IFNSteppableBase):
 
         self.runBeforeMCS = 1
 
+        # Internal Data
         self._registered_types = []
         self._target_field_name = ''
         self._release_rate = 0.0
 
-        self.set_target_field_name(ifn_field_name)
+        # Initialize default data
+        self.target_field_name = ifn_field_name
         self.uninfected_type_name = MainSteppables.uninfected_type_name
         self.infected_type_name = MainSteppables.infected_type_name
         self.virus_releasing_type_name = MainSteppables.virus_releasing_type_name
@@ -480,7 +535,7 @@ class IFNReleaseSteppable(IFNSteppableBase):
             intracellularIFN = ifn_cell_sbml['IFN']
             p = k21 * intracellularIFN
             self.release_rate = p
-            secretor.secreteInsideCell(cell, self.release_rate * fact / cell.volume)
+            secretor.secreteInsideCell(cell, self._release_rate * fact / cell.volume)
 
     def register_type(self, _name: str):
         if _name not in self._registered_types:
@@ -497,9 +552,6 @@ class IFNReleaseSteppable(IFNSteppableBase):
     def virus_releasing_type_id(self):
         return getattr(self, self.virus_releasing_type_name.upper())
 
-    def set_target_field_name(self, _name: str):
-        self._target_field_name = _name
-
     @property
     def release_rate(self):
         return self._release_rate
@@ -510,13 +562,25 @@ class IFNReleaseSteppable(IFNSteppableBase):
             raise ValueError("IFN release must be non-negative")
         self._release_rate = _val
 
+    @property
+    def target_field_name(self):
+        return self._target_field_name
+
+    @target_field_name.setter
+    def target_field_name(self, _name: str):
+        self._target_field_name = _name
 
 class IFNVirusFieldInitializerSteppable(MainSteppables.VirusFieldInitializerSteppable, IFNSteppableBase):
-    # todo: implement unique_key in IFNVirusFieldInitializerSteppable
-    # todo: generate docstring for IFNVirusFieldInitializerSteppable
+    """
+    Initializes virus field data and properties
+
+    By default, requires CC3DML ids "virus_dc" for virus field diffusion coefficient and "virus_decay" for virus field
+    decay. These can be set with set_field_data.
+    """
+
+    unique_key = ifn_virus_field_initializer_key
 
     def start(self):
-        # todo: verify units; IFNInputs.py says virus_diffusion_coefficient has units of seconds
         min_to_mcs = self.step_period / 60.0
         days_to_mcs = min_to_mcs / 60.0 / 24.0
         self.diffusion_coefficient = IFNInputs.virus_diffusion_coefficient * min_to_mcs / self.voxel_length ** 2
@@ -536,13 +600,12 @@ class IFNFieldInitializerSteppable(IFNSteppableBase):
     def __init__(self, frequency):
         IFNSteppableBase.__init__(self, frequency)
 
+        # Initialize Defaut Data
         self.ifn_field_name = ifn_field_name
-
         self._ifn_diffusion_id = 'ifn_dc'
         self._ifn_decay_id = 'ifn_decay'
 
     def start(self):
-        # todo: verify units; IFNInputs.py says IFNe_diffusion_coefficient has units of seconds
         min_to_mcs = self.step_period / 60.0
         hours_to_mcs = min_to_mcs / 60.0
         self.diffusion_coefficient = IFNInputs.IFNe_diffusion_coefficient * min_to_mcs / self.voxel_length ** 2
@@ -586,9 +649,23 @@ class IFNFieldInitializerSteppable(IFNSteppableBase):
 
 
 class IFNSimDataSteppable(IFNSteppableBase):
-    # todo: generate docstring for IFNSimDataSteppable
-    # todo: add extracellular virus and IFN plot and write
-    # todo: make data plot/write frequencies settable
+    """
+    Plots/writes simulation data of interest
+
+    The frequency of plotting population data in Player can be set with the attribute plot_pop_data_freq.
+    Plotting is disabled when plot_pop_data_freq is set to zero.
+
+    The frequency of writing population data to file can be set with the attribute write_pop_data_freq.
+    Data is written to the cc3d output directory with the name 'pop_data.dat'.
+    Writing is disabled when write_pop_data_freq is set to zero.
+
+    The frequency of plotting diffusion field data in Player can be set with the attribute plot_med_diff_data_freq.
+    Plotting is disabled when plot_med_diff_data_freq is set to zero.
+
+    The frequency of writing diffusion field data to file can be set with the attribute write_med_diff_data_freq.
+    Data is written to the cc3d output directory with the name 'med_diff_data.dat'.
+    Writing is disabled when write_med_diff_data_freq is set to zero.
+    """
 
     unique_key = ifn_sim_data_key
 
@@ -615,11 +692,11 @@ class IFNSimDataSteppable(IFNSteppableBase):
         # For flushing outputs every quarter simulation length
         self.__flush_counter = 1
 
+        # Internal Data
         self._registered_types = []
-        self._target_field_name = ''
-        self._dead_type_name = ''
-        self._initial_number_cells = 0.0
+        self._initial_number_cells = 0
 
+        # Initialize Default Data
         self.uninfected_type_name = MainSteppables.uninfected_type_name
         self.infected_type_name = MainSteppables.infected_type_name
         self.virus_releasing_type_name = MainSteppables.virus_releasing_type_name
@@ -627,7 +704,7 @@ class IFNSimDataSteppable(IFNSteppableBase):
         self.register_type(MainSteppables.uninfected_type_name)
         self.register_type(MainSteppables.infected_type_name)
         self.register_type(MainSteppables.virus_releasing_type_name)
-        self.virus_field_name = MainSteppables.virus_field_name
+        self.virus_field_name = virus_field_name
         self.ifn_field_name = ifn_field_name
 
     def start(self):
@@ -656,14 +733,14 @@ class IFNSimDataSteppable(IFNSteppableBase):
                 new_window.add_plot(viral_replication_model_vars[i], style='Dots', color=colors[i], size=5)
                 setattr(self, attr_name, new_window)
 
-            attr_name = 'ifn_data_win' + self.ifn_field_name
-            new_window = self.add_new_plot_window(title=self.ifn_field_name,
+            attr_name = 'ifn_data_win' + self._ifn_field_name
+            new_window = self.add_new_plot_window(title=self._ifn_field_name,
                                                   x_axis_title='Time (hrs)',
                                                   y_axis_title='Variables', x_scale_type='linear',
                                                   y_scale_type='linear',
                                                   grid=False,
                                                   config_options={'legend': True})
-            new_window.add_plot(self.ifn_field_name, style='Dots', color='red', size=5)
+            new_window.add_plot(self._ifn_field_name, style='Dots', color='red', size=5)
             setattr(self, attr_name, new_window)
 
         # Check that output directory is available
@@ -674,7 +751,7 @@ class IFNSimDataSteppable(IFNSteppableBase):
                 with open(self.ifn_data_path, 'w'):
                     pass
 
-                self.ifn_data[-1] = ['Time'] + ifn_model_vars + viral_replication_model_vars + ['IFNe']
+                self.ifn_data[-1] = ['Time'] + ifn_model_vars + viral_replication_model_vars + [self._ifn_field_name]
 
         if self.plot_med_diff_data:
             self.med_diff_data_win = self.add_new_plot_window(title='Total diffusive species',
@@ -686,7 +763,7 @@ class IFNSimDataSteppable(IFNSteppableBase):
                                                               config_options={'legend': True})
 
             # TODO: Generalize Field Names
-            self.med_diff_data_win.add_plot("Ve", style='Dots', color='red', size=5)
+            self.med_diff_data_win.add_plot(self._virus_field_name, style='Dots', color='red', size=5)
             self.med_diff_data_win.add_plot("IFNe", style='Dots', color='green', size=5)
 
         # Check that output directory is available
@@ -697,11 +774,11 @@ class IFNSimDataSteppable(IFNSteppableBase):
                 with open(self.med_diff_data_path, 'w'):
                     pass
 
-                self.med_diff_data[-1] = ['Time', 'Ve', 'IFNe']
+                self.med_diff_data[-1] = ['Time', self._virus_field_name, self._ifn_field_name]
 
     def step(self, mcs):
         if mcs == 0:
-            self._initial_number_cells = len(self.cell_list_by_type(*self.registered_type_ids)) + len(
+            self.initial_number_cells = len(self.cell_list_by_type(*self.registered_type_ids)) + len(
                 self.cell_list_by_type(self.dead_type_id))
 
         if self.simdata_steppable is None:
@@ -721,63 +798,35 @@ class IFNSimDataSteppable(IFNSteppableBase):
         # Plotting and writing average values of IFN model variables
         if plot_ifn_data or write_ifn_data:
             data_dict = [mcs * hours_to_mcs]
-            L = len(self.cell_list_by_type(*self.registered_type_ids))
-            for i in range(len(ifn_model_vars)):
-                total_var = 0.0
-                for cell in self.cell_list_by_type(*self.registered_type_ids):
-                    cell_sbml = get_cell_ifn_model(cell)
-                    total_var += cell_sbml[ifn_model_vars[i]]
-                data_dict.append(total_var / L)
-                if plot_ifn_data:
-                    window_name = getattr(self, 'ifn_data_win' + ifn_model_vars[i])
-                    window_name.add_data_point(ifn_model_vars[i], mcs * hours_to_mcs, total_var / L)
+            total_vars = {k: 0.0 for k in ifn_model_vars + viral_replication_model_vars}
+            L = 0.0
 
-            for i in range(len(viral_replication_model_vars)):
-                total_var = 0.0
-                for cell in self.cell_list_by_type(*self.registered_type_ids):
-                    cell_sbml = get_cell_viral_replication_model(cell)
-                    total_var += cell_sbml[viral_replication_model_vars[i]]
-                data_dict.append(total_var / L)
-                if plot_ifn_data:
-                    window_name = getattr(self, 'ifn_data_win' + viral_replication_model_vars[i])
-                    window_name.add_data_point(viral_replication_model_vars[i], mcs * hours_to_mcs, total_var / L)
+            for cell in self.cell_list_by_type(*self.registered_type_ids):
+                L += 1.0
 
-            # BEGIN RECOMMENDATION
-            # Try replacing the previous code with what's in this block
-            # It should be much faster, due to only iterating over the cell inventory once
-            # - TJS
-            #
-            # total_vars = {k: 0.0 for k in ifn_model_vars + viral_replication_model_vars}
-            # L = 0.0
-            #
-            # for cell in self.cell_list_by_type(*self.registered_type_ids):
-            #     L += 1.0
-            #
-            #     cell_sbml = get_cell_ifn_model(cell)
-            #     for model_var in ifn_model_vars:
-            #         total_vars[model_var] += cell_sbml[model_var]
-            #
-            #     cell_sbml = get_cell_viral_replication_model(cell)
-            #     for model_var in viral_replication_model_vars:
-            #         total_vars[model_var] += cell_sbml[model_var]
-            #
-            # for model_var in ifn_model_vars + viral_replication_model_vars:
-            #     mean_var = total_vars[model_var] / L
-            #     data_dict.append(mean_var)
-            #     if plot_ifn_data:
-            #         window_name = getattr(self, 'ifn_data_win' + model_var)
-            #         window_name.add_data_point(model_var, mcs * hours_to_mcs, mean_var)
-            #
-            # END RECOMMENDATION
+                cell_sbml = get_cell_ifn_model(cell)
+                for model_var in ifn_model_vars:
+                    total_vars[model_var] += cell_sbml[model_var]
+
+                cell_sbml = get_cell_viral_replication_model(cell)
+                for model_var in viral_replication_model_vars:
+                    total_vars[model_var] += cell_sbml[model_var]
+
+            for model_var in ifn_model_vars + viral_replication_model_vars:
+                mean_var = total_vars[model_var] / L
+                data_dict.append(mean_var)
+                if plot_ifn_data:
+                    window_name = getattr(self, 'ifn_data_win' + model_var)
+                    window_name.add_data_point(model_var, mcs * hours_to_mcs, mean_var)
 
             # Measure amount of IFNe in the Field
-            secretor = self.get_field_secretor(field_name=self.ifn_field_name)
+            secretor = self.get_field_secretor(field_name=self._ifn_field_name)
             total_var = 0
             for cell in self.cell_list_by_type(*self.registered_type_ids):
                 total_var += secretor.amountSeenByCell(cell)
             if plot_ifn_data:
-                window_name = getattr(self, 'ifn_data_win' + self.ifn_field_name)
-                window_name.add_data_point(self.ifn_field_name, mcs * hours_to_mcs,
+                window_name = getattr(self, 'ifn_data_win' + self._ifn_field_name)
+                window_name.add_data_point(self._ifn_field_name, mcs * hours_to_mcs,
                                            total_var / self._initial_number_cells)
             data_dict.append(total_var / self._initial_number_cells)
 
@@ -787,13 +836,13 @@ class IFNSimDataSteppable(IFNSteppableBase):
         if plot_med_diff_data or write_med_diff_data:
             # Gather total diffusive amounts
             try:
-                med_viral_total = self.get_field_secretor(self.virus_field_name).totalFieldIntegral()
-                med_ifn_total = self.get_field_secretor(self.ifn_field_name).totalFieldIntegral()
+                med_viral_total = self.get_field_secretor(self._virus_field_name).totalFieldIntegral()
+                med_ifn_total = self.get_field_secretor(self._ifn_field_name).totalFieldIntegral()
             except AttributeError:  # Pre-v4.2.1 CC3D
                 med_viral_total = 0.0
                 med_ifn_total = 0.0
-                field_virus = getattr(self.field, self.virus_field_name)
-                field_ifn = getattr(self.field, self.ifn_field_name)
+                field_virus = getattr(self.field, self._virus_field_name)
+                field_ifn = getattr(self.field, self._ifn_field_name)
                 for x, y, z in self.every_pixel():
                     med_viral_total += field_virus[x, y, z]
                     med_ifn_total += field_ifn[x, y, z]
@@ -801,7 +850,7 @@ class IFNSimDataSteppable(IFNSteppableBase):
             # Plot total diffusive viral amount if requested
             if plot_med_diff_data:
                 if med_viral_total > 0:
-                    self.med_diff_data_win.add_data_point("Ve", mcs * hours_to_mcs, med_viral_total)
+                    self.med_diff_data_win.add_data_point(self._virus_field_name, mcs * hours_to_mcs, med_viral_total)
                 if med_ifn_total > 0:
                     self.med_diff_data_win.add_data_point("IFNe", mcs * hours_to_mcs, med_ifn_total)
 
@@ -851,14 +900,14 @@ class IFNSimDataSteppable(IFNSteppableBase):
         return getattr(self, self._dead_type_name.upper())
 
     @property
-    def dead_type_name(self):
+    def initial_number_cells(self):
         """
-        Name of the dead cell type
+        Count of initial number of epithelial cells for rescaling purposes
         """
-        return self._dead_type_name
+        return self._initial_number_cells
 
-    @dead_type_name.setter
-    def dead_type_name(self, _name: str):
-        self._dead_type_name = _name
+    @initial_number_cells.setter
+    def initial_number_cells(self, _val: int):
+        self._initial_number_cells = _val
 
 # TODO: Write Plaque Assay SimData Steppable

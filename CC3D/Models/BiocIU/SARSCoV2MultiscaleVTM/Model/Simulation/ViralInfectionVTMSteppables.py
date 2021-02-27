@@ -138,8 +138,7 @@ class CellInitializerSteppable(nCoVSteppableBase.nCoVSteppableBase):
         self.cell_diameter = ViralInfectionVTMModelInputs.cell_diameter
         self.volume_parameter = ViralInfectionVTMModelInputs.volume_lm
         self.initialize_sheet()
-        self.random_infected_fraction(1.0)
-        # self.single_infected_cell()
+        self.random_infected_fraction(0.05)
 
     def start(self):
         """
