@@ -39,6 +39,7 @@ ifn_ecplise_phase_key = 'ifn_ecplise_phase_steppable'
 ifn_viral_release_key = 'ifn_viral_release_steppable'
 ifn_viral_death_key = 'ifn_viral_death_steppable'
 ifn_virus_field_initializer_key = 'ifn_virus_field_initializer_steppable'
+ifn_plaque_assay_key = 'ifn_plaque_assay_steppable'
 
 class IFNSteppableBase(nCoVSteppableBase):
 
@@ -611,6 +612,13 @@ class IFNSimDataSteppable(IFNSteppableBase):
     """
     Plots/writes simulation data of interest
 
+    The frequency of plotting cell population data in Player can be set with the attribute plot_pop_data_freq.
+    Plotting is disabled when plot_pop_data_freq is set to zero.
+
+    The frequency of writing ell population data  to file can be set with the attribute write_pop_data_freq.
+    Data is written to the cc3d output directory with the name 'ifn_data.dat'.
+    Writing is disabled when write_ifn_data_freq is set to zero.
+
     The frequency of plotting interferon model data in Player can be set with the attribute plot_ifn_data_freq.
     Plotting is disabled when plot_ifn_data_freq is set to zero.
 
@@ -944,4 +952,108 @@ class IFNSimDataSteppable(IFNSteppableBase):
     def initial_number_cells(self, _val: int):
         self._initial_number_cells = _val
 
-# TODO: Write Plaque Assay SimData Steppable
+class IFNPlaqueAssaySteppable(IFNSteppableBase):
+    """
+    Initializes, plots and writes data for plaque assay simulations
+
+    The frequency of plotting plaque assay data in Player can be set with the attribute plot_plaque_assay_data_freq.
+    Plotting is disabled when plot__plaque_assay_data_freq is set to zero.
+
+    The frequency of writing ell population data  to file can be set with the attribute write_plaque_assay_data_freq.
+    Data is written to the cc3d output directory with the name 'plaque_assay_data.dat'.
+    Writing is disabled when write_plaque_assay_data_freq is set to zero.
+    """
+
+    unique_key = ifn_plaque_assay_key
+
+    def __init__(self, frequency):
+        IFNSteppableBase.__init__(self, frequency)
+
+        # Reference to SimDataSteppable
+        self.plaquedata_steppable = None
+
+        self.plaque_assay_data_win = None
+        self.plaque_assay_data = dict()
+
+        self.plot_plaque_assay_data = IFNInputs.plot_plaque_assay_data_freq > 0
+
+        # For flushing outputs every quarter simulation length
+        self.__flush_counter = 1
+
+        # Initialize Default Data
+        self.infected_type_name = MainSteppables.infected_type_name
+        self.virus_releasing_type_name = MainSteppables.virus_releasing_type_name
+        self.dead_type_name = MainSteppables.dead_type_name
+
+    def start(self):
+        #todo: initialize single infected cell in the center of the simulation domain
+
+        # Initialize population data plot if requested
+        if self.plot_plaque_assay_data:
+            self.plaque_assay_data_win = self.add_new_plot_window(title='Plaque Data',
+                                                         x_axis_title='Time (hrs)',
+                                                         y_axis_title='Radial Distance',
+                                                         x_scale_type='linear',
+                                                         y_scale_type='linear',
+                                                         grid=True,
+                                                         config_options={'legend': True})
+
+            self.plaque_assay_data_win.add_plot(self._infected_type_name, style='Lines', color='red', size=5)
+            self.plaque_assay_data_win.add_plot(self._virus_releasing_type_name, style='Lines', color='green', size=5)
+            self.plaque_assay_data_win.add_plot(self._dead_type_name, style='Lines', color='yellow', size=5)
+
+    def step(self, mcs):
+        if self.plaquedata_steppable is None:
+            self.plaquedata_steppable = self.shared_steppable_vars[ifn_plaque_assay_key]
+
+        plot_plaque_assay_data = self.plot_plaque_assay_data and mcs % IFNInputs.plot_plaque_assay_data_freq == 0
+
+        hours_to_mcs = self.step_period / 60.0 / 60.0
+
+        if plot_plaque_assay_data:
+            import numpy as np
+
+            # Measure area occupied by cells and assume its a circle
+            volume_infected = 0.0
+            for cell in self.cell_list_by_type(self.infected_type_id):
+                volume_infected += cell.volume
+            avg_infected_radius = np.sqrt(volume_infected/np.pi)
+
+            volume_virus_releasing = 0.0
+            for cell in self.cell_list_by_type(self.virus_releasing_type_id):
+                volume_virus_releasing += cell.volume
+            avg_virus_releasing_radius = np.sqrt(volume_virus_releasing/np.pi)
+
+            volume_dead = 0.0
+            for cell in self.cell_list_by_type(self.dead_type_id):
+                volume_dead += cell.volume
+            avg_dead_radius = np.sqrt(volume_dead/np.pi)
+
+            # Plot population data plot if requested
+            if plot_plaque_assay_data:
+                self.plaque_assay_data_win.add_data_point(self._infected_type_name, mcs * hours_to_mcs,
+                                                 avg_infected_radius)
+                self.plaque_assay_data_win.add_data_point(self._virus_releasing_type_name, mcs * hours_to_mcs,
+                                                 avg_virus_releasing_radius)
+                self.plaque_assay_data_win.add_data_point(self._dead_type_name, mcs * hours_to_mcs, avg_dead_radius)
+
+    @property
+    def infected_type_id(self) -> int:
+        """
+        Id of the infected cell type according to a cc3d simulation
+        """
+        return getattr(self, self._infected_type_name.upper())
+
+    @property
+    def virus_releasing_type_id(self) -> int:
+        """
+        Id of the virus-releasing cell type according to a cc3d simulation
+        """
+        return getattr(self, self._virus_releasing_type_name.upper())
+
+    @property
+    def dead_type_id(self) -> int:
+        """
+        Id of the dead cell type according to a cc3d simulation
+        """
+        return getattr(self, self._dead_type_name.upper())

@@ -51,6 +51,10 @@ from ..Models.IFNSIgnaling.IFNSteppables import IFNSimDataSteppable
 
 CompuCellSetup.register_steppable(steppable=IFNSimDataSteppable(frequency=1))
 
+from ..Models.IFNSIgnaling.IFNSteppables import IFNPlaqueAssaySteppable
+
+CompuCellSetup.register_steppable(steppable=IFNPlaqueAssaySteppable(frequency=1))
+
 from ..Models.IFNSIgnaling.IFNSteppables import IFNSteppable
 
 CompuCellSetup.register_steppable(steppable=IFNSteppable(frequency=1))
