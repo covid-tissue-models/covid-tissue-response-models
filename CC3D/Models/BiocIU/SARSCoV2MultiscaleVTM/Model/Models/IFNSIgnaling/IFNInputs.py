@@ -9,9 +9,9 @@ __param_desc__['write_pop_data_freq'] = 'Write population data to simulation dir
 write_pop_data_freq = 0  # Write population data to simulation directory frequency (disable with 0)
 
 __param_desc__['plot_ifn_data_freq'] = 'Plot ifn model data frequency'
-plot_ifn_data_freq = 0
+plot_ifn_data_freq = 1
 __param_desc__['write_ifn_data_freq'] = 'Write ifn model data to simulation directory frequency'
-write_ifn_data_freq = 0
+write_ifn_data_freq = 1
 
 __param_desc__['plot_med_diff_data_freq'] = 'Plot ifn model medium data frequency'
 plot_med_diff_data_freq = 0
@@ -21,7 +21,7 @@ write_med_diff_data_freq = 0
 __param_desc__['plot_plaque_assay_data_freq'] = 'Plot ifn plaque assay data frequency'
 plot_plaque_assay_data_freq = 1
 __param_desc__['write_plaque_assay_data_freq'] = 'Write ifn plaque assay data to simulation directory frequency'
-write_plaque_assay_data_freq = 1
+write_plaque_assay_data_freq = 0
 
 # IFN Model Parameters
 __param_desc__["k11"] = "RIGI sensing (μM/h)"

@@ -132,6 +132,27 @@ class IFNSteppableBase(nCoVSteppableBase):
     def registered_type_ids(self):
         return [getattr(self, x.upper()) for x in self._registered_types]
 
+    @property
+    def infected_type_id(self) -> int:
+        """
+        Id of the infected cell type according to a cc3d simulation
+        """
+        return getattr(self, self._infected_type_name.upper())
+
+    @property
+    def virus_releasing_type_id(self) -> int:
+        """
+        Id of the virus-releasing cell type according to a cc3d simulation
+        """
+        return getattr(self, self._virus_releasing_type_name.upper())
+
+    @property
+    def dead_type_id(self) -> int:
+        """
+        Id of the dead cell type according to a cc3d simulation
+        """
+        return getattr(self, self._dead_type_name.upper())
+
 def IFN_model_string():
     """
     Antimony model string generator for IFN intracellular signaling model adopted from "Multiscale Model
@@ -514,10 +535,6 @@ class IFNReleaseSteppable(IFNSteppableBase):
             secretor.secreteInsideCell(cell, self._release_rate * fact / cell.volume)
 
     @property
-    def virus_releasing_type_id(self):
-        return getattr(self, self.virus_releasing_type_name.upper())
-
-    @property
     def release_rate(self):
         return self._release_rate
 
@@ -717,7 +734,7 @@ class IFNSimDataSteppable(IFNSteppableBase):
                                                       x_axis_title='Time (hrs)',
                                                       y_axis_title='Variables', x_scale_type='linear',
                                                       y_scale_type='linear',
-                                                      grid=False,
+                                                      grid=True,
                                                       config_options={'legend': True})
                 new_window.add_plot(ifn_model_vars[i], style='Dots', color=colors[i], size=5)
                 setattr(self, attr_name, new_window)
@@ -729,7 +746,7 @@ class IFNSimDataSteppable(IFNSteppableBase):
                                                       x_axis_title='Time (hrs)',
                                                       y_axis_title='Variables', x_scale_type='linear',
                                                       y_scale_type='linear',
-                                                      grid=False,
+                                                      grid=True,
                                                       config_options={'legend': True})
                 new_window.add_plot(viral_replication_model_vars[i], style='Dots', color=colors[i], size=5)
                 setattr(self, attr_name, new_window)
@@ -739,7 +756,7 @@ class IFNSimDataSteppable(IFNSteppableBase):
                                                   x_axis_title='Time (hrs)',
                                                   y_axis_title='Variables', x_scale_type='linear',
                                                   y_scale_type='linear',
-                                                  grid=False,
+                                                  grid=True,
                                                   config_options={'legend': True})
             new_window.add_plot(self._ifn_field_name, style='Dots', color='red', size=5)
             setattr(self, attr_name, new_window)
@@ -921,27 +938,6 @@ class IFNSimDataSteppable(IFNSteppableBase):
         return getattr(self, self._uninfected_type_name.upper())
 
     @property
-    def infected_type_id(self) -> int:
-        """
-        Id of the infected cell type according to a cc3d simulation
-        """
-        return getattr(self, self._infected_type_name.upper())
-
-    @property
-    def virus_releasing_type_id(self) -> int:
-        """
-        Id of the virus-releasing cell type according to a cc3d simulation
-        """
-        return getattr(self, self._virus_releasing_type_name.upper())
-
-    @property
-    def dead_type_id(self) -> int:
-        """
-        Id of the dead cell type according to a cc3d simulation
-        """
-        return getattr(self, self._dead_type_name.upper())
-
-    @property
     def initial_number_cells(self):
         """
         Count of initial number of epithelial cells for rescaling purposes
@@ -1000,9 +996,9 @@ class IFNPlaqueAssaySteppable(IFNSteppableBase):
                                                          grid=True,
                                                          config_options={'legend': True})
 
-            self.plaque_assay_data_win.add_plot(self._infected_type_name, style='Lines', color='red', size=5)
-            self.plaque_assay_data_win.add_plot(self._virus_releasing_type_name, style='Lines', color='green', size=5)
-            self.plaque_assay_data_win.add_plot(self._dead_type_name, style='Lines', color='yellow', size=5)
+            self.plaque_assay_data_win.add_plot(self._infected_type_name, style='Dots', color='red', size=5)
+            self.plaque_assay_data_win.add_plot(self._virus_releasing_type_name, style='Dots', color='green', size=5)
+            self.plaque_assay_data_win.add_plot(self._dead_type_name, style='Dots', color='yellow', size=5)
 
         # Check that output directory is available
         if self.output_dir is not None:
@@ -1068,7 +1064,6 @@ class IFNPlaqueAssaySteppable(IFNSteppableBase):
     def finish(self):
         self.flush_stored_outputs()
 
-
     def flush_stored_outputs(self):
         """
         Write stored outputs to file and clear output storage
@@ -1078,24 +1073,3 @@ class IFNPlaqueAssaySteppable(IFNSteppableBase):
             with open(self.plaque_assay_data_path, 'a') as fout:
                 fout.write(MainSteppables.SimDataSteppable.data_output_string(self, self.plaque_assay_data))
                 self.plaque_assay_data.clear()
-
-    @property
-    def infected_type_id(self) -> int:
-        """
-        Id of the infected cell type according to a cc3d simulation
-        """
-        return getattr(self, self._infected_type_name.upper())
-
-    @property
-    def virus_releasing_type_id(self) -> int:
-        """
-        Id of the virus-releasing cell type according to a cc3d simulation
-        """
-        return getattr(self, self._virus_releasing_type_name.upper())
-
-    @property
-    def dead_type_id(self) -> int:
-        """
-        Id of the dead cell type according to a cc3d simulation
-        """
-        return getattr(self, self._dead_type_name.upper())
