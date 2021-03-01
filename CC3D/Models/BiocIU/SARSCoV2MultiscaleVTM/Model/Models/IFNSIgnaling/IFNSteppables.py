@@ -970,12 +970,14 @@ class IFNPlaqueAssaySteppable(IFNSteppableBase):
         IFNSteppableBase.__init__(self, frequency)
 
         # Reference to SimDataSteppable
-        self.plaquedata_steppable = None
+        self.plaque_assay_data_steppable = None
 
         self.plaque_assay_data_win = None
+        self.plaque_assay_data_path = None
         self.plaque_assay_data = dict()
 
         self.plot_plaque_assay_data = IFNInputs.plot_plaque_assay_data_freq > 0
+        self.write_plaque_assay_data = IFNInputs.write_plaque_assay_data_freq > 0
 
         # For flushing outputs every quarter simulation length
         self.__flush_counter = 1
@@ -1002,17 +1004,32 @@ class IFNPlaqueAssaySteppable(IFNSteppableBase):
             self.plaque_assay_data_win.add_plot(self._virus_releasing_type_name, style='Lines', color='green', size=5)
             self.plaque_assay_data_win.add_plot(self._dead_type_name, style='Lines', color='yellow', size=5)
 
+        # Check that output directory is available
+        if self.output_dir is not None:
+            from pathlib import Path
+            if self.write_plaque_assay_data:
+                self.plaque_assay_data_path = Path(self.output_dir).joinpath('plaque_assay_data.dat')
+                with open(self.plaque_assay_data_path, 'w'):
+                    pass
+
+                self.plaque_assay_data[-1] = ['Time',self._infected_type_name,self._virus_releasing_type_name,
+                                              self._dead_type_name]
+
     def step(self, mcs):
-        if self.plaquedata_steppable is None:
-            self.plaquedata_steppable = self.shared_steppable_vars[ifn_plaque_assay_key]
+        if self.plaque_assay_data_steppable is None:
+            self.plaque_assay_data_steppable = self.shared_steppable_vars[ifn_plaque_assay_key]
 
         plot_plaque_assay_data = self.plot_plaque_assay_data and mcs % IFNInputs.plot_plaque_assay_data_freq == 0
+        if self.output_dir is not None:
+            write_plaque_assay_data = self.write_plaque_assay_data and mcs % IFNInputs.write_plaque_assay_data_freq == 0
+        else:
+            write_plaque_assay_data = False
+
 
         hours_to_mcs = self.step_period / 60.0 / 60.0
 
-        if plot_plaque_assay_data:
+        if plot_plaque_assay_data or write_plaque_assay_data:
             import numpy as np
-
             # Measure area occupied by cells and assume its a circle
             volume_infected = 0.0
             for cell in self.cell_list_by_type(self.infected_type_id):
@@ -1029,13 +1046,38 @@ class IFNPlaqueAssaySteppable(IFNSteppableBase):
                 volume_dead += cell.volume
             avg_dead_radius = np.sqrt(volume_dead/np.pi)
 
-            # Plot population data plot if requested
+            # Plot plaque assay data if requested
             if plot_plaque_assay_data:
                 self.plaque_assay_data_win.add_data_point(self._infected_type_name, mcs * hours_to_mcs,
                                                  avg_infected_radius)
                 self.plaque_assay_data_win.add_data_point(self._virus_releasing_type_name, mcs * hours_to_mcs,
                                                  avg_virus_releasing_radius)
                 self.plaque_assay_data_win.add_data_point(self._dead_type_name, mcs * hours_to_mcs, avg_dead_radius)
+
+            # Write population data to file if requested
+            if write_plaque_assay_data:
+                self.plaque_assay_data[mcs] = [mcs * hours_to_mcs,
+                                      avg_infected_radius,
+                                      avg_virus_releasing_radius,
+                                      avg_dead_radius]
+        self.flush_stored_outputs()
+
+    def on_stop(self):
+        self.finish()
+
+    def finish(self):
+        self.flush_stored_outputs()
+
+
+    def flush_stored_outputs(self):
+        """
+        Write stored outputs to file and clear output storage
+        :return: None
+        """
+        if self.write_plaque_assay_data and self.plaque_assay_data:
+            with open(self.plaque_assay_data_path, 'a') as fout:
+                fout.write(MainSteppables.SimDataSteppable.data_output_string(self, self.plaque_assay_data))
+                self.plaque_assay_data.clear()
 
     @property
     def infected_type_id(self) -> int:
