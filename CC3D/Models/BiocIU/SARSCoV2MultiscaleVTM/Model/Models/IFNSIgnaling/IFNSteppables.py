@@ -21,12 +21,12 @@ from . import IFNInputs
 IFN_model_name = 'IFN_model'
 viral_replication_model_name = 'ifn_viral_replication_model'
 ifn_field_name = 'IFNe'
-#todo: how to set virus field name
 virus_field_name = 'Virus'
-# todo: remove simulation control from this module before release
-hours_to_simulate = 40.0  # 10 in the original model
 ifn_model_vars = ["IFN", "STATP", "IRF7", "IRF7P"]
+ifn_model_params_keys = ['k11','k12','k13','k14','k21','k31','k32','k33',
+                         't3','k41','k42','t4','k51','t5','n','RIGI']
 viral_replication_model_vars = ["H", "V"]
+viral_replication_model_params_keys = ['k61','k71','k72','k73']
 
 #Steppable keys
 ifn_signaling_key = 'ifn_signaling_steppable'
@@ -158,13 +158,22 @@ class IFNSteppableBase(nCoVSteppableBase):
         return getattr(self, self._dead_type_name.upper())
 
 
-def IFN_model_string():
+def IFN_model_string(**kwargs):
     """
     Antimony model string generator for IFN intracellular signaling model adopted from "Multiscale Model
     of RNA Virus Replication and Interferon Responses Reveals Factors Controlling Plaque Growth Dynamics"
     Josua O. Aponte-Serrano, Jordan J.A. Weaver, T.J. Sego, James A. Glazier and Jason E. Shoemaker
-    :return: Antimony model string
+    :return: IFN antimony model string
     """
+
+    ifn_params = {k: getattr(IFNInputs, k) for k in ifn_model_params_keys}
+    for k, v in kwargs.items():
+        if k not in ifn_params.keys():
+            raise AttributeError(f'Unrecognized parameter ({k} = {v})')
+        elif v < 0.0:
+            raise ValueError(f'Value must be non-negative ({k} = {v})')
+        ifn_params[k] = v
+
     model_string = f'''model {IFN_model_name}()
         //Equations
         E2a: -> IFN         ; H*(k11*RIGI*V+k12*(V^n)/(k13+(V^n))+k14*IRF7P)    ;
@@ -177,22 +186,22 @@ def IFN_model_string():
         E6b: IRF7P ->       ; t5*IRF7P                                          ;
 
         //Parameters
-        k11 = {IFNInputs.k11}    ;
-        k12 = {IFNInputs.k12}    ;
-        k13 = {IFNInputs.k13}    ;
-        k14 = {IFNInputs.k14}    ;
-        k21 = {IFNInputs.k21}    ;
-        k31 = {IFNInputs.k31}    ;
-        k32 = {IFNInputs.k32}    ;
-        k33 = {IFNInputs.k33}    ;
-        t3  = {IFNInputs.t3}     ;
-        k41 = {IFNInputs.k41}    ;
-        k42 = {IFNInputs.k42}    ;
-        t4  = {IFNInputs.t4}     ;
-        k51 = {IFNInputs.k51}    ;
-        t5  = {IFNInputs.t5}     ;
-        n   = {IFNInputs.n}      ;
-        RIGI = {IFNInputs.RIGI}  ;
+        k11 = {ifn_params['k11']}    ;
+        k12 = {ifn_params['k12']}    ;
+        k13 = {ifn_params['k13']}    ;
+        k14 = {ifn_params['k14']}    ;
+        k21 = {ifn_params['k21']}    ;
+        k31 = {ifn_params['k31']}    ;
+        k32 = {ifn_params['k32']}    ;
+        k33 = {ifn_params['k33']}    ;
+        t3  = {ifn_params['t3']}     ;
+        k41 = {ifn_params['k41']}    ;
+        k42 = {ifn_params['k42']}    ;
+        t4  = {ifn_params['t4']}     ;
+        k51 = {ifn_params['k51']}    ;
+        t5  = {ifn_params['t5']}     ;
+        n   = {ifn_params['n']}      ;
+        RIGI = {ifn_params['RIGI']}  ;
 
         // Inputs
         H    = 0.0     ;
@@ -202,7 +211,7 @@ def IFN_model_string():
     return model_string
 
 
-def viral_replication_model_string():
+def viral_replication_model_string(**kwargs):
     """
     Antimony model string generator for viral replication model coupled with the intracellular signaling
     model adopted from "Multiscale Model of RNA Virus Replication and Interferon Responses Reveals Factors
@@ -211,6 +220,15 @@ def viral_replication_model_string():
 
     :return: Antimony model string
     """
+
+    vrm_params = {k: getattr(IFNInputs, k) for k in viral_replication_model_params_keys}
+    for k, v in kwargs.items():
+        if k not in vrm_params.keys():
+            raise AttributeError(f'Unrecognized parameter ({k} = {v})')
+        elif v < 0.0:
+            raise ValueError(f'Value must be non-negative ({k} = {v})')
+        vrm_params[k] = v
+
     model_string = f'''model {viral_replication_model_name}()
         //Equations
         E7a: H ->           ; H*k61*V                     ;
@@ -218,10 +236,10 @@ def viral_replication_model_string():
         E8b: V ->           ; k73*V                       ;
 
         //Parameters
-        k61 = {IFNInputs.k61} ;
-        k71 = {IFNInputs.k71} ;
-        k72 = {IFNInputs.k72} ;
-        k73 = {IFNInputs.k73} ;
+        k61 = {vrm_params['k61']} ;
+        k71 = {vrm_params['k71']} ;
+        k72 = {vrm_params['k72']} ;
+        k73 = {vrm_params['k73']} ;
 
         //Initial Conditions
         V = 0.0      ;
@@ -251,8 +269,10 @@ def get_cell_ifn_model(cell):
     :param cell: a cell
     :return: ifn model instance
     """
-    return getattr(cell.sbml, IFN_model_name)
-
+    if hasattr(cell.sbml, IFN_model_name):
+        return getattr(cell.sbml, IFN_model_name)
+    else:
+        return None
 
 class IFNSteppable(IFNSteppableBase):
     """
@@ -270,7 +290,8 @@ class IFNSteppable(IFNSteppableBase):
 
         # Internal data
         self._registered_types = []
-        self._ifn_params = {k: getattr(IFNInputs, k) for k in ifn_model_vars}
+        self._ifn_params = {}
+        self._vrm_params = {}
 
         # Initialize default data
         self.ifn_field_name = ifn_field_name
@@ -280,32 +301,36 @@ class IFNSteppable(IFNSteppableBase):
         self.register_type(MainSteppables.uninfected_type_name)
         self.register_type(MainSteppables.infected_type_name)
         self.register_type(MainSteppables.virus_releasing_type_name)
+        self.set_ifn_params(**{k: getattr(IFNInputs, k) for k in ifn_model_params_keys})
+        self.set_viral_replication_params(**{k: getattr(IFNInputs, k) for k in viral_replication_model_params_keys})
 
         self.sbml_options = {'relative': 1e-10, 'absolute': 1e-12}
 
     def start(self):
-        # todo: remove control of simulation steps from this module before release
         hours_to_mcs = self.step_period / 60.0 / 60.0
-        self.get_xml_element('simulation_steps').cdata = hours_to_simulate / hours_to_mcs
         self.set_sbml_global_options(self.sbml_options)
 
         # Load IFN sbml model
-        # todo: make model parameters of IFN sbml model settable;
-        #  redundant this can be done using the IFNInputs
-        def ifn_model_fcn(cell):
-            return IFN_model_string()
+        def _ifn_model_fcn(cell):
+            """
+            Callback to the ifn model string generator
+            """
+            return IFN_model_string(**self._ifn_params)
 
         self.register_ode_model(model_name=IFN_model_name,
-                                model_fcn=ifn_model_fcn,
+                                model_fcn=_ifn_model_fcn,
                                 cell_types=self._registered_types,
                                 step_size=hours_to_mcs)
 
         # Load viral replication sbml model
-        def vr_model_fcn(cell):
-            return viral_replication_model_string()
+        def _vr_model_fcn(cell):
+            """
+            Callback to the viral replication model string generator
+            """
+            return viral_replication_model_string(**self._vrm_params)
 
         self.register_ode_model(model_name=viral_replication_model_name,
-                                model_fcn=vr_model_fcn,
+                                model_fcn=_vr_model_fcn,
                                 cell_types=self._registered_types,
                                 step_size=hours_to_mcs)
 
@@ -324,6 +349,46 @@ class IFNSteppable(IFNSteppableBase):
         # Step the models for all registered types
         self.timestep_ode_model(model_name=IFN_model_name)
         self.timestep_ode_model(model_name=viral_replication_model_name)
+
+    def set_ifn_params(self, **kwargs):
+        """
+        Set parameters in ifn model
+        :param kwargs: keyword argument values
+        :return: None
+        """
+        for k, v in kwargs.items():
+            # todo: safeguard already inside the antimony string generating fun
+            if k not in ifn_model_params_keys:
+                raise AttributeError(f'Unrecognized parameter ({k} = {v})')
+            elif v < 0.0:
+                raise ValueError(f'Value must be non-negative ({k} = {v})')
+            self._ifn_params[k] = v
+
+    def get_ifn_params(self) -> dict:
+        """
+        Get a copy of parameters in viral replication model for newly created cells
+        """
+        return self._ifn_params.copy()
+
+    def set_viral_replication_params(self, **kwargs):
+        """
+        Set parameters in viral replication model
+        :param kwargs: keyword argument values
+        :return: None
+        """
+        for k, v in kwargs.items():
+            # todo: safeguard already inside the antimony string generating fun
+            if k not in viral_replication_model_params_keys:
+                raise AttributeError(f'Unrecognized parameter ({k} = {v})')
+            elif v < 0.0:
+                raise ValueError(f'Value must be non-negative ({k} = {v})')
+            self._vrm_params[k] = v
+
+    def get_viral_replication_params(self) -> dict:
+        """
+        Get a copy of parameters in viral replication model for newly created cells
+        """
+        return self._vrm_params.copy()
 
 
 class IFNCellInitializerSteppable(MainSteppables.CellInitializerSteppable, IFNSteppableBase):
@@ -360,10 +425,10 @@ class IFNViralInternalizationSteppable(MainSteppables.ViralInternalizationSteppa
     unique_key = ifn_viral_internalization_key
 
     def __init__(self, frequency=1):
-        MainSteppables.ViralInternalizationSteppable.__init__(self, frequency)
-        IFNSteppableBase.__init__(self)
+        super().__init__(frequency)
 
         # Internal data
+        # todo: initialization of inherited classes didnt work
         self._registered_types = []
         self._initial_amount_virus = 0.0
 
@@ -470,6 +535,8 @@ class IFNViralReleaseSteppable(MainSteppables.ViralReleaseSteppable, IFNSteppabl
 
     @virus_level_scaling_factor.setter
     def virus_level_scaling_factor(self, _val: float):
+        if _val < 0:
+            raise ValueError("Virus scaling factor must be non-negative")
         self._virus_level_scaling_factor= _val
 
 
@@ -543,8 +610,10 @@ class IFNReleaseSteppable(IFNSteppableBase):
 
         hours_to_mcs = self.step_period / 60.0 / 60.0
         for cell in self.cell_list_by_type(*self.registered_type_ids):
+            intracellularIFN = 1.0
             ifn_cell_sbml = get_cell_ifn_model(cell)
-            intracellularIFN = ifn_cell_sbml['IFN']
+            if ifn_cell_sbml:
+                intracellularIFN = ifn_cell_sbml['IFN']
             p = self.release_rate * hours_to_mcs * intracellularIFN
             secretor.secreteInsideCell(cell, p * fact / cell.volume)
 
@@ -572,10 +641,14 @@ class IFNVirusFieldInitializerSteppable(MainSteppables.VirusFieldInitializerStep
     def start(self):
         min_to_mcs = self.step_period / 60.0
         days_to_mcs = min_to_mcs / 60.0 / 24.0
-        self.diffusion_coefficient = IFNInputs.virus_diffusion_coefficient * min_to_mcs / self.voxel_length ** 2
-        self.decay_coefficient = IFNInputs.c * days_to_mcs
-        MainSteppables.VirusFieldInitializerSteppable.start(self)
-
+        if self._diffusion_coefficient is None:
+            self.get_xml_element(self._virus_diffusion_id).cdata = IFNInputs.virus_diffusion_coefficient * min_to_mcs / self.voxel_length ** 2
+        else:
+            self.get_xml_element(self._virus_diffusion_id).cdata = self._diffusion_coefficient * min_to_mcs / self.voxel_length ** 2
+        if self._decay_coefficient is None:
+            self.get_xml_element(self._virus_decay_id).cdata = IFNInputs.c * days_to_mcs
+        else:
+            self.get_xml_element(self._virus_decay_id).cdata = self._decay_coefficient * days_to_mcs
 
 class IFNFieldInitializerSteppable(IFNSteppableBase):
     """
@@ -585,8 +658,6 @@ class IFNFieldInitializerSteppable(IFNSteppableBase):
     decay
     """
 
-    # todo: make diffusion and decay coefficients settable in IFNFieldInitializerSteppable
-
     unique_key = ifn_field_initializer_key
 
     def __init__(self, frequency):
@@ -595,37 +666,62 @@ class IFNFieldInitializerSteppable(IFNSteppableBase):
         # Internal Data
         self._ifn_diffusion_id = 'ifn_dc'
         self._ifn_decay_id = 'ifn_decay'
+        self._diffusion_coefficient = None
+        self._decay_coefficient = None
 
         # Initialize Defaut Data
         self.ifn_field_name = ifn_field_name
 
     def start(self):
+        """
+        Called once to initialize simulation
+        """
         min_to_mcs = self.step_period / 60.0
         hours_to_mcs = min_to_mcs / 60.0
-        self.diffusion_coefficient = IFNInputs.IFNe_diffusion_coefficient * min_to_mcs / self.voxel_length ** 2
-        self.decay_coefficient = IFNInputs.t2 * hours_to_mcs
+        if self._diffusion_coefficient is None:
+            self.get_xml_element(self._ifn_diffusion_id).cdata = IFNInputs.IFNe_diffusion_coefficient * min_to_mcs / self.voxel_length ** 2
+        else:
+            self.get_xml_element(self._ifn_diffusion_id).cdata = self._diffusion_coefficient * min_to_mcs / self.voxel_length ** 2
+        if self._decay_coefficient is None:
+            self.get_xml_element(self._ifn_decay_id).cdata = IFNInputs.t2 * hours_to_mcs
+        else:
+            self.get_xml_element(self._ifn_decay_id).cdata = self._decay_coefficient * hours_to_mcs
 
     @property
     def diffusion_coefficient(self) -> float:
-        return self.get_xml_element(self._ifn_diffusion_id).cdata
+        """
+        Diffusion coefficient, in units microns^2/s
+        """
+        return self._diffusion_coefficient
 
     @diffusion_coefficient.setter
     def diffusion_coefficient(self, _val: float):
         if _val <= 0:
             raise ValueError("Diffusion coefficient must be positive")
-        self.get_xml_element(self._ifn_diffusion_id).cdata = _val
+        self._diffusion_coefficient = _val
 
     @property
     def decay_coefficient(self) -> float:
-        return self.get_xml_element(self._ifn_decay_id).cdata
+        """
+        Decay coefficient, in units 1/s
+        """
+        return self._decay_coefficient
 
     @decay_coefficient.setter
     def decay_coefficient(self, _val: float):
-        if _val < 0:
+        if _val < 0.0:
             raise ValueError("Decay coefficient must be non-negative")
-        self.get_xml_element(self._ifn_decay_id).cdata = _val
+        self._decay_coefficient = _val
 
     def set_field_data(self, field_name: str = None, diffusion: str = None, decay: str = None):
+        """
+        Set diffusion field data for virus field
+
+        :param field_name: name of the virus field (optional)
+        :param diffusion: cc3dml id of the diffusion field diffusion coefficient (optional)
+        :param decay: cc3dml id of the diffusion field decay coefficient (optional)
+        :return: None
+        """
         if field_name is not None:
             self.ifn_field_name = field_name
         if diffusion is not None:
@@ -635,10 +731,16 @@ class IFNFieldInitializerSteppable(IFNSteppableBase):
 
     @property
     def field_secretor(self):
+        """
+        Virus field secretor
+        """
         return self.get_field_secretor(self.ifn_field_name)
 
     @property
     def field_object(self):
+        """
+        Reference to virus field
+        """
         return getattr(self.field, self.ifn_field_name)
 
 
@@ -667,8 +769,6 @@ class IFNSimDataSteppable(IFNSteppableBase):
     Data is written to the cc3d output directory with the name 'med_diff_data.dat'.
     Writing is disabled when write_med_diff_data_freq is set to zero.
     """
-
-    # todo: make all data file paths unique to framework;
 
     unique_key = ifn_sim_data_key
 
@@ -737,7 +837,7 @@ class IFNSimDataSteppable(IFNSteppableBase):
         if self.output_dir is not None:
             from pathlib import Path
             if self.write_pop_data:
-                self.pop_data_path = Path(self.output_dir).joinpath('pop_data.dat')
+                self.pop_data_path = Path(self.output_dir).joinpath('ifn_pop_data.dat')
                 with open(self.pop_data_path, 'w'):
                     pass
 
@@ -807,7 +907,7 @@ class IFNSimDataSteppable(IFNSteppableBase):
         if self.output_dir is not None:
             from pathlib import Path
             if self.write_med_diff_data:
-                self.med_diff_data_path = Path(self.output_dir).joinpath('med_diff_data.dat')
+                self.med_diff_data_path = Path(self.output_dir).joinpath('ifn_med_diff_data.dat')
                 with open(self.med_diff_data_path, 'w'):
                     pass
 
@@ -840,14 +940,14 @@ class IFNSimDataSteppable(IFNSteppableBase):
             # Gather population data
             num_cells_uninfected = len(self.cell_list_by_type(self.uninfected_type_id))
             num_cells_infected = len(self.cell_list_by_type(self.infected_type_id))
-            num_cells_virusreleasing = len(self.cell_list_by_type(self.virus_releasing_type_id))
+            num_cells_virus_releasing = len(self.cell_list_by_type(self.virus_releasing_type_id))
             num_cells_dying = len(self.cell_list_by_type(self.dead_type_id))
 
             # Plot population data plot if requested
             if plot_pop_data:
                 self.pop_data_win.add_data_point(self._uninfected_type_name,  mcs * hours_to_mcs, num_cells_uninfected)
                 self.pop_data_win.add_data_point(self._infected_type_name,  mcs * hours_to_mcs, num_cells_infected)
-                self.pop_data_win.add_data_point(self._virus_releasing_type_name,  mcs * hours_to_mcs, num_cells_virusreleasing)
+                self.pop_data_win.add_data_point(self._virus_releasing_type_name,  mcs * hours_to_mcs, num_cells_virus_releasing)
                 self.pop_data_win.add_data_point(self._dead_type_name,  mcs * hours_to_mcs, num_cells_dying)
 
             # Write population data to file if requested
@@ -855,7 +955,7 @@ class IFNSimDataSteppable(IFNSteppableBase):
                 self.pop_data[mcs] = [mcs * hours_to_mcs,
                                       num_cells_uninfected,
                                       num_cells_infected,
-                                      num_cells_virusreleasing,
+                                      num_cells_virus_releasing,
                                       num_cells_dying]
 
         # Plotting and writing average values of IFN model variables
@@ -1003,8 +1103,6 @@ class IFNPlaqueAssaySteppable(IFNSteppableBase):
         self.dead_type_name = MainSteppables.dead_type_name
 
     def start(self):
-        #todo: initialize single infected cell in the center of the simulation domain
-
         # Initialize population data plot if requested
         if self.plot_plaque_assay_data:
             self.plaque_assay_data_win = self.add_new_plot_window(title='Plaque Data',
