@@ -41,7 +41,11 @@ ifn_viral_death_key = 'ifn_viral_death_steppable'
 ifn_virus_field_initializer_key = 'ifn_virus_field_initializer_steppable'
 ifn_plaque_assay_key = 'ifn_plaque_assay_steppable'
 
+
 class IFNSteppableBase(nCoVSteppableBase):
+    # todo: basic docstring for IFNSteppableBase
+    # todo: document per derived class which of the properties and methods are actually used
+    #  e.g., self.register_type corresponds to registration of a cell type for something particular to a derived class
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -153,6 +157,7 @@ class IFNSteppableBase(nCoVSteppableBase):
         """
         return getattr(self, self._dead_type_name.upper())
 
+
 def IFN_model_string():
     """
     Antimony model string generator for IFN intracellular signaling model adopted from "Multiscale Model
@@ -203,6 +208,7 @@ def viral_replication_model_string():
     model adopted from "Multiscale Model of RNA Virus Replication and Interferon Responses Reveals Factors
     Controlling Plaque Growth Dynamics" Josua O. Aponte-Serrano, Jordan J.A. Weaver, T.J. Sego,
     James A. Glazier and Jason E. Shoemaker
+
     :return: Antimony model string
     """
     model_string = f'''model {viral_replication_model_name}()
@@ -264,6 +270,7 @@ class IFNSteppable(IFNSteppableBase):
 
         # Internal data
         self._registered_types = []
+        self._ifn_params = {k: getattr(IFNInputs, k) for k in ifn_model_vars}
 
         # Initialize default data
         self.ifn_field_name = ifn_field_name
@@ -341,10 +348,6 @@ class IFNCellInitializerSteppable(MainSteppables.CellInitializerSteppable, IFNSt
         for cell in self.cell_list_by_type(self.infected_type_id):
             self.set_cell_type(cell, self.virus_releasing_type_id)
 
-    @property
-    def virus_releasing_type_id(self) -> int:
-        return getattr(self, self.virus_releasing_type_name.upper())
-
 
 class IFNViralInternalizationSteppable(MainSteppables.ViralInternalizationSteppable, IFNSteppableBase):
     """
@@ -357,7 +360,8 @@ class IFNViralInternalizationSteppable(MainSteppables.ViralInternalizationSteppa
     unique_key = ifn_viral_internalization_key
 
     def __init__(self, frequency=1):
-        super().__init__(frequency)
+        MainSteppables.ViralInternalizationSteppable.__init__(self, frequency)
+        IFNSteppableBase.__init__(self)
 
         # Internal data
         self._registered_types = []
@@ -406,6 +410,7 @@ class IFNViralInternalizationSteppable(MainSteppables.ViralInternalizationSteppa
     def initial_amount_virus(self, _val: str):
         self._initial_amount_virus = _val
 
+
 class IFNEclipsePhaseSteppable(MainSteppables.EclipsePhaseSteppable, IFNSteppableBase):
     """
     Convenience steppable to rescale ecplise phase parameter
@@ -420,9 +425,13 @@ class IFNEclipsePhaseSteppable(MainSteppables.EclipsePhaseSteppable, IFNSteppabl
         days_to_mcs = self.step_period / 60.0 / 60.0 / 24.0
         self.eclipse_phase = 1.0 / (IFNInputs.k * days_to_mcs)
 
+
 class IFNViralReleaseSteppable(MainSteppables.ViralReleaseSteppable, IFNSteppableBase):
     """
     Performs virion release according to the intracellular virus level
+
+    The rate of virus release per unit of intracellular virus can be set with the attribute ``release_rate``, in
+    time units of hours.
     """
 
     unique_key = ifn_viral_release_key
@@ -435,6 +444,7 @@ class IFNViralReleaseSteppable(MainSteppables.ViralReleaseSteppable, IFNSteppabl
 
         # Initialize default data
         self.virus_level_scaling_factor = 1094460.28
+        self.release_rate = IFNInputs.k73
 
     def step(self, mcs):
         secretor = self.get_field_secretor(field_name=self._target_field_name)
@@ -446,12 +456,10 @@ class IFNViralReleaseSteppable(MainSteppables.ViralReleaseSteppable, IFNSteppabl
         hours_to_mcs = self.step_period / 60.0 / 60.0
         for cell in self.cell_list_by_type(self.virus_releasing_type_id):
             virus_cell_sbml = get_cell_viral_replication_model(cell)
-            k73 = IFNInputs.k73 * hours_to_mcs
             intracellularVirus = virus_cell_sbml['V']
-            p = k73 * intracellularVirus * self._virus_level_scaling_factor
-            self.release_rate = p
+            p = self.release_rate * hours_to_mcs * intracellularVirus * self._virus_level_scaling_factor
 
-            secretor.secreteInsideCell(cell, self._release_rate * fact / cell.volume)
+            secretor.secreteInsideCell(cell, p * fact / cell.volume)
 
     @property
     def virus_level_scaling_factor(self):
@@ -470,7 +478,9 @@ class IFNViralDeathSteppable(MainSteppables.ViralDeathSteppable, IFNSteppableBas
     Performs viral death as a function of the cell's viability determined from the cell' internal
     viral replication model.
 
-    The derived class specified the death rate as a per cell rate, rather than a rate by cell type
+    The derived class specified the death rate as a per cell rate, rather than a rate by cell type.
+
+    The rate of cell death can be set with the attribute ``viral_death_rate``, in time units of hours.
     """
 
     unique_key = ifn_viral_death_key
@@ -478,15 +488,17 @@ class IFNViralDeathSteppable(MainSteppables.ViralDeathSteppable, IFNSteppableBas
     def __init__(self, frequency=1):
         super().__init__(frequency)
 
+        # Initialize default data
+        self.viral_death_rate = IFNInputs.k61
+
     def step(self, mcs):
         hours_to_mcs = self.step_period / 60.0 / 60.0
         for cell in self.cell_list_by_type(self.virus_releasing_type_id):
             virus_cell_sbml = get_cell_viral_replication_model(cell)
-            k61 = IFNInputs.k61 * hours_to_mcs
             H = virus_cell_sbml['H']
             V = virus_cell_sbml['V']
-            self.viral_death_rate = k61 * V * (1 - H)
-            pr = nCoVUtils.ul_rate_to_prob(self.viral_death_rate)
+            viral_death_rate = self.viral_death_rate * hours_to_mcs * V * (1 - H)
+            pr = nCoVUtils.ul_rate_to_prob(viral_death_rate)
             if random.random() <= pr:
                 self.set_cell_type(cell, self.dead_type_id)
 
@@ -495,7 +507,10 @@ class IFNReleaseSteppable(IFNSteppableBase):
     """
     Performs IFN release
 
-    If the simulation domain is quasi-2D, then release will be multiplied by the height of the domain
+    If the simulation domain is quasi-2D, then release will be multiplied by the height of the domain.
+
+    The release rate of IFN per unit of intracellular IFN can be set with the attribute ``release_rate``, in
+    time units of hours.
     """
 
     unique_key = ifn_release_key
@@ -517,6 +532,7 @@ class IFNReleaseSteppable(IFNSteppableBase):
         self.register_type(MainSteppables.uninfected_type_name)
         self.register_type(MainSteppables.infected_type_name)
         self.register_type(MainSteppables.virus_releasing_type_name)
+        self.release_rate = IFNInputs.k21
 
     def step(self, mcs):
         secretor = self.get_field_secretor(field_name=self._ifn_field_name)
@@ -528,11 +544,9 @@ class IFNReleaseSteppable(IFNSteppableBase):
         hours_to_mcs = self.step_period / 60.0 / 60.0
         for cell in self.cell_list_by_type(*self.registered_type_ids):
             ifn_cell_sbml = get_cell_ifn_model(cell)
-            k21 = ifn_cell_sbml['k21'] * hours_to_mcs
             intracellularIFN = ifn_cell_sbml['IFN']
-            p = k21 * intracellularIFN
-            self.release_rate = p
-            secretor.secreteInsideCell(cell, self._release_rate * fact / cell.volume)
+            p = self.release_rate * hours_to_mcs * intracellularIFN
+            secretor.secreteInsideCell(cell, p * fact / cell.volume)
 
     @property
     def release_rate(self):
@@ -560,6 +574,7 @@ class IFNVirusFieldInitializerSteppable(MainSteppables.VirusFieldInitializerStep
         days_to_mcs = min_to_mcs / 60.0 / 24.0
         self.diffusion_coefficient = IFNInputs.virus_diffusion_coefficient * min_to_mcs / self.voxel_length ** 2
         self.decay_coefficient = IFNInputs.c * days_to_mcs
+        MainSteppables.VirusFieldInitializerSteppable.start(self)
 
 
 class IFNFieldInitializerSteppable(IFNSteppableBase):
@@ -569,6 +584,8 @@ class IFNFieldInitializerSteppable(IFNSteppableBase):
     By default, requires CC3DML ids "ifn_dc" for virus field diffusion coefficient and "ifn_decay" for virus field
     decay
     """
+
+    # todo: make diffusion and decay coefficients settable in IFNFieldInitializerSteppable
 
     unique_key = ifn_field_initializer_key
 
@@ -650,6 +667,8 @@ class IFNSimDataSteppable(IFNSteppableBase):
     Data is written to the cc3d output directory with the name 'med_diff_data.dat'.
     Writing is disabled when write_med_diff_data_freq is set to zero.
     """
+
+    # todo: make all data file paths unique to framework;
 
     unique_key = ifn_sim_data_key
 
