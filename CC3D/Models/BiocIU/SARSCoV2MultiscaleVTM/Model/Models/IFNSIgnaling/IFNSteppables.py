@@ -406,12 +406,13 @@ class IFNCellInitializerSteppable(MainSteppables.CellInitializerSteppable, IFNSt
         # Initialize default data
         self.virus_releasing_type_name = MainSteppables.virus_releasing_type_name
         self.random_infected_fraction(1.0)
+        # self.single_infected_cell()
 
     def start(self):
         super().start()
-
-        for cell in self.cell_list_by_type(self.infected_type_id):
-            self.set_cell_type(cell, self.virus_releasing_type_id)
+        #
+        # for cell in self.cell_list_by_type(self.infected_type_id):
+        #     self.set_cell_type(cell, self.virus_releasing_type_id)
 
 
 class IFNViralInternalizationSteppable(MainSteppables.ViralInternalizationSteppable, IFNSteppableBase):
@@ -488,8 +489,19 @@ class IFNEclipsePhaseSteppable(MainSteppables.EclipsePhaseSteppable, IFNSteppabl
 
         # Initialize default data
         days_to_mcs = self.step_period / 60.0 / 60.0 / 24.0
-        self.eclipse_phase = 1.0 / (IFNInputs.k * days_to_mcs)
+        self.eclipse_phase = IFNInputs.k * days_to_mcs
 
+    def step(self, mcs):
+        """
+        Called every simulation step
+
+        :param mcs: current simulation step
+        :return: None
+        """
+        pr = nCoVUtils.ul_rate_to_prob(self.eclipse_phase)
+        for cell in self.cell_list_by_type(self.infected_type_id):
+            if random.random() <= pr:
+                self.set_cell_type(cell, self.virus_releasing_type_id)
 
 class IFNViralReleaseSteppable(MainSteppables.ViralReleaseSteppable, IFNSteppableBase):
     """
@@ -1145,12 +1157,12 @@ class IFNPlaqueAssaySteppable(IFNSteppableBase):
             import numpy as np
             # Measure area occupied by cells and assume its a circle
             volume_infected = 0.0
-            for cell in self.cell_list_by_type(self.infected_type_id):
+            for cell in self.cell_list_by_type(self.infected_type_id,self.virus_releasing_type_id,self.dead_type_id):
                 volume_infected += cell.volume
             avg_infected_radius = np.sqrt(volume_infected/np.pi)
 
             volume_virus_releasing = 0.0
-            for cell in self.cell_list_by_type(self.virus_releasing_type_id):
+            for cell in self.cell_list_by_type(self.virus_releasing_type_id,self.dead_type_id):
                 volume_virus_releasing += cell.volume
             avg_virus_releasing_radius = np.sqrt(volume_virus_releasing/np.pi)
 

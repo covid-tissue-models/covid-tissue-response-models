@@ -64,15 +64,3 @@ from ..Models.IFNSIgnaling.IFNSteppables import IFNCellInitializerSteppable
 CompuCellSetup.register_steppable(steppable=IFNCellInitializerSteppable(frequency=1))
 
 CompuCellSetup.run()
-
-from ..Models.IFNSIgnaling import IFNSteppables
-
-
-get_cell_viral_replication_model = IFNSteppables.get_cell_viral_replication_model
-
-def new_get_cell_viral_replication_model(cell):
-    if cell is None:
-        return {'V': my_virus_func(cell)}
-    return get_cell_viral_replication_model(cell)
-
-IFNSteppables.get_cell_viral_replication_model = new_get_cell_viral_replication_model
