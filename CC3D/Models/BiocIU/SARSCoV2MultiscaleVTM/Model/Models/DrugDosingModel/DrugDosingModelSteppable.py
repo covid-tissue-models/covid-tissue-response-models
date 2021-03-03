@@ -622,7 +622,7 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
             for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING, self.UNINFECTED):
                 self.timestep_cell_sbml('drug_metabolization', cell)
 
-                cell.dict['rmax'] = self.get_rmax(cell.sbml.drug_metabolization['Mala'])
+                cell.dict['rmax'] = self.get_rmax(cell.sbml.drug_metabolization['Mntp'])
                 if cell.type != self.UNINFECTED:
                     vr_model = getattr(cell.sbml, self.vr_model_name)
                     vr_model.replicating_rate = cell.dict['rmax']
@@ -672,6 +672,39 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
 
     def finish(self):
         pass
+
+class ProdrugDiffusionControler(ViralInfectionVTMSteppableBasePy):
+    """
+    Responsible for controlling prodrug diffusion
+    """
+
+    def __init__(self, frequency=1):
+        if not diffusing_drug:
+            frequency = 9999
+        ViralInfectionVTMSteppableBasePy.__init__(self, frequency)
+
+        self.drug_dosing_model_key = drug_dosing_model_key
+
+        self.step = None
+        # self.ddm_rr = None
+
+    def start(self):
+        if diffusing_drug:
+            self.step = self.diff_step
+            self.get_xml_element('prodr_dc').cdata = prodrug_diff_coef_au
+            # self.ddm_rr = self.shared_steppable_vars[self.drug_dosing_model_key].ddm_rr
+        else:
+            self.step = self.empty_step
+
+    def empty_step(self, mcs):
+        pass
+
+    def diff_step(self, mcs):
+        pass
+
+    def get_incoming_rmds(self):
+
+
 
 
 class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
