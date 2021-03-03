@@ -19,7 +19,7 @@ __param_desc__['write_med_diff_data_freq'] = 'Write ifn model medium data to sim
 write_med_diff_data_freq = 0
 
 __param_desc__['plot_plaque_assay_data_freq'] = 'Plot ifn plaque assay data frequency'
-plot_plaque_assay_data_freq = 0
+plot_plaque_assay_data_freq = 1
 __param_desc__['write_plaque_assay_data_freq'] = 'Write ifn plaque assay data to simulation directory frequency'
 write_plaque_assay_data_freq = 0
 

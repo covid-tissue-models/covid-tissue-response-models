@@ -406,13 +406,12 @@ class IFNCellInitializerSteppable(MainSteppables.CellInitializerSteppable, IFNSt
         # Initialize default data
         self.virus_releasing_type_name = MainSteppables.virus_releasing_type_name
         self.random_infected_fraction(1.0)
-        # self.single_infected_cell()
 
     def start(self):
         super().start()
-        #
-        # for cell in self.cell_list_by_type(self.infected_type_id):
-        #     self.set_cell_type(cell, self.virus_releasing_type_id)
+
+        for cell in self.cell_list_by_type(self.infected_type_id):
+            self.set_cell_type(cell, self.virus_releasing_type_id)
 
 
 class IFNViralInternalizationSteppable(MainSteppables.ViralInternalizationSteppable, IFNSteppableBase):

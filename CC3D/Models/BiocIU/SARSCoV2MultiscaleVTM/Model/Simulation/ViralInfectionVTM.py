@@ -63,4 +63,9 @@ from ..Models.IFNSIgnaling.IFNSteppables import IFNCellInitializerSteppable
 
 CompuCellSetup.register_steppable(steppable=IFNCellInitializerSteppable(frequency=1))
 
+# from ViralInfectionVTMSteppables import CellInitializerSteppable
+# steppable = CellInitializerSteppable(frequency=1)
+# steppable.single_infected_cell()
+# CompuCellSetup.register_steppable(steppable=steppable)
+
 CompuCellSetup.run()
