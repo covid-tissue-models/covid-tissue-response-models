@@ -1,6 +1,6 @@
 from numpy import log
 from .DDMUtils import SetImporter
-
+from ViralInfectionVTMModelInputs import s_to_mcs, um_to_lat_width
 rate_sets_dict = SetImporter.import_sets_as_dict()
 
 __param_desc__ = {}
@@ -164,8 +164,14 @@ __param_desc__['active_met_ic50'] = 'value for the active metabolite ic50. param
                                     'concentration of drug (it is always linear)'
 active_met_ic50 = rs.a * drug_ic50 + rs.b
 
+__param_desc__['hill_coef'] = 'Hill coeficient for diminishing hill function of rmax'
+hill_coef = 2
+
 __param_desc__['diffusing_drug'] = 'bool to use scalar prodrug or as diffusive species'
 diffusing_drug = False
 
-__param_desc__['hill_coef'] = 'Hill coeficient for diminishing hill function of rmax'
-hill_coef = 2
+__param_desc__['prodrug_diff_coef_um2'] = 'estimated diffusion length of prodrug (remdesivir) [um^2/s]'
+prodrug_diff_coef_um2 = 3
+
+__param_desc__['prodrug_diff_coef_au'] = 'estimated diffusion length of prodrug (remdesivir) [cc3d units]'
+prodrug_diff_coef_au = prodrug_diff_coef_um2 * s_to_mcs / (um_to_lat_width ** 2)
