@@ -497,7 +497,6 @@ class IFNViralInternalizationSteppable(IFNSteppableBase, MainSteppables.ViralInt
         super().__init__(frequency)
 
         # Internal data
-        # todo: initialization of inherited classes didnt work
         self._initial_amount_virus = 0.0
 
         # Initialize default data
