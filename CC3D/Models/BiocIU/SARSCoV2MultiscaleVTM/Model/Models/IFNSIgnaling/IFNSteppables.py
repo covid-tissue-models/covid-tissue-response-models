@@ -477,7 +477,7 @@ class IFNCellInitializerSteppable(MainSteppables.CellInitializerSteppable, IFNSt
             self.set_cell_type(cell, self.virus_releasing_type_id)
 
 
-class IFNViralInternalizationSteppable(MainSteppables.ViralInternalizationSteppable, IFNSteppableBase):
+class IFNViralInternalizationSteppable(IFNSteppableBase, MainSteppables.ViralInternalizationSteppable):
     """
     Derived class from ViralInternalizationSteppable in ViralInfectionVTMSteppables
 
@@ -498,7 +498,6 @@ class IFNViralInternalizationSteppable(MainSteppables.ViralInternalizationSteppa
 
         # Internal data
         # todo: initialization of inherited classes didnt work
-        self._registered_types = []
         self._initial_amount_virus = 0.0
 
         # Initialize default data
