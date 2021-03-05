@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 plt.rcParams['axes.grid'] = True
 
 ODEnames = ['Time','Virus','Viability','P','IFNe','STATP','IRF7','IRF7P','IFN']
-ODE = np.genfromtxt('JordanOriginalODE_1.txt', skip_header=1, delimiter=',', names=ODEnames)
+ODE = np.genfromtxt('ode_data.txt', skip_header=1, delimiter=',', names=ODEnames)
 CC3Dnames = ['mcs', 'Time', 'IFN', 'STATP', 'IRF7', 'IRF7P', 'Viability', 'Virus', 'IFNe']
 CC3D = np.genfromtxt('ifn_data.dat', skip_header=1, delimiter=',', names=CC3Dnames)
 

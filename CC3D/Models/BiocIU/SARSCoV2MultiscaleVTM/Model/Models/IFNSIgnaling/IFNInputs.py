@@ -1,3 +1,4 @@
+# coding=utf-8
 # todo: update usage of __param_desc__; all keys should match the name of their corresponding variable
 # todo: disable all data plotting/writing before release
 __param_desc__ = {}
@@ -72,13 +73,13 @@ __param_desc__["IFNe_diffusion_coefficient"] = "IFNe diffusion coefficient (um^2
 IFNe_diffusion_coefficient = 9.0/10.0
 __param_desc__["t2"] = "IFNe decay rate (1/hr)"
 t2 = 3.481
-__param_desc__["Virus_diffusion_coefficient"] = "Virus diffusion coefficient (um^2/min)"
+__param_desc__["virus_diffusion_coefficient"] = "Virus diffusion coefficient (um^2/min)"
 virus_diffusion_coefficient = 9.0/10.0
 __param_desc__["c"] = "virus decay rate (1/days)"
 c = 13.0
 
 # Cell Transition Parameters
-__param_desc__['internalization_rate'] = 'Viral Infectivity (PFU/(mL*days))'
+__param_desc__['b'] = 'Viral Infectivity (PFU/(mL*days))'
 b = 2.4E-4
 __param_desc__['eclipse_phase'] = '1/days'
 k = 4.0

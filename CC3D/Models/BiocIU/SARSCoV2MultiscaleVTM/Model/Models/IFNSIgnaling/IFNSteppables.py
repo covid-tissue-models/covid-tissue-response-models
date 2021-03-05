@@ -29,6 +29,7 @@ viral_replication_model_vars = ["H", "V"]
 viral_replication_model_params_keys = ['k61','k71','k72','k73']
 
 #Steppable keys
+ifn_base_key = 'ifn_base_steppable'
 ifn_signaling_key = 'ifn_signaling_steppable'
 ifn_release_key = 'ifn_release_steppable'  # IFNReleaseSteppable
 ifn_field_initializer_key = 'ifn_field_initializer_steppable'  # IFNFieldInitializerSteppable
@@ -43,6 +44,29 @@ ifn_plaque_assay_key = 'ifn_plaque_assay_steppable'
 
 
 class IFNSteppableBase(nCoVSteppableBase):
+    """
+    The base class of all steppables in the interferon signaling module.
+
+    This is an intermediate base class between nCoVSteppableBas and other module specific steppables. Defines general
+    methods and features that support interferon module implementation via steppables.
+
+    Defines internal references to cell type names and setters for cell type names. For example, it contains the
+    interal variable '_uninfected_type_name' that can be referenced by other derived classes and can be specified
+    by setting the 'uninfected_type_name' property.
+
+    Provides pointers to the ids of different cell types. For example, the 'uninfected_type_id' property retrieves
+    the id of the uninfected cell type.
+
+    Defines internal references to virus and interferon fields and setters for the field names. For example, it
+    contains the interal variable '_ifn_type_name' that can be referenced by other derived classes and can be specified
+    by setting the 'ifn_field_name' property.
+
+    Defines a registry of cell types and functions to add/remove cell types to the registry. The registry is a list of
+    the cell types the steppable operates over. Cells can be registered using the 'register_type' method and can be
+    unregistered using the 'unregister_type'. The ids of the cells registered can be retrieved using the
+    'registered_type_ids' property.
+    """
+
     # todo: basic docstring for IFNSteppableBase
     # todo: document per derived class which of the properties and methods are actually used
     #  e.g., self.register_type corresponds to registration of a cell type for something particular to a derived class
@@ -126,10 +150,16 @@ class IFNSteppableBase(nCoVSteppableBase):
         self._ifn_field_name = _name
 
     def register_type(self, _name: str):
+        """
+        Add cell type to registry
+        """
         if _name not in self._registered_types:
             self._registered_types.append(_name)
 
     def unregister_type(self, _name: str):
+        """
+        Remove cell type to registry
+        """
         self._registered_types.remove(_name)
 
     @property
@@ -137,23 +167,30 @@ class IFNSteppableBase(nCoVSteppableBase):
         return [getattr(self, x.upper()) for x in self._registered_types]
 
     @property
+    def uninfected_type_id(self) -> int:
+        """
+        Id of the uninfected cell type according to a cc3d simulation
+        """
+        return getattr(self, self._uninfected_type_name.upper())
+
+    @property
     def infected_type_id(self) -> int:
         """
-        Id of the infected cell type according to a cc3d simulation
+        Id of the infected cell type  corresponding to a cc3d simulation specification
         """
         return getattr(self, self._infected_type_name.upper())
 
     @property
     def virus_releasing_type_id(self) -> int:
         """
-        Id of the virus-releasing cell type according to a cc3d simulation
+        Id of the virus-releasing cell type corresponding to a cc3d simulation specification
         """
         return getattr(self, self._virus_releasing_type_name.upper())
 
     @property
     def dead_type_id(self) -> int:
         """
-        Id of the dead cell type according to a cc3d simulation
+        Id of the dead cell type corresponding to a cc3d simulation specification
         """
         return getattr(self, self._dead_type_name.upper())
 
@@ -163,6 +200,8 @@ def IFN_model_string(**kwargs):
     Antimony model string generator for IFN intracellular signaling model adopted from "Multiscale Model
     of RNA Virus Replication and Interferon Responses Reveals Factors Controlling Plaque Growth Dynamics"
     Josua O. Aponte-Serrano, Jordan J.A. Weaver, T.J. Sego, James A. Glazier and Jason E. Shoemaker
+
+    :param kwargs:  keywords and values of IFN model parameters, optional
     :return: IFN antimony model string
     """
 
@@ -213,11 +252,12 @@ def IFN_model_string(**kwargs):
 
 def viral_replication_model_string(**kwargs):
     """
-    Antimony model string generator for viral replication model coupled with the intracellular signaling
+    Antimony model string generator for viral replication model coupled with the intracellular interferon signaling
     model adopted from "Multiscale Model of RNA Virus Replication and Interferon Responses Reveals Factors
     Controlling Plaque Growth Dynamics" Josua O. Aponte-Serrano, Jordan J.A. Weaver, T.J. Sego,
     James A. Glazier and Jason E. Shoemaker
 
+    :param kwargs:  keywords and values of viral replication model parameters, optional
     :return: Antimony model string
     """
 
@@ -259,8 +299,10 @@ def get_cell_viral_replication_model(cell):
     :param cell: a cell
     :return: viral replication model instance
     """
-    return getattr(cell.sbml, viral_replication_model_name)
-
+    if hasattr(cell.sbml, IFN_model_name):
+        return getattr(cell.sbml, viral_replication_model_name)
+    else:
+        return None
 
 def get_cell_ifn_model(cell):
     """
@@ -277,8 +319,25 @@ def get_cell_ifn_model(cell):
 class IFNSteppable(IFNSteppableBase):
     """
     Implements IFN signaling model by passing information between viral replication model, IFN signaling model
-    and reading the amount of extracellular interferon
+    and reading the amount of extracellular interferon.
 
+    The interferon model and viral replication model are initialized as sbml in each cell of the types
+    registered in the stepabble cell type registry. Uninfected, infected and virus releasing cell types
+    are registered by default.
+
+    Models are initialized with the default parameter values specified in IFNInputs.py but can be modified using
+    'set_ifn_params' and 'set_vrm_params' methods. Parameters values can be retrieved using 'get_ifn_params'
+    and 'get_vrm_params'.
+
+    The field regulating the activation of the ifn signaling pathway can be specified by setting the
+    'ifn_field_name' property.
+
+    The values of the virus ('V') and cell viability ('H') are passed on to the cell's interferon sbml model.
+    The value of the field the cell gets exposed to is passed on to both the interferon and the viral replication
+    sbml models.
+
+    All interferon and viral replication sbml models are step forward by a step size determined by the 'step_size'
+    potts property.
     """
 
     unique_key = ifn_signaling_key
@@ -335,7 +394,7 @@ class IFNSteppable(IFNSteppableBase):
                                 step_size=hours_to_mcs)
 
     def step(self, mcs):
-        # Connects viral replication model and IFN model and read IFNe field
+        # Connects viral replication model and IFN model and reads IFNe field
         secretor = self.get_field_secretor(field_name=self._ifn_field_name)
         for cell in self.cell_list_by_type(*self.registered_type_ids):
             ifn_cell_sbml = get_cell_ifn_model(cell)
@@ -352,7 +411,7 @@ class IFNSteppable(IFNSteppableBase):
 
     def set_ifn_params(self, **kwargs):
         """
-        Set parameters in ifn model
+        Set parameters of interferon sbml model
         :param kwargs: keyword argument values
         :return: None
         """
@@ -366,13 +425,13 @@ class IFNSteppable(IFNSteppableBase):
 
     def get_ifn_params(self) -> dict:
         """
-        Get a copy of parameters in viral replication model for newly created cells
+        Get a copy of parameters in interferon sbml model
         """
         return self._ifn_params.copy()
 
     def set_viral_replication_params(self, **kwargs):
         """
-        Set parameters in viral replication model
+        Set parameters of viral replication sbml model
         :param kwargs: keyword argument values
         :return: None
         """
@@ -386,16 +445,17 @@ class IFNSteppable(IFNSteppableBase):
 
     def get_viral_replication_params(self) -> dict:
         """
-        Get a copy of parameters in viral replication model for newly created cells
+        Get a copy of parameters in viral replication sbml model
         """
         return self._vrm_params.copy()
 
 
 class IFNCellInitializerSteppable(MainSteppables.CellInitializerSteppable, IFNSteppableBase):
     """
-    Initalizes cells with the MOI corresponding to the training conditions of the original paper: Weaver JJ,
-    Shoemaker JE. Mathematical Modeling of RNA Virus Sensing Pathways Reveals Paracrine Signaling as the Primary Factor
-    Regulating Excessive Cytokine Production. Processes. 2020 Jun;8(6):719.
+    Derived class from CellInitializerSteppable in ViralInfectionVTMSteppables
+
+    Initalizes cells with MOI corresponding to the training conditions of reference paper. All cells are
+    initialized in the virus releasing infected type.
     """
 
     unique_key = ifn_cell_initializer_key
@@ -416,10 +476,16 @@ class IFNCellInitializerSteppable(MainSteppables.CellInitializerSteppable, IFNSt
 
 class IFNViralInternalizationSteppable(MainSteppables.ViralInternalizationSteppable, IFNSteppableBase):
     """
+    Derived class from ViralInternalizationSteppable in ViralInfectionVTMSteppables
+
     Convenience steppable to rescale infectivity parameter according to cellularization method proposed in:
     Sego TJ, Aponte-Serrano JO, Gianlupi JF, Glazier JA. Generating Agent-Based Multiscale Multicellular
     Spatiotemporal Models from Ordinary Differential Equations of Biological Systems, with Applications
-    in Viral Infection. bioRxiv. 2021 Jan 1.
+    in Viral Infection.
+
+    Assigns callback 'on_set_cell_type' to set the initial amount of virus passed on to the viral replication
+    sbml model when cells transition from uninfected to infected types. The initial amount of virus passed on the
+    sbml model can be set by setting 'intial_amount_virus' property.
     """
 
     unique_key = ifn_viral_internalization_key
@@ -460,6 +526,9 @@ class IFNViralInternalizationSteppable(MainSteppables.ViralInternalizationSteppa
                 self.set_cell_type(cell, self.infected_type_id)
 
     def on_set_cell_type(self, cell, old_type):
+        """
+        Implementation of cell type change callback
+        """
         if cell.type == self.infected_type_id and old_type == self.uninfected_type_id:
             virus_cell_sbml = get_cell_viral_replication_model(cell)
             virus_cell_sbml['V'] = self._initial_amount_virus
@@ -467,7 +536,8 @@ class IFNViralInternalizationSteppable(MainSteppables.ViralInternalizationSteppa
     @property
     def initial_amount_virus(self):
         """
-        Initial amnount of unitless virus level when internalization occurs
+        Initial amnount of unitless virus level passed on to the viral replication sbml model when
+        internalization occurs
         """
         return self._initial_amount_virus
 
@@ -478,7 +548,9 @@ class IFNViralInternalizationSteppable(MainSteppables.ViralInternalizationSteppa
 
 class IFNEclipsePhaseSteppable(MainSteppables.EclipsePhaseSteppable, IFNSteppableBase):
     """
-    Convenience steppable to rescale ecplise phase parameter
+    Derived class from EclipsePhaseSteppable in ViralInfectionVTMSteppables
+
+    Convenience steppable to rescale ecplise phase parameter.
     """
 
     unique_key = ifn_ecplise_phase_key
@@ -491,12 +563,6 @@ class IFNEclipsePhaseSteppable(MainSteppables.EclipsePhaseSteppable, IFNSteppabl
         self.eclipse_phase = IFNInputs.k * days_to_mcs
 
     def step(self, mcs):
-        """
-        Called every simulation step
-
-        :param mcs: current simulation step
-        :return: None
-        """
         pr = nCoVUtils.ul_rate_to_prob(self.eclipse_phase)
         for cell in self.cell_list_by_type(self.infected_type_id):
             if random.random() <= pr:
@@ -504,10 +570,17 @@ class IFNEclipsePhaseSteppable(MainSteppables.EclipsePhaseSteppable, IFNSteppabl
 
 class IFNViralReleaseSteppable(MainSteppables.ViralReleaseSteppable, IFNSteppableBase):
     """
-    Performs virion release according to the intracellular virus level
+    Derived class from ViralReleaseSteppable in ViralInfectionVTMSteppables
 
-    The rate of virus release per unit of intracellular virus can be set with the attribute ``release_rate``, in
-    time units of hours.
+    Performs virion release to the extracellular environment.
+
+    The rate of virus release can be specified by setting the 'release_rate' property. If the cell has an
+    sbml model of viral replication, the release rate is multiplied by the virus level in the sbml model.
+
+    The scaling factor between units of the virus level in the viral replication sbml model and the amount of virions
+    released can be specified by setting the 'virus_level_scaling_factor' property.
+
+    If the simulation domain is quasi-2D, the release rate will be multiplied by the height of the domain.
     """
 
     unique_key = ifn_viral_release_key
@@ -516,7 +589,7 @@ class IFNViralReleaseSteppable(MainSteppables.ViralReleaseSteppable, IFNSteppabl
         super().__init__(frequency)
 
         # Internal data
-        self._virus_level_scaling_factor = 0.0
+        self._virus_level_scaling_factor = 1.0
 
         # Initialize default data
         self.virus_level_scaling_factor = 1094460.28
@@ -531,8 +604,10 @@ class IFNViralReleaseSteppable(MainSteppables.ViralReleaseSteppable, IFNSteppabl
 
         hours_to_mcs = self.step_period / 60.0 / 60.0
         for cell in self.cell_list_by_type(self.virus_releasing_type_id):
+            intracellularVirus = 1.0
             virus_cell_sbml = get_cell_viral_replication_model(cell)
-            intracellularVirus = virus_cell_sbml['V']
+            if virus_cell_sbml:
+                intracellularVirus = virus_cell_sbml['V']
             p = self.release_rate * hours_to_mcs * intracellularVirus * self._virus_level_scaling_factor
 
             secretor.secreteInsideCell(cell, p * fact / cell.volume)
@@ -553,12 +628,13 @@ class IFNViralReleaseSteppable(MainSteppables.ViralReleaseSteppable, IFNSteppabl
 
 class IFNViralDeathSteppable(MainSteppables.ViralDeathSteppable, IFNSteppableBase):
     """
-    Performs viral death as a function of the cell's viability determined from the cell' internal
-    viral replication model.
+    Derived class from ViralDeathSteppabl in ViralInfectionVTMSteppables
 
-    The derived class specified the death rate as a per cell rate, rather than a rate by cell type.
+    Performs viral death.
 
-    The rate of cell death can be set with the attribute ``viral_death_rate``, in time units of hours.
+    The rate of viral cell deatch can be specified by setting the 'viral_death_rate' property.
+    If the cell has an sbml model of viral replication, the release rate is multiplied by the virus level (V)
+    and the cell's viability (H) from the viral replication sbml model.
     """
 
     unique_key = ifn_viral_death_key
@@ -572,9 +648,12 @@ class IFNViralDeathSteppable(MainSteppables.ViralDeathSteppable, IFNSteppableBas
     def step(self, mcs):
         hours_to_mcs = self.step_period / 60.0 / 60.0
         for cell in self.cell_list_by_type(self.virus_releasing_type_id):
+            H = 0.0
+            V = 1.0
             virus_cell_sbml = get_cell_viral_replication_model(cell)
-            H = virus_cell_sbml['H']
-            V = virus_cell_sbml['V']
+            if virus_cell_sbml:
+                H = virus_cell_sbml['H']
+                V = virus_cell_sbml['V']
             viral_death_rate = self.viral_death_rate * hours_to_mcs * V * (1 - H)
             pr = nCoVUtils.ul_rate_to_prob(viral_death_rate)
             if random.random() <= pr:
@@ -583,12 +662,15 @@ class IFNViralDeathSteppable(MainSteppables.ViralDeathSteppable, IFNSteppableBas
 
 class IFNReleaseSteppable(IFNSteppableBase):
     """
-    Performs IFN release
+    Performs interferon release to the extracellular environment by registered cxell tyoes. Uninfected, infected and
+    virus releasing cell types are registered by default.
 
-    If the simulation domain is quasi-2D, then release will be multiplied by the height of the domain.
+    The release rate of interferon can be specified by setting the 'release_rate' property. By defau
 
-    The release rate of IFN per unit of intracellular IFN can be set with the attribute ``release_rate``, in
-    time units of hours.
+    If the cell has an sbml model of interferon signaling, the release rate is multiplied by the intracellular
+    interferon in the sbml model.
+
+    If the simulation domain is quasi-2D, the release rate will be multiplied by the height of the domain.
     """
 
     unique_key = ifn_release_key
@@ -630,6 +712,9 @@ class IFNReleaseSteppable(IFNSteppableBase):
 
     @property
     def release_rate(self):
+        """
+        Interferon release rate
+        """
         return self._release_rate
 
     @release_rate.setter
@@ -641,10 +726,14 @@ class IFNReleaseSteppable(IFNSteppableBase):
 
 class IFNVirusFieldInitializerSteppable(MainSteppables.VirusFieldInitializerSteppable, IFNSteppableBase):
     """
+    Derived class from ViralDeathSteppabl in ViralInfectionVTMSteppables
+
     Initializes virus field data and properties
 
     By default, requires CC3DML ids "virus_dc" for virus field diffusion coefficient and "virus_decay" for virus field
-    decay. These can be set with set_field_data.
+    decay.
+
+    Virus field diffusion coefficient and virus field decay can be set with 'set_field_data'.
     """
 
     unique_key = ifn_virus_field_initializer_key
@@ -663,10 +752,12 @@ class IFNVirusFieldInitializerSteppable(MainSteppables.VirusFieldInitializerStep
 
 class IFNFieldInitializerSteppable(IFNSteppableBase):
     """
-    Initializes IFN field data and properties
+    Initializes interferon field data and properties
 
-    By default, requires CC3DML ids "ifn_dc" for virus field diffusion coefficient and "ifn_decay" for virus field
-    decay
+    By default, requires CC3DML ids "ifn_dc" for interferon field diffusion coefficient and "ifn_decay" for interferon
+    field decay
+
+    Interferon field diffusion coefficient and interferon field decay can be set with 'set_field_data'.
     """
 
     unique_key = ifn_field_initializer_key
@@ -701,7 +792,7 @@ class IFNFieldInitializerSteppable(IFNSteppableBase):
     @property
     def diffusion_coefficient(self) -> float:
         """
-        Diffusion coefficient, in units microns^2/s
+        Diffusion coefficient, in units microns^2/min
         """
         return self._diffusion_coefficient
 
@@ -714,7 +805,7 @@ class IFNFieldInitializerSteppable(IFNSteppableBase):
     @property
     def decay_coefficient(self) -> float:
         """
-        Decay coefficient, in units 1/s
+        Decay coefficient, in units 1/hours
         """
         return self._decay_coefficient
 
@@ -726,11 +817,11 @@ class IFNFieldInitializerSteppable(IFNSteppableBase):
 
     def set_field_data(self, field_name: str = None, diffusion: str = None, decay: str = None):
         """
-        Set diffusion field data for virus field
+        Set diffusion field data for ifn field
 
-        :param field_name: name of the virus field (optional)
-        :param diffusion: cc3dml id of the diffusion field diffusion coefficient (optional)
-        :param decay: cc3dml id of the diffusion field decay coefficient (optional)
+        :param field_name: name of the interferon field (optional)
+        :param diffusion: cc3dml id of the interferon field diffusion coefficient (optional)
+        :param decay: cc3dml id of the interferon field decay coefficient (optional)
         :return: None
         """
         if field_name is not None:
@@ -743,14 +834,14 @@ class IFNFieldInitializerSteppable(IFNSteppableBase):
     @property
     def field_secretor(self):
         """
-        Virus field secretor
+        Interferon field secretor
         """
         return self.get_field_secretor(self.ifn_field_name)
 
     @property
     def field_object(self):
         """
-        Reference to virus field
+        Reference to interferon field
         """
         return getattr(self.field, self.ifn_field_name)
 
@@ -762,15 +853,15 @@ class IFNSimDataSteppable(IFNSteppableBase):
     The frequency of plotting cell population data in Player can be set with the attribute plot_pop_data_freq.
     Plotting is disabled when plot_pop_data_freq is set to zero.
 
-    The frequency of writing ell population data  to file can be set with the attribute write_pop_data_freq.
+    The frequency of writing ell population data to file can be set with the attribute write_pop_data_freq.
     Data is written to the cc3d output directory with the name 'ifn_data.dat'.
     Writing is disabled when write_ifn_data_freq is set to zero.
 
-    The frequency of plotting interferon model data in Player can be set with the attribute plot_ifn_data_freq.
-    Plotting is disabled when plot_ifn_data_freq is set to zero.
+    The frequency of plotting interferon and viral replication sbml models data in Player can be set with the attribute
+    plot_ifn_data_freq. Plotting is disabled when plot_ifn_data_freq is set to zero.
 
-    The frequency of writing interferon model data to file can be set with the attribute write_ifn_data_freq.
-    Data is written to the cc3d output directory with the name 'ifn_data.dat'.
+    The frequency of writing interferonand viral replication sbml models data to file can be set with the attribute
+    write_ifn_data_freq. Data is written to the cc3d output directory with the name 'ifn_data.dat'.
     Writing is disabled when write_ifn_data_freq is set to zero.
 
     The frequency of plotting diffusion field data in Player can be set with the attribute plot_med_diff_data_freq.
@@ -1061,13 +1152,6 @@ class IFNSimDataSteppable(IFNSteppableBase):
                 self.med_diff_data.clear()
 
     @property
-    def uninfected_type_id(self) -> int:
-        """
-        Id of the uninfected cell type according to a cc3d simulation
-        """
-        return getattr(self, self._uninfected_type_name.upper())
-
-    @property
     def initial_number_cells(self):
         """
         Count of initial number of epithelial cells for rescaling purposes
@@ -1080,7 +1164,9 @@ class IFNSimDataSteppable(IFNSteppableBase):
 
 class IFNPlaqueAssaySteppable(IFNSteppableBase):
     """
-    Initializes, plots and writes data for plaque assay simulations
+    Plots and writes data for plaque assay simulations. Plaque assay simulations require that infection is initalized
+    with a single cell. This steppable measures and records the radius of a single infection plaque assuming that
+    the infection propagates outward from a single infected cell.
 
     The frequency of plotting plaque assay data in Player can be set with the attribute plot_plaque_assay_data_freq.
     Plotting is disabled when plot__plaque_assay_data_freq is set to zero.
