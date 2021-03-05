@@ -1,6 +1,4 @@
 # coding=utf-8
-# todo: update usage of __param_desc__; all keys should match the name of their corresponding variable
-# todo: disable all data plotting/writing before release
 __param_desc__ = {}
 
 # Data Control
@@ -20,7 +18,7 @@ __param_desc__['write_med_diff_data_freq'] = 'Write ifn model medium data to sim
 write_med_diff_data_freq = 0
 
 __param_desc__['plot_plaque_assay_data_freq'] = 'Plot ifn plaque assay data frequency'
-plot_plaque_assay_data_freq = 1
+plot_plaque_assay_data_freq = 0
 __param_desc__['write_plaque_assay_data_freq'] = 'Write ifn plaque assay data to simulation directory frequency'
 write_plaque_assay_data_freq = 0
 
@@ -81,5 +79,5 @@ c = 13.0
 # Cell Transition Parameters
 __param_desc__['b'] = 'Viral Infectivity (PFU/(mL*days))'
 b = 2.4E-4
-__param_desc__['eclipse_phase'] = '1/days'
+__param_desc__['k'] = '1/days'
 k = 4.0

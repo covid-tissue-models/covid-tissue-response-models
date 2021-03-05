@@ -47,6 +47,7 @@ Change log
 - Implementation as described in reference publication
 
 """
+# todo: update citation
 
 module_prefix = "ifnsig_"
 

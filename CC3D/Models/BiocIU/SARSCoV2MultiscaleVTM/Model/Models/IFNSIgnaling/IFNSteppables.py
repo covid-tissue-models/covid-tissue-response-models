@@ -9,7 +9,7 @@
 # Jason E. Shoemaker
 #
 # Model parameters are specified in IFNInputs.py
-
+# todo: implement module_prefix defined in __init__ or remove
 import random
 
 from nCoVToolkit import nCoVUtils
@@ -23,12 +23,12 @@ viral_replication_model_name = 'ifn_viral_replication_model'
 ifn_field_name = 'IFNe'
 virus_field_name = 'Virus'
 ifn_model_vars = ["IFN", "STATP", "IRF7", "IRF7P"]
-ifn_model_params_keys = ['k11','k12','k13','k14','k21','k31','k32','k33',
-                         't3','k41','k42','t4','k51','t5','n','RIGI']
+ifn_model_params_keys = ['k11', 'k12', 'k13', 'k14', 'k21', 'k31', 'k32', 'k33',
+                         't3', 'k41', 'k42', 't4', 'k51', 't5', 'n', 'RIGI']
 viral_replication_model_vars = ["H", "V"]
-viral_replication_model_params_keys = ['k61','k71','k72','k73']
+viral_replication_model_params_keys = ['k61', 'k71', 'k72', 'k73']
 
-#Steppable keys
+# Steppable keys
 ifn_base_key = 'ifn_base_steppable'
 ifn_signaling_key = 'ifn_signaling_steppable'
 ifn_release_key = 'ifn_release_steppable'  # IFNReleaseSteppable
@@ -67,7 +67,6 @@ class IFNSteppableBase(nCoVSteppableBase):
     'registered_type_ids' property.
     """
 
-    # todo: basic docstring for IFNSteppableBase
     # todo: document per derived class which of the properties and methods are actually used
     #  e.g., self.register_type corresponds to registration of a cell type for something particular to a derived class
 
@@ -304,6 +303,7 @@ def get_cell_viral_replication_model(cell):
     else:
         return None
 
+
 def get_cell_ifn_model(cell):
     """
     Convenience method to get the ifn model of a cell
@@ -315,6 +315,7 @@ def get_cell_ifn_model(cell):
         return getattr(cell.sbml, IFN_model_name)
     else:
         return None
+
 
 class IFNSteppable(IFNSteppableBase):
     """
@@ -412,11 +413,12 @@ class IFNSteppable(IFNSteppableBase):
     def set_ifn_params(self, **kwargs):
         """
         Set parameters of interferon sbml model
+
         :param kwargs: keyword argument values
         :return: None
         """
         for k, v in kwargs.items():
-            # todo: safeguard already inside the antimony string generating fun
+            # safeguard already inside the antimony string generating fun
             if k not in ifn_model_params_keys:
                 raise AttributeError(f'Unrecognized parameter ({k} = {v})')
             elif v < 0.0:
@@ -432,11 +434,12 @@ class IFNSteppable(IFNSteppableBase):
     def set_viral_replication_params(self, **kwargs):
         """
         Set parameters of viral replication sbml model
+
         :param kwargs: keyword argument values
         :return: None
         """
         for k, v in kwargs.items():
-            # todo: safeguard already inside the antimony string generating fun
+            # safeguard already inside the antimony string generating fun
             if k not in viral_replication_model_params_keys:
                 raise AttributeError(f'Unrecognized parameter ({k} = {v})')
             elif v < 0.0:
@@ -567,6 +570,7 @@ class IFNEclipsePhaseSteppable(MainSteppables.EclipsePhaseSteppable, IFNSteppabl
         for cell in self.cell_list_by_type(self.infected_type_id):
             if random.random() <= pr:
                 self.set_cell_type(cell, self.virus_releasing_type_id)
+
 
 class IFNViralReleaseSteppable(MainSteppables.ViralReleaseSteppable, IFNSteppableBase):
     """
@@ -750,6 +754,7 @@ class IFNVirusFieldInitializerSteppable(MainSteppables.VirusFieldInitializerStep
         else:
             self.get_xml_element(self._virus_decay_id).cdata = self._decay_coefficient * days_to_mcs
 
+
 class IFNFieldInitializerSteppable(IFNSteppableBase):
     """
     Initializes interferon field data and properties
@@ -780,10 +785,11 @@ class IFNFieldInitializerSteppable(IFNSteppableBase):
         """
         min_to_mcs = self.step_period / 60.0
         hours_to_mcs = min_to_mcs / 60.0
+        scaling_factor = min_to_mcs / self.voxel_length ** 2
         if self._diffusion_coefficient is None:
-            self.get_xml_element(self._ifn_diffusion_id).cdata = IFNInputs.IFNe_diffusion_coefficient * min_to_mcs / self.voxel_length ** 2
+            self.get_xml_element(self._ifn_diffusion_id).cdata = IFNInputs.IFNe_diffusion_coefficient * scaling_factor
         else:
-            self.get_xml_element(self._ifn_diffusion_id).cdata = self._diffusion_coefficient * min_to_mcs / self.voxel_length ** 2
+            self.get_xml_element(self._ifn_diffusion_id).cdata = self._diffusion_coefficient * scaling_factor
         if self._decay_coefficient is None:
             self.get_xml_element(self._ifn_decay_id).cdata = IFNInputs.t2 * hours_to_mcs
         else:
@@ -1049,7 +1055,9 @@ class IFNSimDataSteppable(IFNSteppableBase):
             if plot_pop_data:
                 self.pop_data_win.add_data_point(self._uninfected_type_name,  mcs * hours_to_mcs, num_cells_uninfected)
                 self.pop_data_win.add_data_point(self._infected_type_name,  mcs * hours_to_mcs, num_cells_infected)
-                self.pop_data_win.add_data_point(self._virus_releasing_type_name,  mcs * hours_to_mcs, num_cells_virus_releasing)
+                self.pop_data_win.add_data_point(self._virus_releasing_type_name,
+                                                 mcs * hours_to_mcs,
+                                                 num_cells_virus_releasing)
                 self.pop_data_win.add_data_point(self._dead_type_name,  mcs * hours_to_mcs, num_cells_dying)
 
             # Write population data to file if requested
@@ -1134,6 +1142,7 @@ class IFNSimDataSteppable(IFNSteppableBase):
     def flush_stored_outputs(self):
         """
         Write stored outputs to file and clear output storage
+
         :return: None
         """
         if self.write_pop_data and self.pop_data:
@@ -1161,6 +1170,7 @@ class IFNSimDataSteppable(IFNSteppableBase):
     @initial_number_cells.setter
     def initial_number_cells(self, _val: int):
         self._initial_number_cells = _val
+
 
 class IFNPlaqueAssaySteppable(IFNSteppableBase):
     """
@@ -1227,6 +1237,7 @@ class IFNPlaqueAssaySteppable(IFNSteppableBase):
 
     def step(self, mcs):
         if self.plaque_assay_data_steppable is None:
+            # todo: add handling of when ifn_plaque_assay_key is not present in shared_steppable_vars
             self.plaque_assay_data_steppable = self.shared_steppable_vars[ifn_plaque_assay_key]
 
         plot_plaque_assay_data = self.plot_plaque_assay_data and mcs % IFNInputs.plot_plaque_assay_data_freq == 0
@@ -1235,19 +1246,18 @@ class IFNPlaqueAssaySteppable(IFNSteppableBase):
         else:
             write_plaque_assay_data = False
 
-
         hours_to_mcs = self.step_period / 60.0 / 60.0
 
         if plot_plaque_assay_data or write_plaque_assay_data:
             import numpy as np
             # Measure area occupied by cells and assume its a circle
             volume_infected = 0.0
-            for cell in self.cell_list_by_type(self.infected_type_id,self.virus_releasing_type_id,self.dead_type_id):
+            for cell in self.cell_list_by_type(self.infected_type_id, self.virus_releasing_type_id, self.dead_type_id):
                 volume_infected += cell.volume
             avg_infected_radius = np.sqrt(volume_infected/np.pi)
 
             volume_virus_releasing = 0.0
-            for cell in self.cell_list_by_type(self.virus_releasing_type_id,self.dead_type_id):
+            for cell in self.cell_list_by_type(self.virus_releasing_type_id, self.dead_type_id):
                 volume_virus_releasing += cell.volume
             avg_virus_releasing_radius = np.sqrt(volume_virus_releasing/np.pi)
 
@@ -1259,17 +1269,17 @@ class IFNPlaqueAssaySteppable(IFNSteppableBase):
             # Plot plaque assay data if requested
             if plot_plaque_assay_data:
                 self.plaque_assay_data_win.add_data_point(self._infected_type_name, mcs * hours_to_mcs,
-                                                 avg_infected_radius)
+                                                          avg_infected_radius)
                 self.plaque_assay_data_win.add_data_point(self._virus_releasing_type_name, mcs * hours_to_mcs,
-                                                 avg_virus_releasing_radius)
+                                                          avg_virus_releasing_radius)
                 self.plaque_assay_data_win.add_data_point(self._dead_type_name, mcs * hours_to_mcs, avg_dead_radius)
 
             # Write population data to file if requested
             if write_plaque_assay_data:
                 self.plaque_assay_data[mcs] = [mcs * hours_to_mcs,
-                                      avg_infected_radius,
-                                      avg_virus_releasing_radius,
-                                      avg_dead_radius]
+                                               avg_infected_radius,
+                                               avg_virus_releasing_radius,
+                                               avg_dead_radius]
         self.flush_stored_outputs()
 
     def on_stop(self):
@@ -1281,6 +1291,7 @@ class IFNPlaqueAssaySteppable(IFNSteppableBase):
     def flush_stored_outputs(self):
         """
         Write stored outputs to file and clear output storage
+
         :return: None
         """
         if self.write_plaque_assay_data and self.plaque_assay_data:
