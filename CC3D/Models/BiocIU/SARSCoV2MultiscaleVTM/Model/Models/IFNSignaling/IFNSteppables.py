@@ -9,17 +9,17 @@
 # Jason E. Shoemaker
 #
 # Model parameters are specified in IFNInputs.py
-# todo: implement module_prefix defined in __init__ or remove
 import random
 
 from nCoVToolkit import nCoVUtils
 from nCoVToolkit.nCoVSteppableBase import nCoVSteppableBase
 import ViralInfectionVTMSteppables as MainSteppables
 from . import IFNInputs
+from . import module_prefix
 
 # Module specific references
-IFN_model_name = 'IFN_model'
-viral_replication_model_name = 'ifn_viral_replication_model'
+ifn_model_name = module_prefix+'model'
+viral_replication_model_name = module_prefix+'viral_replication_model'
 ifn_field_name = 'IFNe'
 virus_field_name = 'Virus'
 ifn_model_vars = ["IFN", "STATP", "IRF7", "IRF7P"]
@@ -29,18 +29,17 @@ viral_replication_model_vars = ["H", "V"]
 viral_replication_model_params_keys = ['k61', 'k71', 'k72', 'k73']
 
 # Steppable keys
-ifn_base_key = 'ifn_base_steppable'
 ifn_signaling_key = 'ifn_signaling_steppable'
-ifn_release_key = 'ifn_release_steppable'  # IFNReleaseSteppable
-ifn_field_initializer_key = 'ifn_field_initializer_steppable'  # IFNFieldInitializerSteppable
-ifn_sim_data_key = 'ifn_sim_data_steppable'  # SimDataSteppable
-ifn_cell_initializer_key = 'ifn_cell_initializer_steppable'
-ifn_viral_internalization_key = 'ifn_viral_internalization_steppable'
-ifn_ecplise_phase_key = 'ifn_ecplise_phase_steppable'
-ifn_viral_release_key = 'ifn_viral_release_steppable'
-ifn_viral_death_key = 'ifn_viral_death_steppable'
-ifn_virus_field_initializer_key = 'ifn_virus_field_initializer_steppable'
-ifn_plaque_assay_key = 'ifn_plaque_assay_steppable'
+ifn_release_key = module_prefix + 'release_steppable'  # IFNReleaseSteppable
+ifn_field_initializer_key = module_prefix + 'field_initializer_steppable'  # IFNFieldInitializerSteppable
+ifn_sim_data_key = module_prefix + 'sim_data_steppable'  # SimDataSteppable
+ifn_cell_initializer_key = module_prefix + 'cell_initializer_steppable'
+ifn_viral_internalization_key = module_prefix + 'viral_internalization_steppable'
+ifn_ecplise_phase_key = module_prefix + 'ecplise_phase_steppable'
+ifn_viral_release_key = module_prefix + 'viral_release_steppable'
+ifn_viral_death_key = module_prefix + 'viral_death_steppable'
+ifn_virus_field_initializer_key = module_prefix + 'virus_field_initializer_steppable'
+ifn_plaque_assay_key = module_prefix + 'plaque_assay_steppable'
 
 
 class IFNSteppableBase(nCoVSteppableBase):
@@ -67,9 +66,6 @@ class IFNSteppableBase(nCoVSteppableBase):
     'registered_type_ids' property.
     """
 
-    # todo: document per derived class which of the properties and methods are actually used
-    #  e.g., self.register_type corresponds to registration of a cell type for something particular to a derived class
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -81,6 +77,12 @@ class IFNSteppableBase(nCoVSteppableBase):
         self._virus_field_name = ''
         self._ifn_field_name = ''
         self._registered_types = []
+
+        # Initialize default data
+        self.uninfected_type_name = MainSteppables.uninfected_type_name
+        self.infected_type_name = MainSteppables.infected_type_name
+        self.virus_releasing_type_name = MainSteppables.virus_releasing_type_name
+        self.dead_type_name = MainSteppables.dead_type_name
 
     @property
     def uninfected_type_name(self):
@@ -212,7 +214,7 @@ def IFN_model_string(**kwargs):
             raise ValueError(f'Value must be non-negative ({k} = {v})')
         ifn_params[k] = v
 
-    model_string = f'''model {IFN_model_name}()
+    model_string = f'''model {ifn_model_name}()
         //Equations
         E2a: -> IFN         ; H*(k11*RIGI*V+k12*(V^n)/(k13+(V^n))+k14*IRF7P)    ;
         E2b: IFN ->         ; k21*IFN                                           ;
@@ -293,12 +295,15 @@ def viral_replication_model_string(**kwargs):
 
 def get_cell_viral_replication_model(cell):
     """
-    Convenience method to get the viral replication model of a cell
+    Convenience method to get the viral replication model of a cell.
+
+    If cell has a viral replication sbml model, the function returns a reference to the sbml model. Otherwise,
+    it returns None.
 
     :param cell: a cell
-    :return: viral replication model instance
+    :return: viral replication model instance or None
     """
-    if hasattr(cell.sbml, IFN_model_name):
+    if hasattr(cell.sbml, viral_replication_model_name):
         return getattr(cell.sbml, viral_replication_model_name)
     else:
         return None
@@ -308,11 +313,14 @@ def get_cell_ifn_model(cell):
     """
     Convenience method to get the ifn model of a cell
 
+    If cell has a interferon sbml model, the function returns a reference to the sbml model. Otherwise,
+    it returns None.
+
     :param cell: a cell
-    :return: ifn model instance
+    :return: ifn model instance or None
     """
-    if hasattr(cell.sbml, IFN_model_name):
-        return getattr(cell.sbml, IFN_model_name)
+    if hasattr(cell.sbml, ifn_model_name):
+        return getattr(cell.sbml, ifn_model_name)
     else:
         return None
 
@@ -339,6 +347,7 @@ class IFNSteppable(IFNSteppableBase):
 
     All interferon and viral replication sbml models are step forward by a step size determined by the 'step_size'
     potts property.
+
     """
 
     unique_key = ifn_signaling_key
@@ -377,7 +386,7 @@ class IFNSteppable(IFNSteppableBase):
             """
             return IFN_model_string(**self._ifn_params)
 
-        self.register_ode_model(model_name=IFN_model_name,
+        self.register_ode_model(model_name = ifn_model_name,
                                 model_fcn=_ifn_model_fcn,
                                 cell_types=self._registered_types,
                                 step_size=hours_to_mcs)
@@ -407,7 +416,7 @@ class IFNSteppable(IFNSteppableBase):
             virus_cell_sbml['IFNe'] = ifn_seen
 
         # Step the models for all registered types
-        self.timestep_ode_model(model_name=IFN_model_name)
+        self.timestep_ode_model(model_name=ifn_model_name)
         self.timestep_ode_model(model_name=viral_replication_model_name)
 
     def set_ifn_params(self, **kwargs):
@@ -485,6 +494,9 @@ class IFNViralInternalizationSteppable(IFNSteppableBase, MainSteppables.ViralInt
     Sego TJ, Aponte-Serrano JO, Gianlupi JF, Glazier JA. Generating Agent-Based Multiscale Multicellular
     Spatiotemporal Models from Ordinary Differential Equations of Biological Systems, with Applications
     in Viral Infection.
+
+    The infectivity parameter is rescaled by the initial number of cells of the types registered in the
+    stepabble cell type registry
 
     Assigns callback 'on_set_cell_type' to set the initial amount of virus passed on to the viral replication
     sbml model when cells transition from uninfected to infected types. The initial amount of virus passed on the
@@ -576,8 +588,8 @@ class IFNViralReleaseSteppable(MainSteppables.ViralReleaseSteppable, IFNSteppabl
 
     Performs virion release to the extracellular environment.
 
-    The rate of virus release can be specified by setting the 'release_rate' property. If the cell has an
-    sbml model of viral replication, the release rate is multiplied by the virus level in the sbml model.
+    The rate of virus release can be specified by setting the 'release_rate' property. The release amount per unit time
+    is the release rate multiplied by the virus level in the sbml model and the scaling factor.
 
     The scaling factor between units of the virus level in the viral replication sbml model and the amount of virions
     released can be specified by setting the 'virus_level_scaling_factor' property.
@@ -606,10 +618,8 @@ class IFNViralReleaseSteppable(MainSteppables.ViralReleaseSteppable, IFNSteppabl
 
         hours_to_mcs = self.step_period / 60.0 / 60.0
         for cell in self.cell_list_by_type(self.virus_releasing_type_id):
-            intracellularVirus = 1.0
             virus_cell_sbml = get_cell_viral_replication_model(cell)
-            if virus_cell_sbml:
-                intracellularVirus = virus_cell_sbml['V']
+            intracellularVirus = virus_cell_sbml['V']
             p = self.release_rate * hours_to_mcs * intracellularVirus * self._virus_level_scaling_factor
 
             secretor.secreteInsideCell(cell, p * fact / cell.volume)
@@ -630,13 +640,13 @@ class IFNViralReleaseSteppable(MainSteppables.ViralReleaseSteppable, IFNSteppabl
 
 class IFNViralDeathSteppable(MainSteppables.ViralDeathSteppable, IFNSteppableBase):
     """
-    Derived class from ViralDeathSteppabl in ViralInfectionVTMSteppables
+    Derived class from ViralDeathSteppable in ViralInfectionVTMSteppables
 
     Performs viral death.
 
     The rate of viral cell deatch can be specified by setting the 'viral_death_rate' property.
-    If the cell has an sbml model of viral replication, the release rate is multiplied by the virus level (V)
-    and the cell's viability (H) from the viral replication sbml model.
+    The death rate is multiplied by the virus level (V) and the cell's viability (H) from the viral
+    replication sbml model.
     """
 
     unique_key = ifn_viral_death_key
@@ -664,10 +674,10 @@ class IFNViralDeathSteppable(MainSteppables.ViralDeathSteppable, IFNSteppableBas
 
 class IFNReleaseSteppable(IFNSteppableBase):
     """
-    Performs interferon release to the extracellular environment by registered cxell tyoes. Uninfected, infected and
-    virus releasing cell types are registered by default.
+    Performs interferon release to the extracellular environment by cells of the registered cell types. Uninfected,
+    infected and virus releasing cell types are registered by default.
 
-    The release rate of interferon can be specified by setting the 'release_rate' property. By defau
+    The release rate of interferon can be specified by setting the 'release_rate' property.
 
     If the cell has an sbml model of interferon signaling, the release rate is multiplied by the intracellular
     interferon in the sbml model.
@@ -857,9 +867,11 @@ class IFNSimDataSteppable(IFNSteppableBase):
     The frequency of plotting cell population data in Player can be set with the attribute plot_pop_data_freq.
     Plotting is disabled when plot_pop_data_freq is set to zero.
 
-    The frequency of writing ell population data to file can be set with the attribute write_pop_data_freq.
+    The frequency of writing cell population data to file can be set with the attribute write_pop_data_freq.
     Data is written to the cc3d output directory with the name 'ifn_data.dat'.
     Writing is disabled when write_ifn_data_freq is set to zero.
+
+    Interferon and viral replication sbml models data is recorded from cells of the registered cell types.
 
     The frequency of plotting interferon and viral replication sbml models data in Player can be set with the attribute
     plot_ifn_data_freq. Plotting is disabled when plot_ifn_data_freq is set to zero.
@@ -943,7 +955,7 @@ class IFNSimDataSteppable(IFNSteppableBase):
         if self.output_dir is not None:
             from pathlib import Path
             if self.write_pop_data:
-                self.pop_data_path = Path(self.output_dir).joinpath('ifn_pop_data.dat')
+                self.pop_data_path = Path(self.output_dir).joinpath(module_prefix+'pop_data.dat')
                 with open(self.pop_data_path, 'w'):
                     pass
 
@@ -966,7 +978,7 @@ class IFNSimDataSteppable(IFNSteppableBase):
 
             colors = ['yellow', 'white']
             for i in range(len(viral_replication_model_vars)):
-                attr_name = 'ifn_data_win' + viral_replication_model_vars[i]
+                attr_name = module_prefix + 'data_win' + viral_replication_model_vars[i]
                 new_window = self.add_new_plot_window(title=viral_replication_model_vars[i],
                                                       x_axis_title='Time (hrs)',
                                                       y_axis_title='Variables', x_scale_type='linear',
@@ -976,7 +988,7 @@ class IFNSimDataSteppable(IFNSteppableBase):
                 new_window.add_plot(viral_replication_model_vars[i], style='Dots', color=colors[i], size=5)
                 setattr(self, attr_name, new_window)
 
-            attr_name = 'ifn_data_win' + self._ifn_field_name
+            attr_name = module_prefix + 'data_win' + self._ifn_field_name
             new_window = self.add_new_plot_window(title=self._ifn_field_name,
                                                   x_axis_title='Time (hrs)',
                                                   y_axis_title='Variables', x_scale_type='linear',
@@ -990,7 +1002,7 @@ class IFNSimDataSteppable(IFNSteppableBase):
         if self.output_dir is not None:
             from pathlib import Path
             if self.write_ifn_data:
-                self.ifn_data_path = Path(self.output_dir).joinpath('ifn_data.dat')
+                self.ifn_data_path = Path(self.output_dir).joinpath(module_prefix + 'data.dat')
                 with open(self.ifn_data_path, 'w'):
                     pass
 
@@ -1013,7 +1025,7 @@ class IFNSimDataSteppable(IFNSteppableBase):
         if self.output_dir is not None:
             from pathlib import Path
             if self.write_med_diff_data:
-                self.med_diff_data_path = Path(self.output_dir).joinpath('ifn_med_diff_data.dat')
+                self.med_diff_data_path = Path(self.output_dir).joinpath(module_prefix + 'med_diff_data.dat')
                 with open(self.med_diff_data_path, 'w'):
                     pass
 
@@ -1087,7 +1099,7 @@ class IFNSimDataSteppable(IFNSteppableBase):
                 mean_var = total_vars[model_var] / L
                 data_dict.append(mean_var)
                 if plot_ifn_data:
-                    window_name = getattr(self, 'ifn_data_win' + model_var)
+                    window_name = getattr(self, module_prefix + 'data_win' + model_var)
                     window_name.add_data_point(model_var, mcs * hours_to_mcs, mean_var)
 
             # Measure amount of IFNe in the Field
@@ -1096,7 +1108,7 @@ class IFNSimDataSteppable(IFNSteppableBase):
             for cell in self.cell_list_by_type(*self.registered_type_ids):
                 total_var += secretor.amountSeenByCell(cell)
             if plot_ifn_data:
-                window_name = getattr(self, 'ifn_data_win' + self._ifn_field_name)
+                window_name = getattr(self, module_prefix + 'data_win' + self._ifn_field_name)
                 window_name.add_data_point(self._ifn_field_name, mcs * hours_to_mcs,
                                            total_var / self._initial_number_cells)
             data_dict.append(total_var / self._initial_number_cells)
@@ -1226,7 +1238,7 @@ class IFNPlaqueAssaySteppable(IFNSteppableBase):
         if self.output_dir is not None:
             from pathlib import Path
             if self.write_plaque_assay_data:
-                self.plaque_assay_data_path = Path(self.output_dir).joinpath('plaque_assay_data.dat')
+                self.plaque_assay_data_path = Path(self.output_dir).joinpath(module_prefix + 'plaque_assay_data.dat')
                 with open(self.plaque_assay_data_path, 'w'):
                     pass
 

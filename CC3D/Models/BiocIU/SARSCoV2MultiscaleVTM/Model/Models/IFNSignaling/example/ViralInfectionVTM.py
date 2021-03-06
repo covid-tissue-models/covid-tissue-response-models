@@ -17,49 +17,49 @@ from cc3d import CompuCellSetup
 
 # All imports, manipulations and registrations should occur after this line
 
-from ..Models.IFNSIgnaling.IFNSteppables import IFNVirusFieldInitializerSteppable
+from ..Models.IFNSignaling.IFNSteppables import IFNVirusFieldInitializerSteppable
 steppable = IFNVirusFieldInitializerSteppable(frequency=1)
 steppable.voxel_length = 3.0
 steppable.step_period = 10.0 * 60
 CompuCellSetup.register_steppable(steppable=steppable)
 
-from ..Models.IFNSIgnaling.IFNSteppables import IFNViralDeathSteppable
+from ..Models.IFNSignaling.IFNSteppables import IFNViralDeathSteppable
 
 CompuCellSetup.register_steppable(steppable=IFNViralDeathSteppable(frequency=1))
 
-from ..Models.IFNSIgnaling.IFNSteppables import IFNEclipsePhaseSteppable
+from ..Models.IFNSignaling.IFNSteppables import IFNEclipsePhaseSteppable
 
 CompuCellSetup.register_steppable(steppable=IFNEclipsePhaseSteppable(frequency=1))
 
-from ..Models.IFNSIgnaling.IFNSteppables import IFNViralInternalizationSteppable
+from ..Models.IFNSignaling.IFNSteppables import IFNViralInternalizationSteppable
 
 CompuCellSetup.register_steppable(steppable=IFNViralInternalizationSteppable(frequency=1))
 
-from ..Models.IFNSIgnaling.IFNSteppables import IFNViralReleaseSteppable
+from ..Models.IFNSignaling.IFNSteppables import IFNViralReleaseSteppable
 
 CompuCellSetup.register_steppable(steppable=IFNViralReleaseSteppable(frequency=1))
 
-from ..Models.IFNSIgnaling.IFNSteppables import IFNReleaseSteppable
+from ..Models.IFNSignaling.IFNSteppables import IFNReleaseSteppable
 
 CompuCellSetup.register_steppable(steppable=IFNReleaseSteppable(frequency=1))
 
-from ..Models.IFNSIgnaling.IFNSteppables import IFNFieldInitializerSteppable
+from ..Models.IFNSignaling.IFNSteppables import IFNFieldInitializerSteppable
 
 CompuCellSetup.register_steppable(steppable=IFNFieldInitializerSteppable(frequency=1))
 
-from ..Models.IFNSIgnaling.IFNSteppables import IFNSimDataSteppable
+from ..Models.IFNSignaling.IFNSteppables import IFNSimDataSteppable
 
 CompuCellSetup.register_steppable(steppable=IFNSimDataSteppable(frequency=1))
 
-from ..Models.IFNSIgnaling.IFNSteppables import IFNPlaqueAssaySteppable
+from ..Models.IFNSignaling.IFNSteppables import IFNPlaqueAssaySteppable
 
 CompuCellSetup.register_steppable(steppable=IFNPlaqueAssaySteppable(frequency=1))
 
-from ..Models.IFNSIgnaling.IFNSteppables import IFNSteppable
+from ..Models.IFNSignaling.IFNSteppables import IFNSteppable
 
 CompuCellSetup.register_steppable(steppable=IFNSteppable(frequency=1))
 
-from ..Models.IFNSIgnaling.IFNSteppables import IFNCellInitializerSteppable
+from ..Models.IFNSignaling.IFNSteppables import IFNCellInitializerSteppable
 
 CompuCellSetup.register_steppable(steppable=IFNCellInitializerSteppable(frequency=1))
 

@@ -49,7 +49,7 @@ Change log
 """
 # todo: update citation
 
-module_prefix = "ifnsig_"
+module_prefix = "ifn_"  # type: str
 
 version_major = 1
 version_minor = 0
