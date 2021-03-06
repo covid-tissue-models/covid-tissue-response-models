@@ -26,7 +26,7 @@ write_med_diff_data_freq = 0  # Write total diffusive field amount frequency (di
 
 # Conversion Factors
 __param_desc__['s_to_mcs'] = 'Simulation step'
-s_to_mcs = 10 * 60  # s/mcs
+s_to_mcs = 5 * 60  # s/mcs
 __param_desc__['um_to_lat_width'] = 'Lattice width'
 um_to_lat_width = 4.0  # um/lattice_length
 

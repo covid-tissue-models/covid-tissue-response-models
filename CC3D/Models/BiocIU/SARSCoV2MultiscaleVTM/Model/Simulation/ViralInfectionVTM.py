@@ -1,5 +1,6 @@
 """
 To cite this framework please use the following:
+
 T.J. Sego, Josua O. Aponte-Serrano, Juliano Ferrari Gianlupi, Samuel R. Heaps, Kira Breithaupt, Lutz Brusch,
 Jessica Crawshaw, James M. Osborne, Ellen M. Quardokus, Richard K. Plemper, James A. Glazier,
 "A modular framework for multiscale, multicellular, spatiotemporal modeling of acute primary viral infection and
