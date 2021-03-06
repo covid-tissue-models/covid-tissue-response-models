@@ -16,8 +16,8 @@
 
     <Potts>
         <!-- Basic properties of CPM (GGH) algorithm -->
-        <Dimensions x="300" y="300" z="1"/>
-        <Steps>240</Steps>
+        <Dimensions x="210" y="210" z="1"/>
+        <Steps>4033</Steps>
         <Temperature>10.0</Temperature>
         <NeighborOrder>3</NeighborOrder>
         <Boundary_x>Periodic</Boundary_x>
@@ -84,25 +84,5 @@
             </Plane>
          </BoundaryConditions>
       </DiffusionField>
-      <DiffusionField Name="IFNe">
-         <DiffusionData>
-            <FieldName>IFNe</FieldName>
-            <GlobalDiffusionConstant id = "ifn_dc">10.0</GlobalDiffusionConstant>
-            <GlobalDecayConstant id = "ifn_decay">1.0E-5</GlobalDecayConstant>
-         </DiffusionData>
-         <BoundaryConditions>
-            <Plane Axis="X">
-               <Periodic/>
-            </Plane>
-            <Plane Axis="Y">
-               <Periodic/>
-            </Plane>
-            <Plane Axis="Z">
-               <ConstantDerivative PlanePosition="Min" Value="0.0"/>
-               <ConstantDerivative PlanePosition="Max" Value="0.0"/>
-            </Plane>
-         </BoundaryConditions>
-      </DiffusionField>
    </Steppable>
-
 </CompuCell3D>

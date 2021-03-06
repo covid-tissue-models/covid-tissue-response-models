@@ -1,6 +1,5 @@
 """
 To cite this framework please use the following:
-
 T.J. Sego, Josua O. Aponte-Serrano, Juliano Ferrari Gianlupi, Samuel R. Heaps, Kira Breithaupt, Lutz Brusch,
 Jessica Crawshaw, James M. Osborne, Ellen M. Quardokus, Richard K. Plemper, James A. Glazier,
 "A modular framework for multiscale, multicellular, spatiotemporal modeling of acute primary viral infection and
@@ -17,55 +16,38 @@ from cc3d import CompuCellSetup
 
 # All imports, manipulations and registrations should occur after this line
 
-from ..Models.IFNSignaling.IFNSteppables import IFNVirusFieldInitializerSteppable
-steppable = IFNVirusFieldInitializerSteppable(frequency=1)
-steppable.voxel_length = 3.0
-steppable.step_period = 10.0 * 60
+from ViralInfectionVTMSteppables import CellInitializerSteppable
+steppable = CellInitializerSteppable(frequency=1)
+steppable.voxel_length = 4.0
+steppable.step_period = 5.0 * 60
 CompuCellSetup.register_steppable(steppable=steppable)
 
-from ..Models.IFNSignaling.IFNSteppables import IFNViralDeathSteppable
+from ViralInfectionVTMSteppables import VirusFieldInitializerSteppable
 
-CompuCellSetup.register_steppable(steppable=IFNViralDeathSteppable(frequency=1))
+CompuCellSetup.register_steppable(steppable=VirusFieldInitializerSteppable(frequency=1))
 
-from ..Models.IFNSignaling.IFNSteppables import IFNEclipsePhaseSteppable
+from Models.RecoveryNeighbor.RecoverySteppables import NeighborRecoverySteppable
 
-CompuCellSetup.register_steppable(steppable=IFNEclipsePhaseSteppable(frequency=1))
+CompuCellSetup.register_steppable(steppable=NeighborRecoverySteppable(frequency=1))
 
-from ..Models.IFNSignaling.IFNSteppables import IFNViralInternalizationSteppable
+from ViralInfectionVTMSteppables import ViralDeathSteppable
 
-CompuCellSetup.register_steppable(steppable=IFNViralInternalizationSteppable(frequency=1))
+CompuCellSetup.register_steppable(steppable=ViralDeathSteppable(frequency=1))
 
-from ..Models.IFNSignaling.IFNSteppables import IFNViralReleaseSteppable
+from ViralInfectionVTMSteppables import EclipsePhaseSteppable
 
-CompuCellSetup.register_steppable(steppable=IFNViralReleaseSteppable(frequency=1))
+CompuCellSetup.register_steppable(steppable=EclipsePhaseSteppable(frequency=1))
 
-from ..Models.IFNSignaling.IFNSteppables import IFNReleaseSteppable
+from ViralInfectionVTMSteppables import ViralInternalizationSteppable
 
-CompuCellSetup.register_steppable(steppable=IFNReleaseSteppable(frequency=1))
+CompuCellSetup.register_steppable(steppable=ViralInternalizationSteppable(frequency=1))
 
-from ..Models.IFNSignaling.IFNSteppables import IFNFieldInitializerSteppable
+from ViralInfectionVTMSteppables import ViralReleaseSteppable
 
-CompuCellSetup.register_steppable(steppable=IFNFieldInitializerSteppable(frequency=1))
+CompuCellSetup.register_steppable(steppable=ViralReleaseSteppable(frequency=1))
 
-from ..Models.IFNSignaling.IFNSteppables import IFNSimDataSteppable
+from ViralInfectionVTMSteppables import SimDataSteppable
 
-CompuCellSetup.register_steppable(steppable=IFNSimDataSteppable(frequency=1))
-
-from ..Models.IFNSignaling.IFNSteppables import IFNPlaqueAssaySteppable
-
-CompuCellSetup.register_steppable(steppable=IFNPlaqueAssaySteppable(frequency=1))
-
-from ..Models.IFNSignaling.IFNSteppables import IFNSteppable
-
-CompuCellSetup.register_steppable(steppable=IFNSteppable(frequency=1))
-
-from ..Models.IFNSignaling.IFNSteppables import IFNCellInitializerSteppable
-
-CompuCellSetup.register_steppable(steppable=IFNCellInitializerSteppable(frequency=1))
-
-# from ViralInfectionVTMSteppables import CellInitializerSteppable
-# steppable = CellInitializerSteppable(frequency=1)
-# steppable.single_infected_cell()
-# CompuCellSetup.register_steppable(steppable=steppable)
+CompuCellSetup.register_steppable(steppable=SimDataSteppable(frequency=1))
 
 CompuCellSetup.run()
