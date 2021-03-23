@@ -41,6 +41,9 @@ write_ddm_data_freq = 1  # Write recovery model data to simulation directory fre
 
 # Treatment options
 
+__param_desc__['use_simple_pk'] = 'bool for using simple pk'
+use_simple_pk = True
+
 __param_desc__['constant_drug_concentration'] = 'bool flag for constant prodrug'
 constant_drug_concentration = False
 
