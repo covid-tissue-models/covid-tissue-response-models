@@ -152,7 +152,7 @@
                <Periodic/>
             </Plane>
             <Plane Axis="Z">
-               <ConstantDerivative PlanePosition="Min" Value="0.0"/>
+               <ConstantDerivative id = 'lower_flux' PlanePosition="Min" Value="0.0"/>
                <ConstantDerivative PlanePosition="Max" Value="0.0"/>
             </Plane>
            </BoundaryConditions>
