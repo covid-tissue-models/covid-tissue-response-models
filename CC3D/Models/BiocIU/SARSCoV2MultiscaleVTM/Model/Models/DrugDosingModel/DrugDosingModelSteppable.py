@@ -37,24 +37,11 @@ drug_dosing_model_key = "drug_dose_steppable"
 
 days_2_mcs = s_to_mcs / 60 / 60 / 24
 
-'''
-with the default parameters (k0 = 100.0; d0 = 1.0; k1 = 25.0; d1 = 6.0; k2 = 25.0; d2 = 6.0; k3 = 25.0; d3 = 6.0; 
-d4 = 6.0) max(Available4) is a linear function of dose following:
-
-max(Available4) ~= 4.14360796e-01 x dose -1.65564741e-08
-
-with the fitted pk (k0 = 10.0; d0 = 16.635; k1 = 1.0; d1 = 8.317; k2 = 989.6; d2 = 8.317; k3 = 158.4; d3 = 0.693; 
-d4 = 0.693) max(Available4) is a linear function of dose following:
-
-max(Available4) ~= 2.32417475e-01 x dose + 1.59151098e-08
-
-'''
-
 
 # @staticmethod
 def set_default_ddm_string(_init_drug_plasma, _init_drug_periphery, _init_drug_lung, _init_met_alanine, _init_met_NMP,
                            _init_met_NTP, _double_first_dose, _k_p_rate, _k_p_prime_rate, _k01_rate, _k10_rate,
-                           _k12_rate,_k23_rate, _k34_rate, _kE0_rate, _kE1_rate, _kE2_rate, _kE3_rate, _kE4_rate,
+                           _k12_rate, _k23_rate, _k34_rate, _kE0_rate, _kE1_rate, _kE2_rate, _kE3_rate, _kE4_rate,
                            _infusion_amount, _dose_interval, _eot, _treatment_start):
     """
     Antimony model string generator for this steppable.
@@ -221,7 +208,8 @@ def full_ddm_for_testing(_init_drug_plasma, _init_drug_periphery, _init_drug_lun
     
     end
 '''.format(_init_drug_plasma, _init_drug_periphery, _init_drug_lung, _init_met_alanine, _init_met_NMP, _init_met_NTP,
-           _double_first_dose, _k_p_rate, _k_p_prime_rate, _k01_rate, _k10_rate, _k12_rate, _k23_rate, _k34_rate, _kE0_rate,
+           _double_first_dose, _k_p_rate, _k_p_prime_rate, _k01_rate, _k10_rate, _k12_rate, _k23_rate, _k34_rate,
+           _kE0_rate,
            _kE1_rate, _kE2_rate, _kE3_rate, _kE4_rate, _infusion_amount, _dose_interval, _eot, _treatment_start)
 
     drug_dosig_model_vars = ["Dpls", "Dperi", "Dlung", "Mala", "Mnmp", "Mntp"]
@@ -230,7 +218,8 @@ def full_ddm_for_testing(_init_drug_plasma, _init_drug_periphery, _init_drug_lun
 
 
 def set_cst_drug_ddm_string(_init_drug_plasma, _init_drug_periphery, _init_drug_lung, _init_met_alanine, _init_met_NMP,
-                            _init_met_NTP, _double_first_dose, _k_p_rate, _k_p_prime_rate, _k01_rate, _k10_rate, _k12_rate,
+                            _init_met_NTP, _double_first_dose, _k_p_rate, _k_p_prime_rate, _k01_rate, _k10_rate,
+                            _k12_rate,
                             _k23_rate, _k34_rate, _kE0_rate, _kE1_rate, _kE2_rate, _kE3_rate, _kE4_rate,
                             _infusion_amount, _dose_interval, _eot, _treatment_start):
     dosingmodel_str = '''
@@ -302,7 +291,8 @@ def set_cst_drug_ddm_string(_init_drug_plasma, _init_drug_periphery, _init_drug_
     
     end
 '''.format(_init_drug_periphery, _init_drug_lung, _init_met_alanine, _init_met_NMP, _init_met_NTP,
-           _double_first_dose, _k_p_rate, _k_p_prime_rate, _k01_rate, _k10_rate, _k12_rate, _k23_rate, _k34_rate, _kE0_rate,
+           _double_first_dose, _k_p_rate, _k_p_prime_rate, _k01_rate, _k10_rate, _k12_rate, _k23_rate, _k34_rate,
+           _kE0_rate,
            _kE1_rate, _kE2_rate, _kE3_rate, _kE4_rate, _infusion_amount, _dose_interval, _eot, _treatment_start)
 
     drug_dosig_model_vars = ["Dpls", "Dperi", "Dlung", "Mala", "Mnmp", "Mntp"]
@@ -377,6 +367,7 @@ def set_cell_drug_metabolization(_init_met_alanine, _init_met_NMP, _init_met_NTP
                _kE2_rate, _kE3_rate, _kE4_rate)
 
     return dosingmodel_str
+
 
 
 class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
@@ -458,11 +449,13 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
         # set model string
         self.drug_model_string, self.ddm_vars = self.set_drug_model_string(
             Drug_pls, Drug_peri, Drug_lung, Ala_met, NMP_met, NTP_met,
-            first_dose_doubler, kp, kpp, k01, k10, k12, k23, k34, kE0, kE1, kE2, kE3, kE4, dose, dose_interval, dose_end,
+            first_dose_doubler, kp, kpp, k01, k10, k12, k23, k34, kE0, kE1, kE2, kE3, kE4, dose, dose_interval,
+            dose_end,
             first_dose)
         self.control_string, _ = self.set_control_model_string(
             Drug_pls, Drug_peri, Drug_lung, Ala_met, NMP_met, NTP_met,
-            first_dose_doubler, kp, kpp, k01, k10, k12, k23, k34, kE0, kE1, kE2, kE3, kE4, dose, dose_interval, dose_end,
+            first_dose_doubler, kp, kpp, k01, k10, k12, k23, k34, kE0, kE1, kE2, kE3, kE4, dose, dose_interval,
+            dose_end,
             first_dose)
 
         # init sbml
@@ -570,9 +563,10 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
             total = 0
             for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING, self.UNINFECTED):
                 rate = days_2_mcs * cell.sbml.drug_metabolization['k12']
-                uptake = secreter.uptakeInsideCellTotalCount(cell, 9e99, rate)  # uptake at rate 'rate' without max
+                uptake = secreter.uptakeInsideCellTotalCount(cell, 9e9, rate)  # uptake at rate 'rate' without max
                 # value for uptake (9e99)
                 cell.sbml.drug_metabolization['Mala'] += abs(uptake.tot_amount)
+                self.sbml.drug_dosing_model['Dlung'] -= abs(uptake.tot_amount)
                 total += abs(uptake.tot_amount)
         # print('result:', self.sbml.drug_dosing_model['Dlung'], total)
 
@@ -673,7 +667,8 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
     def finish(self):
         pass
 
-class ProdrugDiffusionControler(ViralInfectionVTMSteppableBasePy):
+
+class ProdrugDiffusionController(ViralInfectionVTMSteppableBasePy):
     """
     Responsible for controlling prodrug diffusion
     """
@@ -700,11 +695,38 @@ class ProdrugDiffusionControler(ViralInfectionVTMSteppableBasePy):
         pass
 
     def diff_step(self, mcs):
-        pass
 
-    def get_incoming_rmds(self):
+        # 1) compare Dlung in sbml to total amount in simulation (calculate the difference)
+        # 1 note) the difference I want is sbml(dlung) - total_rmds_in_sim. that way the sign of the difference is the
+        # sign of the flux
+        # 2) set cc3d diffusion flux to difference (times rates and whatnot)
 
+        self.get_xml_element('lower_flux').Value = 0.0  # just to be safe
 
+        sim_rmds = self.get_total_prodrug()
+
+        # let me do step 0 first
+
+        dlung = self.sbml.drug_dosing_model['Dlung']
+
+        flux = (dlung - sim_rmds) / (self.dim.x * self.dim.y)  # all pixels get / loose the same share of dlung
+
+        print(sim_rmds, dlung, flux)
+        if flux > 0:
+            self.get_xml_element('lower_flux').Value = flux
+        else:
+            if abs(flux) > sim_rmds / (self.dim.x * self.dim.y):
+                flux = - sim_rmds / (self.dim.x * self.dim.y)
+                self.get_xml_element('lower_flux').Value = flux
+
+    def get_total_prodrug(self):
+        try:
+            rmds_tot = self.get_field_secretor("prodrug").totalFieldIntegral()
+        except AttributeError:  # Pre-v4.2.1 CC3D
+            rmds_tot = 0
+            for x, y, z in self.every_pixel():
+                rmds_tot += self.field.prodrug[x, y, z]
+        return rmds_tot
 
 
 class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
