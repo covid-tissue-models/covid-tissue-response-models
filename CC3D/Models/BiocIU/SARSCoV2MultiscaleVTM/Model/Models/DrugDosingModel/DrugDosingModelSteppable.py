@@ -36,7 +36,7 @@ from BatchRun import BatchRunLib
 drug_dosing_model_key = "drug_dose_steppable"
 
 days_2_mcs = s_to_mcs / 60 / 60 / 24
-
+hour_2_mcs = s_to_mcs / 60 / 60
 
 # @staticmethod
 def set_default_ddm_string(_init_drug_plasma, _init_drug_periphery, _init_drug_lung, _init_met_alanine, _init_met_NMP,
@@ -372,106 +372,110 @@ def set_cell_drug_metabolization(_init_met_alanine, _init_met_NMP, _init_met_NTP
 def set_simple_pk_full():
     # time units are H!!!
     simple_pk_str = """
-        // Created by libAntimony v2.12.0.3
+                // Created by libAntimony v2.12.0.3
         function Rate_Law_for_Uptake_1(dose, k, duration)
           dose*k/duration;
         end
-
+        
         Rate_Law_for_Uptake_1 is "Rate Law for Uptake_1"
-
-
+        
+        function Function_for_Uptake(Body, Infusion_duration, Remdes_dose_mol, k_in)
+          Rate_Law_for_Uptake_1(Remdes_dose_mol, k_in, Infusion_duration)/Body;
+        end
+        
+        Function_for_Uptake is "Function for Uptake"
+        
+        
         model *New_Model()
-
+        
           // Compartments and Species:
           compartment Body;
           species GS443902 in Body, GS443902_source in Body, GS443902_sink in Body;
-
+        
           // Rate Rules:
           GS443902_AUC' = GS443902;
-
+        
           // Reactions:
-          Uptake: GS443902_source => GS443902; Rate_Law_for_Uptake_1(Remdes_dose_mol, k_in, Infusion_duration);
+          Uptake: GS443902_source => GS443902; Body*Function_for_Uptake(Body, Infusion_duration, Remdes_dose_mol, k_in);
           Clearance: GS443902 => GS443902_sink; Body*k_out*GS443902;
-
+        
           // Events:
-          checkTmax: at GS443902 > GS443902_Cmax: GS443902_Tmax = time;
-          checkCmax: at GS443902 > GS443902_Cmax: GS443902_Cmax = GS443902 + 1e-8;
-          checkC24: at time == 24: GS443902_C24 = GS443902;
-          Infusion_0_off: at time > ModelValue_18_0: k_in = 0;
-          Infus_1_on: at time > 24: k_in = 0.5;
-          Infus_1_off: at time > (24 + ModelValue_18_0): k_in = 0;
-          Infus_2_on: at time > 48: k_in = 0.5;
-          Infus_2_off: at time > (48 + ModelValue_18_0): k_in = 0;
-          Infus_3_on: at time > 72: k_in = 0.5;
-          Infus_3_off: at time > (72 + ModelValue_18_0): k_in = 0;
-          Infus_4_on: at time > 96: k_in = 0.5;
-          Infus_4_off: at time > (96 + ModelValue_18_0): k_in = 0;
-
+          checkTmax: at 0 after GS443902 > GS443902_Cmax: GS443902_Tmax = time;
+          checkCmax: at 0 after GS443902 > GS443902_Cmax: GS443902_Cmax = GS443902 + 1e-9;
+          checkC24: at 0 after time == 24: GS443902_C24 = GS443902;
+        
           // Species initializations:
           GS443902 = 0;
           GS443902_source = Remdes_dose_mol;
           GS443902_sink = 0;
-
+        
           // Compartment initializations:
           Body = 38.4;
-
+        
           // Variable initializations:
           Remdes_dose_mol = Remdes_dose_mg/1000/Remdes_MW;
           Remdes_dose_mol has unit_6;
           GS443902_Cmax = GS443902;
           GS443902_Cmax has unit_4;
           GS443902_Tmax = 0;
-          GS443902_Tmax has unit_3;
+          GS443902_Tmax has unit_9;
           GS443902_C24 = 0;
           GS443902_C24 has unit_4;
-          ModelValue_18_0 = Infusion_duration;
           k_in = 1;
-          k_in has unit_0;
+          k_in has unit_7;
           k_out = ln(2)/Observed_t1_2;
-          k_out has unit_0;
+          k_out has unit_7;
           Observed_t1_2 = 30.4;
-          Observed_t1_2 has unit_3;
+          Observed_t1_2 has unit_9;
           Remdes_MW = 602.585;
           Remdes_MW has unit_1;
           GS443902_AUC = 0;
-          GS443902_AUC has unit_2;
+          GS443902_AUC has unit_8;
           Remdes_dose_mg = 200;
-          Remdes_dose_mg has unit_5;
+          Remdes_dose_mg has unit_10;
           Infusion_duration = 1;
-          Infusion_duration has unit_3;
-
+          Infusion_duration has unit_9;
+        
           // Other declarations:
-          var GS443902_Cmax, GS443902_Tmax, GS443902_C24, k_in, GS443902_AUC;
-          const Body, Remdes_dose_mol, ModelValue_18_0, k_out, Observed_t1_2, Remdes_MW;
-          const Remdes_dose_mg, Infusion_duration;
-
+          var GS443902_Cmax, GS443902_Tmax, GS443902_C24, GS443902_AUC;
+          const Body, Remdes_dose_mol, k_in, k_out, Observed_t1_2, Remdes_MW, Remdes_dose_mg;
+          const Infusion_duration;
+        
           // Unit definitions:
           unit substance = mole;
           unit unit_0 = 1 / 3600e2 second;
           unit unit_1 = gram / mole;
           unit unit_2 = 1 mole * 3600e2 second / litre;
-          unit time_unit = 3600e2 second;
           unit unit_4 = mole / litre;
           unit unit_5 = 1e-3 gram;
           unit unit_6 = mole;
+          unit unit_3 = 3600e2 second;
           unit length = metre;
           unit area = metre^2;
           unit volume = litre;
-          unit unit_3 = 3600e2 second;
-
+          unit time_unit = 360000e2 second;
+          unit unit_7 = 1 / 360000e2 second;
+          unit unit_8 = 100 mole * 3600e2 second / litre;
+          unit unit_9 = 360000e2 second;
+          unit unit_10 = 1e-3 gram;
+        
           // Display Names:
           unit_0 is "1/h";
           unit_1 is "g/mol";
           unit_2 is "mol/l*h";
-          time_unit is "time";
           unit_4 is "mol/l";
           unit_5 is "mg";
           unit_6 is "mol";
           unit_3 is "h";
-          ModelValue_18_0 is "Initial for Infusion_duration";
+          time_unit is "time";
+          unit_7 is "1/(100*h)";
+          unit_8 is "100*mol*h/l";
+          unit_9 is "100*h";
+          unit_10 is "0.001*g";
         end
+        
+        New_Model is "New Model_1"
 
-        New_Model is "New Model"
 
     """
 
@@ -713,7 +717,7 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
 
             self.set_control_model_string = full_ddm_for_testing
         else:
-            self.set_drug_model_string =
+            self.set_drug_model_string = set_simple_pk_full
             self.set_control_model_string = set_simple_pk_full
 
         self.plot_ddm_data = plot_ddm_data_freq > 0
@@ -738,6 +742,7 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
         self.ddm_rr = None
 
         self.control_rr = None
+        self.active_component = None
 
     @staticmethod
     def get_roadrunner_for_single_antimony(model):
@@ -774,33 +779,49 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
 
     def start(self):
 
-        # set model string
-        self.drug_model_string, self.ddm_vars = self.set_drug_model_string(
-            Drug_pls, Drug_peri, Drug_lung, Ala_met, NMP_met, NTP_met,
-            first_dose_doubler, kp, kpp, k01, k10, k12, k23, k34, kE0, kE1, kE2, kE3, kE4, dose, dose_interval,
-            dose_end,
-            first_dose)
-        self.control_string, _ = self.set_control_model_string(
-            Drug_pls, Drug_peri, Drug_lung, Ala_met, NMP_met, NTP_met,
-            first_dose_doubler, kp, kpp, k01, k10, k12, k23, k34, kE0, kE1, kE2, kE3, kE4, dose, dose_interval,
-            dose_end,
-            first_dose)
+        if not use_simple_pk:
 
-        # init sbml
-        self.add_free_floating_antimony(model_string=self.drug_model_string, step_size=days_2_mcs,
-                                        model_name='drug_dosing_model')
-        self.ddm_rr = self.get_roadrunner_for_single_antimony('drug_dosing_model')
+            self.active_component = 'Mntp'
+            # set model string
 
-        self.add_free_floating_antimony(model_string=self.control_string, step_size=days_2_mcs,
-                                        model_name='drug_dosing_control')
-        self.control_rr = self.get_roadrunner_for_single_antimony('drug_dosing_control')
+            self.drug_model_string, self.ddm_vars = self.set_drug_model_string(
+                Drug_pls, Drug_peri, Drug_lung, Ala_met, NMP_met, NTP_met,
+                first_dose_doubler, kp, kpp, k01, k10, k12, k23, k34, kE0, kE1, kE2, kE3, kE4, dose, dose_interval,
+                dose_end,
+                first_dose)
+            self.control_string, _ = self.set_control_model_string(
+                Drug_pls, Drug_peri, Drug_lung, Ala_met, NMP_met, NTP_met,
+                first_dose_doubler, kp, kpp, k01, k10, k12, k23, k34, kE0, kE1, kE2, kE3, kE4, dose, dose_interval,
+                dose_end,
+                first_dose)
+            # init sbml
+            self.add_free_floating_antimony(model_string=self.drug_model_string, step_size=days_2_mcs,
+                                            model_name='drug_dosing_model')
+            self.ddm_rr = self.get_roadrunner_for_single_antimony('drug_dosing_model')
 
-        self.drug_metabolization_string = set_cell_drug_metabolization(Ala_met, NMP_met, NTP_met, k12, k23, k34, kE2,
-                                                                       kE3, kE4)
+            self.add_free_floating_antimony(model_string=self.control_string, step_size=days_2_mcs,
+                                            model_name='drug_dosing_control')
+            self.control_rr = self.get_roadrunner_for_single_antimony('drug_dosing_control')
 
-        for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING, self.UNINFECTED):
-            self.add_antimony_to_cell(model_string=self.drug_metabolization_string, model_name='drug_metabolization',
-                                      cell=cell, step_size=days_2_mcs)
+            self.drug_metabolization_string = set_cell_drug_metabolization(Ala_met, NMP_met, NTP_met, k12, k23, k34,
+                                                                           kE2,
+                                                                           kE3, kE4)
+
+            for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING, self.UNINFECTED):
+                self.add_antimony_to_cell(model_string=self.drug_metabolization_string,
+                                          model_name='drug_metabolization',
+                                          cell=cell, step_size=days_2_mcs)
+        else:
+            self.drug_model_string = self.set_simple_pk_full()
+            self.active_component = 'GS443902'
+            for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING, self.UNINFECTED):
+                self.add_antimony_to_cell(model_string=self.drug_model_string,
+                                          model_name='drug_metabolization',
+                                          cell=cell, step_size=hour_2_mcs)
+                
+
+
+
 
         if prophylactic_treatment:
             # to be able to write the data from prophylaxis I put the prophylactic code in the
@@ -958,6 +979,9 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
         #     vr_model.replicating_rate = self.rmax
 
         # ViralInfectionVTMLib.step_sbml_model_cell(cell=cell)
+    def simple_pk_step(self, mcs):
+        # with the simple pk each cell will have its own pk model running in themselves
+        pass
 
     def get_rna_array(self):
         return np.array([cell.dict['Replicating'] for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING,
