@@ -818,7 +818,7 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
                 self.add_antimony_to_cell(model_string=self.drug_model_string,
                                           model_name='drug_metabolization',
                                           cell=cell, step_size=hour_2_mcs)
-                
+
 
 
 
@@ -981,6 +981,12 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
         # ViralInfectionVTMLib.step_sbml_model_cell(cell=cell)
     def simple_pk_step(self, mcs):
         # with the simple pk each cell will have its own pk model running in themselves
+        for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING, self.UNINFECTED):
+            self.timestep_cell_sbml('drug_metabolization', cell)
+            cell.dict['rmax'] = self.get_rmax(cell.sbml.drug_metabolization[self.active_component])
+            if cell.type != self.UNINFECTED:
+                vr_model = getattr(cell.sbml, self.vr_model_name)
+                vr_model.replicating_rate = cell.dict['rmax']
         pass
 
     def get_rna_array(self):
