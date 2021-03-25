@@ -33,9 +33,9 @@ active_met_name = 'GS-443902'
 
 # Data control options
 __param_desc__['plot_ddm_data_freq'] = 'Plot drug model data frequency'
-plot_ddm_data_freq = 0  # Plot recovery model data frequency (disable with 0)
+plot_ddm_data_freq = 1  # Plot drug dosing model data frequency (disable with 0)
 __param_desc__['write_ddm_data_freq'] = 'Write drug model data to simulation directory frequency'
-write_ddm_data_freq = 1  # Write recovery model data to simulation directory frequency (disable with 0)
+write_ddm_data_freq = 1  # Write drug dosing model data to simulation directory frequency (disable with 0)
 
 # DDM SBML model
 
@@ -130,7 +130,7 @@ vary_IC50 = True
 __param_desc__['active_met_ic50'] = 'value for the active metabolite ic50. parameters obtained by running the simple ' \
                                     'PK for 350 hours, detecting the peaks and troths and obtaining the average of ' \
                                     'those [mole/litter]'
-active_met_ic50 = 0.00030324582987671276
+active_met_ic50 = 0.00030324582987671276 / 38.4
 
 __param_desc__['hill_coef'] = 'Hill coeficient for diminishing hill function of rmax'
 hill_coef = 2
