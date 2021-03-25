@@ -1,9 +1,10 @@
 import sys
 from numpy import log
 from .DDMUtils import SetImporter
-import os
-sys.path.append(os.path.join(os.environ["ViralInfectionVTM"], "Simulation"))
-sys.path.append(os.environ["ViralInfectionVTM"])
+# import os
+# sys.path.append(os.path.join(os.environ["ViralInfectionVTM"], "Simulation"))
+# sys.path.append(os.environ["ViralInfectionVTM"])
+sys.path.insert(1, r'../../Simulation')
 from ViralInfectionVTMModelInputs import s_to_mcs, um_to_lat_width
 rate_sets_dict = SetImporter.import_sets_as_dict()
 
