@@ -38,6 +38,7 @@ drug_dosing_model_key = "drug_dose_steppable"
 days_2_mcs = s_to_mcs / 60 / 60 / 24
 hour_2_mcs = s_to_mcs / 60 / 60
 
+
 # @staticmethod
 def set_default_ddm_string(_init_drug_plasma, _init_drug_periphery, _init_drug_lung, _init_met_alanine, _init_met_NMP,
                            _init_met_NTP, _double_first_dose, _k_p_rate, _k_p_prime_rate, _k01_rate, _k10_rate,
@@ -369,9 +370,9 @@ def set_cell_drug_metabolization(_init_met_alanine, _init_met_NMP, _init_met_NTP
     return dosingmodel_str
 
 
-def set_simple_pk_full():
+def set_simple_pk_full(infusion_amount, time_of_1st_dose, dose_interval, dose_end):
     # time units are H!!!
-    simple_pk_str = """
+    simple_pk_str = f"""
                 // Created by libAntimony v2.12.0.3
         function Rate_Law_for_Uptake_1(dose, k, duration)
           dose*k/duration;
@@ -403,6 +404,10 @@ def set_simple_pk_full():
           checkTmax: at 0 after GS443902 > GS443902_Cmax: GS443902_Tmax = time;
           checkCmax: at 0 after GS443902 > GS443902_Cmax: GS443902_Cmax = GS443902 + 1e-9;
           checkC24: at 0 after time == 24: GS443902_C24 = GS443902;
+          
+          E1: at (time - first_dose > 0): k_in = 0.5*double_first_dose, curr_infu_start = time ; // starts the first infusion
+          E2: at ( (time-first_dose > dose_interval) && (time < dose_end) && sin((((time-first_dose)/dose_interval))*2*pi)>0): k_in = 0.5, curr_infu_start = time; // starts the subsequent infusions
+          E3: at (time - (one_hour + curr_infu_start) > 0): k_in = 0 ; // turns infusion off
         
           // Species initializations:
           GS443902 = 0;
@@ -411,8 +416,18 @@ def set_simple_pk_full():
         
           // Compartment initializations:
           Body = 38.4;
-        
+          
+          //input variables
+          infusion_amount = {infusion_amount};
+          
+          first_dose = {time_of_1st_dose};
+          dose_interval = {dose_interval};
+          dose_end = {dose_end};
+          
           // Variable initializations:
+          double_first_dose = 2;
+          curr_infu_start = 0; 
+          one_hour = 1;
           Remdes_dose_mol = Remdes_dose_mg/1000/Remdes_MW;
           Remdes_dose_mol has unit_6;
           GS443902_Cmax = GS443902;
@@ -421,7 +436,7 @@ def set_simple_pk_full():
           GS443902_Tmax has unit_9;
           GS443902_C24 = 0;
           GS443902_C24 has unit_4;
-          k_in = 1;
+          k_in = 0;
           k_in has unit_7;
           k_out = ln(2)/Observed_t1_2;
           k_out has unit_7;
@@ -431,14 +446,14 @@ def set_simple_pk_full():
           Remdes_MW has unit_1;
           GS443902_AUC = 0;
           GS443902_AUC has unit_8;
-          Remdes_dose_mg = 200;
+          Remdes_dose_mg = infusion_amount; // 200;
           Remdes_dose_mg has unit_10;
           Infusion_duration = 1;
           Infusion_duration has unit_9;
         
           // Other declarations:
-          var GS443902_Cmax, GS443902_Tmax, GS443902_C24, GS443902_AUC;
-          const Body, Remdes_dose_mol, k_in, k_out, Observed_t1_2, Remdes_MW, Remdes_dose_mg;
+          var GS443902_Cmax, GS443902_Tmax, GS443902_C24, GS443902_AUC, k_in;
+          const Body, Remdes_dose_mol, k_out, Observed_t1_2, Remdes_MW, Remdes_dose_mg;
           const Infusion_duration;
         
           // Unit definitions:
@@ -476,222 +491,6 @@ def set_simple_pk_full():
         
         New_Model is "New Model_1"
 
-
-    """
-
-    return simple_pk_str
-
-def set_simple_pk_lung():
-    # time units are H!!!
-    simple_pk_str = """
-        // Created by libAntimony v2.12.0.3
-        function Rate_Law_for_Uptake_1(dose, k, duration)
-          dose*k/duration;
-        end
-
-        Rate_Law_for_Uptake_1 is "Rate Law for Uptake_1"
-
-
-        model *New_Model()
-
-          // Compartments and Species:
-          compartment Body;
-          species GS443902 in Body, GS443902_source in Body, GS443902_sink in Body;
-
-          // Rate Rules:
-          GS443902_AUC' = GS443902;
-
-          // Reactions:
-          Uptake: GS443902_source => GS443902; Rate_Law_for_Uptake_1(Remdes_dose_mol, k_in, Infusion_duration);
-          Clearance: GS443902 => GS443902_sink; Body*k_out*GS443902;
-
-          // Events:
-          checkTmax: at GS443902 > GS443902_Cmax: GS443902_Tmax = time;
-          checkCmax: at GS443902 > GS443902_Cmax: GS443902_Cmax = GS443902 + 1e-8;
-          checkC24: at time == 24: GS443902_C24 = GS443902;
-          Infusion_0_off: at time > ModelValue_18_0: k_in = 0;
-          Infus_1_on: at time > 24: k_in = 0.5;
-          Infus_1_off: at time > (24 + ModelValue_18_0): k_in = 0;
-          Infus_2_on: at time > 48: k_in = 0.5;
-          Infus_2_off: at time > (48 + ModelValue_18_0): k_in = 0;
-          Infus_3_on: at time > 72: k_in = 0.5;
-          Infus_3_off: at time > (72 + ModelValue_18_0): k_in = 0;
-          Infus_4_on: at time > 96: k_in = 0.5;
-          Infus_4_off: at time > (96 + ModelValue_18_0): k_in = 0;
-
-          // Species initializations:
-          GS443902 = 0;
-          GS443902_source = Remdes_dose_mol;
-          GS443902_sink = 0;
-
-          // Compartment initializations:
-          Body = 38.4;
-
-          // Variable initializations:
-          Remdes_dose_mol = Remdes_dose_mg/1000/Remdes_MW;
-          Remdes_dose_mol has unit_6;
-          GS443902_Cmax = GS443902;
-          GS443902_Cmax has unit_4;
-          GS443902_Tmax = 0;
-          GS443902_Tmax has unit_3;
-          GS443902_C24 = 0;
-          GS443902_C24 has unit_4;
-          ModelValue_18_0 = Infusion_duration;
-          k_in = 1;
-          k_in has unit_0;
-          k_out = ln(2)/Observed_t1_2;
-          k_out has unit_0;
-          Observed_t1_2 = 30.4;
-          Observed_t1_2 has unit_3;
-          Remdes_MW = 602.585;
-          Remdes_MW has unit_1;
-          GS443902_AUC = 0;
-          GS443902_AUC has unit_2;
-          Remdes_dose_mg = 200;
-          Remdes_dose_mg has unit_5;
-          Infusion_duration = 1;
-          Infusion_duration has unit_3;
-
-          // Other declarations:
-          var GS443902_Cmax, GS443902_Tmax, GS443902_C24, k_in, GS443902_AUC;
-          const Body, Remdes_dose_mol, ModelValue_18_0, k_out, Observed_t1_2, Remdes_MW;
-          const Remdes_dose_mg, Infusion_duration;
-
-          // Unit definitions:
-          unit substance = mole;
-          unit unit_0 = 1 / 3600e2 second;
-          unit unit_1 = gram / mole;
-          unit unit_2 = 1 mole * 3600e2 second / litre;
-          unit time_unit = 3600e2 second;
-          unit unit_4 = mole / litre;
-          unit unit_5 = 1e-3 gram;
-          unit unit_6 = mole;
-          unit length = metre;
-          unit area = metre^2;
-          unit volume = litre;
-          unit unit_3 = 3600e2 second;
-
-          // Display Names:
-          unit_0 is "1/h";
-          unit_1 is "g/mol";
-          unit_2 is "mol/l*h";
-          time_unit is "time";
-          unit_4 is "mol/l";
-          unit_5 is "mg";
-          unit_6 is "mol";
-          unit_3 is "h";
-          ModelValue_18_0 is "Initial for Infusion_duration";
-        end
-
-        New_Model is "New Model"
-
-    """
-
-    return simple_pk_str
-
-def set_simple_pk_cell():
-    # time units are H!!!
-    simple_pk_str = """
-        // Created by libAntimony v2.12.0.3
-        function Rate_Law_for_Uptake_1(dose, k, duration)
-          dose*k/duration;
-        end
-
-        Rate_Law_for_Uptake_1 is "Rate Law for Uptake_1"
-
-
-        model *New_Model()
-
-          // Compartments and Species:
-          compartment Body;
-          species GS443902 in Body, GS443902_source in Body, GS443902_sink in Body;
-
-          // Rate Rules:
-          GS443902_AUC' = GS443902;
-
-          // Reactions:
-          //Uptake: GS443902_source => GS443902; Rate_Law_for_Uptake_1(Remdes_dose_mol, k_in, Infusion_duration);
-          Clearance: GS443902 => GS443902_sink; Body*k_out*GS443902;
-
-          // Events:
-          //checkTmax: at GS443902 > GS443902_Cmax: GS443902_Tmax = time;
-          //checkCmax: at GS443902 > GS443902_Cmax: GS443902_Cmax = GS443902 + 1e-8;
-          //checkC24: at time == 24: GS443902_C24 = GS443902;
-          //Infusion_0_off: at time > ModelValue_18_0: k_in = 0;
-          //Infus_1_on: at time > 24: k_in = 0.5;
-          //Infus_1_off: at time > (24 + ModelValue_18_0): k_in = 0;
-          //Infus_2_on: at time > 48: k_in = 0.5;
-          //Infus_2_off: at time > (48 + ModelValue_18_0): k_in = 0;
-          //Infus_3_on: at time > 72: k_in = 0.5;
-          //Infus_3_off: at time > (72 + ModelValue_18_0): k_in = 0;
-          //Infus_4_on: at time > 96: k_in = 0.5;
-          //Infus_4_off: at time > (96 + ModelValue_18_0): k_in = 0;
-
-          // Species initializations:
-          GS443902 = 0;
-          GS443902_source = Remdes_dose_mol;
-          GS443902_sink = 0;
-
-          // Compartment initializations:
-          Body = 38.4;
-
-          // Variable initializations:
-          Remdes_dose_mol = Remdes_dose_mg/1000/Remdes_MW;
-          Remdes_dose_mol has unit_6;
-          GS443902_Cmax = GS443902;
-          GS443902_Cmax has unit_4;
-          GS443902_Tmax = 0;
-          GS443902_Tmax has unit_3;
-          GS443902_C24 = 0;
-          GS443902_C24 has unit_4;
-          ModelValue_18_0 = Infusion_duration;
-          k_in = 1;
-          k_in has unit_0;
-          k_out = ln(2)/Observed_t1_2;
-          k_out has unit_0;
-          Observed_t1_2 = 30.4;
-          Observed_t1_2 has unit_3;
-          Remdes_MW = 602.585;
-          Remdes_MW has unit_1;
-          GS443902_AUC = 0;
-          GS443902_AUC has unit_2;
-          Remdes_dose_mg = 200;
-          Remdes_dose_mg has unit_5;
-          Infusion_duration = 1;
-          Infusion_duration has unit_3;
-
-          // Other declarations:
-          var GS443902_Cmax, GS443902_Tmax, GS443902_C24, k_in, GS443902_AUC;
-          const Body, Remdes_dose_mol, ModelValue_18_0, k_out, Observed_t1_2, Remdes_MW;
-          const Remdes_dose_mg, Infusion_duration;
-
-          // Unit definitions:
-          unit substance = mole;
-          unit unit_0 = 1 / 3600e2 second;
-          unit unit_1 = gram / mole;
-          unit unit_2 = 1 mole * 3600e2 second / litre;
-          unit time_unit = 3600e2 second;
-          unit unit_4 = mole / litre;
-          unit unit_5 = 1e-3 gram;
-          unit unit_6 = mole;
-          unit length = metre;
-          unit area = metre^2;
-          unit volume = litre;
-          unit unit_3 = 3600e2 second;
-
-          // Display Names:
-          unit_0 is "1/h";
-          unit_1 is "g/mol";
-          unit_2 is "mol/l*h";
-          time_unit is "time";
-          unit_4 is "mol/l";
-          unit_5 is "mg";
-          unit_6 is "mol";
-          unit_3 is "h";
-          ModelValue_18_0 is "Initial for Infusion_duration";
-        end
-
-        New_Model is "New Model"
 
     """
 
@@ -812,16 +611,13 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
                                           model_name='drug_metabolization',
                                           cell=cell, step_size=days_2_mcs)
         else:
-            self.drug_model_string = self.set_simple_pk_full()
+            self.drug_model_string = self.set_drug_model_string(dose, 24 * first_dose,
+                                                                24 * dose_interval, dose_end)
             self.active_component = 'GS443902'
             for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING, self.UNINFECTED):
                 self.add_antimony_to_cell(model_string=self.drug_model_string,
                                           model_name='drug_metabolization',
                                           cell=cell, step_size=hour_2_mcs)
-
-
-
-
 
         if prophylactic_treatment:
             # to be able to write the data from prophylaxis I put the prophylactic code in the
@@ -832,7 +628,8 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
         if sanity_run:
             self.rmax = replicating_rate
         else:
-            self.rmax = self.get_rmax(self.sbml.drug_dosing_control['Mntp'])
+            # self.rmax = self.get_rmax(self.sbml.drug_dosing_control['Mntp'])
+            self.rmax = replicating_rate
 
         self.shared_steppable_vars['rmax'] = self.rmax
 
@@ -953,7 +750,8 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
         #
         # diffusion of remdesivir: very fast, mol weigh of 602.585. See bose-einstein for upper limit. treat it as a
         # small molecule.
-
+        self.simple_pk_step(mcs)
+        return
         self.ddm_rr.timestep()
         self.control_rr.timestep()
         remdesivir_upt_tot = self.do_prodrug_metabolization()
@@ -979,6 +777,7 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
         #     vr_model.replicating_rate = self.rmax
 
         # ViralInfectionVTMLib.step_sbml_model_cell(cell=cell)
+
     def simple_pk_step(self, mcs):
         # with the simple pk each cell will have its own pk model running in themselves
         for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING, self.UNINFECTED):
@@ -987,7 +786,8 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
             if cell.type != self.UNINFECTED:
                 vr_model = getattr(cell.sbml, self.vr_model_name)
                 vr_model.replicating_rate = cell.dict['rmax']
-        pass
+        print(cell.sbml.drug_metabolization['time'], cell.sbml.drug_metabolization[self.active_component],
+              cell.sbml.drug_metabolization['k_in'], cell.sbml.drug_metabolization['Remdes_dose_mol'])
 
     def get_rna_array(self):
         return np.array([cell.dict['Replicating'] for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING,

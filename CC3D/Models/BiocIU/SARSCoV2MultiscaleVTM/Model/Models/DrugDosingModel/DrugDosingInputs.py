@@ -131,16 +131,17 @@ prophylactic_time = 1
 if not prophylactic_treatment:
     prophylactic_time = 0
 
-__param_desc__['daily_dose'] = 'how much drug is given in a DAY'
-daily_dose = 1
+__param_desc__['daily_dose'] = '(twice) how much drug is given in a DAY in mg. Loading dose is double the normal, ' \
+                               'it gets galved automatically'
+daily_dose = 200
 
 __param_desc__['dose_interval'] = 'time interval between doses in days'
 dose_interval = 1
 
-__param_desc__['initial_dose'] = 'initial dose (arbitrary amount)'
+__param_desc__['initial_dose'] = 'initial dose is double the standard [mg]. normal dose is halved in the sbml string'
 initial_dose = daily_dose / (24. / dose_interval)  # daily_dose/(N doses/day)
 
-__param_desc__['dose'] = 'dose of subsequent treatments (arbitrary units)'
+__param_desc__['dose'] = 'dose of subsequent treatments [mg]'
 dose = initial_dose
 
 if sanity_run:
@@ -159,14 +160,19 @@ if not treatment_ends:
 __param_desc__['vary_IC50'] = 'bool to indicate if varying the IC50 or vary a max drug'
 vary_IC50 = True
 
-__param_desc__['drug_ic50'] = 'value for drug ic50'
-drug_ic50 = 1
+# __param_desc__['drug_ic50'] = 'value for drug ic50'
+# drug_ic50 = 1
+#
+# __param_desc__['active_met_ic50'] = 'value for the active metabolite ic50. parameters obtained by running the PK for ' \
+#                                     'each set of rates with constant plasma drug concentration, while varying the ' \
+#                                     'concentration of drug (it is always linear)'
+# active_met_ic50 = rs.a * drug_ic50 + rs.b
 
-__param_desc__['active_met_ic50'] = 'value for the active metabolite ic50. parameters obtained by running the PK for ' \
-                                    'each set of rates with constant plasma drug concentration, while varying the ' \
-                                    'concentration of drug (it is always linear)'
-active_met_ic50 = rs.a * drug_ic50 + rs.b
-
+# 0.00030324582987671276
+__param_desc__['active_met_ic50'] = 'value for the active metabolite ic50. parameters obtained by running the simple ' \
+                                    'PK for 350 hours, detecting the peaks and troths and obtaining the average of ' \
+                                    'those [mole/litter]'
+active_met_ic50 = 0.00030324582987671276
 __param_desc__['hill_coef'] = 'Hill coeficient for diminishing hill function of rmax'
 hill_coef = 2
 
