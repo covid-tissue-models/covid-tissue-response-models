@@ -1,5 +1,5 @@
 # Model effect of Drug Dosing in viral replication
-# Written by J. F. Gianlupi, M.S.
+# Written by J. F. Gianlupi, M.Sci.
 # #todo write some more
 # Model parameters are specified in DrugDosingInputs.py
 #
@@ -18,7 +18,7 @@ from cc3d.core.PySteppables import *
 
 sys.path.append(os.path.join(os.environ["ViralInfectionVTM"], "Simulation"))
 sys.path.append(os.environ["ViralInfectionVTM"])
-from ViralInfectionVTMModelInputs import s_to_mcs, vr_step_size, replicating_rate, kon, koff, \
+from Simulation.ViralInfectionVTMModelInputs import s_to_mcs, vr_step_size, replicating_rate, kon, koff, \
     initial_unbound_receptors, hill_coeff_uptake_pr, rate_coeff_uptake_pr, max_ck_secrete_infect, unpacking_rate, \
     r_half, translating_rate, packing_rate, secretion_rate
 import ViralInfectionVTMLib
