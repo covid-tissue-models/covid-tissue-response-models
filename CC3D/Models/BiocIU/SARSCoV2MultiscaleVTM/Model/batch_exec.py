@@ -102,20 +102,47 @@
 #                   'daily_dose': [10, 2, 1, .5, .1],
 #                   'kon': [1]}
 
-new_full_dicst = {}
+# new_full_dicst = {}
+#
+# set_investigation_dict_1 = {'set_numb': [1, 2, 3, 4, 5, 6, 7, 8],
+#                             'drug_ic50': [10, 2, 1, 0.5, 0.1],
+#                             'daily_dose': [1],
+#                             'first_dose': [2],
+#                             'dose_interval': [1]}
+# set_investigation_dict_2 = {'set_numb': [9, 10],
+#                             'drug_ic50': [10, 2, 1, 0.5, 0.1],
+#                             'daily_dose': [1],
+#                             'first_dose': [2],
+#                             'dose_interval': [1]}
 
-set_investigation_dict_1 = {'set_numb': [1, 2, 3, 4, 5, 6, 7, 8],
-                            'drug_ic50': [10, 2, 1, 0.5, 0.1],
-                            'daily_dose': [1],
-                            'first_dose': [2],
-                            'dose_interval': [1]}
-set_investigation_dict_2 = {'set_numb': [9, 10],
-                            'drug_ic50': [10, 2, 1, 0.5, 0.1],
-                            'daily_dose': [1],
-                            'first_dose': [2],
-                            'dose_interval': [1]}
+ddm_simple_pk_full_batch = {'first_dose': [0, 12 / 24, 24 / 24, 48 / 24, 72 / 24, 5],
+                            # missing profilaxis. time of 1st dose in days
+                            'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
+                            # missing continuous dosing. dose interval in days
+                            'ic50_multiplier': [10, 2, 1, .5, .1],
+                            'kon': [1 / 4, 1 / 2, 1]}
+ddm_simple_pk_batch1 = {'first_dose': [0, 12 / 24],  # missing profilaxis. time of 1st dose in days
+                        'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
+                        # missing continuous dosing. dose interval in days
+                        'ic50_multiplier': [2, 1, .5, .1],
+                        'kon': [1]}
+ddm_simple_pk_batch2 = {'first_dose': [24 / 24, 48 / 24],  # missing profilaxis. time of 1st dose in days
+                        'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
+                        # missing continuous dosing. dose interval in days
+                        'ic50_multiplier': [2, 1, .5, .1],
+                        'kon': [1]}
+ddm_simple_pk_batch3 = {'first_dose': [72 / 24, 5],  # missing profilaxis. time of 1st dose in days
+                        'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
+                        # missing continuous dosing. dose interval in days
+                        'ic50_multiplier': [2, 1, .5, .1],
+                        'kon': [1]}
 
-mult_dict = set_investigation_dict_1
+ddm_simple_pk_batch4 = {'first_dose': [0, 12 / 24, 24 / 24, 48 / 24, 72 / 24, 5],
+                        'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
+                        # missing continuous dosing. dose interval in days
+                        'ic50_multiplier': [10],
+                        'kon': [1]}
+mult_dict = ddm_simple_pk_batch1
 num_rep = 10
 # Model output frequency
 model_out_freq = 1
