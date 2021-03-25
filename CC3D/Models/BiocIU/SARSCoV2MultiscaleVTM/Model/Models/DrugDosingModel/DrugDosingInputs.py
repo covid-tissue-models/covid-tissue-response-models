@@ -132,6 +132,11 @@ __param_desc__['active_met_ic50'] = 'value for the active metabolite ic50. param
                                     'those [mole/litter]'
 active_met_ic50 = 0.00030324582987671276 / 38.4
 
+__param_desc__['ic50_multiplier'] = 'used to easily change the ic50'
+ic50_multiplier = 1
+
+active_met_ic50 = active_met_ic50 * ic50_multiplier
+
 __param_desc__['hill_coef'] = 'Hill coeficient for diminishing hill function of rmax'
 hill_coef = 2
 
