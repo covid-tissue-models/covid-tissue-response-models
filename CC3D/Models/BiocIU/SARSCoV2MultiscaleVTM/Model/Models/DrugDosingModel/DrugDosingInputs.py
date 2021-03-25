@@ -60,7 +60,7 @@ __param_desc__['double_sbml_step'] = 'bool for doing 2 sbmls calls'
 double_sbml_step = False
 
 __param_desc__['double_loading_dose'] = 'bool for having the loading dose be double'
-double_loading_dose = False
+double_loading_dose = True
 
 __param_desc__['first_dose_doubler'] = 'multiplier to double loading dose'
 first_dose_doubler = 1
@@ -85,39 +85,6 @@ NMP_met = 0
 
 __param_desc__['NTP_met'] = 'Concentration of NTP metabolite already in the system'
 NTP_met = 0
-
-# rates
-__param_desc__['kp'] = 'rate of remdesivir from plasma to periphery, units /day'
-kp = rs.kp
-
-__param_desc__['kpp'] = 'rate of remdesivir from periphery to plasma, units /day'
-kpp = rs.kpp
-
-__param_desc__['k01'] = 'plasma -> lung rate, units /day'
-k01 = rs.k0  # todo: replace k0 on the right here and in k10 with new rates
-
-__param_desc__['k10'] = 'lung -> plasma rate, units /day'
-k10 = rs.k0
-
-__param_desc__['k12'] = 'drug -> metabolite alanine rate, units /day'
-k12 = rs.k12
-
-__param_desc__['k23'] = 'metabolite alanine -> metabolite NMP rate, units /day'
-k23 = rs.k23
-
-__param_desc__['k34'] = 'metabolite NMP -> metabolite NTP rate, units /day'
-k34 = rs.k34
-
-__param_desc__['kE0'] = 'elimination rate of drug from plasma, units /day'
-kE0 = rs.kE0
-__param_desc__['kE1'] = 'elimination rate of drug from lungs, units /day'
-kE1 = rs.kE1
-__param_desc__['kE2'] = 'elimination rate of metabolite alanine, units /day'
-kE2 = rs.kE2
-__param_desc__['kE3'] = 'elimination rate of metabolite NMP, units /day'
-kE3 = rs.kE3
-__param_desc__['kE4'] = 'elimination rate of metabolite NTP, units /day'
-kE4 = rs.kE4
 
 # dosing
 __param_desc__['first_dose'] = 'time of first dose in days'
@@ -160,19 +127,11 @@ if not treatment_ends:
 __param_desc__['vary_IC50'] = 'bool to indicate if varying the IC50 or vary a max drug'
 vary_IC50 = True
 
-# __param_desc__['drug_ic50'] = 'value for drug ic50'
-# drug_ic50 = 1
-#
-# __param_desc__['active_met_ic50'] = 'value for the active metabolite ic50. parameters obtained by running the PK for ' \
-#                                     'each set of rates with constant plasma drug concentration, while varying the ' \
-#                                     'concentration of drug (it is always linear)'
-# active_met_ic50 = rs.a * drug_ic50 + rs.b
-
-# 0.00030324582987671276
 __param_desc__['active_met_ic50'] = 'value for the active metabolite ic50. parameters obtained by running the simple ' \
                                     'PK for 350 hours, detecting the peaks and troths and obtaining the average of ' \
                                     'those [mole/litter]'
 active_met_ic50 = 0.00030324582987671276
+
 __param_desc__['hill_coef'] = 'Hill coeficient for diminishing hill function of rmax'
 hill_coef = 2
 
