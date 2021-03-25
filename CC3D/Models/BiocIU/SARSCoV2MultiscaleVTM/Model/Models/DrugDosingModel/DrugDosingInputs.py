@@ -2,8 +2,8 @@ import sys
 from numpy import log
 from .DDMUtils import SetImporter
 import os
-sys.path.append(os.path.join(os.environ["ViralInfectionVTM"], "Simulation"))
-sys.path.append(os.environ["ViralInfectionVTM"])
+sys.path.append(os.path.join(os.environ["Model"], "Simulation"))
+sys.path.append(os.environ["Model"])
 # sys.path.insert(1, r'../../Simulation')
 # sys.path.append(r'../../Simulation')
 from ViralInfectionVTMModelInputs import s_to_mcs, um_to_lat_width
