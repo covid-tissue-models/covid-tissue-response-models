@@ -152,7 +152,9 @@ out_freq = 250
 
 # sweep_output_folder = r'/N/slate/jferrari/new_pk/corrected_ic50_calc/ddm_batch_1'
 #
-sweep_output_folder = r'/N/slate/jferrari/ddm/new_k_2021/set_investigation'
+    sweep_output_folder = r'/N/slate/jferrari/ddm/simple_pk/batch_1'
+
+
 # Input modules
 from Simulation import ViralInfectionVTMModelInputs
 from Models.DrugDosingModel import DrugDosingInputs
