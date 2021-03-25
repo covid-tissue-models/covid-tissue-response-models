@@ -508,16 +508,8 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
         BatchRunLib.apply_external_multipliers(__name__, DrugDosingInputs)
         self.drug_dosing_model_key = drug_dosing_model_key
 
-        if not use_simple_pk:
-            if constant_drug_concentration:
-                self.set_drug_model_string = set_cst_drug_ddm_string
-            else:
-                self.set_drug_model_string = set_default_ddm_string
-
-            self.set_control_model_string = full_ddm_for_testing
-        else:
-            self.set_drug_model_string = set_simple_pk_full
-            self.set_control_model_string = set_simple_pk_full
+        self.set_drug_model_string = set_simple_pk_full
+        self.set_control_model_string = set_simple_pk_full
 
         self.plot_ddm_data = plot_ddm_data_freq > 0
         self.write_ddm_data = write_ddm_data_freq > 0
@@ -577,47 +569,13 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
         rr.timestep()
 
     def start(self):
-
-        if not use_simple_pk:
-
-            self.active_component = 'Mntp'
-            # set model string
-
-            self.drug_model_string, self.ddm_vars = self.set_drug_model_string(
-                Drug_pls, Drug_peri, Drug_lung, Ala_met, NMP_met, NTP_met,
-                first_dose_doubler, kp, kpp, k01, k10, k12, k23, k34, kE0, kE1, kE2, kE3, kE4, dose, dose_interval,
-                dose_end,
-                first_dose)
-            self.control_string, _ = self.set_control_model_string(
-                Drug_pls, Drug_peri, Drug_lung, Ala_met, NMP_met, NTP_met,
-                first_dose_doubler, kp, kpp, k01, k10, k12, k23, k34, kE0, kE1, kE2, kE3, kE4, dose, dose_interval,
-                dose_end,
-                first_dose)
-            # init sbml
-            self.add_free_floating_antimony(model_string=self.drug_model_string, step_size=days_2_mcs,
-                                            model_name='drug_dosing_model')
-            self.ddm_rr = self.get_roadrunner_for_single_antimony('drug_dosing_model')
-
-            self.add_free_floating_antimony(model_string=self.control_string, step_size=days_2_mcs,
-                                            model_name='drug_dosing_control')
-            self.control_rr = self.get_roadrunner_for_single_antimony('drug_dosing_control')
-
-            self.drug_metabolization_string = set_cell_drug_metabolization(Ala_met, NMP_met, NTP_met, k12, k23, k34,
-                                                                           kE2,
-                                                                           kE3, kE4)
-
-            for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING, self.UNINFECTED):
-                self.add_antimony_to_cell(model_string=self.drug_metabolization_string,
-                                          model_name='drug_metabolization',
-                                          cell=cell, step_size=days_2_mcs)
-        else:
-            self.drug_model_string = self.set_drug_model_string(dose, 24 * first_dose,
-                                                                24 * dose_interval, dose_end)
-            self.active_component = 'GS443902'
-            for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING, self.UNINFECTED):
-                self.add_antimony_to_cell(model_string=self.drug_model_string,
-                                          model_name='drug_metabolization',
-                                          cell=cell, step_size=hour_2_mcs)
+        self.drug_model_string = self.set_drug_model_string(dose, 24 * first_dose,
+                                                            24 * dose_interval, dose_end)
+        self.active_component = 'GS443902'
+        for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING, self.UNINFECTED):
+            self.add_antimony_to_cell(model_string=self.drug_model_string,
+                                      model_name='drug_metabolization',
+                                      cell=cell, step_size=hour_2_mcs)
 
         if prophylactic_treatment:
             # to be able to write the data from prophylaxis I put the prophylactic code in the
@@ -644,150 +602,19 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
     def get_rmax(self, avail4):
         return (1 - nCoVUtils.hill_equation(avail4, self.hill_k, 2)) * replicating_rate
 
-    def get_all_uptakes_scalar_prodrug(self):
-        """
-
-        :return:
-        """
-
-        total = 0
-        uptakes = []
-        for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING, self.UNINFECTED):
-            rate = days_2_mcs * cell.sbml.drug_metabolization['k12']  # k12 is in units of /day!!!!!!!!!!!!!
-            u = rate * self.sbml.drug_dosing_model['Dlung'] / len(self.cell_list_by_type(
-                self.INFECTED, self.VIRUSRELEASING, self.UNINFECTED))
-            total += u
-            uptakes.append((cell.id, u))
-
-        return uptakes, total
-
-    def do_prodrug_metabolization(self):
-        """
-
-        :return:
-        """
-        if self.sbml.drug_dosing_model['Dlung'] <= 0:
-            # print(self.sbml.drug_dosing_model['Dlung'])
-            self.sbml.drug_dosing_model['Dlung'] = 0
-            return 0
-        if not diffusing_drug:
-
-            # for non-diffusing drug (aka, an scalar) the calculation of uptake goes as follows:
-            # uptake_total = sum(uptake_cell) = sum( rate_cell * drug_cell); as non-diffusing drug_cell is the same for
-            # all cells, call it pc
-            # uptake_total = pc * sum(rate_cell); say now that all cells metabolize at the same rate, kc
-            # uptake_total = pc * kc * Nc; Nc being the number of cells
-            # It follows, then
-            # uptake_total = Nc * uptake_cell.
-            # We know the total uptake from the ODE,
-            # uptake_total = k_ode * drug_total, so
-            # Nc * uptake_cell = uptake_total = k_ode * drug_total
-            # kc * pc = uptake_cell = k_ode * drug_total / Nc
-
-            uptakes, total = self.get_all_uptakes_scalar_prodrug()
-
-            if total < self.sbml.drug_dosing_model['Dlung']:
-                for cid, u in uptakes:
-                    cell = self.fetch_cell_by_id(cid)
-                    cell.sbml.drug_metabolization['Mala'] += u
-                    # print(cell.id, cell.sbml.drug_metabolization['Available1'])
-                    self.sbml.drug_dosing_model['Dlung'] -= u
-
-            else:
-                total = self.sbml.drug_dosing_model['Dlung']
-                u = self.sbml.drug_dosing_model['Dlung'] / len(self.cell_list_by_type(self.INFECTED,
-                                                                                      self.VIRUSRELEASING,
-                                                                                      self.UNINFECTED))
-                # print('equal uptake = ', u)
-                for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING, self.UNINFECTED):
-                    cell.sbml.drug_metabolization['Mala'] += u
-                    self.sbml.drug_dosing_model['Dlung'] -= u
-
-        else:
-            # regular cc3d uptake
-            secreter = self.get_field_secretor("prodrug")
-            total = 0
-            for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING, self.UNINFECTED):
-                rate = days_2_mcs * cell.sbml.drug_metabolization['k12']
-                uptake = secreter.uptakeInsideCellTotalCount(cell, 9e9, rate)  # uptake at rate 'rate' without max
-                # value for uptake (9e99)
-                cell.sbml.drug_metabolization['Mala'] += abs(uptake.tot_amount)
-                self.sbml.drug_dosing_model['Dlung'] -= abs(uptake.tot_amount)
-                total += abs(uptake.tot_amount)
-        # print('result:', self.sbml.drug_dosing_model['Dlung'], total)
-
-        # print('control:', self.sbml.drug_dosing_control['Dlung'], days_2_mcs * self.sbml.drug_dosing_control['J6'])
-        # print('result/control:', self.sbml.drug_dosing_model['Dlung'] / self.sbml.drug_dosing_control['Dlung'],
-        #       total / (days_2_mcs * self.sbml.drug_dosing_control['J6']))
-        return total
-
     def step(self, mcs):
 
-        # the rate k0 is to go
-        # from plasma to the lung and back. So how much enters the system is k0 (Dplasma - Dlung).
-        # Then the cells convert it.
-        # What we want then is to have the chemical be deposited in the epithelial cells. We also want it to not
-        # diffuse to medium (if possible). Cells read the full value in their region and uptake k12*Dlung(uptaken)
-        # 0. Get the amount leaving back to plasma
-        # 1. get amount of prodrug entering the system, k0*D, add it (D = Dplasma - Dlung).
-        # 1.1. deposit k0*D uniformely as diffusing concentration
-        # 1.2. the amount leaving the system is modeled by the decay. Decay will be both k0 and kE1, \gamma = k0 + kE1;
-        # so need to calculate k0*Dlung to add it back to the sbml
-        # 1.note I'll have the prodrug as a global for the beginning of implementation, change later
-        #
-        # 2. The epithelial cells uptake in their whole domain.
-        # 2.1. They uptake k12*Dlung(over cell) and that is added to their sbml
-        #
         # CELLULARIZATION NOTE!!!
-        # For drug uptake need to properly distribute it. Say the total dose given is 1, I need to divide the total dose
-        # by the person's weight, then multiply it by the weight of the patch, then divide by the number of cells the
-        # patch initially had.
-        # !!!!!!!!!!!!!!!!!!!!NOTE ON THE NOTE!!!!!!!!!!!!!!!!!!!!
-        # It's wrong, overthinking on my part (we are using concentrations, so all good)
-        #
-        #
-        #
-        #
-        # diffusion of remdesivir: very fast, mol weigh of 602.585. See bose-einstein for upper limit. treat it as a
-        # small molecule.
-        self.simple_pk_step(mcs)
-        return
-        self.ddm_rr.timestep()
-        self.control_rr.timestep()
-        remdesivir_upt_tot = self.do_prodrug_metabolization()
-        self.shared_steppable_vars['remdesivir_upt_tot'] = remdesivir_upt_tot
-        if not sanity_run:
-            # self.rmax = self.get_rmax(self.sbml.drug_dosing_model['Available4'])
-            # self.shared_steppable_vars['rmax'] = self.rmax
+        # For the simple pk each cell has a copy of the model running in themselves
 
-            for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING, self.UNINFECTED):
-                self.timestep_cell_sbml('drug_metabolization', cell)
-
-                cell.dict['rmax'] = self.get_rmax(cell.sbml.drug_metabolization['Mntp'])
-                if cell.type != self.UNINFECTED:
-                    vr_model = getattr(cell.sbml, self.vr_model_name)
-                    vr_model.replicating_rate = cell.dict['rmax']
-                    # print(vr_model.replicating_rate)
-
-                time = cell.sbml.drug_metabolization['Time']
-            # print('time', time, self.sbml.drug_dosing_model['Time'])
-
-        # for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING):
-        #     vr_model = getattr(cell.sbml, self.vr_model_name)
-        #     vr_model.replicating_rate = self.rmax
-
-        # ViralInfectionVTMLib.step_sbml_model_cell(cell=cell)
-
-    def simple_pk_step(self, mcs):
-        # with the simple pk each cell will have its own pk model running in themselves
         for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING, self.UNINFECTED):
             self.timestep_cell_sbml('drug_metabolization', cell)
             cell.dict['rmax'] = self.get_rmax(cell.sbml.drug_metabolization[self.active_component])
             if cell.type != self.UNINFECTED:
                 vr_model = getattr(cell.sbml, self.vr_model_name)
                 vr_model.replicating_rate = cell.dict['rmax']
-        print(cell.sbml.drug_metabolization['time'], cell.sbml.drug_metabolization[self.active_component],
-              cell.sbml.drug_metabolization['k_in'], cell.sbml.drug_metabolization['Remdes_dose_mol'])
+        # print(cell.sbml.drug_metabolization['time'], cell.sbml.drug_metabolization[self.active_component],
+        #       cell.sbml.drug_metabolization['k_in'], cell.sbml.drug_metabolization['Remdes_dose_mol'])
 
     def get_rna_array(self):
         return np.array([cell.dict['Replicating'] for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING,
