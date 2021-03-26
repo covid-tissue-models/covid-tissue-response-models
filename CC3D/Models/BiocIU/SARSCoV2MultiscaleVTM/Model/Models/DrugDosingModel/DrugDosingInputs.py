@@ -7,7 +7,10 @@ from .DDMUtils import SetImporter
 # sys.path.insert(1, r'../../Simulation')
 # sys.path.append(r'../../Simulation')
 # sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from Simulation.ViralInfectionVTMModelInputs import s_to_mcs, um_to_lat_width
+try:
+    from Simulation.ViralInfectionVTMModelInputs import s_to_mcs, um_to_lat_width
+except ModuleNotFoundError:
+    from ViralInfectionVTMModelInputs import s_to_mcs, um_to_lat_width
 # from ViralInfectionVTMModelInputs import s_to_mcs, um_to_lat_width
 rate_sets_dict = SetImporter.import_sets_as_dict()
 
@@ -43,7 +46,7 @@ active_met_name = 'GS-443902'
 __param_desc__['plot_ddm_data_freq'] = 'Plot drug model data frequency'
 plot_ddm_data_freq = 1  # Plot drug dosing model data frequency (disable with 0)
 __param_desc__['write_ddm_data_freq'] = 'Write drug model data to simulation directory frequency'
-write_ddm_data_freq = 1  # Write drug dosing model data to simulation directory frequency (disable with 0)
+write_ddm_data_freq = 0  # Write drug dosing model data to simulation directory frequency (disable with 0)
 
 # DDM SBML model
 
