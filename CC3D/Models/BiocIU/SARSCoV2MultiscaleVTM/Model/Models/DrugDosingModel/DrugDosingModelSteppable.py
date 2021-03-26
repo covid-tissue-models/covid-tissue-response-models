@@ -665,15 +665,26 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
             self.tracked_cell = self.choose_tracked_cell()
 
         self.total_virus_released += self.shared_steppable_vars['total_virus_release_this_mcs']
-        if ((self.plot_ddm_data or self.write_ddm_data) and
-                (mcs % plot_ddm_data_freq == 0 or mcs % write_ddm_data_freq == 0)):
-            self.avg_active, self.std_active = self.get_mean_std_active()
-            self.mean_rmax, self.std_rmax = self.get_mean_std_rmax()
-            self.rna_list = self.get_rna_array()
-            pass
+        # if ((self.plot_ddm_data or self.write_ddm_data) and
+        #         (mcs % plot_ddm_data_freq == 0 or mcs % write_ddm_data_freq == 0)):
+        # self.avg_active, self.std_active = self.get_mean_std_active()
+        # self.mean_rmax, self.std_rmax = self.get_mean_std_rmax()
+        # self.rna_list = self.get_rna_array()
+            # pass
+        calculated_stuff = False
         if self.plot_ddm_data and mcs % plot_ddm_data_freq == 0:
+            if not calculated_stuff:
+                self.avg_active, self.std_active = self.get_mean_std_active()
+                self.mean_rmax, self.std_rmax = self.get_mean_std_rmax()
+                self.rna_list = self.get_rna_array()
+                calculated_stuff = True
             self.do_plots(mcs)
         if self.write_ddm_data and mcs % write_ddm_data_freq == 0:
+            if not calculated_stuff:
+                self.avg_active, self.std_active = self.get_mean_std_active()
+                self.mean_rmax, self.std_rmax = self.get_mean_std_rmax()
+                self.rna_list = self.get_rna_array()
+                calculated_stuff = True
             self.do_writes(mcs)
             # self.flush_stored_outputs()
             # self.__flush_counter -= 1
