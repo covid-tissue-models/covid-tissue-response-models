@@ -308,8 +308,7 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
         uptake_probability = nCoVUtils.hill_equation(viral_amount_com,
                                                      diss_coeff_uptake_pr,
                                                      hill_coeff_uptake_pr)
-        if viral_amount_com>0:
-            print(cell.xCOM, cell.yCOM, '\n', viral_amount_com, uptake_probability)
+
         cell_does_uptake = np.random.rand() < uptake_probability
         uptake_amount = s_to_mcs / rate_coeff_uptake_pr * uptake_probability
 
