@@ -141,7 +141,7 @@ vary_IC50 = True
 __param_desc__['active_met_ic50'] = 'value for the active metabolite ic50. parameters obtained by running the simple ' \
                                     'PK for 350 hours, detecting the peaks and troths and obtaining the average of ' \
                                     'those [mole/litter]'
-active_met_ic50 = 0.00030324582987671276 / 38.4
+active_met_ic50 = 7.89702681970606e-06
 
 __param_desc__['ic50_multiplier'] = 'used to easily change the ic50'
 ic50_multiplier = 1
