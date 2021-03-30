@@ -19,7 +19,7 @@ plot_vim_data_freq = 0  # Plot viral internalization model data frequency (disab
 __param_desc__['write_vim_data_freq'] = 'Write viral internalization model data to simulation directory frequency'
 write_vim_data_freq = 0  # Write viral internalization model data to simulation directory frequency (disable with 0)
 __param_desc__['plot_pop_data_freq'] = 'Plot population data frequency'
-plot_pop_data_freq = 0  # Plot population data frequency (disable with 0)
+plot_pop_data_freq = 10  # Plot population data frequency (disable with 0)
 __param_desc__['write_pop_data_freq'] = 'Write population data to simulation directory frequency'
 write_pop_data_freq = 0  # Write population data to simulation directory frequency (disable with 0)
 __param_desc__['plot_med_diff_data_freq'] = 'Plot total diffusive field amount frequency'
@@ -52,19 +52,16 @@ pmol_to_cc3d_au = 1e14  # 1e15au/1pmol
 __param_desc__['exp_cell_diameter'] = 'Cell diameter'
 exp_cell_diameter = 12.0  # um
 
-# fitted replication, by Josh, source https://doi.org/10.3201/eid2606.200516
-
 __param_desc__['exp_unpacking_rate'] = 'Unpacking rate'
 exp_unpacking_rate = 1.0 / 100.0 * 1.0 / 60.0
 __param_desc__['exp_replicating_rate'] = 'Replicating rate'
-exp_replicating_rate = 1.0 / 300.0 * 1.0 / 60.0
+exp_replicating_rate = 1.0 / 200.0 * 1.0 / 60.0  # 1.0/20.0min * 1.0min/60.0s = 1.0/1200.0s
 __param_desc__['exp_translating_rate'] = 'Translating rate'
-exp_translating_rate = 1.0 / 100.0 * 1.0 / 60.0
+exp_translating_rate = 1.0 / 300.0 * 1.0 / 60.0
 __param_desc__['exp_packing_rate'] = 'Packing rate'
-exp_packing_rate = 1.85990022e-03
+exp_packing_rate = 1.0 / 100.0 * 1.0 / 60.0
 __param_desc__['exp_secretion_rate'] = 'Secretion rate'
 exp_secretion_rate = 1.0 / 100.0 * 1.0 / 60.0
-
 
 __param_desc__['exp_virus_dc'] = 'Viral diffusion coefficient'
 exp_virus_dc = 10.0 / 1000.0  # um^2/s
