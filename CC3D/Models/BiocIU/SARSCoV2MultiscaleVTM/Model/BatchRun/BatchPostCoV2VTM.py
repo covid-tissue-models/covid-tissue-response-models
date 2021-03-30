@@ -1,9 +1,9 @@
 # todo - document stuff for easier usage by others
+import math
 import os
 import sys
 sys.path.append(os.environ['PYTHONPATH'])
 
-import math
 import shutil
 import csv
 try:
@@ -27,19 +27,25 @@ from cc3d.cpp.CompuCell import Dim3D
 from cc3d.player5 import Configuration
 from cc3d.player5.Simulation.CMLResultReader import CMLResultReader
 from cc3d.player5.Utilities.utils import extract_address_int_from_vtk_object
-from Simulation.ViralInfectionVTMModelInputs import s_to_mcs
 
 export_data_desc = {'ir_data': ['ImmuneResp'],
-                    'med_diff_data': ['MedViral', 'MedCyt', 'MedOxi'],
-                    'pop_data': ['Uninfected', 'Infected', 'InfectedSecreting', 'Dying', 'ImmuneCell',
+                    'med_diff_data': ['MedViral',
+                                      'MedCyt',
+                                      'MedOxi'],
+                    'pop_data': ['Uninfected',
+                                 'Infected',
+                                 'InfectedSecreting',
+                                 'Dying',
+                                 'ImmuneCell',
                                  'ImmuneCellActivated'],
-                    'spat_data': ['DeathComp', 'InfectDist'],
-                    'death_data': ['Viral', 'OxiField', 'Contact', 'Bystander'],
-                    'ddm_rmax_data': ['r_max'],
-                    'ddm_data': ['Prodrug', 'Metabolite1', 'Metabolite2', 'Metabolite3', 'Metabolite4'],
-                    'ddm_tot_RNA_data': ['tot_RNA']}
+                    'spat_data': ['DeathComp',
+                                  'InfectDist'],
+                    'death_data': ['Viral',
+                                   'OxiField',
+                                   'Contact',
+                                   'Bystander']}
 
-x_label_str_transient = "Simulation time (Days)"
+x_label_str_transient = "Simulation time (MCS)"
 
 y_label_str = {'ir_data': {'ImmuneResp': 'Immune response state variable'},
                'med_diff_data': {'MedViral': 'Total diffusive virus',
@@ -56,14 +62,7 @@ y_label_str = {'ir_data': {'ImmuneResp': 'Immune response state variable'},
                'death_data': {'Viral': 'Number of virally-induced apoptosis deaths',
                               'OxiField': 'Number of oxidative deaths',
                               'Contact': 'Number of cytotoxic kill deaths',
-                              'Bystander': 'Number of bystander effect deaths'},
-               'ddm_rmax_data': {'r_max': 'r_max value'},
-               'ddm_data': {'Prodrug': 'Concentration of administered prodrug (A.U.)',
-                            'Metabolite1': 'Concentration of 1st resulting metabolite (A.U.)',
-                            'Metabolite2': 'Concentration of 2nd resulting metabolite (A.U.)',
-                            'Metabolite3': 'Concentration of 3rd resulting metabolite (A.U.)',
-                            'Metabolite4': 'Concentration of active metabolite (4th metabolite -- A.U.)'},
-               'ddm_tot_RNA_data': {'tot_RNA': 'Total viral RNA in tissue cells'}
+                              'Bystander': 'Number of bystander effect deaths'}
                }
 
 fig_save_names = {'ir_data': {'ImmuneResp': 'metric_immune_response_svar'},
@@ -81,14 +80,7 @@ fig_save_names = {'ir_data': {'ImmuneResp': 'metric_immune_response_svar'},
                   'death_data': {'Viral': 'metric_death_viral',
                                  'OxiField': 'metric_death_oxi',
                                  'Contact': 'metric_death_contact',
-                                 'Bystander': 'metric_death_bystander'},
-                  'ddm_rmax_data': {'r_max': 'metric_rmax'},
-                  'ddm_data': {'Prodrug': 'metric_prodrug',
-                               'Metabolite1': 'metric_metabolite1',
-                               'Metabolite2': 'metric_metabolite2',
-                               'Metabolite3': 'metric_metabolite3',
-                               'Metabolite4': 'metric_metabolite4'},
-                  'ddm_tot_RNA_data': {'tot_RNA': 'metric_total_RNA'}
+                                 'Bystander': 'metric_death_bystander'}
                   }
 
 
@@ -193,8 +185,7 @@ def calculate_batch_data_stats(batch_data_summary):
                 this_data = []
                 for trial_data in data_dict.values():
                     if trial_data is not None:
-                        if this_mcs in trial_data.keys():
-                            this_data.append(trial_data[this_mcs][param])
+                        this_data.append(trial_data[this_mcs][param])
 
                 if this_data:
                     mean_data[this_mcs][param] = float(np.average(this_data))
@@ -226,32 +217,39 @@ def generate_batch_data_summary(cov2_vtm_sim_run, step_list=None):
     return batch_data_summary
 
 
-def generate_transient_plot_trials(batch_data_summary, data_desc, var_name):
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
+def generate_transient_plot_trials(batch_data_summary, data_desc, var_name, fig_pack=None):
+    fig = None
+    if fig_pack is None:
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+    else:
+        ax = fig_pack.get_subplot()
     ax.grid()
 
     data_dict = batch_data_summary[data_desc]
-    # sim_mcs = list(data_dict[list(data_dict.keys())[0]].keys())
     for trial_idx in data_dict.keys():
         if trial_idx in ['batchMean', 'batchStDev']:
             continue
         sim_mcs = list(data_dict[trial_idx].keys())
-        # sim_hours = float(sim_mcs[:]) * s_to_mcs / 60 / 60
-        sim_days = [this_mcs*s_to_mcs/60/60/24 for this_mcs in sim_mcs]
         y_data = [data_dict[trial_idx][this_mcs][var_name] for this_mcs in sim_mcs]
-        ax.plot(sim_days, y_data, label='Trial {}'.format(trial_idx), marker='.')
+        ax.plot(sim_mcs, y_data, label='Trial {}'.format(trial_idx), marker='.')
+
     ax.set_xlabel(x_label_str_transient)
     ax.set_ylabel(y_label_str[data_desc][var_name])
     # ax.legend()
-    fig.tight_layout()
 
-    return fig, ax
+    if fig_pack is None:
+        fig.tight_layout()
+        return fig, ax
 
 
-def generate_transient_plot_stat(batch_data_summary, data_desc, var_name, plot_stdev=True):
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
+def generate_transient_plot_stat(batch_data_summary, data_desc, var_name, plot_stdev=True, fig_pack=None):
+    fig = None
+    if fig_pack is None:
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+    else:
+        ax = fig_pack.get_subplot()
     ax.grid()
 
     data_dict = batch_data_summary[data_desc]
@@ -269,9 +267,10 @@ def generate_transient_plot_stat(batch_data_summary, data_desc, var_name, plot_s
 
     ax.set_xlabel(x_label_str_transient)
     ax.set_ylabel(y_label_str[data_desc][var_name])
-    fig.tight_layout()
 
-    return fig, ax
+    if fig_pack is None:
+        fig.tight_layout()
+        return fig, ax
 
 
 def generate_2var_plot_trials(batch_data_summary, var_name_hor, var_name_ver):
@@ -450,21 +449,17 @@ class CoV2VTMSimRunPost:
         fig_save_name_rel = 'metric_' + var_name_hor + '_and_' + var_name_ver + fig_suffix_stat + fig_suffix
         return os.path.join(fig_dir, fig_save_name_rel)
 
-    def export_transient_plot_trials(self, loc=None, manipulators=None):
+    def export_transient_plot_trials(self, loc=None):
         if loc is None:
             loc = self.cov2_vtm_sim_run.output_dir_root
 
         assert os.path.isdir(loc), "Results directory must be defined before rendering dump."
-        assert manipulators is None or isinstance(manipulators,
-                                                  dict), "manipulators must be None or a dictionary of manipulator functions"
 
         fig_dir = self.get_fig_root_dir(loc, auto_make_dir=True)
 
         for data_desc in self.get_data_descs():
             for param_name in self.return_param_names(data_desc):
-                fig, ax = self.generate_transient_plot_trials(data_desc, param_name)
-                if manipulators is not None and param_name in manipulators.keys():
-                    manipulators[param_name](fig, ax)
+                fig, _ = self.generate_transient_plot_trials(data_desc, param_name)
                 fig.savefig(self.generate_transient_plot_trials_filename(data_desc, param_name, fig_dir=fig_dir))
                 plt.close(fig)
 
@@ -590,6 +585,38 @@ class GenericDrawerFree(GenericDrawer):
         return model, view
 
 
+# Manipulators
+
+
+# Apply log scale to all field renders
+def gd_manipulator_log_scale():
+    def gd_manipulator(gd):
+        gd.draw_model_2D.clut.SetScaleToLog10()
+    return gd_manipulator
+
+
+# Set adaptive fixed contour axes
+# Function changes values in min_max_dict to reflect caxes that were used
+def sc_manipulator_fixed_caxes(min_max_dict: dict, log_scale: bool = False):
+    for field_name, min_max in min_max_dict.items():
+        if log_scale:
+            min_max[0] = math.ceil(min_max[0] * 10) / 10
+        else:
+            min_max[0] = 0
+        min_max[1] = math.ceil(min_max[1] * 10) / 10
+        min_max_dict[field_name] = min_max
+
+    def sc_manipulator(scm):
+        for _field_name, _min_max in min_max_dict.items():
+            scm.screenshotDataDict[_field_name].metadata['MinRangeFixed'] = True
+            scm.screenshotDataDict[_field_name].metadata['MinRange'] = _min_max[0]
+            scm.screenshotDataDict[_field_name].metadata['MaxRangeFixed'] = True
+            scm.screenshotDataDict[_field_name].metadata['MaxRange'] = _min_max[1]
+
+    return sc_manipulator
+
+
+# todo - add parallel rendering
 class CallableCC3DRenderer:
     """
     Performs CC3D rendering of data generated from executing a CallableCoV2VTM simulation batch without launching Player
@@ -604,10 +631,10 @@ class CallableCC3DRenderer:
         self.cml_results_reader = None
 
         # Methods for modifying specification of GenericDrawer
-        self._gd_manipulators = {}
+        self.__gd_manipulators = {}
 
         # Methods for modifying specification of ScreenshotData
-        self._sc_manipulators = {}
+        self.__sc_manipulators = {}
 
     def get_trial_vtk_dir(self, trial_idx):
         """
@@ -717,10 +744,10 @@ class CallableCC3DRenderer:
         :param mcs: step at which to apply the manipulator
         :return: None
         """
-        if trial_idx not in self._gd_manipulators.keys():
-            self._gd_manipulators[trial_idx] = dict()
+        if trial_idx not in self.__gd_manipulators.keys():
+            self.__gd_manipulators[trial_idx] = dict()
 
-        self._gd_manipulators[trial_idx][mcs] = gd_manipulator
+        self.__gd_manipulators[trial_idx][mcs] = gd_manipulator
 
     # todo - add API for defining rendering specs so users don't have to search through the details of GenericDrawer;
     #  API should include convenience function for retrieving current specs
@@ -733,10 +760,10 @@ class CallableCC3DRenderer:
         :param mcs: step at which to apply the manipulator
         :return: None
         """
-        if trial_idx not in self._sc_manipulators.keys():
-            self._sc_manipulators[trial_idx] = dict()
+        if trial_idx not in self.__sc_manipulators.keys():
+            self.__sc_manipulators[trial_idx] = dict()
 
-        self._sc_manipulators[trial_idx][mcs] = sc_manipulator
+        self.__sc_manipulators[trial_idx][mcs] = sc_manipulator
 
     def get_results_min_max(self, trial_idx):
         """
@@ -814,18 +841,40 @@ class CallableCC3DRenderer:
         return min_max
 
     def _get_rendering_manipulator(self, trial_idx, mcs):
-        if trial_idx not in self._gd_manipulators.keys() or mcs not in self._gd_manipulators[trial_idx].keys():
+        if trial_idx not in self.__gd_manipulators.keys() or mcs not in self.__gd_manipulators[trial_idx].keys():
             return None
         else:
-            return self._gd_manipulators[trial_idx][mcs]
+            return self.__gd_manipulators[trial_idx][mcs]
 
     def _get_screenshot_manipulator(self, trial_idx, mcs):
-        if trial_idx not in self._sc_manipulators.keys() or mcs not in self._sc_manipulators[trial_idx].keys():
+        if trial_idx not in self.__sc_manipulators.keys() or mcs not in self.__sc_manipulators[trial_idx].keys():
             return None
         else:
-            return self._sc_manipulators[trial_idx][mcs]
+            return self.__sc_manipulators[trial_idx][mcs]
 
-    def _render_trial(self, trial_idx):
+    def process_opts(self, _opts: dict):
+        log_scale = 'log_scale' in _opts.keys() and _opts['log_scale']
+        fixed_caxes = 'fixed_caxes' in _opts.keys() and _opts['fixed_caxes']
+        write_caxes = 'write_caxes' in _opts.keys() and _opts['write_caxes']
+
+        if log_scale:
+            self.load_rendering_manipulator(gd_manipulator_log_scale())
+
+        if fixed_caxes:
+            min_max_dict = self.get_results_min_max(0)
+            self.load_screenshot_manipulator(sc_manipulator_fixed_caxes(min_max_dict, log_scale=log_scale))
+            if write_caxes:
+                import json
+                ss_dir = self.scm.get_screenshot_dir_name()
+                if not os.path.isdir(ss_dir):
+                    os.makedirs(ss_dir)
+                min_max_dict_formatted = dict()
+                for field_name, min_max in min_max_dict.items():
+                    min_max_dict_formatted[field_name] = {'min': min_max[0], 'max': min_max[1]}
+                with open(os.path.join(ss_dir, 'caxes.json'), 'w') as f:
+                    json.dump(min_max_dict_formatted, f, indent=4, sort_keys=True)
+
+    def __render_trial(self, trial_idx):
         """
         Main routine to perform rendering for a trial from batch run
         :param trial_idx: index of trial
@@ -860,7 +909,7 @@ class CallableCC3DRenderer:
         :return: None
         """
         self.prep_output_dir()
-        [self._render_trial(trial_idx) for trial_idx in range(len(self.cov2_vtm_sim_run.get_trial_dirs()))]
+        [self.__render_trial(trial_idx) for trial_idx in range(len(self.cov2_vtm_sim_run.get_trial_dirs()))]
 
     def render_trial_results(self, trial_idx):
         """
@@ -869,7 +918,7 @@ class CallableCC3DRenderer:
         :return: None
         """
         self.prep_output_dir()
-        self._render_trial(trial_idx)
+        self.__render_trial(trial_idx)
 
     def render_trial_results_par(self, opts=None):
         """
@@ -910,31 +959,14 @@ class _RenderJob:
         try:
             _renderer = CallableCC3DRenderer(self._cov2_vtm_sim_run)
             _renderer.load_trial_results(self._run_idx)
-
-            if 'log_scale' in self._opts.keys() and self._opts['log_scale']:
-                # Apply log scale to all field renders
-                def gd_manipulator(gd):
-                    gd.draw_model_2D.clut.SetScaleToLog10()
-                _renderer.load_rendering_manipulator(gd_manipulator)
-
-            if 'fixed_caxes' in self._opts.keys() and self._opts['fixed_caxes']:
-                # Apply fixed legends to all field renders
-                min_max_dict = _renderer.get_results_min_max(self._run_idx)
-
-                def sc_manipulator(scm):
-                    for field_name, min_max in min_max_dict.items():
-                        scm.screenshotDataDict[field_name].metadata['MinRangeFixed'] = True
-                        scm.screenshotDataDict[field_name].metadata['MinRange'] = math.ceil(
-                            min_max[1] * 10) / 10 / 1E6
-                        scm.screenshotDataDict[field_name].metadata['MaxRangeFixed'] = True
-                        scm.screenshotDataDict[field_name].metadata['MaxRange'] = math.ceil(min_max[1] * 10) / 10
-
-                _renderer.load_screenshot_manipulator(sc_manipulator)
-
+            _renderer.process_opts(self._opts)
             _renderer.render_trial_results(self._run_idx)
             return True
         except Exception:
             return False
+
+
+#       Prototype from immune model prototyping
 
 
 class CallableCC3DDataRenderer(CallableCC3DRenderer):
@@ -1075,13 +1107,13 @@ class CallableCC3DDataRenderer(CallableCC3DRenderer):
 
         return min_max_dict
 
-    def _render_trial(self, trial_idx):
+    def __render_trial(self, trial_idx):
         """
         Main routine to perform rendering for a trial from batch run
         :param trial_idx: index of trial
         :return: None
         """
-        print('CallableCC3DRenderer rendering trial {}'.format(trial_idx))
+        print('CallableCC3DDataRenderer rendering trial {}'.format(trial_idx))
         self.load_trial_results(trial_idx)
 
         if self.cml_results_reader is None:
@@ -1101,6 +1133,9 @@ class CallableCC3DDataRenderer(CallableCC3DRenderer):
             gd_manipulator = self._get_rendering_manipulator(trial_idx, mcs)
             if gd_manipulator is not None:
                 gd_manipulator(self.gd)
+            sc_manipulator = self._get_screenshot_manipulator(trial_idx, mcs)
+            if sc_manipulator is not None:
+                sc_manipulator(self.scm)
             print('...{}'.format(mcs))
             self.output_screenshots(mcs)
 
@@ -1110,7 +1145,7 @@ class CallableCC3DDataRenderer(CallableCC3DRenderer):
         :return: None
         """
         self.prep_output_dir()
-        [self._render_trial(trial_idx) for trial_idx in range(len(self.data_dirs))]
+        [self.__render_trial(trial_idx) for trial_idx in range(len(self.data_dirs))]
 
     def render_trial_results(self, trial_idx):
         """
@@ -1119,7 +1154,7 @@ class CallableCC3DDataRenderer(CallableCC3DRenderer):
         :return: None
         """
         self.prep_output_dir()
-        self._render_trial(trial_idx)
+        self.__render_trial(trial_idx)
 
     def render_trial_results_par(self, opts=None):
         """
@@ -1157,6 +1192,7 @@ class _RenderDataJob:
         self._out_dir = _out_dir
         self._set_lab = _set_lab
         self._run_lab = _run_lab
+
         if opts is not None:
             self._opts = opts
         else:
@@ -1169,28 +1205,9 @@ class _RenderDataJob:
                                                  set_labs=[self._set_lab],
                                                  run_labs=[self._run_lab])
             _renderer.load_trial_results(0)
-
-            if 'log_scale' in self._opts.keys() and self._opts['log_scale']:
-                # Apply log scale to all field renders
-                def gd_manipulator(gd):
-                    gd.draw_model_2D.clut.SetScaleToLog10()
-                _renderer.load_rendering_manipulator(gd_manipulator)
-
-            if 'fixed_caxes' in self._opts.keys() and self._opts['fixed_caxes']:
-                # Apply fixed legends to all field renders
-                min_max_dict = _renderer.get_results_min_max(0)
-
-                def sc_manipulator(scm):
-                    for field_name, min_max in min_max_dict.items():
-                        scm.screenshotDataDict[field_name].metadata['MinRangeFixed'] = True
-                        scm.screenshotDataDict[field_name].metadata['MinRange'] = math.ceil(
-                            min_max[1] * 10) / 10 / 1E6
-                        scm.screenshotDataDict[field_name].metadata['MaxRangeFixed'] = True
-                        scm.screenshotDataDict[field_name].metadata['MaxRange'] = math.ceil(min_max[1] * 10) / 10
-
-                _renderer.load_screenshot_manipulator(sc_manipulator)
-
+            _renderer.process_opts(self._opts)
             _renderer.render_trial_results(0)
             return True
-        except Exception:
+        except Exception as e:
+            print(e)
             return False
