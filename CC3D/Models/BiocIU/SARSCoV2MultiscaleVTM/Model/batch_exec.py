@@ -119,28 +119,28 @@ ddm_simple_pk_full_batch = {'first_dose': [0, 12 / 24, 24 / 24, 48 / 24, 72 / 24
                             # missing profilaxis. time of 1st dose in days
                             'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
                             # missing continuous dosing. dose interval in days
-                            'ic50_multiplier': [0.5, 0.75, 1, 1.25, 2],
+                            'ic50_multiplier': [0.01, 0.1, 1, 10, 100],
                             'kon': [1 / 4, 1 / 2, 1]}
 ddm_simple_pk_batch2 = {'first_dose': [0, 12 / 24],  # missing profilaxis. time of 1st dose in days
                         'dose_interval': [6 / 24, 8 / 24, 12 / 24, 1],
                         # missing continuous dosing. dose interval in days
-                        'ic50_multiplier': [0.5, 0.75, 1, 1.25, 2],
+                        'ic50_multiplier': [0.01, 0.1, 1, 10, 100],
                         'kon': [1]}
 ddm_simple_pk_batch1 = {'first_dose': [24 / 24, 48 / 24],  # missing profilaxis. time of 1st dose in days
                         'dose_interval': [6 / 24, 8 / 24, 12 / 24, 1],
                         # missing continuous dosing. dose interval in days
-                        'ic50_multiplier': [0.5, 0.75, 1, 1.25, 2],
+                        'ic50_multiplier': [0.01, 0.1, 1, 10, 100],
                         'kon': [1]}
 ddm_simple_pk_batch3 = {'first_dose': [72 / 24, 5],  # missing profilaxis. time of 1st dose in days
                         'dose_interval': [ 6 / 24, 8 / 24, 12 / 24, 1],
                         # missing continuous dosing. dose interval in days
-                        'ic50_multiplier': [0.5, 0.75, 1, 1.25, 2],
+                        'ic50_multiplier': [0.01, 0.1, 1, 10, 100],
                         'kon': [1]}
 
 ddm_simple_pk_batch4 = {'first_dose': [0, 12 / 24, 24 / 24, 48 / 24, 72 / 24, 5],
                         'dose_interval': [4 / 24],
                         # missing continuous dosing. dose interval in days
-                        'ic50_multiplier': [0.5, 0.75, 1, 1.25, 2],
+                        'ic50_multiplier': [0.01, 0.1, 1, 10, 100],
                         'kon': [1]}
 mult_dict = ddm_simple_pk_batch1
 num_rep = 10
