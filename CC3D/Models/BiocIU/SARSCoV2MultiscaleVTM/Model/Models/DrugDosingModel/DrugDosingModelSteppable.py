@@ -289,7 +289,9 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
             cell.dict['rmax'] = self.get_rmax(cell.sbml.drug_metabolization[self.active_component])
             if cell.type != self.UNINFECTED:
                 vr_model = getattr(cell.sbml, self.vr_model_name)
-                vr_model.replicating_rate = cell.dict['rmax']
+                # vr_model.replicating_rate = cell.dict['rmax']
+                vr_model['replicating_rate'] = cell.dict['rmax']
+                # cell.sbml.viral_name.replicating_rate = cell.dict['rmax']
         # print(cell.sbml.drug_metabolization['time'], cell.sbml.drug_metabolization[self.active_component],
         #       cell.sbml.drug_metabolization['k_in'], cell.sbml.drug_metabolization['Remdes_dose_mol'])
 
