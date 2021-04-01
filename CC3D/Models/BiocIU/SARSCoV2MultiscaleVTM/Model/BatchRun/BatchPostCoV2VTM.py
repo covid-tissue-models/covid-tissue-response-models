@@ -43,7 +43,13 @@ export_data_desc = {'ir_data': ['ImmuneResp'],
                     'death_data': ['Viral',
                                    'OxiField',
                                    'Contact',
-                                   'Bystander']}
+                                   'Bystander'],
+                    'ddm_rmax_data': ['r_max'],
+                    'ddm_data': ['Drug',
+                                 'Active Metabolite'],
+                    'ddm_tot_RNA_data': ['Total_viral_RNA_in_cells'],
+                    'ddm_mean_RNA_data': ['Mean_viral_RNA_in_cells']
+                    }
 
 x_label_str_transient = "Simulation time (MCS)"
 
@@ -184,7 +190,7 @@ def calculate_batch_data_stats(batch_data_summary):
             for param in param_names:
                 this_data = []
                 for trial_data in data_dict.values():
-                    if trial_data is not None:
+                    if trial_data is not None and this_mcs in trial_data.keys():
                         this_data.append(trial_data[this_mcs][param])
 
                 if this_data:
