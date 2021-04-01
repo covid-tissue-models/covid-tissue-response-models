@@ -180,6 +180,9 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
         ViralInfectionVTMSteppableBasePy.__init__(self, frequency)
         import Models.DrugDosingModel.DrugDosingInputs as DrugDosingInputs
         BatchRunLib.apply_external_multipliers(__name__, DrugDosingInputs)
+
+        active_met_ic50 = active_met_ic50 * ic50_multiplier
+
         self.drug_dosing_model_key = drug_dosing_model_key
 
         self.set_drug_model_string = set_simple_pk_full
@@ -294,6 +297,7 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
                 # cell.sbml.viral_name.replicating_rate = cell.dict['rmax']
         # print(cell.sbml.drug_metabolization['time'], cell.sbml.drug_metabolization[self.active_component],
         #       cell.sbml.drug_metabolization['k_in'], cell.sbml.drug_metabolization['Remdes_dose_mol'])
+        # print(vr_model['replicating_rate'])
 
     def get_rna_array(self):
         return np.array([cell.dict['Replicating'] for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING,

@@ -46,7 +46,7 @@ active_met_name = 'GS-443902'
 __param_desc__['plot_ddm_data_freq'] = 'Plot drug model data frequency'
 plot_ddm_data_freq = 1  # Plot drug dosing model data frequency (disable with 0)
 __param_desc__['write_ddm_data_freq'] = 'Write drug model data to simulation directory frequency'
-write_ddm_data_freq = 0  # Write drug dosing model data to simulation directory frequency (disable with 0)
+write_ddm_data_freq = 1  # Write drug dosing model data to simulation directory frequency (disable with 0)
 
 # DDM SBML model
 
@@ -145,8 +145,6 @@ active_met_ic50 = 7.89702681970606e-06
 
 __param_desc__['ic50_multiplier'] = 'used to easily change the ic50'
 ic50_multiplier = 1
-
-active_met_ic50 = active_met_ic50 * ic50_multiplier
 
 __param_desc__['hill_coef'] = 'Hill coeficient for diminishing hill function of rmax'
 hill_coef = 2
