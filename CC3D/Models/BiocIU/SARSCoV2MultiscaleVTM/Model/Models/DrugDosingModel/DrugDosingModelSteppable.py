@@ -20,8 +20,8 @@ sys.path.append(os.path.join(os.environ["ViralInfectionVTM"], "Simulation"))
 sys.path.append(os.environ["ViralInfectionVTM"])
 try:
     from Simulation.ViralInfectionVTMModelInputs import s_to_mcs, vr_step_size, replicating_rate, kon, koff, \
-    initial_unbound_receptors, hill_coeff_uptake_pr, rate_coeff_uptake_pr, max_ck_secrete_infect, unpacking_rate, \
-    r_half, translating_rate, packing_rate, secretion_rate
+        initial_unbound_receptors, hill_coeff_uptake_pr, rate_coeff_uptake_pr, max_ck_secrete_infect, unpacking_rate, \
+        r_half, translating_rate, packing_rate, secretion_rate
 except ModuleNotFoundError:
     from ViralInfectionVTMModelInputs import s_to_mcs, vr_step_size, replicating_rate, kon, koff, \
         initial_unbound_receptors, hill_coeff_uptake_pr, rate_coeff_uptake_pr, max_ck_secrete_infect, unpacking_rate, \
@@ -36,12 +36,15 @@ from nCoVToolkit import nCoVUtils
 
 from .DrugDosingInputs import *
 
+
 from BatchRun import BatchRunLib
 
 drug_dosing_model_key = "drug_dose_steppable"
 
 days_2_mcs = s_to_mcs / 60 / 60 / 24
 hour_2_mcs = s_to_mcs / 60 / 60
+# global active_met_ic50
+# active_met_ic50 = active_met_ic50
 
 
 def set_simple_pk_full(infusion_amount, time_of_1st_dose, dose_interval, dose_end, first_dose_doubler):
@@ -181,8 +184,6 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
         import Models.DrugDosingModel.DrugDosingInputs as DrugDosingInputs
         BatchRunLib.apply_external_multipliers(__name__, DrugDosingInputs)
 
-        active_met_ic50 = active_met_ic50 * ic50_multiplier
-
         self.drug_dosing_model_key = drug_dosing_model_key
 
         self.set_drug_model_string = set_simple_pk_full
@@ -193,7 +194,7 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
 
         self.max_avail4 = 2.32417475e-01 * dose  # see comment just before steppable definition
 
-        self.hill_k = active_met_ic50
+        self.hill_k = None
 
         self.drug_model_string = None
 
@@ -246,6 +247,10 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
         rr.timestep()
 
     def start(self):
+        # a = active_met_ic50
+        # print(ic50_multiplier, active_met_ic50)
+
+        self.hill_k = active_met_ic50 * ic50_multiplier
         self.drug_model_string, self.ddm_vars = self.set_drug_model_string(dose, 24 * first_dose, 24 * dose_interval,
                                                                            dose_end, first_dose_doubler)
         self.active_component = '[GS443902]'
@@ -676,7 +681,7 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
         # self.avg_active, self.std_active = self.get_mean_std_active()
         # self.mean_rmax, self.std_rmax = self.get_mean_std_rmax()
         # self.rna_list = self.get_rna_array()
-            # pass
+        # pass
         calculated_stuff = False
         if self.plot_ddm_data and mcs % plot_ddm_data_freq == 0:
             if not calculated_stuff:
