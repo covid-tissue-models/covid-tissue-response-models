@@ -153,6 +153,7 @@ out_freq = 250
 # sweep_output_folder = r'/N/slate/jferrari/new_pk/corrected_ic50_calc/ddm_batch_1'
 #
 sweep_output_folder = r'/N/slate/jferrari/ddm/simple_pk/batch_1'
+# sweep_output_folder = r'D:\batch_run_debug'
 
 
 # Input modules

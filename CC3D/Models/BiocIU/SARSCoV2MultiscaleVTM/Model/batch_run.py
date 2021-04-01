@@ -1,4 +1,4 @@
- import os
+import os
 os.environ["ViralInfectionVTM"] = os.path.dirname(__file__)
 
 # ----------------------------- Setup Instructions ----------------------------- #
@@ -106,11 +106,12 @@ mult_dict = None
 
 full_cellularized_dict = {}
 
-set_investigation_dict ={'set_numb': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-                         'drug_ic50': [10, 2, 1, 0.5, 0.1],
-                         'daily_dose': [1],
-                         'first_dose': [2]}
-
+ic50_multiplier ={'first_dose': [0, 12 / 24, 24 / 24, 48 / 24, 72 / 24, 5],
+                        'dose_interval': [4 / 24],
+                        # missing continuous dosing. dose interval in days
+                        'ic50_multiplier': [0.01, 0.1, 1, 10, 100],
+                        'kon': [1]}
+mult_dict = ic50_multiplier
 # Number of replicas to run per parameter set
 num_rep = 10
 # Number of simulations to run in parallel per parameter set
@@ -146,14 +147,14 @@ out_freq = 50
 #           set_1/
 #           ...
 # sweep_output_folder = os.path.abspath(os.path.join(os.path.splitdrive(os.getcwd())[0], '/DrugDosing_test'))
-sweep_output_folder = r'D:\Google Drive IU\phdStuff\covid 19 project\ddm results\new PK\ddm_batch_8'
+sweep_output_folder = r'D:\batch_run_debug'
 
 # Option to execute sweep simulations
 #   Set to False to not run simulations
-opt_run_sims = False
+opt_run_sims = True
 # Option to render statistics results
 #   Set to False to not generate statistics figures
-opt_render_stat = True
+opt_render_stat = False
 # Option to render spatial results
 #   Set to False to not generate spatial figures
 opt_render_spat = False
