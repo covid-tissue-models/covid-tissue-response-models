@@ -36,18 +36,20 @@ from nCoVToolkit import nCoVUtils
 
 from .DrugDosingInputs import *
 
-
 from BatchRun import BatchRunLib
 
 drug_dosing_model_key = "drug_dose_steppable"
 
 days_2_mcs = s_to_mcs / 60 / 60 / 24
 hour_2_mcs = s_to_mcs / 60 / 60
+
+
 # global active_met_ic50
 # active_met_ic50 = active_met_ic50
 
 
-def set_simple_pk_full(infusion_amount, time_of_1st_dose, dose_interval, dose_end, first_dose_doubler):
+def set_simple_pk_full(infusion_amount, time_of_1st_dose, dose_interval, dose_end, first_dose_doubler,
+                       prophylaxis_time=0):
     # time units are H!!!
     simple_pk_str = f"""
                 // Created by libAntimony v2.12.0.3
@@ -78,13 +80,13 @@ def set_simple_pk_full(infusion_amount, time_of_1st_dose, dose_interval, dose_en
           Clearance: GS443902 => GS443902_sink; Body*k_out*GS443902;
         
           // Events:
-          checkTmax: at 0 after GS443902 > GS443902_Cmax: GS443902_Tmax = time;
+          checkTmax: at 0 after GS443902 > GS443902_Cmax: GS443902_Tmax = time+prophylaxis_time;
           checkCmax: at 0 after GS443902 > GS443902_Cmax: GS443902_Cmax = GS443902 + 1e-9;
-          checkC24: at 0 after time == 24: GS443902_C24 = GS443902;
+          checkC24: at 0 after time+prophylaxis_time == 24: GS443902_C24 = GS443902;
           
-          E1: at (time - first_dose > 0): k_in = 0.5*double_first_dose, curr_infu_start = time ; // starts the first infusion
-          E2: at ( (time-first_dose > dose_interval) && (time < dose_end) && sin((((time-first_dose)/dose_interval))*2*pi)>0): k_in = 0.5, curr_infu_start = time; // starts the subsequent infusions
-          E3: at (time - (one_hour + curr_infu_start) > 0): k_in = 0 ; // turns infusion off
+          E1: at (time+prophylaxis_time - first_dose > 0): k_in = 0.5*double_first_dose, curr_infu_start = time ; // starts the first infusion
+          E2: at ( (time+prophylaxis_time-first_dose > dose_interval) && (time < dose_end) && sin((((time-first_dose)/dose_interval))*2*pi)>0): k_in = 0.5, curr_infu_start = time; // starts the subsequent infusions
+          E3: at (time+prophylaxis_time - (one_hour + curr_infu_start) > 0): k_in = 0 ; // turns infusion off
         
           // Species initializations:
           GS443902 = 0;
@@ -100,6 +102,8 @@ def set_simple_pk_full(infusion_amount, time_of_1st_dose, dose_interval, dose_en
           first_dose = {time_of_1st_dose};
           dose_interval = {dose_interval};
           dose_end = {dose_end};
+
+          prophylaxis_time = {prophylaxis_time};
           
           // Variable initializations:
           double_first_dose = {first_dose_doubler};
@@ -523,20 +527,41 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
             #         ddm_rr = rr
             #         break
             number_of_prophylactic_steps = int(prophylactic_time / days_2_mcs)
-
+            final_step_idx = list(range(number_of_prophylactic_steps))[-1]
             ddm_rr = self.shared_steppable_vars[drug_dosing_model_key].ddm_rr
             get_rmax = getattr(DrugDosingModelSteppable, 'get_rmax')
             for i in range(number_of_prophylactic_steps):  # let it run for prophylactic_time days
                 # print('time stepping', i)
-                ddm_rr.timestep()
-                self.shared_steppable_vars['rmax'] = get_rmax(self.mvars, self.sbml.drug_dosing_control[
+                # ddm_rr.timestep()
+                # instead of timestepping the global sbml I'll step the cells'. This way if we do microdosimetry
+                # prof code will still be the same
+                for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING, self.UNINFECTED):
+                    self.mvars.timestep_cell_sbml('drug_metabolization', cell)
+
+                    if i == final_step_idx:
+                        cell.dict['rmax'] = self.mvars.get_rmax(
+                            cell.sbml.drug_metabolization[self.mvars.active_component])
+                        if cell.type != self.UNINFECTED:
+                            vr_model = getattr(cell.sbml, self.mvars.vr_model_name)
+                            vr_model['replicating_rate'] = cell.dict['rmax']
+                # print(cell.sbml.drug_metabolization['curr_infu_start'],
+                #       cell.sbml.drug_metabolization['first_dose'],
+                #       cell.sbml.drug_metabolization['time'],
+                #       cell.sbml.drug_metabolization[self.mvars.ddm_vars[-1]],
+                #       cell.sbml.drug_metabolization[self.mvars.active_component])
+
+                self.shared_steppable_vars['rmax'] = self.mvars.get_rmax(self.sbml.drug_dosing_control[
                     self.mvars.active_component])
+
                 self.shared_steppable_vars['pre_sim_time'] = number_of_prophylactic_steps - i
                 if self.write_ddm_data:
                     self.do_writes(0)
-            for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING, self.UNINFECTED):
-                self.timestep_cell_sbml('drug_metabolization', cell)
-                cell.dict['rmax'] = self.shared_steppable_vars['rmax']
+                if self.plot_ddm_data:
+                    self.do_plots(0)
+            print(cell.sbml.drug_metabolization['time'])
+            # for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING, self.UNINFECTED):
+            #     self.mvars.timestep_cell_sbml('drug_metabolization', cell)
+            #     cell.dict['rmax'] = self.shared_steppable_vars['rmax']
             if self.write_ddm_data:
                 self.flush_stored_outputs()
                 self.__flush_counter -= 1
@@ -578,38 +603,42 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
 
         # [self.ddm_control_plot.add_data_point(x, s_to_mcs * mcs / 60 / 60, self.sbml.drug_dosing_control[x])
         #  for x in self.mvars.ddm_vars]
-
-        self.ddm_control_plot.add_data_point(self.mvars.ddm_vars[0], s_to_mcs * mcs / 60 / 60,
-                                             self.sbml.drug_dosing_control[self.mvars.ddm_vars[0]] *
-                                             self.sbml.drug_dosing_control[self.mvars.ddm_vars[-1]])
-        self.ddm_control_plot.add_data_point(self.mvars.ddm_vars[1], s_to_mcs * mcs / 60 / 60,
+        if prophylactic_treatment and mcs == 0:
+            time = mcs - self.shared_steppable_vars['pre_sim_time']
+        else:
+            time = mcs
+        if time < 0:
+            self.ddm_control_plot.add_data_point(self.mvars.ddm_vars[0], s_to_mcs * time / 60 / 60,
+                                                 self.sbml.drug_dosing_control[self.mvars.ddm_vars[0]] *
+                                                 self.sbml.drug_dosing_control[self.mvars.ddm_vars[-1]])
+            self.ddm_control_plot.add_data_point(self.mvars.ddm_vars[1], s_to_mcs * time / 60 / 60,
                                              self.sbml.drug_dosing_control[self.mvars.ddm_vars[1]])
+            infusion = self.tracked_cell.sbml.drug_metabolization[self.mvars.ddm_vars[0]] * \
+                       self.tracked_cell.sbml.drug_metabolization[self.mvars.ddm_vars[-1]]
+            self.ddm_data_win.add_data_point(self.mvars.ddm_vars[0], s_to_mcs * time / 60 / 60, infusion)
+            self.ddm_data_win.add_data_point(self.mvars.ddm_vars[1], s_to_mcs * time / 60 / 60,
+                                                 self.tracked_cell.sbml.drug_metabolization[self.mvars.ddm_vars[1]])
+        if time >= 0:
+            self.ddm_control_plot.add_data_point(self.mvars.ddm_vars[0], s_to_mcs * time / 60 / 60,
+                                                 self.sbml.drug_dosing_control[self.mvars.ddm_vars[0]] *
+                                                 self.sbml.drug_dosing_control[self.mvars.ddm_vars[-1]])
+            self.ddm_control_plot.add_data_point(self.mvars.ddm_vars[1], s_to_mcs * time / 60 / 60,
+                                                 self.sbml.drug_dosing_control[self.mvars.ddm_vars[1]])
+            infusion = self.tracked_cell.sbml.drug_metabolization[self.mvars.ddm_vars[0]] * \
+                       self.tracked_cell.sbml.drug_metabolization[self.mvars.ddm_vars[-1]]
 
-        infusion = self.tracked_cell.sbml.drug_metabolization[self.mvars.ddm_vars[0]] * \
-                   self.tracked_cell.sbml.drug_metabolization[self.mvars.ddm_vars[-1]]
+            self.ddm_data_win.add_data_point(self.mvars.ddm_vars[0], s_to_mcs * time / 60 / 60, infusion)
+            self.ddm_data_win.add_data_point(self.mvars.ddm_vars[1], s_to_mcs * time / 60 / 60,
+                                             self.avg_active)
 
-        self.ddm_data_win.add_data_point(self.mvars.ddm_vars[0], s_to_mcs * mcs / 60 / 60, infusion)
-        self.ddm_data_win.add_data_point(self.mvars.ddm_vars[1], s_to_mcs * mcs / 60 / 60,
-                                         self.avg_active)
-        # self.ddm_data_win.add_data_point(self.mvars.ddm_vars[2], s_to_mcs * mcs / 60 / 60,
-        #                                  self.sbml.drug_dosing_model[self.mvars.ddm_vars[2]])
-
-        # total_mets = self.get_total_metabolites_in_cells()
-        #
-        # for i, x in enumerate(self.mvars.ddm_vars[3:]):
-        #     # print(x, np.sum(total_mets[i]), total_mets[i])
-        #     y = np.sum(total_mets[i])
-        #     # print(y)
-        #     self.ddm_data_win.add_data_point(x, s_to_mcs * mcs / 60 / 60, y)
-
-        if mcs > first_dose / days_2_mcs or constant_drug_concentration:
-            # mean, _ = self.get_mean_std_rmax()
-            self.rmax_data_win.add_data_point('rmax', s_to_mcs * mcs / 60 / 60, self.mean_rmax)
+            if time > first_dose / days_2_mcs or constant_drug_concentration:
+                # mean, _ = self.get_mean_std_rmax()
+                self.rmax_data_win.add_data_point('rmax', s_to_mcs * mcs / 60 / 60, self.mean_rmax)
 
         # rna_list = self.get_rna_array()
 
-        self.total_rna_plot.add_data_point('RNA_tot', s_to_mcs * mcs / 60 / 60, np.sum(self.rna_list))
-        self.mean_rna_plot.add_data_point('RNA_mean', s_to_mcs * mcs / 60 / 60, np.mean(self.rna_list))
+            self.total_rna_plot.add_data_point('RNA_tot', s_to_mcs * mcs / 60 / 60, np.sum(self.rna_list))
+            self.mean_rna_plot.add_data_point('RNA_mean', s_to_mcs * mcs / 60 / 60, np.mean(self.rna_list))
 
     def get_ddm_data_list(self):
 
@@ -629,9 +658,15 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
 
         if time < 0:
             # self.ddm_data['ddm_data'][time] = [self.sbml.drug_dosing_control[x] for x in self.mvars.ddm_vars]
-            self.ddm_data['ddm_data'][time] = [self.sbml.drug_dosing_control[self.mvars.ddm_vars[0]] *
-                                               self.sbml.drug_dosing_control[self.mvars.ddm_vars[-1]],
-                                               self.sbml.drug_dosing_control[self.mvars.ddm_vars[1]]]
+            self.ddm_data['ddm_data'][time] = [self.tracked_cell.sbml.drug_metabolization[self.mvars.ddm_vars[0]] *
+                                               self.tracked_cell.sbml.drug_metabolization[self.mvars.ddm_vars[-1]],
+                                               self.tracked_cell.sbml.drug_metabolization[self.mvars.ddm_vars[1]]]
+            self.ddm_data['ddm_data'][time] = [np.NaN, np.NaN]
+            self.ddm_data['ddm_rmax_data'][time] = [np.NaN]
+
+            self.ddm_data['ddm_tot_RNA_data'][mcs] = [np.NaN]
+            self.ddm_data['ddm_mean_RNA_data'][mcs] = [np.NaN]
+            self.ddm_data['ddm_total_viral_production_data'][mcs] = [0]
 
         if time >= 0:
             # self.ddm_data['ddm_data'][time] = self.get_ddm_data_list()
