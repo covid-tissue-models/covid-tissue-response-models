@@ -132,7 +132,7 @@ ddm_simple_pk_batch1 = {'first_dose': [24 / 24, 48 / 24],  # missing profilaxis.
                         'ic50_multiplier': [0.01, 0.1, 1, 10, 100],
                         'kon': [1]}
 ddm_simple_pk_batch3 = {'first_dose': [72 / 24, 5],  # missing profilaxis. time of 1st dose in days
-                        'dose_interval': [ 6 / 24, 8 / 24, 12 / 24, 1],
+                        'dose_interval': [6 / 24, 8 / 24, 12 / 24, 1],
                         # missing continuous dosing. dose interval in days
                         'ic50_multiplier': [0.01, 0.1, 1, 10, 100],
                         'kon': [1]}
@@ -142,7 +142,13 @@ ddm_simple_pk_batch4 = {'first_dose': [0, 12 / 24, 24 / 24, 48 / 24, 72 / 24, 5]
                         # missing continuous dosing. dose interval in days
                         'ic50_multiplier': [0.01, 0.1, 1, 10, 100],
                         'kon': [1]}
-mult_dict = ddm_simple_pk_batch1
+proph_batch1 = {'prophylactic_time': [3],
+                'dose_interval': [6 / 24, 8 / 24, 12 / 24, 1],
+                # missing continuous dosing. dose interval in days
+                'ic50_multiplier': [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 10, 100],
+                'kon': [1]}
+
+mult_dict = proph_batch1
 num_rep = 10
 # Model output frequency
 model_out_freq = 1
