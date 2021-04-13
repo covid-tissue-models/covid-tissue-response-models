@@ -246,7 +246,7 @@ def main():
     carbonate_config = [carbonate_config_template.copy() for _ in range(num_sets)]
     set_idx = 0
     for cc in carbonate_config:
-        cc['jn'] += f'_{set_idx}'
+        cc['J'] += f'_{set_idx}'
         set_idx += 1
 
     sim_input = list()
