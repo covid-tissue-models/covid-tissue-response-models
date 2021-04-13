@@ -34,15 +34,16 @@ _ciu_lims = {'nn': 72,
              'vmem': 503,
              'wh': None}
 
-_default_config = {'ec': None,
-                   'ee': None,
-                   'jn': "MYJOB",
-                   'ko': False,
-                   'nn': 1,
-                   'ppn': 1,
+_default_config = {'p': "general",
+                   # 'ec': None,
+                   # 'ee': None,
+                   'J': "MYJOB",
+                   # 'ko': False,
+                   'C': 1,
+                   'N': 1,
                    'shell_script': None,
-                   'vmem': None,
-                   'wh': None,
+                   'mem': None,  # --mem
+                   'time': None,  # time
                    'wm': None}
 
 
@@ -146,7 +147,7 @@ class CallableCC3DCarbonateDispatcher:
 
         import subprocess
         import multiprocessing
-        p = multiprocessing.Process(target=subprocess.run, args=(["qsub", self.job_script_filename],))
+        p = multiprocessing.Process(target=subprocess.run, args=(["srun", self.job_script_filename],))
         p.start()
 
 
