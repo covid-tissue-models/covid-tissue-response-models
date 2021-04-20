@@ -189,7 +189,7 @@ carbonate_config_template['J'] = 'ddm_new_pk_set_inv1'  # jn -> J
 carbonate_config_template['time'] = 3  # wh -> --time
 # carbonate_config_template['wm'] = 0  # ?
 carbonate_config_template['N'] = 8  # -> -N
-carbonate_config_template['mem'] = 10000
+carbonate_config_template['mem'] = '10G'
 
 # Begin computing work
 import os
