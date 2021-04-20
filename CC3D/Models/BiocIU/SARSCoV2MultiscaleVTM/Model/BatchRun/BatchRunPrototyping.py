@@ -129,11 +129,11 @@ class CallableCC3DCarbonateDispatcher:
         print(f'Generating job script: {self.job_script_filename}')
         import carbonate_job_script_gen as script_gen
         script_gen.reset_config()
-        script_gen.set_num_nodes(self.__config_dict['nn'])
-        script_gen.set_num_proc_per_node(self.__config_dict['ppn'])
-        script_gen.set_job_name(self.__config_dict['jn'])
-        script_gen.set_walltime(self.__config_dict['wh'], self.__config_dict['wm'])
-        script_gen.set_virtual_mem(self.__config_dict['vmem'])
+        script_gen.set_num_nodes(self.__config_dict['N'])
+        # script_gen.set_num_proc_per_node(self.__config_dict['ppn'])
+        script_gen.set_job_name(self.__config_dict['J'])
+        script_gen.set_walltime(self.__config_dict['time'], self.__config_dict['wm'])
+        script_gen.set_virtual_mem(self.__config_dict['mem'])
         script_gen.set_keep_output(keep_output)
         script_gen.set_shell_scripts(self.shell_script_filename)
         if not script_gen.validate_config():
