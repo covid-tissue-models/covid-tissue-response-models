@@ -127,7 +127,8 @@ class CallableCC3DCarbonateDispatcher:
         :return: {str} Path to the .job script
         """
         print(f'Generating job script: {self.job_script_filename}')
-        import carbonate_job_script_gen as script_gen
+        # import carbonate_job_script_gen as script_gen
+        import slurm_job_script_gen as script_gen
         script_gen.reset_config()
         script_gen.set_num_nodes(self.__config_dict['nn'])
         script_gen.set_num_proc_per_node(self.__config_dict['ppn'])
