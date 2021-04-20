@@ -179,7 +179,7 @@ class SimRunAsyncCarbonate(CoV2VTMSimRunAsync):
 
         model_config = self.model_config[run_idx].copy()
         carbonate_config = self.carbonate_config.copy()
-        carbonate_config['jn'] += f'_{run_idx}'
+        carbonate_config['J'] += f'_{run_idx}'
         dispatcher = CallableCC3DCarbonateDispatcher(model_config=model_config,
                                                      carb_config=carbonate_config)
         dispatcher.issue_job()
