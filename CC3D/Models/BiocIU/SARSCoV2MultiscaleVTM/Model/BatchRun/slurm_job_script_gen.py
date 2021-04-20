@@ -170,9 +170,9 @@ def set_queue(debug: bool = False, interactive: bool = False):
 
 def set_error_file(file: str = None):
     if file is None:
-        _config['of'] = _config['jn'] + '_error.err'
+        _config['ef'] = _config['jn'] + '_error.err'
     else:
-        _config['of'] = file
+        _config['ef'] = file
 
 
 def set_output_file(file: str = None):
