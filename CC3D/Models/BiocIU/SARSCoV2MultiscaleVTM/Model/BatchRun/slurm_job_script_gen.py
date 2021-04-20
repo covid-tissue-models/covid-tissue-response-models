@@ -308,8 +308,8 @@ def run_script(_jo: bool = True, job_queue: str = "", opt_queue: bool = False) -
     o += queue(_config['q'])
     o += email_events(_config['ee'], _config['ec'])
     o += job_name(_config['jn'])
-    if _jo:
-        o += join_outputs()
+    # if _jo:
+    #     o += join_outputs()
     o += targets(_config['shell_scripts'])
     print(o)
     return o
