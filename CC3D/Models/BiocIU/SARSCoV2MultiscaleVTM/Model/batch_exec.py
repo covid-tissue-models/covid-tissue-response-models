@@ -185,11 +185,11 @@ BatchRunLib.register_auto_inputs(input_module_name='Models.DrugDosingModel.DrugD
 from BatchRun.BatchRunPrototyping import carbonate_config_template
 
 carbonate_config_template = carbonate_config_template()
-carbonate_config_template['J'] = 'ddm_new_pk_set_inv1'  # jn -> J
-carbonate_config_template['time'] = 3  # wh -> --time
-# carbonate_config_template['wm'] = 0  # ?
-carbonate_config_template['N'] = 8  # -> -N
-# carbonate_config_template['mem'] = '10G'
+carbonate_config_template['jn'] = 'ddm_new_pk_set_inv1'
+carbonate_config_template['wh'] = 3
+carbonate_config_template['wm'] = 0
+carbonate_config_template['ppn'] = 8 
+carbonate_config_template['mem'] = 10
 carbonate_config_template['p'] = 'general'
 
 # Begin computing work
