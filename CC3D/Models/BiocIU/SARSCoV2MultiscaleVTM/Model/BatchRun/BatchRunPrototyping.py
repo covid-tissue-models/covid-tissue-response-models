@@ -37,14 +37,17 @@ _ciu_lims = {'nn': 72,
 _default_config = {'p': "general",
                    'ec': None,
                    'ee': None,
-                   'jn': "MYJOB",
-                   'ko': False,
+                   'J': "MYJOB",
+                   'ko': True,
                    'nn': 1,
                    'ppn': 1,
-                   'shell_script': None,
-                   'vmem': None,  # --mem
-                   'wh': None,  # time
-                   'wm': None}
+                   'shell_scripts': None,
+                   'vmem': None,
+                   'wh': None,
+                   'wm': None,
+                   'q': None,
+                   'ef': None,
+                   'of': None}
 
 
 def carbonate_config_template():
@@ -136,6 +139,8 @@ class CallableCC3DCarbonateDispatcher:
         script_gen.set_walltime(self.__config_dict['wh'], self.__config_dict['wm'])
         script_gen.set_virtual_mem(self.__config_dict['vmem'])
         script_gen.set_keep_output(keep_output)
+        script_gen.set_error_file(self.__config_dict['ef'])
+        script_gen.set_output_file(self.__config_dict['of'])
         script_gen.set_shell_scripts(self.shell_script_filename)
         if not script_gen.validate_config():
             return None

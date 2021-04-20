@@ -21,7 +21,8 @@ _interact_lims = {'nn': 1,
                   'vmem': 503,
                   'wh': 8}
 
-_default_config = {'ec': None,
+_default_config = {'p': "general",
+                   'ec': None,
                    'ee': None,
                    'J': "MYJOB",
                    'ko': True,
@@ -31,7 +32,24 @@ _default_config = {'ec': None,
                    'vmem': None,
                    'wh': None,
                    'wm': None,
-                   'q': None}
+                   'q': None,
+                   'ef': None,
+                   'of': None}
+'''
+#!/bin/bash
+
+#SBATCH -J job_name
+#SBATCH -p general
+#SBATCH -o filename_%j.txt
+#SBATCH -e filename_%j.err
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=username@iu.edu
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=12
+#SBATCH --time=02:00:00
+#SBATCH --mem=64G
+'''
 
 _config = {k: v for k, v in _default_config.items()}
 _hw_lims = {k: v for k, v in _ciu_lims.items()}
@@ -150,6 +168,20 @@ def set_queue(debug: bool = False, interactive: bool = False):
         _config['q'] = INTERACTIVE
 
 
+def set_error_file(file: str = None):
+    if file is None:
+        _config['of'] = _config['jn'] + '_error.err'
+    else:
+        _config['of'] = file
+
+
+def set_output_file(file: str = None):
+    if file is None:
+        _config['of'] = _config['jn'] + '_output.txt'
+    else:
+        _config['of'] = file
+
+
 def optimize():
     if not any([_config[k] > _interact_lims[k] for k in _interact_lims.keys()]):
         set_queue(interactive=True)
@@ -220,23 +252,6 @@ def virtual_mem(_vmem):
     return None
 
 
-'''
-#!/bin/bash
-
-#SBATCH -J job_name
-#SBATCH -p general
-#SBATCH -o filename_%j.txt
-#SBATCH -e filename_%j.err
-#SBATCH --mail-type=ALL
-#SBATCH --mail-user=username@iu.edu
-#SBATCH --nodes=1
-#SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=12
-#SBATCH --time=02:00:00
-#SBATCH --mem=64G
-'''
-
-
 def email_events(email_event_labs: str = None, email_addr: str = None):
     if email_event_labs is not None and email_addr is not None:
         check_events(email_event_labs)
@@ -294,6 +309,12 @@ def interactive_run_script() -> str:
     return o
 
 
+def standard_outputs(ef, of):
+    o = f"#SBATCH -o {of}\n"
+    o += f"#SBATCH -e {ef}\n"
+    return o
+
+
 def run_script(_jo: bool = True, job_queue: str = "", opt_queue: bool = False) -> str:
     if opt_queue:
         optimize()
@@ -308,6 +329,7 @@ def run_script(_jo: bool = True, job_queue: str = "", opt_queue: bool = False) -
     o += queue(_config['q'])
     o += email_events(_config['ee'], _config['ec'])
     o += job_name(_config['jn'])
+    o += standard_outputs(_config['ef'], _config['of'])
     # if _jo:
     #     o += join_outputs()
     o += targets(_config['shell_scripts'])
