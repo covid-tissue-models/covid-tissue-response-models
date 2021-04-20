@@ -35,15 +35,15 @@ _ciu_lims = {'nn': 72,
              'wh': None}
 
 _default_config = {'p': "general",
-                   # 'ec': None,
-                   # 'ee': None,
-                   'J': "MYJOB",
-                   # 'ko': False,
-                   'C': 1,
-                   'N': 1,
+                   'ec': None,
+                   'ee': None,
+                   'jn': "MYJOB",
+                   'ko': False,
+                   'nn': 1,
+                   'ppn': 1,
                    'shell_script': None,
-                   'mem': None,  # --mem
-                   'time': None,  # time
+                   'vmem': None,  # --mem
+                   'wh': None,  # time
                    'wm': None}
 
 
@@ -129,11 +129,11 @@ class CallableCC3DCarbonateDispatcher:
         print(f'Generating job script: {self.job_script_filename}')
         import carbonate_job_script_gen as script_gen
         script_gen.reset_config()
-        script_gen.set_num_nodes(self.__config_dict['N'])
-        # script_gen.set_num_proc_per_node(self.__config_dict['ppn'])
-        script_gen.set_job_name(self.__config_dict['J'])
-        script_gen.set_walltime(self.__config_dict['time'], self.__config_dict['wm'])
-        script_gen.set_virtual_mem(self.__config_dict['mem'])
+        script_gen.set_num_nodes(self.__config_dict['nn'])
+        script_gen.set_num_proc_per_node(self.__config_dict['ppn'])
+        script_gen.set_job_name(self.__config_dict['jn'])
+        script_gen.set_walltime(self.__config_dict['wh'], self.__config_dict['wm'])
+        script_gen.set_virtual_mem(self.__config_dict['vmem'])
         script_gen.set_keep_output(keep_output)
         script_gen.set_shell_scripts(self.shell_script_filename)
         if not script_gen.validate_config():
@@ -179,7 +179,7 @@ class SimRunAsyncCarbonate(CoV2VTMSimRunAsync):
 
         model_config = self.model_config[run_idx].copy()
         carbonate_config = self.carbonate_config.copy()
-        carbonate_config['J'] += f'_{run_idx}'
+        carbonate_config['jn'] += f'_{run_idx}'
         dispatcher = CallableCC3DCarbonateDispatcher(model_config=model_config,
                                                      carb_config=carbonate_config)
         dispatcher.issue_job()
