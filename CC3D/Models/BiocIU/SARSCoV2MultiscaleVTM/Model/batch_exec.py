@@ -188,7 +188,7 @@ carbonate_config_template = carbonate_config_template()
 carbonate_config_template['jn'] = 'ddm_new_pk_set_inv1'
 carbonate_config_template['wh'] = 3
 carbonate_config_template['wm'] = 0
-carbonate_config_template['ppn'] = 8 
+carbonate_config_template['ppn'] = 8
 carbonate_config_template['mem'] = 10
 carbonate_config_template['p'] = 'general'
 
@@ -248,7 +248,7 @@ def main():
     carbonate_config = [carbonate_config_template.copy() for _ in range(num_sets)]
     set_idx = 0
     for cc in carbonate_config:
-        cc['J'] += f'_{set_idx}'
+        cc['jn'] += f'_{set_idx}'
         set_idx += 1
 
     sim_input = list()
