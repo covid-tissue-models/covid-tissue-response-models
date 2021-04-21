@@ -333,7 +333,7 @@ def run_script(_jo: bool = True, job_queue: str = "", opt_queue: bool = False) -
     # if _jo:
     #     o += join_outputs()
     o += targets(_config['shell_scripts'])
-    print(o)
+    # print(o)
     return o
 
 
