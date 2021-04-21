@@ -269,9 +269,9 @@ def targets(_shell_scripts):
         if len(_shell_scripts) > 1:
             _str = ""
             for t in _shell_scripts:
-                _str += f"sh {t} &\n"
+                _str += f"srun sh {t} &\n"
         else:
-            _str = "sh " + _shell_scripts[0] + "\n"
+            _str = "srun sh " + _shell_scripts[0] + "\n"
         return _str
     elif isinstance(_shell_scripts, str):
         return _shell_scripts + "\n"
