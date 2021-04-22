@@ -59,13 +59,13 @@ __param_desc__['constant_drug_concentration'] = 'bool flag for constant prodrug'
 constant_drug_concentration = False
 
 __param_desc__['prophylactic_treatment'] = 'bool flag for prophylactic treatment'
-prophylactic_treatment = True
+prophylactic_treatment = False
 
 __param_desc__['treatment_ends'] = 'bool flag for setting a end time for treatment or not'
 treatment_ends = False
 
 __param_desc__['sanity_run'] = 'bool for shutting off drug treatment (True -> no treatment)'
-sanity_run = False
+sanity_run = True
 
 __param_desc__['double_sbml_step'] = 'bool for doing 2 sbmls calls'
 double_sbml_step = False

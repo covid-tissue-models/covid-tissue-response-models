@@ -148,8 +148,14 @@ proph_batch1 = {'prophylactic_time': [3],
                 'ic50_multiplier': [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 10, 100],
                 'kon': [1]}
 
-mult_dict = proph_batch1
-num_rep = 10
+nothing_batch = {'first_dose': [0],
+                'dose_interval': [1],
+                'ic50_multiplier': [1],
+                'kon': [1]}
+
+
+mult_dict = nothing_batch
+num_rep = 400
 # Model output frequency
 model_out_freq = 1
 # Output frequency of simulation data per simulation replica
@@ -160,6 +166,7 @@ out_freq = 250
 #
 sweep_output_folder = r'/N/slate/jferrari/ddm/simple_pk/batch_1'
 sweep_output_folder = r'/N/slate/jferrari/ddm/simple_pk/p_batch_1'
+sweep_output_folder = r'/N/slate/jferrari/ddm/simple_pk/nothing'
 # sweep_output_folder = r'D:\batch_run_debug'
 
 
@@ -186,7 +193,7 @@ from BatchRun.BatchRunPrototyping import carbonate_config_template
 
 carbonate_config_template = carbonate_config_template()
 carbonate_config_template['jn'] = 'ddm_new_pk_set_inv1'
-carbonate_config_template['wh'] = 4
+carbonate_config_template['wh'] = 10
 carbonate_config_template['wm'] = 0
 carbonate_config_template['ppn'] = 8
 carbonate_config_template['mem'] = 10

@@ -278,6 +278,12 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
             self.rmax = self.get_rmax(cell.sbml.drug_metabolization[self.active_component])
             # self.rmax = replicating_rate
 
+        for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING, self.UNINFECTED):
+            vr_model = getattr(cell.sbml, self.vr_model_name)
+            # vr_model.replicating_rate = cell.dict['rmax']
+            vr_model['replicating_rate'] = self.rmax
+            cell.dict['rmax'] = self.rmax
+
         self.shared_steppable_vars['rmax'] = self.rmax
 
         # replace viral uptake function
@@ -298,12 +304,13 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
         self.ddm_rr.timestep()
         for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING, self.UNINFECTED):
             self.timestep_cell_sbml('drug_metabolization', cell)
-            cell.dict['rmax'] = self.get_rmax(cell.sbml.drug_metabolization[self.active_component])
-            if cell.type != self.UNINFECTED:
-                vr_model = getattr(cell.sbml, self.vr_model_name)
-                # vr_model.replicating_rate = cell.dict['rmax']
-                vr_model['replicating_rate'] = cell.dict['rmax']
-                # cell.sbml.viral_name.replicating_rate = cell.dict['rmax']
+            if not sanity_run:
+                cell.dict['rmax'] = self.get_rmax(cell.sbml.drug_metabolization[self.active_component])
+                if cell.type != self.UNINFECTED:
+                    vr_model = getattr(cell.sbml, self.vr_model_name)
+                    # vr_model.replicating_rate = cell.dict['rmax']
+                    vr_model['replicating_rate'] = cell.dict['rmax']
+                    # cell.sbml.viral_name.replicating_rate = cell.dict['rmax']
         # print(cell.sbml.drug_metabolization['time'], cell.sbml.drug_metabolization[self.active_component],
         #       cell.sbml.drug_metabolization['k_in'], cell.sbml.drug_metabolization['Remdes_dose_mol'])
         # print(vr_model['replicating_rate'])
