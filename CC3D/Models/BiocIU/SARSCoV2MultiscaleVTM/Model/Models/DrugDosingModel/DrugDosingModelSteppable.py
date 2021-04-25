@@ -511,9 +511,14 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
                 pass
 
     def choose_tracked_cell(self):
-        for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING, self.UNINFECTED):
-            break
-        return cell
+        # for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING, self.UNINFECTED):
+        #     break
+
+        cells = [cell for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING, self.UNINFECTED)]
+        if len(cells):
+            return cells[0]
+        else:
+            return None
 
     def start(self):
         self.mvars = self.shared_steppable_vars[drug_dosing_model_key]  # main ddm class vars
@@ -558,7 +563,7 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
                 #       cell.sbml.drug_metabolization[self.mvars.active_component])
 
                 self.shared_steppable_vars['rmax'] = self.mvars.get_rmax(self.sbml.drug_dosing_control[
-                    self.mvars.active_component])
+                                                                             self.mvars.active_component])
 
                 self.shared_steppable_vars['pre_sim_time'] = number_of_prophylactic_steps - i
                 if self.write_ddm_data:
@@ -619,11 +624,12 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
                                                  self.sbml.drug_dosing_control[self.mvars.ddm_vars[0]] *
                                                  self.sbml.drug_dosing_control[self.mvars.ddm_vars[-1]])
             self.ddm_control_plot.add_data_point(self.mvars.ddm_vars[1], s_to_mcs * time / 60 / 60,
-                                             self.sbml.drug_dosing_control[self.mvars.ddm_vars[1]])
-            infusion = self.tracked_cell.sbml.drug_metabolization[self.mvars.ddm_vars[0]] * \
-                       self.tracked_cell.sbml.drug_metabolization[self.mvars.ddm_vars[-1]]
-            self.ddm_data_win.add_data_point(self.mvars.ddm_vars[0], s_to_mcs * time / 60 / 60, infusion)
-            self.ddm_data_win.add_data_point(self.mvars.ddm_vars[1], s_to_mcs * time / 60 / 60,
+                                                 self.sbml.drug_dosing_control[self.mvars.ddm_vars[1]])
+            if self.tracked_cell is not None:
+                infusion = self.tracked_cell.sbml.drug_metabolization[self.mvars.ddm_vars[0]] * \
+                           self.tracked_cell.sbml.drug_metabolization[self.mvars.ddm_vars[-1]]
+                self.ddm_data_win.add_data_point(self.mvars.ddm_vars[0], s_to_mcs * time / 60 / 60, infusion)
+                self.ddm_data_win.add_data_point(self.mvars.ddm_vars[1], s_to_mcs * time / 60 / 60,
                                                  self.tracked_cell.sbml.drug_metabolization[self.mvars.ddm_vars[1]])
         if time >= 0:
             self.ddm_control_plot.add_data_point(self.mvars.ddm_vars[0], s_to_mcs * time / 60 / 60,
@@ -631,18 +637,19 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
                                                  self.sbml.drug_dosing_control[self.mvars.ddm_vars[-1]])
             self.ddm_control_plot.add_data_point(self.mvars.ddm_vars[1], s_to_mcs * time / 60 / 60,
                                                  self.sbml.drug_dosing_control[self.mvars.ddm_vars[1]])
-            infusion = self.tracked_cell.sbml.drug_metabolization[self.mvars.ddm_vars[0]] * \
-                       self.tracked_cell.sbml.drug_metabolization[self.mvars.ddm_vars[-1]]
+            if self.tracked_cell is not None:
+                infusion = self.tracked_cell.sbml.drug_metabolization[self.mvars.ddm_vars[0]] * \
+                           self.tracked_cell.sbml.drug_metabolization[self.mvars.ddm_vars[-1]]
 
-            self.ddm_data_win.add_data_point(self.mvars.ddm_vars[0], s_to_mcs * time / 60 / 60, infusion)
-            self.ddm_data_win.add_data_point(self.mvars.ddm_vars[1], s_to_mcs * time / 60 / 60,
-                                             self.avg_active)
+                self.ddm_data_win.add_data_point(self.mvars.ddm_vars[0], s_to_mcs * time / 60 / 60, infusion)
+                self.ddm_data_win.add_data_point(self.mvars.ddm_vars[1], s_to_mcs * time / 60 / 60,
+                                                 self.avg_active)
 
             if time > first_dose / days_2_mcs or constant_drug_concentration:
                 # mean, _ = self.get_mean_std_rmax()
                 self.rmax_data_win.add_data_point('rmax', s_to_mcs * mcs / 60 / 60, self.mean_rmax)
 
-        # rna_list = self.get_rna_array()
+            # rna_list = self.get_rna_array()
 
             self.total_rna_plot.add_data_point('RNA_tot', s_to_mcs * mcs / 60 / 60, np.sum(self.rna_list))
             self.mean_rna_plot.add_data_point('RNA_mean', s_to_mcs * mcs / 60 / 60, np.mean(self.rna_list))
@@ -665,9 +672,12 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
 
         if time < 0:
             # self.ddm_data['ddm_data'][time] = [self.sbml.drug_dosing_control[x] for x in self.mvars.ddm_vars]
-            self.ddm_data['ddm_data'][time] = [self.tracked_cell.sbml.drug_metabolization[self.mvars.ddm_vars[0]] *
-                                               self.tracked_cell.sbml.drug_metabolization[self.mvars.ddm_vars[-1]],
-                                               self.tracked_cell.sbml.drug_metabolization[self.mvars.ddm_vars[1]]]
+            if self.tracked_cell is not None:
+                self.ddm_data['ddm_data'][time] = [self.tracked_cell.sbml.drug_metabolization[self.mvars.ddm_vars[0]] *
+                                                   self.tracked_cell.sbml.drug_metabolization[self.mvars.ddm_vars[-1]],
+                                                   self.tracked_cell.sbml.drug_metabolization[self.mvars.ddm_vars[1]]]
+            else:
+                self.ddm_data['ddm_data'][time] = [np.NaN, np.NaN]
             self.ddm_data['ddm_data'][time] = [np.NaN, np.NaN]
             self.ddm_data['ddm_rmax_data'][time] = [np.NaN]
 
@@ -677,9 +687,12 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
 
         if time >= 0:
             # self.ddm_data['ddm_data'][time] = self.get_ddm_data_list()
-            self.ddm_data['ddm_data'][time] = [self.tracked_cell.sbml.drug_metabolization[self.mvars.ddm_vars[0]] *
-                                               self.tracked_cell.sbml.drug_metabolization[self.mvars.ddm_vars[-1]],
-                                               self.avg_active]
+            if self.tracked_cell is not None:
+                self.ddm_data['ddm_data'][time] = [self.tracked_cell.sbml.drug_metabolization[self.mvars.ddm_vars[0]] *
+                                                   self.tracked_cell.sbml.drug_metabolization[self.mvars.ddm_vars[-1]],
+                                                   self.avg_active]
+            else:
+                self.ddm_data['ddm_data'][time] = [np.NaN, np.NaN]
 
             mean, _ = self.get_mean_std_rmax()
             # self.ddm_data['ddm_rmax_data'][time] = [self.shared_steppable_vars['rmax']]
@@ -714,7 +727,7 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
 
     def step(self, mcs):
 
-        if self.tracked_cell.type == self.DYING:
+        if self.tracked_cell is None or self.tracked_cell.type == self.DYING:
             self.tracked_cell = self.choose_tracked_cell()
 
         self.total_virus_released += self.shared_steppable_vars['total_virus_release_this_mcs']
