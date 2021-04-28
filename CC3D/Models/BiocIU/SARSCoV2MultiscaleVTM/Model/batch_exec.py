@@ -1,158 +1,78 @@
 # Model inputs
-# full_mult_dit = {'first_dose': [0, 6 / 24, 12 / 24, 48 / 24, 72 / 24],  # missing profilaxis. time of 1st dose in days
-#                  'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
-#                  # missing continuous dosing. dose interval in days
-#                  'rel_avail4_EC50': [0.01, 0.1, .5, .75, 1, 1.25],
-#                  'kon': [1 / 4, 1 / 2, 1]}
-#
-# # NOTE! each batch should be ran twice, as I'm setting numb of rep to 5
-# ddm_batch_1 = {'first_dose': [0, 6 / 24],
-#                'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
-#                'rel_avail4_EC50': [0.01, 0.1, .5, .75, 1, 1.25],
-#                'kon': [1]}
-# ddm_batch_2 = {'first_dose': [12 / 24, 48 / 24],
-#                'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
-#                'rel_avail4_EC50': [0.01, 0.1, .5, .75, 1, 1.25],
-#                'kon': [1]}
-# ddm_batch_3 = {'first_dose': [72 / 24],
-#                'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
-#                'rel_avail4_EC50': [0.01, 0.1, .5, .75, 1, 1.25],
-#                'kon': [1]}
-#
-# # ______________________________________________
-#
-# ddm_batch_4 = {'first_dose': [0, 6 / 24],
-#                'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
-#                'rel_avail4_EC50': [0.01, 0.1, .5, .75, 1, 1.25],
-#                'kon': [1 / 2]}
-# ddm_batch_5 = {'first_dose': [12 / 24, 48 / 24],
-#                'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
-#                'rel_avail4_EC50': [0.01, 0.1, .5, .75, 1, 1.25],
-#                'kon': [1 / 2]}
-# ddm_batch_6 = {'first_dose': [72 / 24],
-#                'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
-#                'rel_avail4_EC50': [0.01, 0.1, .5, .75, 1, 1.25],
-#                'kon': [1 / 2]}
-#
-# # ______________________________________________
-#
-# ddm_batch_7 = {'first_dose': [0, 6 / 24],
-#                'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
-#                'rel_avail4_EC50': [0.01, 0.1, .5, .75, 1, 1.25],
-#                'kon': [1 / 4]}
-# ddm_batch_8 = {'first_dose': [12 / 24, 48 / 24],
-#                'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
-#                'rel_avail4_EC50': [0.01, 0.1, .5, .75, 1, 1.25],
-#                'kon': [1 / 4]}
-# ddm_batch_9 = {'first_dose': [72 / 24],
-#                'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
-#                'rel_avail4_EC50': [0.01, 0.1, .5, .75, 1, 1.25],
-#                'kon': [1 / 4]}
-# # ______________________________________________
-# ddm_batch_10 = {'first_dose': [1],
-#                 'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
-#                 'rel_avail4_EC50': [0.01, 0.1, .5, .75, 1, 1.25],
-#                 'kon': [1 / 4]}
-# ddm_batch_11 = {'first_dose': [1],
-#                 'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
-#                 'rel_avail4_EC50': [0.01, 0.1, .5, .75, 1, 1.25],
-#                 'kon': [1 / 2, 1]}
-#
-# full_laxis_mult_dit = {'prophylactic_treatment': [1],
-#                        'prophylactic_time': [4, 10],
-#                        'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
-#                        'rel_avail4_EC50': [0.01, 0.1, .5, .75, 1, 1.25],
-#                        'kon': [1 / 4, 1 / 2, 1]}
-#
-# laxis_mult_dit_1 = {'prophylactic_treatment': [1],
-#                     'prophylactic_time': [4, 10],
-#                     'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
-#                     'rel_avail4_EC50': [0.01, 0.1, .5, .75, 1, 1.25],
-#                     'kon': [1 / 4]}
-# laxis_mult_dit_2 = {'prophylactic_treatment': [1],
-#                     'prophylactic_time': [4, 10],
-#                     'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
-#                     'rel_avail4_EC50': [0.01, 0.1, .5, .75, 1, 1.25],
-#                     'kon': [1 / 2]}
-# laxis_mult_dit_3 = {'prophylactic_treatment': [1],
-#                     'prophylactic_time': [4, 10],
-#                     'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
-#                     'rel_avail4_EC50': [0.01, 0.1, .5, .75, 1, 1.25],
-#                     'kon': [1]}
-#
-# ddm_new_method_full_batch = {'first_dose': [0, 12 / 24, 24 / 24, 48 / 24, 72 / 24, 5],
-#                              # missing profilaxis. time of 1st dose in days
-#                              'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
-#                              # missing continuous dosing. dose interval in days
-#                              'daily_dose': [10, 2, 1, .5, .1],
-#                              'kon': [1 / 4, 1 / 2, 1]}
-# ddm_new_batch1 = {'first_dose': [0, 12 / 24],  # missing profilaxis. time of 1st dose in days
-#                   'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
-#                   # missing continuous dosing. dose interval in days
-#                   'daily_dose': [10, 2, 1, .5, .1],
-#                   'kon': [1]}
-# ddm_new_batch2 = {'first_dose': [24 / 24, 48 / 24],  # missing profilaxis. time of 1st dose in days
-#                   'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
-#                   # missing continuous dosing. dose interval in days
-#                   'daily_dose': [10, 2, 1, .5, .1],
-#                   'kon': [1]}
-# ddm_new_batch3 = {'first_dose': [72 / 24, 5],  # missing profilaxis. time of 1st dose in days
-#                   'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
-#                   # missing continuous dosing. dose interval in days
-#                   'daily_dose': [10, 2, 1, .5, .1],
-#                   'kon': [1]}
 
-# new_full_dicst = {}
-#
-# set_investigation_dict_1 = {'set_numb': [1, 2, 3, 4, 5, 6, 7, 8],
-#                             'drug_ic50': [10, 2, 1, 0.5, 0.1],
-#                             'daily_dose': [1],
-#                             'first_dose': [2],
-#                             'dose_interval': [1]}
-# set_investigation_dict_2 = {'set_numb': [9, 10],
-#                             'drug_ic50': [10, 2, 1, 0.5, 0.1],
-#                             'daily_dose': [1],
-#                             'first_dose': [2],
-#                             'dose_interval': [1]}
-
-ddm_simple_pk_full_batch = {'first_dose': [0, 12 / 24, 24 / 24, 48 / 24, 72 / 24, 5],
-                            # missing profilaxis. time of 1st dose in days
+ddm_simple_pk_full_batch = {'first_dose': [0, 1, 3, 5, 7],
+                            'prophylactic_time': [1, 3, 5, 7],
                             'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
                             # missing continuous dosing. dose interval in days
-                            'ic50_multiplier': [0.01, 0.1, 1, 10, 100],
-                            'kon': [1 / 4, 1 / 2, 1]}
-ddm_simple_pk_batch2 = {'first_dose': [0, 12 / 24],  # missing profilaxis. time of 1st dose in days
-                        'dose_interval': [6 / 24, 8 / 24, 12 / 24, 1],
+                            'ic50_multiplier': [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 10],
+                            'kon': [1]}
+
+ddm_simple_pk_batch1 = {'first_dose': [7],  # DONE
+                        # 'prophylactic_time': [1, 3, 5, 7],
+                        'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
                         # missing continuous dosing. dose interval in days
-                        'ic50_multiplier': [0.01, 0.1, 1, 10, 100],
-                        'kon': [1]}
-ddm_simple_pk_batch1 = {'first_dose': [24 / 24, 48 / 24],  # missing profilaxis. time of 1st dose in days
-                        'dose_interval': [6 / 24, 8 / 24, 12 / 24, 1],
-                        # missing continuous dosing. dose interval in days
-                        'ic50_multiplier': [0.01, 0.1, 1, 10, 100],
-                        'kon': [1]}
-ddm_simple_pk_batch3 = {'first_dose': [72 / 24, 5],  # missing profilaxis. time of 1st dose in days
-                        'dose_interval': [6 / 24, 8 / 24, 12 / 24, 1],
-                        # missing continuous dosing. dose interval in days
-                        'ic50_multiplier': [0.01, 0.1, 1, 10, 100],
+                        'ic50_multiplier': [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 10],
                         'kon': [1]}
 
-ddm_simple_pk_batch4 = {'first_dose': [0, 12 / 24, 24 / 24, 48 / 24, 72 / 24, 5],
-                        'dose_interval': [4 / 24],
+ddm_simple_pk_batch2 = {'first_dose': [0],
+                        # 'prophylactic_time': [1, 3, 5, 7],
+                        'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
                         # missing continuous dosing. dose interval in days
-                        'ic50_multiplier': [0.01, 0.1, 1, 10, 100],
+                        'ic50_multiplier': [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 10],
                         'kon': [1]}
-proph_batch1 = {'prophylactic_time': [3],
+
+ddm_simple_pk_batch3 = {'first_dose': [3],
+                        # 'prophylactic_time': [1, 3, 5, 7],
+                        'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
+                        # missing continuous dosing. dose interval in days
+                        'ic50_multiplier': [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 10],
+                        'kon': [1]}
+
+
+ddm_simple_pk_batch4 = {'first_dose': [1],
+                        # 'prophylactic_time': [1, 3, 5, 7],
+                        'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
+                        # missing continuous dosing. dose interval in days
+                        'ic50_multiplier': [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 10],
+                        'kon': [1]}
+
+
+ddm_simple_pk_batch5 = {'first_dose': [5],
+                        # 'prophylactic_time': [1, 3, 5, 7],
+                        'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
+                        # missing continuous dosing. dose interval in days
+                        'ic50_multiplier': [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 10],
+                        'kon': [1]}
+
+proph_batch1 = {'prophylactic_time': [3],  # DONE
                 'dose_interval': [6 / 24, 8 / 24, 12 / 24, 1],
                 # missing continuous dosing. dose interval in days
-                'ic50_multiplier': [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 10, 100],
+                'ic50_multiplier': [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 10],
                 'kon': [1]}
+
+proph_batch2 = {'prophylactic_time': [1],
+                'dose_interval': [6 / 24, 8 / 24, 12 / 24, 1],
+                # missing continuous dosing. dose interval in days
+                'ic50_multiplier': [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 10],
+                'kon': [1]}
+
+proph_batch3 = {'prophylactic_time': [5],
+                'dose_interval': [6 / 24, 8 / 24, 12 / 24, 1],
+                # missing continuous dosing. dose interval in days
+                'ic50_multiplier': [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 10],
+                'kon': [1]}
+
+proph_batch4 = {'prophylactic_time': [7],
+                'dose_interval': [6 / 24, 8 / 24, 12 / 24, 1],
+                # missing continuous dosing. dose interval in days
+                'ic50_multiplier': [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 10],
+                'kon': [1]}
+
 
 nothing_batch = {'first_dose': [0],
-                'dose_interval': [1],
-                'ic50_multiplier': [1],
-                'kon': [1]}
-
+                 'dose_interval': [1],
+                 'ic50_multiplier': [1],
+                 'kon': [1]}
 
 mult_dict = nothing_batch
 num_rep = 400
