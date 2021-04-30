@@ -86,7 +86,7 @@ out_freq = 250
 #
 sweep_output_folder = r'/N/slate/jferrari/ddm/simple_pk/batch_1'
 sweep_output_folder = r'/N/slate/jferrari/ddm/simple_pk/p_batch_1'
-sweep_output_folder = r'/N/slate/jferrari/ddm/simple_pk/nothing'
+sweep_output_folder = r'/N/slate/jferrari/ddm/simple_pk/nothing_10'
 # sweep_output_folder = r'D:\batch_run_debug'
 
 

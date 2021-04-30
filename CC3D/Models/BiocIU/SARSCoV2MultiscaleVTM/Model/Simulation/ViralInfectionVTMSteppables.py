@@ -67,17 +67,32 @@ class CellsInitializerSteppable(ViralInfectionVTMSteppableBasePy):
                                                   packing_rate=packing_rate)
 
         # Infect a cell
-        cell = self.cell_field[self.dim.x // 2, self.dim.y // 2, 0]
-        cell.dict['Unpacking'] = 1.0
-        cell.type = self.INFECTED
+        # cell = self.cell_field[self.dim.x // 2, self.dim.y // 2, 0]
+        # cell.dict['Unpacking'] = 1.0
+        # cell.type = self.INFECTED
+        #
+        # self.load_viral_replication_model(cell=cell, vr_step_size=vr_step_size,
+        #                                   unpacking_rate=unpacking_rate,
+        #                                   replicating_rate=replicating_rate,
+        #                                   r_half=r_half,
+        #                                   translating_rate=translating_rate,
+        #                                   packing_rate=packing_rate,
+        #                                   secretion_rate=secretion_rate)
 
-        self.load_viral_replication_model(cell=cell, vr_step_size=vr_step_size,
-                                          unpacking_rate=unpacking_rate,
-                                          replicating_rate=replicating_rate,
-                                          r_half=r_half,
-                                          translating_rate=translating_rate,
-                                          packing_rate=packing_rate,
-                                          secretion_rate=secretion_rate)
+        #  infect 10 cells
+
+        cells_to_infect = np.random.choice(list(self.cell_list_by_type(self.UNINFECTED)), 10)
+        for cell in cells_to_infect:
+            cell.dict['Unpacking'] = 1.0
+            cell.type = self.INFECTED
+
+            self.load_viral_replication_model(cell=cell, vr_step_size=vr_step_size,
+                                              unpacking_rate=unpacking_rate,
+                                              replicating_rate=replicating_rate,
+                                              r_half=r_half,
+                                              translating_rate=translating_rate,
+                                              packing_rate=packing_rate,
+                                              secretion_rate=secretion_rate)
 
         cell.dict['ck_production'] = max_ck_secrete_infect
 
