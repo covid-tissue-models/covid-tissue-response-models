@@ -74,8 +74,8 @@ nothing_batch = {'first_dose': [0],
                  'ic50_multiplier': [1],
                  'kon': [1]}
 
-mult_dict = nothing_batch
-num_rep = 400
+mult_dict = proph_batch1
+num_rep = 10
 # Model output frequency
 model_out_freq = 1
 # Output frequency of simulation data per simulation replica
@@ -85,8 +85,8 @@ out_freq = 250
 # sweep_output_folder = r'/N/slate/jferrari/new_pk/corrected_ic50_calc/ddm_batch_1'
 #
 sweep_output_folder = r'/N/slate/jferrari/ddm/simple_pk/batch_1'
-sweep_output_folder = r'/N/slate/jferrari/ddm/simple_pk/p_batch_1'
-sweep_output_folder = r'/N/slate/jferrari/ddm/simple_pk/nothing_10'
+# sweep_output_folder = r'/N/slate/jferrari/ddm/simple_pk/p_batch_1'
+# sweep_output_folder = r'/N/slate/jferrari/ddm/simple_pk/nothing_10'
 # sweep_output_folder = r'D:\batch_run_debug'
 
 
