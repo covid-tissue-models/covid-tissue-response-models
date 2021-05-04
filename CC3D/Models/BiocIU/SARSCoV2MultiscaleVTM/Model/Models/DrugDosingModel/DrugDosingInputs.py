@@ -65,7 +65,7 @@ __param_desc__['treatment_ends'] = 'bool flag for setting a end time for treatme
 treatment_ends = False
 
 __param_desc__['sanity_run'] = 'bool for shutting off drug treatment (True -> no treatment)'
-sanity_run = True
+sanity_run = False
 
 __param_desc__['double_sbml_step'] = 'bool for doing 2 sbmls calls'
 double_sbml_step = False
