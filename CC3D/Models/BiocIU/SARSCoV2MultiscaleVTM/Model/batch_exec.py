@@ -74,8 +74,8 @@ nothing_batch = {'first_dose': [0],
                  'ic50_multiplier': [1],
                  'kon': [1]}
 
-mult_dict = proph_batch1
-num_rep = 10
+mult_dict = nothing_batch
+num_rep = 400
 # Model output frequency
 model_out_freq = 1
 # Output frequency of simulation data per simulation replica
@@ -113,7 +113,7 @@ from BatchRun.BatchRunPrototyping import carbonate_config_template
 
 carbonate_config_template = carbonate_config_template()
 carbonate_config_template['jn'] = 'ddm_new_pk_set_inv1'
-carbonate_config_template['wh'] = 10
+carbonate_config_template['wh'] = 8
 carbonate_config_template['wm'] = 0
 carbonate_config_template['ppn'] = 8
 carbonate_config_template['mem'] = 10

@@ -81,7 +81,7 @@ class CellsInitializerSteppable(ViralInfectionVTMSteppableBasePy):
 
         #  infect 10 cells
 
-        cells_to_infect = np.random.choice(list(self.cell_list_by_type(self.UNINFECTED)), 10)
+        cells_to_infect = np.random.choice(list(self.cell_list_by_type(self.UNINFECTED)), 2)
         for cell in cells_to_infect:
             cell.dict['Unpacking'] = 1.0
             cell.type = self.INFECTED
