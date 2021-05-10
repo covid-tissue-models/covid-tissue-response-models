@@ -7,14 +7,14 @@ ddm_simple_pk_full_batch = {'first_dose': [0, 1, 3, 5, 7],
                             'ic50_multiplier': [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 10],
                             'kon': [1]}
 
-ddm_simple_pk_batch1 = {'first_dose': [7],  # DONE
+ddm_simple_pk_batch1 = {'first_dose': [0],
                         # 'prophylactic_time': [1, 3, 5, 7],
                         'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
                         # missing continuous dosing. dose interval in days
                         'ic50_multiplier': [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 10],
                         'kon': [1]}
 
-ddm_simple_pk_batch2 = {'first_dose': [0],
+ddm_simple_pk_batch2 = {'first_dose': [7],
                         # 'prophylactic_time': [1, 3, 5, 7],
                         'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
                         # missing continuous dosing. dose interval in days
@@ -74,8 +74,8 @@ nothing_batch = {'first_dose': [0],
                  'ic50_multiplier': [1],
                  'kon': [1]}
 
-mult_dict = nothing_batch
-num_rep = 400
+mult_dict = ddm_simple_pk_batch3
+num_rep = 10
 # Model output frequency
 model_out_freq = 1
 # Output frequency of simulation data per simulation replica
@@ -84,9 +84,9 @@ out_freq = 250
 
 # sweep_output_folder = r'/N/slate/jferrari/new_pk/corrected_ic50_calc/ddm_batch_1'
 #
-sweep_output_folder = r'/N/slate/jferrari/ddm/simple_pk/batch_1'
+sweep_output_folder = r'/N/slate/jferrari/ddm/simple_pk/batch_3'
 # sweep_output_folder = r'/N/slate/jferrari/ddm/simple_pk/p_batch_1'
-# sweep_output_folder = r'/N/slate/jferrari/ddm/simple_pk/nothing_10'
+# sweep_output_folder = r'/N/slate/jferrari/ddm/simple_pk/nothing_5'
 # sweep_output_folder = r'D:\batch_run_debug'
 
 
