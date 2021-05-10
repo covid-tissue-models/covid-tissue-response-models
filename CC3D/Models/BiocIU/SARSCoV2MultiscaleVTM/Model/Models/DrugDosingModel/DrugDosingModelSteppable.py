@@ -217,6 +217,8 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
         self.control_rr = None
         self.active_component = None
 
+        self.alignment_not_done = True
+
     @staticmethod
     def get_roadrunner_for_single_antimony(model):
         """
@@ -255,8 +257,14 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
         # print(ic50_multiplier, active_met_ic50)
 
         self.hill_k = active_met_ic50 * ic50_multiplier
-        self.drug_model_string, self.ddm_vars = self.set_drug_model_string(dose, 24 * first_dose, 24 * dose_interval,
-                                                                           dose_end, first_dose_doubler)
+        if use_alignment and not prophylactic_treatment:
+
+            self.drug_model_string, self.ddm_vars = self.set_drug_model_string(dose, 99, 24 * dose_interval,
+                                                                               dose_end, first_dose_doubler)
+        else:
+            self.drug_model_string, self.ddm_vars = self.set_drug_model_string(dose, 24 * first_dose,
+                                                                               24 * dose_interval,
+                                                                               dose_end, first_dose_doubler)
         self.active_component = '[GS443902]'
         self.add_free_floating_antimony(model_string=self.drug_model_string, step_size=hour_2_mcs,
                                         model_name='drug_dosing_control')
@@ -299,6 +307,19 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
 
     def step(self, mcs):
 
+        if not prophylactic_treatment and use_alignment and self.alignment_not_done:
+
+            if len(self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING)) >= alignt_at_pop:
+                self.alignment_not_done = False
+                # drug_model_string, _ = self.set_drug_model_string(dose, 24 * first_dose + days_2_mcs * mcs,
+                #                                                   24 * dose_interval,
+                #                                                   dose_end, first_dose_doubler)
+                start_time = 24 * first_dose + days_2_mcs * mcs
+                for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING, self.UNINFECTED):
+                    vr_model = getattr(cell.sbml, 'drug_metabolization')
+                    vr_model['first_dose'] = start_time
+
+            pass
         # CELLULARIZATION NOTE!!!
         # For the simple pk each cell has a copy of the model running in themselves
         self.ddm_rr.timestep()

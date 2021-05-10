@@ -65,7 +65,7 @@ __param_desc__['treatment_ends'] = 'bool flag for setting a end time for treatme
 treatment_ends = False
 
 __param_desc__['sanity_run'] = 'bool for shutting off drug treatment (True -> no treatment)'
-sanity_run = True
+sanity_run = False
 
 __param_desc__['double_sbml_step'] = 'bool for doing 2 sbmls calls'
 double_sbml_step = False
@@ -77,6 +77,13 @@ __param_desc__['first_dose_doubler'] = 'multiplier to double loading dose'
 first_dose_doubler = 1
 if double_loading_dose:
     first_dose_doubler = 2
+
+
+__param_desc__['use_alignment'] = 'Bool to start counting time to treatment from N infected cells'
+use_alignment = True
+
+__param_desc__['alignt_at_pop'] = 'N infected cells for alignment'
+alignt_at_pop = 10
 
 # initial drug concentrations
 __param_desc__['Drug_pls'] = 'Concentration of Drug already in plasma'
