@@ -84,8 +84,8 @@ def set_simple_pk_full(infusion_amount, time_of_1st_dose, dose_interval, dose_en
           checkCmax: at 0 after GS443902 > GS443902_Cmax: GS443902_Cmax = GS443902 + 1e-9;
           checkC24: at 0 after time+prophylaxis_time == 24: GS443902_C24 = GS443902;
           
-          E1: at (time+prophylaxis_time - first_dose > 0): k_in = 0.5*double_first_dose, curr_infu_start = time ; // starts the first infusion
-          E2: at ( (time+prophylaxis_time-first_dose > dose_interval) && (time < dose_end) && sin((((time-first_dose)/dose_interval))*2*pi)>0): k_in = 0.5, curr_infu_start = time; // starts the subsequent infusions
+          E1: at (time+prophylaxis_time - first_dose > 0): k_in = base_kin*double_first_dose, curr_infu_start = time ; // starts the first infusion
+          E2: at ( (time+prophylaxis_time-first_dose > dose_interval) && (time < dose_end) && sin((((time-first_dose)/dose_interval))*2*pi)>0): k_in = base_kin, curr_infu_start = time; // starts the subsequent infusions
           E3: at (time+prophylaxis_time - (one_hour + curr_infu_start) > 0): k_in = 0 ; // turns infusion off
         
           // Species initializations:
@@ -118,6 +118,7 @@ def set_simple_pk_full(infusion_amount, time_of_1st_dose, dose_interval, dose_en
           GS443902_C24 = 0;
           GS443902_C24 has unit_4;
           k_in = 0;
+          base_kin = 0.5;
           k_in has unit_7;
           k_out = ln(2)/Observed_t1_2;
           k_out has unit_7;
@@ -269,11 +270,40 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
         self.add_free_floating_antimony(model_string=self.drug_model_string, step_size=hour_2_mcs,
                                         model_name='drug_dosing_control')
         self.ddm_rr = self.get_roadrunner_for_single_antimony('drug_dosing_control')
-        for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING, self.UNINFECTED):
+        self.in_rates = []
+        self.out_rates = []
+        for i, cell in enumerate(self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING, self.UNINFECTED)):
             self.add_antimony_to_cell(model_string=self.drug_model_string,
                                       model_name='drug_metabolization',
                                       cell=cell, step_size=hour_2_mcs)
-
+            if intercell_var and ('rmd_in_rate' in params_to_var or 'rmd_out_rate' in params_to_var):
+                rms_model = getattr(cell.sbml, 'drug_metabolization')
+                if 'rmd_in_rate' in params_to_var:
+                    if not i % 2:
+                        var = np.random.normal(0, .25)
+                        if var < -1:
+                            var = -.99
+                        if var > 1:
+                            var = .99
+                        rms_model['base_kin'] = rms_model['base_kin'] * (1 + var)
+                        self.in_rates.append(rms_model['base_kin'])
+                    else:
+                        rms_model['base_kin'] = rms_model['base_kin'] * (1 - var)
+                        self.in_rates.append(rms_model['base_kin'])
+                if 'rmd_out_rate' in params_to_var:
+                    if not i % 2:
+                        var = np.random.normal(0, .25)
+                        if var < -1:
+                            var = -.99
+                        if var > 1:
+                            var = .99
+                        rms_model['k_out'] = rms_model['k_out'] * (1 + var)
+                        self.out_rates.append(rms_model['k_out'])
+                    else:
+                        rms_model['k_out'] = rms_model['k_out'] * (1 - var)
+                        self.out_rates.append(rms_model['k_out'])
+        print(self.in_rates)
+        print(self.out_rates)
         if prophylactic_treatment:
             # to be able to write the data from prophylaxis I put the prophylactic code in the
             # data steppable. May not be elegant but it works
@@ -468,9 +498,11 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
         if self.write_ddm_data:
             self.data_files = {'ddm_data': 'ddm_data.dat', 'ddm_rmax_data': 'ddm_rmax_data.dat',
                                'ddm_tot_RNA_data': 'ddm_tot_RNA_data.dat', 'ddm_mean_RNA_data': 'ddm_mean_RNA_data.dat',
-                               'ddm_total_viral_production_data': 'ddm_total_viral_production_data.dat'}
+                               'ddm_total_viral_production_data': 'ddm_total_viral_production_data.dat',
+                               'intercell_var_in_rate': 'in_rates.dat', 'intercell_var_out_rate': 'out_rates.dat'}
             self.ddm_data = {'ddm_data': {}, 'ddm_rmax_data': {}, 'ddm_tot_RNA_data': {}, 'ddm_mean_RNA_data': {},
-                             'ddm_total_viral_production_data': {}}
+                             'ddm_total_viral_production_data': {}, 'intercell_var_in_rate': {},
+                             'intercell_var_out_rate': {}}
 
     def init_plots(self):
         self.ddm_data_win = self.add_new_plot_window(title='Drug dosing model',
@@ -690,6 +722,10 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
             time = mcs - self.shared_steppable_vars['pre_sim_time']
         else:
             time = mcs
+
+        if not time == 0:
+            self.ddm_data['intercell_var_in_rate'][mcs] = self.mvars.in_rates
+            self.ddm_data['intercell_var_out_rate'][mcs] = self.mvars.out_rates
 
         if time < 0:
             # self.ddm_data['ddm_data'][time] = [self.sbml.drug_dosing_control[x] for x in self.mvars.ddm_vars]
