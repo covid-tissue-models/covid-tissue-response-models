@@ -53,7 +53,7 @@ write_ddm_data_freq = 1  # Write drug dosing model data to simulation directory 
 # Treatment options
 
 __param_desc__['intercell_var'] = 'bool for doing inter cell variability of variables'
-intercell_var = True
+intercell_var = False
 
 __param_desc__['params_to_var'] = 'which parameters to do the intercell var'
 params_to_var = ['rmd_in_rate', 'rmd_out_rate']  # 'protein_rate', 'ace2'
@@ -130,7 +130,7 @@ __param_desc__['dose_interval'] = 'time interval between doses in days'
 dose_interval = 1
 
 __param_desc__['initial_dose'] = 'initial dose is double the standard [mg]. normal dose is halved in the sbml string'
-initial_dose = daily_dose / (24. / dose_interval)  # daily_dose/(N doses/day)
+initial_dose = daily_dose  # / (24. / dose_interval)  # daily_dose/(N doses/day)
 
 __param_desc__['dose'] = 'dose of subsequent treatments [mg]'
 dose = initial_dose

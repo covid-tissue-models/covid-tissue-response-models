@@ -84,8 +84,9 @@ def set_simple_pk_full(infusion_amount, time_of_1st_dose, dose_interval, dose_en
           checkCmax: at 0 after GS443902 > GS443902_Cmax: GS443902_Cmax = GS443902 + 1e-9;
           checkC24: at 0 after time+prophylaxis_time == 24: GS443902_C24 = GS443902;
           
-          E1: at (time+prophylaxis_time - first_dose > 0): k_in = base_kin*double_first_dose, curr_infu_start = time ; // starts the first infusion
-          E2: at ( (time+prophylaxis_time-first_dose > dose_interval) && (time < dose_end) && sin((((time-first_dose)/dose_interval))*2*pi)>0): k_in = base_kin, curr_infu_start = time; // starts the subsequent infusions
+          E1: at (time+prophylaxis_time - first_dose > 0): k_in = base_kin*double_first_dose, curr_infu_start = time, time_of_first_dose = time; // starts the first infusion
+          E21: at ((time+prophylaxis_time-first_dose > dose_interval) && (time < time_of_first_dose + 24) && sin((((time-first_dose)/dose_interval))*2*pi)>0):  k_in = base_kin*double_first_dose, curr_infu_start = time;
+          E2: at ((time+prophylaxis_time-first_dose > dose_interval)  && (time > time_of_first_dose + 24) && (time < dose_end) && sin((((time-first_dose)/dose_interval))*2*pi)>0): k_in = base_kin, curr_infu_start = time; // starts the subsequent infusions
           E3: at (time+prophylaxis_time - (one_hour + curr_infu_start) > 0): k_in = 0 ; // turns infusion off
         
           // Species initializations:
@@ -108,6 +109,7 @@ def set_simple_pk_full(infusion_amount, time_of_1st_dose, dose_interval, dose_en
           // Variable initializations:
           double_first_dose = {first_dose_doubler};
           curr_infu_start = 0; 
+          time_of_first_dose = 0;
           one_hour = 1;
           Remdes_dose_mol = Remdes_dose_mg/1000/Remdes_MW;
           Remdes_dose_mol has unit_6;
@@ -189,6 +191,8 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
         import Models.DrugDosingModel.DrugDosingInputs as DrugDosingInputs
         BatchRunLib.apply_external_multipliers(__name__, DrugDosingInputs)
 
+        # self.initial_dose = initial_dose / (24. / dose_interval)
+
         self.drug_dosing_model_key = drug_dosing_model_key
 
         self.set_drug_model_string = set_simple_pk_full
@@ -259,11 +263,14 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
 
         self.hill_k = active_met_ic50 * ic50_multiplier
         if use_alignment and not prophylactic_treatment:
-
-            self.drug_model_string, self.ddm_vars = self.set_drug_model_string(dose, 99, 24 * dose_interval,
+            print(dose / (24. / dose_interval))
+            self.drug_model_string, self.ddm_vars = self.set_drug_model_string(dose / (24. / dose_interval), 99,
+                                                                               24 * dose_interval,
                                                                                dose_end, first_dose_doubler)
         else:
-            self.drug_model_string, self.ddm_vars = self.set_drug_model_string(dose, 24 * first_dose,
+            print(dose / (24. / dose_interval))
+            self.drug_model_string, self.ddm_vars = self.set_drug_model_string(dose / (24. / dose_interval),
+                                                                               24 * first_dose,
                                                                                24 * dose_interval,
                                                                                dose_end, first_dose_doubler)
         self.active_component = '[GS443902]'
@@ -302,8 +309,8 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
                     else:
                         rms_model['k_out'] = rms_model['k_out'] * (1 - var)
                         self.out_rates.append(rms_model['k_out'])
-        print(self.in_rates)
-        print(self.out_rates)
+        # print(self.in_rates)
+        # print(self.out_rates)
         if prophylactic_treatment:
             # to be able to write the data from prophylaxis I put the prophylactic code in the
             # data steppable. May not be elegant but it works
@@ -341,10 +348,9 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
 
             if len(self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING)) >= alignt_at_pop:
                 self.alignment_not_done = False
-                # drug_model_string, _ = self.set_drug_model_string(dose, 24 * first_dose + days_2_mcs * mcs,
-                #                                                   24 * dose_interval,
-                #                                                   dose_end, first_dose_doubler)
-                start_time = 24 * first_dose + days_2_mcs * mcs
+
+                start_time = 24 * first_dose + hour_2_mcs * (mcs + 1)
+                print(f'@@@@\n{start_time}\n{24 * first_dose}\n{mcs}')
                 for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING, self.UNINFECTED):
                     vr_model = getattr(cell.sbml, 'drug_metabolization')
                     vr_model['first_dose'] = start_time
