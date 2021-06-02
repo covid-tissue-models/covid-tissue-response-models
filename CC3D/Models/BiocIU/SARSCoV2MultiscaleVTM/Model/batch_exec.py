@@ -120,9 +120,9 @@ from BatchRun.BatchRunPrototyping import carbonate_config_template
 
 carbonate_config_template = carbonate_config_template()
 carbonate_config_template['jn'] = 'ddm_new_pk_set_inv1'
-carbonate_config_template['wh'] = 8
+carbonate_config_template['wh'] = 24
 carbonate_config_template['wm'] = 0
-carbonate_config_template['ppn'] = 8
+carbonate_config_template['ppn'] = 1
 carbonate_config_template['mem'] = 10
 carbonate_config_template['p'] = 'general'
 

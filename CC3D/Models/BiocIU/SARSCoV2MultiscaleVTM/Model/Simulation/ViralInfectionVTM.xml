@@ -10,7 +10,7 @@
 
     <Metadata>
         <!-- Basic properties simulation -->
-        <NumberOfProcessors>8</NumberOfProcessors>
+        <NumberOfProcessors>1</NumberOfProcessors>
         <DebugOutputFrequency>100</DebugOutputFrequency>
     </Metadata>
 
