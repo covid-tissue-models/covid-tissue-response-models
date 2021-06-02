@@ -211,7 +211,7 @@ def job_requirements(_nn, _ppn, vmem=None, hours=None, minutes=None):
     # o = f"#PBS -l nodes={_nn}:ppn={_ppn}"
     o = f"#SBATCH --nodes={_nn}\n"
     o += f"#SBATCH --cpus-per-task={_ppn}\n"
-    o += " #SBATCH --qos=glazier"
+    o += "#SBATCH --qos=glazier"
     if walltime(hours, minutes) is not None:
         # o += f",{walltime(hours, minutes)}"
         o += f"#SBATCH --{walltime(hours, minutes)}\n"
