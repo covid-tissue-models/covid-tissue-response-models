@@ -86,7 +86,7 @@ def set_simple_pk_full(infusion_amount, time_of_1st_dose, dose_interval, dose_en
           
           E1: at (time+prophylaxis_time - first_dose > 0): k_in = base_kin*double_first_dose, curr_infu_start = time, time_of_first_dose = time; // starts the first infusion
           E21: at ((time+prophylaxis_time-first_dose > dose_interval) && (time < time_of_first_dose + 23.99) && sin((((time-first_dose)/dose_interval))*2*pi)>0):  k_in = base_kin*double_first_dose, curr_infu_start = time;
-          E2: at ((time+prophylaxis_time-first_dose > dose_interval)  && (time > time_of_first_dose + 24) && (time < dose_end) && sin((((time-first_dose)/dose_interval))*2*pi)>0): k_in = base_kin, curr_infu_start = time; // starts the subsequent infusions
+          E2: at ((time+prophylaxis_time-first_dose > dose_interval) && (time > time_of_first_dose + 24) && (k_in < .6) && (time < dose_end) && sin((((time-first_dose)/dose_interval))*2*pi)>0): k_in = base_kin, curr_infu_start = time; // starts the subsequent infusions
           E3: at (time+prophylaxis_time - (one_hour + curr_infu_start) > 0): k_in = 0 ; // turns infusion off
         
           // Species initializations:
@@ -109,7 +109,7 @@ def set_simple_pk_full(infusion_amount, time_of_1st_dose, dose_interval, dose_en
           // Variable initializations:
           double_first_dose = {first_dose_doubler};
           curr_infu_start = 0; 
-          time_of_first_dose = 0;
+          time_of_first_dose = 99;
           one_hour = 1;
           Remdes_dose_mol = Remdes_dose_mg/1000/Remdes_MW;
           Remdes_dose_mol has unit_6;
@@ -357,7 +357,18 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
                 for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING, self.UNINFECTED):
                     vr_model = getattr(cell.sbml, 'drug_metabolization')
                     vr_model['first_dose'] = start_time
-
+                # print(vr_model['time_of_first_dose'])
+        # else:
+        #     pass
+        #     for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING, self.UNINFECTED):
+        #         vr_model = getattr(cell.sbml, 'drug_metabolization')
+        #         break
+        #     print(vr_model['time'], vr_model['time_of_first_dose'], vr_model['time_of_first_dose'] + 23.99) # else:
+        #     pass
+        #     for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING, self.UNINFECTED):
+        #         vr_model = getattr(cell.sbml, 'drug_metabolization')
+        #         break
+        #     print(vr_model['time'], vr_model['time_of_first_dose'], vr_model['time_of_first_dose'] + 23.99)
 
         # CELLULARIZATION NOTE!!!
         # For the simple pk each cell has a copy of the model running in themselves
