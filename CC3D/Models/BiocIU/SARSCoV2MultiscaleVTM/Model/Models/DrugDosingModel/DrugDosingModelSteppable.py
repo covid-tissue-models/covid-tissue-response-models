@@ -224,6 +224,8 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
 
         self.alignment_not_done = True
 
+        self.ever_infected = None
+
     @staticmethod
     def get_roadrunner_for_single_antimony(model):
         """
@@ -260,7 +262,8 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
     def start(self):
         # a = active_met_ic50
         # print(ic50_multiplier, active_met_ic50)
-
+        self.ever_infected = len(self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING))
+        # print(self.ever_infected)
         self.hill_k = active_met_ic50 * ic50_multiplier
         if use_alignment and not prophylactic_treatment:
             print(dose / (24. / dose_interval))
@@ -346,7 +349,7 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
 
         if not prophylactic_treatment and use_alignment and self.alignment_not_done:
 
-            if len(self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING)) >= alignt_at_pop:
+            if self.ever_infected >= alignt_at_pop:
                 self.alignment_not_done = False
 
                 start_time = 24 * first_dose + hour_2_mcs * (mcs + 1)
@@ -355,7 +358,7 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
                     vr_model = getattr(cell.sbml, 'drug_metabolization')
                     vr_model['first_dose'] = start_time
 
-            pass
+
         # CELLULARIZATION NOTE!!!
         # For the simple pk each cell has a copy of the model running in themselves
         self.ddm_rr.timestep()
@@ -393,6 +396,8 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
 
         if cell_does_uptake and cell.type == self.UNINFECTED:
             cell.type = self.INFECTED
+            self.ever_infected += 1
+            # print(self.ever_infected)
             cell.dict['ck_production'] = max_ck_secrete_infect
             self.load_viral_replication_model(cell=cell, vr_step_size=vr_step_size,
                                               unpacking_rate=unpacking_rate,
