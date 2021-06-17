@@ -48,7 +48,7 @@ hour_2_mcs = s_to_mcs / 60 / 60
 # active_met_ic50 = active_met_ic50
 
 
-def set_simple_pk_full(infusion_amount, time_of_1st_dose, dose_interval, dose_end, first_dose_doubler,
+def set_simple_pk_full(infusion_amount, time_of_1st_dose, dose_interval, dose_end, first_dose_doubler, observed_t1_2,
                        prophylaxis_time=0):
     # time units are H!!!
     simple_pk_str = f"""
@@ -122,7 +122,7 @@ def set_simple_pk_full(infusion_amount, time_of_1st_dose, dose_interval, dose_en
           k_in has unit_7;
           k_out = ln(2)/Observed_t1_2;
           k_out has unit_7;
-          Observed_t1_2 = 30.4;
+          Observed_t1_2 = {observed_t1_2};
           Observed_t1_2 has unit_9;
           Remdes_MW = 602.585;
           Remdes_MW has unit_1;
@@ -267,13 +267,15 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
             print(dose / (24. / dose_interval))
             self.drug_model_string, self.ddm_vars = self.set_drug_model_string(dose / (24. / dose_interval), 99,
                                                                                24 * dose_interval,
-                                                                               dose_end, first_dose_doubler)
+                                                                               dose_end, first_dose_doubler,
+                                                                               t_half_mult*t_half)
         else:
             print(dose / (24. / dose_interval))
             self.drug_model_string, self.ddm_vars = self.set_drug_model_string(dose / (24. / dose_interval),
                                                                                24 * first_dose,
                                                                                24 * dose_interval,
-                                                                               dose_end, first_dose_doubler)
+                                                                               dose_end, first_dose_doubler,
+                                                                               t_half_mult*t_half)
         self.active_component = '[GS443902]'
         self.add_free_floating_antimony(model_string=self.drug_model_string, step_size=hour_2_mcs,
                                         model_name='drug_dosing_control')

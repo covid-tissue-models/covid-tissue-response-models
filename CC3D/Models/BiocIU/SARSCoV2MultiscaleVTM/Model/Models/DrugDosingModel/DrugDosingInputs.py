@@ -144,6 +144,12 @@ dose_end = 1
 if not treatment_ends:
     dose_end = 1e99
 
+__param_desc__['t_half'] = 'half life of the active component (hours)'
+t_half = 30.4
+
+__param_desc__['t_half_mult'] = 'half life of the active component (hours)'
+t_half_mult = .1
+
 # rate reduction parameters
 
 # parameters
