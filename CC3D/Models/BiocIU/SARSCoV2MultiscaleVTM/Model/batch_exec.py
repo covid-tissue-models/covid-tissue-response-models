@@ -12,7 +12,7 @@ ddm_simple_pk_batch1 = {'first_dose': [0],  #
                         'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
                         # missing continuous dosing. dose interval in days
                         'ic50_multiplier': [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 10],
-                        't_half_mult': [.1],
+                        't_half_mult': [4 / 30.4, 6 / 30.4, 12 / 30.4, 18 / 30.4, 24 / 30.4],
                         'kon': [1]}
 
 ddm_simple_pk_batch2 = {'first_dose': [7],  #
@@ -29,16 +29,14 @@ ddm_simple_pk_batch3 = {'first_dose': [3],  #
                         'ic50_multiplier': [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 10],
                         'kon': [1]}
 
-
-ddm_simple_pk_batch4 = {'first_dose': [1], #
+ddm_simple_pk_batch4 = {'first_dose': [1],  #
                         # 'prophylactic_time': [1, 3, 5, 7],
                         'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
                         # missing continuous dosing. dose interval in days
                         'ic50_multiplier': [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 10],
                         'kon': [1]}
 
-
-ddm_simple_pk_batch5 = {'first_dose': [5], #
+ddm_simple_pk_batch5 = {'first_dose': [5],  #
                         # 'prophylactic_time': [1, 3, 5, 7],
                         'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
                         # missing continuous dosing. dose interval in days
@@ -51,7 +49,7 @@ proph_batch1 = {'prophylactic_time': [3],  #
                 'ic50_multiplier': [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 10],
                 'kon': [1]}
 
-proph_batch2 = {'prophylactic_time': [1], #
+proph_batch2 = {'prophylactic_time': [1],  #
                 'dose_interval': [6 / 24, 8 / 24, 12 / 24, 1],
                 # missing continuous dosing. dose interval in days
                 'ic50_multiplier': [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 10],
@@ -69,13 +67,12 @@ proph_batch4 = {'prophylactic_time': [7],
                 'ic50_multiplier': [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 10],
                 'kon': [1]}
 
-intercell_pk_rate_var = {'first_dose': [0,3,5],
-                        # 'prophylactic_time': [1, 3, 5, 7],
-                        'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
-                        # missing continuous dosing. dose interval in days
-                        'ic50_multiplier': [0.05, 0.1, 0.2, 0.5, 1],
-                        'kon': [1]}
-
+intercell_pk_rate_var = {'first_dose': [0, 3, 5],
+                         # 'prophylactic_time': [1, 3, 5, 7],
+                         'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
+                         # missing continuous dosing. dose interval in days
+                         'ic50_multiplier': [0.05, 0.1, 0.2, 0.5, 1],
+                         'kon': [1]}
 
 nothing_batch = {'first_dose': [0],
                  'dose_interval': [1],
@@ -92,7 +89,7 @@ out_freq = 250
 
 # sweep_output_folder = r'/N/slate/jferrari/new_pk/corrected_ic50_calc/ddm_batch_1'
 #
-sweep_output_folder = r'/N/slate/jferrari/ddm/simple_pk/batch_3'
+sweep_output_folder = r'/N/slate/jferrari/ddm/simple_pk/vary_t12/batch_1'
 # sweep_output_folder = r'/N/slate/jferrari/ddm/simple_pk/p_batch_1'
 # sweep_output_folder = r'/N/slate/jferrari/ddm/simple_pk/nothing_5'
 # sweep_output_folder = r'D:\batch_run_debug'
