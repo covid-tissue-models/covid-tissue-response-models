@@ -84,8 +84,8 @@ def set_simple_pk_full(infusion_amount, time_of_1st_dose, dose_interval, dose_en
           checkCmax: at 0 after GS443902 > GS443902_Cmax: GS443902_Cmax = GS443902 + 1e-9;
           checkC24: at 0 after time+prophylaxis_time == 24: GS443902_C24 = GS443902;
           
-          E1: at (time+prophylaxis_time - first_dose > 0): k_in = (24/dose_interval) * base_kin*double_first_dose, curr_infu_start = time ; // starts the first infusion
-          E2: at ( (time+prophylaxis_time-first_dose > dose_interval) && (time < dose_end) && sin((((time-first_dose)/dose_interval))*2*pi)>0): k_in = base_kin, curr_infu_start = time; // starts the subsequent infusions
+          E1: at (time+prophylaxis_time - first_dose > 0): k_in = base_kin*double_first_dose, curr_infu_start = time ; // starts the first infusion
+          E2: at ((time+prophylaxis_time-first_dose > dose_interval) && (time < dose_end) && sin((((time-first_dose)/dose_interval))*2*pi)>0): k_in = base_kin, curr_infu_start = time; // starts the subsequent infusions
           E3: at (time+prophylaxis_time - (one_hour + curr_infu_start) > 0): k_in = 0 ; // turns infusion off
         
           // Species initializations:
