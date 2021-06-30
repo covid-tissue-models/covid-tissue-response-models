@@ -9,10 +9,26 @@ ddm_simple_pk_full_batch = {'first_dose': [0, 1, 3, 5, 7],
 
 ddm_simple_pk_batch1 = {'first_dose': [0],  #
                         # 'prophylactic_time': [1, 3, 5, 7],
-                        'dose_interval': [6 / 24, 8 / 24, 12 / 24, 1],
+                        'dose_interval': [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6],
                         # missing continuous dosing. dose interval in days
-                        'ic50_multiplier': [0.01, 0.05, 0.1, 0.2, 0.5, 1, 2],
-                        't_half_mult': [4 / 30.4, 6 / 30.4, 12 / 30.4],
+                        'ic50_multiplier': [0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1],
+                        't_half_mult': [1],
+                        'kon': [1]}
+
+ddm_new_var_batch2 = {'first_dose': [1],  #
+                        # 'prophylactic_time': [1, 3, 5, 7],
+                        'dose_interval': [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6],
+                        # missing continuous dosing. dose interval in days
+                        'ic50_multiplier': [0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1],
+                        't_half_mult': [1],
+                        'kon': [1]}
+
+ddm_new_var_batch3 = {'first_dose': [3],  #
+                        # 'prophylactic_time': [1, 3, 5, 7],
+                        'dose_interval': [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6],
+                        # missing continuous dosing. dose interval in days
+                        'ic50_multiplier': [0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1],
+                        't_half_mult': [1],
                         'kon': [1]}
 
 ddm_simple_pk_batch2 = {'first_dose': [7],  #
