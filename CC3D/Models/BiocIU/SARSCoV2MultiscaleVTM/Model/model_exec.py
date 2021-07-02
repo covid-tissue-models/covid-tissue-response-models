@@ -4,7 +4,7 @@ import os
 import sys
 
 from cc3d.CompuCellSetup.CC3DCaller import CC3DCaller
-
+from BatchRun.CallableCoV2VTM import CallableCoV2VTMScheduler
 
 STATUS_FILE = 'running.status'
 
@@ -40,7 +40,7 @@ def parse_args(argsv):
     return ArgParser(argsv)
 
 
-def main(input_dict: dict, status_filename: str = None, generate_status: bool = False):
+def main(input_dict: dict, status_filename: str = None, generate_status: bool = False, n_runs: int = 1):
     if status_filename is not None:
         generate_status = False
 
@@ -49,17 +49,28 @@ def main(input_dict: dict, status_filename: str = None, generate_status: bool = 
         with open(status_filename, "w"):
             pass
 
-    cc3d_caller = CC3DCaller(cc3d_sim_fname=input_dict['simulation_fname'],
-                             output_frequency=input_dict['output_frequency'],
-                             screenshot_output_frequency=input_dict['screenshot_output_frequency'],
-                             output_dir=input_dict['output_dir'],
-                             sim_input=input_dict['sim_input'])
-    ret_val = cc3d_caller.run()
+    # cc3d_caller = CC3DCaller(cc3d_sim_fname=input_dict['simulation_fname'],
+    #                          output_frequency=input_dict['output_frequency'],
+    #                          screenshot_output_frequency=input_dict['screenshot_output_frequency'],
+    #                          output_dir=input_dict['output_dir'],
+    #                          sim_input=input_dict['sim_input'])
+    # ret_val = cc3d_caller.run()
+    path = os.path.join(input_dict['output_dir'], f'set_{input_dict.pop("set_idx")}')
+    cc3d_caller = CallableCoV2VTMScheduler(root_output_folder=path,
+                                           output_frequency=input_dict['output_frequency'],
+                                           screenshot_output_frequency=input_dict['screenshot_output_frequency'],
+                                           num_workers=n_runs,
+                                           num_runs=n_runs,
+                                           sim_input=input_dict['sim_input'],
+                                           dump_dir=None)
+
+    cc3d_caller.run()
 
     if status_filename is not None and os.path.isfile(status_filename):
         os.remove(status_filename)
 
-    return ret_val
+    # return ret_val
+    return 0
 
 
 if __name__ == '__main__':
@@ -68,4 +79,4 @@ if __name__ == '__main__':
     with open(parser.input_file, 'r') as sf:
         _input_dict = json.load(sf)
 
-    main(_input_dict, status_filename=parser.status_file, generate_status=parser.generate_status)
+    main(_input_dict, status_filename=parser.status_file, generate_status=parser.generate_status, n_runs=10)
