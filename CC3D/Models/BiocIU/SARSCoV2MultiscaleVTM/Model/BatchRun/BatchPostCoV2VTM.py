@@ -2,14 +2,17 @@
 import math
 import os
 import sys
+
 sys.path.append(os.environ['PYTHONPATH'])
 
 import shutil
 import csv
+
 try:
     import matplotlib.pyplot as plt
 except ModuleNotFoundError:
     import subprocess
+
     subprocess.check_call([sys.executable, "-m", "pip", "install", "matplotlib"])
     import matplotlib.pyplot as plt
 
@@ -48,7 +51,8 @@ export_data_desc = {'ir_data': ['ImmuneResp'],
                     'ddm_data': ['Drug',
                                  'Active Metabolite'],
                     'ddm_tot_RNA_data': ['Total_viral_RNA_in_cells'],
-                    'ddm_mean_RNA_data': ['Mean_viral_RNA_in_cells']
+                    'ddm_mean_RNA_data': ['Mean_viral_RNA_in_cells'],
+                    'ddm_total_viral_production_data': ['vir_auc']
                     }
 
 x_label_str_transient = "Simulation time (MCS)"
@@ -68,7 +72,10 @@ y_label_str = {'ir_data': {'ImmuneResp': 'Immune response state variable'},
                'death_data': {'Viral': 'Number of virally-induced apoptosis deaths',
                               'OxiField': 'Number of oxidative deaths',
                               'Contact': 'Number of cytotoxic kill deaths',
-                              'Bystander': 'Number of bystander effect deaths'}
+                              'Bystander': 'Number of bystander effect deaths'},
+               'ddm_data': ['Drug',
+                            'Active Metabolite'],
+               'ddm_total_viral_production_data': {'vir_auc': 'AUC of diffusive virus'}
                }
 
 fig_save_names = {'ir_data': {'ImmuneResp': 'metric_immune_response_svar'},
@@ -86,9 +93,9 @@ fig_save_names = {'ir_data': {'ImmuneResp': 'metric_immune_response_svar'},
                   'death_data': {'Viral': 'metric_death_viral',
                                  'OxiField': 'metric_death_oxi',
                                  'Contact': 'metric_death_contact',
-                                 'Bystander': 'metric_death_bystander'}
+                                 'Bystander': 'metric_death_bystander'},
+                  'ddm_total_viral_production_data': {'vir_auc': 'metric_vir_AUC'}
                   }
-
 
 fig_suffix_trials = '_trials'
 fig_suffix_stat = '_stat'
@@ -280,7 +287,6 @@ def generate_transient_plot_stat(batch_data_summary, data_desc, var_name, plot_s
 
 
 def generate_2var_plot_trials(batch_data_summary, var_name_hor, var_name_ver):
-
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.grid()
@@ -316,7 +322,6 @@ def generate_2var_plot_trials(batch_data_summary, var_name_hor, var_name_ver):
 
 
 def generate_2var_plot_stat(batch_data_summary, var_name_hor, var_name_ver, plot_stdev=True):
-
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.grid()
@@ -365,6 +370,7 @@ class CoV2VTMSimRunPost:
     """
     Renders simulation metrics data generated from executing a CallableCoV2VTM simulation batch
     """
+
     def __init__(self, cov2_vtm_sim_run, step_list=None):
         self.cov2_vtm_sim_run = cov2_vtm_sim_run
 
@@ -512,6 +518,7 @@ class CC3DUIDummy(QObject):
     """
     Some trickery to fake the launching of Player
     """
+
     def __init__(self, field_dim: Dim3D):
         super().__init__()
         self.fieldExtractor = PlayerPython.FieldExtractorCML()
@@ -572,6 +579,7 @@ class GenericDrawerFree(GenericDrawer):
     """
     Removes dependency on persistent globals
     """
+
     def __init__(self, parent=None, originating_widget=None):
         super().__init__(parent, originating_widget)
 
@@ -598,6 +606,7 @@ class GenericDrawerFree(GenericDrawer):
 def gd_manipulator_log_scale():
     def gd_manipulator(gd):
         gd.draw_model_2D.clut.SetScaleToLog10()
+
     return gd_manipulator
 
 
@@ -627,6 +636,7 @@ class CallableCC3DRenderer:
     """
     Performs CC3D rendering of data generated from executing a CallableCoV2VTM simulation batch without launching Player
     """
+
     def __init__(self, cov2_vtm_sim_run):
         self.cov2_vtm_sim_run = cov2_vtm_sim_run
 
@@ -980,6 +990,7 @@ class CallableCC3DDataRenderer(CallableCC3DRenderer):
     Performs CC3D rendering of data generated from executing a CallableCoV2VTM simulation batch without launching Player
     Like CallableCC3DRenderer, but works on individual directories of data instead of a CallableCoV2VTM instance
     """
+
     def __init__(self, data_dirs, out_dirs, set_labs=None, run_labs=None, num_workers=1):
         super().__init__(None)
 
