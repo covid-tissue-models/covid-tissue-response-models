@@ -96,7 +96,7 @@ nothing_batch = {'first_dose': [0],
                  'kon': [1]}
 
 mult_dict = ddm_simple_pk_batch1
-num_rep = 1
+num_rep = 5
 # Model output frequency
 model_out_freq = 1
 # Output frequency of simulation data per simulation replica
@@ -136,7 +136,7 @@ carbonate_config_template = carbonate_config_template()
 carbonate_config_template['jn'] = 'ddm_new_pk_set_inv1'
 carbonate_config_template['wh'] = 24
 carbonate_config_template['wm'] = 0
-carbonate_config_template['ppn'] = 10
+carbonate_config_template['ppn'] = 1
 carbonate_config_template['mem'] = 10
 carbonate_config_template['p'] = 'general'
 
@@ -185,9 +185,8 @@ def sim_input_generator(_set_idx):
             sweep_var_o = sweep_vars[k - 1]
             recur_vals[sweep_var] = int((recur_vals[sweep_var_o] - sweep_idx[sweep_var_o]) / len_mults[sweep_var_o])
             sweep_idx[sweep_var] = recur_vals[sweep_var] % len_mults[sweep_var]
-    r_dict = {sweep_vars[k]: mult_dict[sweep_vars[k]][sweep_idx[sweep_vars[k]]] for k in range(len(sweep_vars))}
-    r_dict["set_idx"] = _set_idx
-    return r_dict
+
+    return {sweep_vars[k]: mult_dict[sweep_vars[k]][sweep_idx[sweep_vars[k]]] for k in range(len(sweep_vars))}
 
 
 def main():
