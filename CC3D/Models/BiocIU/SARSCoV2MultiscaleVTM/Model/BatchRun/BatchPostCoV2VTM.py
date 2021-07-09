@@ -49,7 +49,7 @@ export_data_desc = {'ir_data': ['ImmuneResp'],
                                    'Bystander'],
                     'ddm_rmax_data': ['r_max'],
                     'ddm_data': ['Drug',
-                                 'Active Metabolite'],
+                                 'ActiveMetabolite'],
                     'ddm_tot_RNA_data': ['Total_viral_RNA_in_cells'],
                     'ddm_mean_RNA_data': ['Mean_viral_RNA_in_cells'],
                     'ddm_total_viral_production_data': ['vir_auc']
@@ -73,9 +73,10 @@ y_label_str = {'ir_data': {'ImmuneResp': 'Immune response state variable'},
                               'OxiField': 'Number of oxidative deaths',
                               'Contact': 'Number of cytotoxic kill deaths',
                               'Bystander': 'Number of bystander effect deaths'},
+               'ddm_rmax_data': {'r_max': r'$r_{max}$ value'},
                'ddm_data': ['Drug',
                             'Active Metabolite'],
-               'ddm_total_viral_production_data': {'vir_auc': 'AUC of diffusive virus'}
+               'ddm_total_viral_production_data': {'vir_auc': 'Total production of diffusive virus'}
                }
 
 fig_save_names = {'ir_data': {'ImmuneResp': 'metric_immune_response_svar'},
@@ -94,7 +95,12 @@ fig_save_names = {'ir_data': {'ImmuneResp': 'metric_immune_response_svar'},
                                  'OxiField': 'metric_death_oxi',
                                  'Contact': 'metric_death_contact',
                                  'Bystander': 'metric_death_bystander'},
-                  'ddm_total_viral_production_data': {'vir_auc': 'metric_vir_AUC'}
+                  'ddm_rmax_data': {'r_max': 'metric_rmax'},
+                  'ddm_data': {'Drug': 'metric_drug',
+                               'ActiveMetabolite': 'metric_metabolite'},
+                  'ddm_total_viral_production_data': {'vir_auc': 'metric_vir_AUC'},
+                  'ddm_tot_RNA_data': {'Total_viral_RNA_in_cells': 'metric_tot_vir_RNA'},
+                  'ddm_mean_RNA_data': {'Mean_viral_RNA_in_cells': 'metric_mean_vir_RNA'}
                   }
 
 fig_suffix_trials = '_trials'
@@ -429,6 +435,7 @@ class CoV2VTMSimRunPost:
             fig_suffix = self.__fig_suffix
 
         fig_save_name_rel = fig_save_names[data_desc][param_name] + fig_suffix_trials + fig_suffix
+        print(fig_save_name_rel)
         return os.path.join(fig_dir, fig_save_name_rel)
 
     def generate_transient_plot_stat_filename(self, data_desc, param_name, fig_suffix=None, fig_dir=None):
