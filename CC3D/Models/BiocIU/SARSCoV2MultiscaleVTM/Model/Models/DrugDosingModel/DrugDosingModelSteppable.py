@@ -638,6 +638,8 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
     def get_mean_std_rmax(self):
         rmax_list = [cell.dict['rmax'] for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING,
                                                                           self.UNINFECTED)]
+        if not len(rmax_list):
+            return 0, 0
         return np.mean(rmax_list), np.std(rmax_list)
 
     def get_mean_std_prodrug(self):
@@ -742,11 +744,13 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
 
         if time >= 0:
             # self.ddm_data['ddm_data'][time] = self.get_ddm_data_list()
-            if self.tracked_cell is not None:
-                self.ddm_data['ddm_data'][time] = [self.avg_prodrug,
-                                                   self.avg_active]
-            else:
-                self.ddm_data['ddm_data'][time] = [np.NaN, np.NaN]
+            self.ddm_data['ddm_data'][time] = [self.avg_prodrug,
+                                               self.avg_active]
+            # if self.tracked_cell is not None:
+            #     self.ddm_data['ddm_data'][time] = [self.avg_prodrug,
+            #                                        self.avg_active]
+            # else:
+            #     self.ddm_data['ddm_data'][time] = [np.NaN, np.NaN]
 
             mean, _ = self.get_mean_std_rmax()
             # self.ddm_data['ddm_rmax_data'][time] = [self.shared_steppable_vars['rmax']]
