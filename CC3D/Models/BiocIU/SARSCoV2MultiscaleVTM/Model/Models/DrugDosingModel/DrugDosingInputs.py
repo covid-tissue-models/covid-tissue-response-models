@@ -53,7 +53,7 @@ write_ddm_data_freq = 1  # Write drug dosing model data to simulation directory 
 # Treatment options
 
 __param_desc__['intercell_var'] = 'bool for doing inter cell variability of variables'
-intercell_var = False
+intercell_var = True
 
 __param_desc__['params_to_var'] = 'which parameters to do the intercell var'
 params_to_var = ['rmd_in_rate', 'rmd_out_rate']  # 'protein_rate', 'ace2'
