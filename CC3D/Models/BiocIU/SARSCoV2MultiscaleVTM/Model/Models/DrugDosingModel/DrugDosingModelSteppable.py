@@ -425,67 +425,6 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
         pass
 
 
-class ProdrugDiffusionController(ViralInfectionVTMSteppableBasePy):
-    """
-    Responsible for controlling prodrug diffusion
-    """
-
-    def __init__(self, frequency=1):
-        if not diffusing_drug:
-            frequency = 9999
-        ViralInfectionVTMSteppableBasePy.__init__(self, frequency)
-
-        self.drug_dosing_model_key = drug_dosing_model_key
-
-        self.step = None
-        # self.ddm_rr = None
-
-    def start(self):
-        if diffusing_drug:
-            self.step = self.diff_step
-            self.get_xml_element('prodr_dc').cdata = prodrug_diff_coef_au
-            # self.ddm_rr = self.shared_steppable_vars[self.drug_dosing_model_key].ddm_rr
-        else:
-            self.step = self.empty_step
-
-    def empty_step(self, mcs):
-        pass
-
-    def diff_step(self, mcs):
-
-        # 1) compare Dlung in sbml to total amount in simulation (calculate the difference)
-        # 1 note) the difference I want is sbml(dlung) - total_rmds_in_sim. that way the sign of the difference is the
-        # sign of the flux
-        # 2) set cc3d diffusion flux to difference (times rates and whatnot)
-
-        self.get_xml_element('lower_flux').Value = 0.0  # just to be safe
-
-        sim_rmds = self.get_total_prodrug()
-
-        # let me do step 0 first
-
-        dlung = self.sbml.drug_dosing_model['Dlung']
-
-        flux = (dlung - sim_rmds) / (self.dim.x * self.dim.y)  # all pixels get / loose the same share of dlung
-
-        print(sim_rmds, dlung, flux)
-        if flux > 0:
-            self.get_xml_element('lower_flux').Value = flux
-        else:
-            if abs(flux) > sim_rmds / (self.dim.x * self.dim.y):
-                flux = - sim_rmds / (self.dim.x * self.dim.y)
-                self.get_xml_element('lower_flux').Value = flux
-
-    def get_total_prodrug(self):
-        try:
-            rmds_tot = self.get_field_secretor("prodrug").totalFieldIntegral()
-        except AttributeError:  # Pre-v4.2.1 CC3D
-            rmds_tot = 0
-            for x, y, z in self.every_pixel():
-                rmds_tot += self.field.prodrug[x, y, z]
-        return rmds_tot
-
-
 class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
     """
     Responsible for plots, extra fields and data handling
