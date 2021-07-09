@@ -268,14 +268,14 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
             self.drug_model_string, self.ddm_vars = self.set_drug_model_string(dose / (24. / dose_interval), 99,
                                                                                24 * dose_interval,
                                                                                dose_end, first_dose_doubler,
-                                                                               t_half_mult*t_half)
+                                                                               t_half_mult * t_half)
         else:
             print(dose / (24. / dose_interval))
             self.drug_model_string, self.ddm_vars = self.set_drug_model_string(dose / (24. / dose_interval),
                                                                                24 * first_dose,
                                                                                24 * dose_interval,
                                                                                dose_end, first_dose_doubler,
-                                                                               t_half_mult*t_half)
+                                                                               t_half_mult * t_half)
         self.active_component = '[GS443902]'
         self.add_free_floating_antimony(model_string=self.drug_model_string, step_size=hour_2_mcs,
                                         model_name='drug_dosing_control')
@@ -290,27 +290,39 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
                 rms_model = getattr(cell.sbml, 'drug_metabolization')
                 if 'rmd_in_rate' in params_to_var:
                     if not i % 2:
-                        var = np.random.normal(0, .25)
-                        if var < -1:
-                            var = -.99
-                        if var > 1:
-                            var = .99
-                        rms_model['base_kin'] = rms_model['base_kin'] * (1 + var)
+                        var_in = np.random.normal(0, .25)
+                        if var_in < -1:
+                            var_in = -.99
+                        if var_in > 1:
+                            var_in = .99
+                        cell.dict['base_kin'] = rms_model['base_kin'] * (1 + var_in)
+                        cell.dict['rmd_in_rate'] = cell.dict['base_kin'] / rms_model['base_kin']
+                        # print('in', cell.dict['rmd_in_rate'], rms_model['base_kin'], var_in)
+                        rms_model['base_kin'] = cell.dict['base_kin']
                         self.in_rates.append(rms_model['base_kin'])
                     else:
-                        rms_model['base_kin'] = rms_model['base_kin'] * (1 - var)
+                        cell.dict['base_kin'] = rms_model['base_kin'] * (1 - var_in)
+                        cell.dict['rmd_in_rate'] = cell.dict['base_kin'] / rms_model['base_kin']
+                        # print('in', cell.dict['rmd_in_rate'], rms_model['base_kin'], var_in)
+                        rms_model['base_kin'] = cell.dict['base_kin']
                         self.in_rates.append(rms_model['base_kin'])
                 if 'rmd_out_rate' in params_to_var:
                     if not i % 2:
-                        var = np.random.normal(0, .25)
-                        if var < -1:
-                            var = -.99
-                        if var > 1:
-                            var = .99
-                        rms_model['k_out'] = rms_model['k_out'] * (1 + var)
+                        var_out = np.random.normal(0, .25)
+                        if var_out < -1:
+                            var_out = -.99
+                        if var_out > 1:
+                            var_out = .99
+                        cell.dict['k_out'] = rms_model['k_out'] * (1 + var_out)
+                        cell.dict['rmd_out_rate'] = cell.dict['k_out'] / rms_model['k_out']
+                        # print('out', cell.dict['rmd_out_rate'], rms_model['k_out'], var_out)
+                        rms_model['k_out'] = cell.dict['k_out']
                         self.out_rates.append(rms_model['k_out'])
                     else:
-                        rms_model['k_out'] = rms_model['k_out'] * (1 - var)
+                        cell.dict['k_out'] = rms_model['k_out'] * (1 - var_out)
+                        cell.dict['rmd_out_rate'] = cell.dict['k_out'] / rms_model['k_out']
+                        # print('out', cell.dict['rmd_out_rate'], rms_model['k_out'], var_out)
+                        rms_model['k_out'] = cell.dict['k_out']
                         self.out_rates.append(rms_model['k_out'])
         # print(self.in_rates)
         # print(self.out_rates)
@@ -434,6 +446,9 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
         ViralInfectionVTMSteppableBasePy.__init__(self, frequency)
 
         self.track_cell_level_scalar_attribute(field_name='internal_viral_RNA', attribute_name='Replicating')
+        if intercell_var:
+            for p in params_to_var:
+                self.track_cell_level_scalar_attribute(field_name=f'relative_{p}', attribute_name=f'{p}')
 
         self.mvars = None
 
@@ -455,6 +470,9 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
         self.total_virus_released = 0
 
         self.__flush_counter = 1
+
+        self.avg_prodrug = None
+        self.std_prodrug = None
 
         if self.write_ddm_data:
             self.data_files = {'ddm_data': 'ddm_data.dat', 'ddm_rmax_data': 'ddm_rmax_data.dat',
@@ -616,9 +634,18 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
                                                                           self.UNINFECTED)]
         return np.mean(rmax_list), np.std(rmax_list)
 
+    def get_mean_std_prodrug(self):
+        prodrug_list = [cell.sbml.drug_metabolization['k_in'] for cell in
+                        self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING, self.UNINFECTED)]
+        if not len(prodrug_list):
+            return 0, 0
+        return np.mean(prodrug_list), np.std(prodrug_list)
+
     def get_mean_std_active(self):
         active_met_list = [cell.sbml.drug_metabolization[self.mvars.active_component] for cell in
                            self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING, self.UNINFECTED)]
+        if not len(active_met_list):
+            return 0, 0
         return np.mean(active_met_list), np.std(active_met_list)
 
     def do_plots(self, mcs):
@@ -706,8 +733,7 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
         if time >= 0:
             # self.ddm_data['ddm_data'][time] = self.get_ddm_data_list()
             if self.tracked_cell is not None:
-                self.ddm_data['ddm_data'][time] = [self.tracked_cell.sbml.drug_metabolization[self.mvars.ddm_vars[0]] *
-                                                   self.tracked_cell.sbml.drug_metabolization[self.mvars.ddm_vars[-1]],
+                self.ddm_data['ddm_data'][time] = [self.avg_prodrug,
                                                    self.avg_active]
             else:
                 self.ddm_data['ddm_data'][time] = [np.NaN, np.NaN]
@@ -759,6 +785,7 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
         if self.plot_ddm_data and mcs % plot_ddm_data_freq == 0:
             if not calculated_stuff:
                 self.avg_active, self.std_active = self.get_mean_std_active()
+                self.avg_prodrug, self.std_prodrug = self.get_mean_std_prodrug()
                 self.mean_rmax, self.std_rmax = self.get_mean_std_rmax()
                 self.rna_list = self.get_rna_array()
                 calculated_stuff = True
