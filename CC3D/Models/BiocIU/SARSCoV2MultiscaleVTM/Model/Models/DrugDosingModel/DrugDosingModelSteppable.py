@@ -474,6 +474,12 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
         self.avg_prodrug = None
         self.std_prodrug = None
 
+        self.avg_active = None
+        self.std_active = None
+        self.mean_rmax = None
+        self.std_rmax = None
+        self.rna_list = None
+
         if self.write_ddm_data:
             self.data_files = {'ddm_data': 'ddm_data.dat', 'ddm_rmax_data': 'ddm_rmax_data.dat',
                                'ddm_tot_RNA_data': 'ddm_tot_RNA_data.dat', 'ddm_mean_RNA_data': 'ddm_mean_RNA_data.dat',
@@ -717,17 +723,21 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
 
         if time < 0:
             # self.ddm_data['ddm_data'][time] = [self.sbml.drug_dosing_control[x] for x in self.mvars.ddm_vars]
-            if self.tracked_cell is not None:
-                self.ddm_data['ddm_data'][time] = [self.tracked_cell.sbml.drug_metabolization[self.mvars.ddm_vars[0]] *
-                                                   self.tracked_cell.sbml.drug_metabolization[self.mvars.ddm_vars[-1]],
-                                                   self.tracked_cell.sbml.drug_metabolization[self.mvars.ddm_vars[1]]]
-            else:
-                self.ddm_data['ddm_data'][time] = [np.NaN, np.NaN]
-            self.ddm_data['ddm_data'][time] = [np.NaN, np.NaN]
-            self.ddm_data['ddm_rmax_data'][time] = [np.NaN]
+            self.avg_active, _ = self.get_mean_std_active()
+            self.avg_prodrug, _ = self.get_mean_std_prodrug()
+            self.ddm_data['ddm_data'][time] = [self.avg_prodrug,
+                                               self.avg_active]
+            # if self.tracked_cell is not None:
+            #     self.ddm_data['ddm_data'][time] = [self.avg_prodrug,
+            #                                        self.avg_active]
+            # else:
+            #     self.ddm_data['ddm_data'][time] = [0, 0]
+            # self.ddm_data['ddm_data'][time] = [np.NaN, np.NaN]
 
-            self.ddm_data['ddm_tot_RNA_data'][mcs] = [np.NaN]
-            self.ddm_data['ddm_mean_RNA_data'][mcs] = [np.NaN]
+            self.ddm_data['ddm_rmax_data'][time] = [0]
+
+            self.ddm_data['ddm_tot_RNA_data'][mcs] = [0]
+            self.ddm_data['ddm_mean_RNA_data'][mcs] = [0]
             self.ddm_data['ddm_total_viral_production_data'][mcs] = [0]
 
         if time >= 0:
