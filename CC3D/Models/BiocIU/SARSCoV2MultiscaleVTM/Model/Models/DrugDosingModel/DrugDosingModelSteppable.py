@@ -299,13 +299,13 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
                         cell.dict['rmd_in_rate'] = cell.dict['base_kin'] / rms_model['base_kin']
                         # print('in', cell.dict['rmd_in_rate'], rms_model['base_kin'], var_in)
                         rms_model['base_kin'] = cell.dict['base_kin']
-                        self.in_rates.append(rms_model['base_kin'])
+                        self.in_rates.append((cell.xCOM, cell.yCOM, rms_model['base_kin']))
                     else:
                         cell.dict['base_kin'] = rms_model['base_kin'] * (1 - var_in)
                         cell.dict['rmd_in_rate'] = cell.dict['base_kin'] / rms_model['base_kin']
                         # print('in', cell.dict['rmd_in_rate'], rms_model['base_kin'], var_in)
                         rms_model['base_kin'] = cell.dict['base_kin']
-                        self.in_rates.append(rms_model['base_kin'])
+                        self.in_rates.append((cell.xCOM, cell.yCOM, rms_model['base_kin']))
                 if 'rmd_out_rate' in params_to_var:
                     if not i % 2:
                         var_out = np.random.normal(0, .25)
@@ -317,13 +317,13 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
                         cell.dict['rmd_out_rate'] = cell.dict['k_out'] / rms_model['k_out']
                         # print('out', cell.dict['rmd_out_rate'], rms_model['k_out'], var_out)
                         rms_model['k_out'] = cell.dict['k_out']
-                        self.out_rates.append(rms_model['k_out'])
+                        self.out_rates.append((cell.xCOM, cell.yCOM, rms_model['k_out']))
                     else:
                         cell.dict['k_out'] = rms_model['k_out'] * (1 - var_out)
                         cell.dict['rmd_out_rate'] = cell.dict['k_out'] / rms_model['k_out']
                         # print('out', cell.dict['rmd_out_rate'], rms_model['k_out'], var_out)
                         rms_model['k_out'] = cell.dict['k_out']
-                        self.out_rates.append(rms_model['k_out'])
+                        self.out_rates.append((cell.xCOM, cell.yCOM, rms_model['k_out']))
         # print(self.in_rates)
         # print(self.out_rates)
         if prophylactic_treatment:
@@ -719,7 +719,7 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
         else:
             time = mcs
 
-        if not time == 0:
+        if time == 0:
             self.ddm_data['intercell_var_in_rate'][mcs] = self.mvars.in_rates
             self.ddm_data['intercell_var_out_rate'][mcs] = self.mvars.out_rates
 
