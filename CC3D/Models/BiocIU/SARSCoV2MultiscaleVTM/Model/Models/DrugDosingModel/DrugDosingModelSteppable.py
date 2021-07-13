@@ -806,6 +806,7 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
             self.do_plots(mcs)
         if self.write_ddm_data and mcs % write_ddm_data_freq == 0:
             if not calculated_stuff:
+                self.avg_prodrug, self.std_prodrug = self.get_mean_std_prodrug()
                 self.avg_active, self.std_active = self.get_mean_std_active()
                 self.mean_rmax, self.std_rmax = self.get_mean_std_rmax()
                 self.rna_list = self.get_rna_array()
