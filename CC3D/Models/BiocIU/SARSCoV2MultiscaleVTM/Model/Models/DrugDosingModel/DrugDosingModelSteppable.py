@@ -365,7 +365,12 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
                 self.alignment_not_done = False
 
                 start_time = 24 * first_dose + hour_2_mcs * (mcs + 1)
-                print(f'@@@@\n{start_time}\n{24 * first_dose}\n{mcs}')
+                print(f'@@@@\n{start_time}\n{24 * first_dose}\n{mcs}\n{start_time/hour_2_mcs}')
+                fileDir = os.path.dirname(os.path.abspath(__file__))
+                file_name = os.path.join(fileDir, 'treatment_start.dat')
+                with open(file_name, 'w+') as f:
+                    f.write('Start time (hours), start time (MCS)')
+                    f.write(f'{start_time},{start_time/hour_2_mcs}')
                 for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING, self.UNINFECTED):
                     vr_model = getattr(cell.sbml, 'drug_metabolization')
                     vr_model['first_dose'] = start_time
