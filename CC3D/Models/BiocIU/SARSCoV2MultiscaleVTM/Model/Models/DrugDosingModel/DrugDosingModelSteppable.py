@@ -282,48 +282,93 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
         self.ddm_rr = self.get_roadrunner_for_single_antimony('drug_dosing_control')
         self.in_rates = []
         self.out_rates = []
+        if intercell_var:
+            ids = []
         for i, cell in enumerate(self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING, self.UNINFECTED)):
             self.add_antimony_to_cell(model_string=self.drug_model_string,
                                       model_name='drug_metabolization',
                                       cell=cell, step_size=hour_2_mcs)
-            if intercell_var and ('rmd_in_rate' in params_to_var or 'rmd_out_rate' in params_to_var):
-                rms_model = getattr(cell.sbml, 'drug_metabolization')
+            if intercell_var:
+                ids.append(cell.id)
+        if intercell_var and ('rmd_in_rate' in params_to_var or 'rmd_out_rate' in params_to_var):
+            np.random.shuffle(ids)
+            ids1 = ids[:len(ids) // 2]
+            ids2 = ids[len(ids) // 2:]
+            for id1, id2 in zip(ids1, ids2):
+                cell1 = self.fetch_cell_by_id(id1)
+                cell2 = self.fetch_cell_by_id(id2)
+                print(cell1.xCOM, cell1.yCOM, cell2.xCOM, cell2.yCOM)
+                # if intercell_var and ('rmd_in_rate' in params_to_var or 'rmd_out_rate' in params_to_var):
+                rms_model1 = getattr(cell1.sbml, 'drug_metabolization')
+                rms_model2 = getattr(cell2.sbml, 'drug_metabolization')
                 if 'rmd_in_rate' in params_to_var:
-                    if not i % 2:
+                    var_in = 11
+                    while abs(var_in) > 1:
                         var_in = np.random.normal(0, .25)
-                        if var_in < -1:
-                            var_in = -.99
-                        if var_in > 1:
-                            var_in = .99
-                        cell.dict['base_kin'] = rms_model['base_kin'] * (1 + var_in)
-                        cell.dict['rmd_in_rate'] = cell.dict['base_kin'] / rms_model['base_kin']
-                        # print('in', cell.dict['rmd_in_rate'], rms_model['base_kin'], var_in)
-                        rms_model['base_kin'] = cell.dict['base_kin']
-                        self.in_rates.append((cell.xCOM, cell.yCOM, rms_model['base_kin']))
-                    else:
-                        cell.dict['base_kin'] = rms_model['base_kin'] * (1 - var_in)
-                        cell.dict['rmd_in_rate'] = cell.dict['base_kin'] / rms_model['base_kin']
-                        # print('in', cell.dict['rmd_in_rate'], rms_model['base_kin'], var_in)
-                        rms_model['base_kin'] = cell.dict['base_kin']
-                        self.in_rates.append((cell.xCOM, cell.yCOM, rms_model['base_kin']))
+                    # print(var_in)
+                    cell1.dict['base_kin'] = rms_model1['base_kin'] * (1 + var_in)
+                    cell1.dict['rmd_in_rate'] = cell1.dict['base_kin'] / rms_model1['base_kin']
+                    # print('in', cell.dict['rmd_in_rate'], rms_model['base_kin'], var_in)
+                    rms_model1['base_kin'] = cell1.dict['base_kin']
+                    self.in_rates.append((cell1.xCOM, cell1.yCOM, rms_model1['base_kin']))
+
+                    cell2.dict['base_kin'] = rms_model2['base_kin'] * (1 - var_in)
+                    cell2.dict['rmd_in_rate'] = cell2.dict['base_kin'] / rms_model2['base_kin']
+                    # print('in', cell.dict['rmd_in_rate'], rms_model['base_kin'], var_in)
+                    rms_model2['base_kin'] = cell2.dict['base_kin']
+                    self.in_rates.append((cell2.xCOM, cell2.yCOM, rms_model2['base_kin']))
+
+                    # if not i % 2:
+                    #     var_in = np.random.normal(0, .25)
+                    #     if var_in < -1:
+                    #         var_in = -.99
+                    #     if var_in > 1:
+                    #         var_in = .99
+                    #     cell.dict['base_kin'] = rms_model['base_kin'] * (1 + var_in)
+                    #     cell.dict['rmd_in_rate'] = cell.dict['base_kin'] / rms_model['base_kin']
+                    #     # print('in', cell.dict['rmd_in_rate'], rms_model['base_kin'], var_in)
+                    #     rms_model['base_kin'] = cell.dict['base_kin']
+                    #     self.in_rates.append((cell.xCOM, cell.yCOM, rms_model['base_kin']))
+                    # else:
+                    #     cell.dict['base_kin'] = rms_model['base_kin'] * (1 - var_in)
+                    #     cell.dict['rmd_in_rate'] = cell.dict['base_kin'] / rms_model['base_kin']
+                    #     # print('in', cell.dict['rmd_in_rate'], rms_model['base_kin'], var_in)
+                    #     rms_model['base_kin'] = cell.dict['base_kin']
+                    #     self.in_rates.append((cell.xCOM, cell.yCOM, rms_model['base_kin']))
                 if 'rmd_out_rate' in params_to_var:
-                    if not i % 2:
+                    var_out = 11
+                    while abs(var_out) > 1:
                         var_out = np.random.normal(0, .25)
-                        if var_out < -1:
-                            var_out = -.99
-                        if var_out > 1:
-                            var_out = .99
-                        cell.dict['k_out'] = rms_model['k_out'] * (1 + var_out)
-                        cell.dict['rmd_out_rate'] = cell.dict['k_out'] / rms_model['k_out']
-                        # print('out', cell.dict['rmd_out_rate'], rms_model['k_out'], var_out)
-                        rms_model['k_out'] = cell.dict['k_out']
-                        self.out_rates.append((cell.xCOM, cell.yCOM, rms_model['k_out']))
-                    else:
-                        cell.dict['k_out'] = rms_model['k_out'] * (1 - var_out)
-                        cell.dict['rmd_out_rate'] = cell.dict['k_out'] / rms_model['k_out']
-                        # print('out', cell.dict['rmd_out_rate'], rms_model['k_out'], var_out)
-                        rms_model['k_out'] = cell.dict['k_out']
-                        self.out_rates.append((cell.xCOM, cell.yCOM, rms_model['k_out']))
+                    # print(var_out)
+                    cell1.dict['k_out'] = rms_model1['k_out'] * (1 + var_out)
+                    cell1.dict['rmd_out_rate'] = cell1.dict['k_out'] / rms_model1['k_out']
+                    # print('out', cell.dict['rmd_out_rate'], rms_model['k_out'], var_out)
+                    rms_model1['k_out'] = cell1.dict['k_out']
+                    self.out_rates.append((cell1.xCOM, cell1.yCOM, rms_model1['k_out']))
+
+                    cell2.dict['k_out'] = rms_model2['k_out'] * (1 - var_out)
+                    cell2.dict['rmd_out_rate'] = cell2.dict['k_out'] / rms_model2['k_out']
+                    # print('out', cell.dict['rmd_out_rate'], rms_model['k_out'], var_out)
+                    rms_model2['k_out'] = cell2.dict['k_out']
+                    self.out_rates.append((cell2.xCOM, cell2.yCOM, rms_model2['k_out']))
+
+                    # if not i % 2:
+                    #     var_out = np.random.normal(0, .25)
+                    #     if var_out < -1:
+                    #         var_out = -.99
+                    #     if var_out > 1:
+                    #         var_out = .99
+                    #     cell.dict['k_out'] = rms_model['k_out'] * (1 + var_out)
+                    #     cell.dict['rmd_out_rate'] = cell.dict['k_out'] / rms_model['k_out']
+                    #     # print('out', cell.dict['rmd_out_rate'], rms_model['k_out'], var_out)
+                    #     rms_model['k_out'] = cell.dict['k_out']
+                    #     self.out_rates.append((cell.xCOM, cell.yCOM, rms_model['k_out']))
+                    # else:
+                    #     cell.dict['k_out'] = rms_model['k_out'] * (1 - var_out)
+                    #     cell.dict['rmd_out_rate'] = cell.dict['k_out'] / rms_model['k_out']
+                    #     # print('out', cell.dict['rmd_out_rate'], rms_model['k_out'], var_out)
+                    #     rms_model['k_out'] = cell.dict['k_out']
+                    #     self.out_rates.append((cell.xCOM, cell.yCOM, rms_model['k_out']))
         # print(self.in_rates)
         # print(self.out_rates)
         if prophylactic_treatment:
@@ -365,12 +410,12 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
                 self.alignment_not_done = False
 
                 start_time = 24 * first_dose + hour_2_mcs * (mcs + 1)
-                print(f'@@@@\n{start_time}\n{24 * first_dose}\n{mcs}\n{start_time/hour_2_mcs}')
+                print(f'@@@@\n{start_time}\n{24 * first_dose}\n{mcs}\n{start_time / hour_2_mcs}')
                 fileDir = os.path.dirname(os.path.abspath(__file__))
                 file_name = os.path.join(fileDir, 'treatment_start.dat')
                 with open(file_name, 'w+') as f:
                     f.write('Start time (hours), start time (MCS)')
-                    f.write(f'{start_time},{start_time/hour_2_mcs}')
+                    f.write(f'{start_time},{start_time / hour_2_mcs}')
                 for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING, self.UNINFECTED):
                     vr_model = getattr(cell.sbml, 'drug_metabolization')
                     vr_model['first_dose'] = start_time
