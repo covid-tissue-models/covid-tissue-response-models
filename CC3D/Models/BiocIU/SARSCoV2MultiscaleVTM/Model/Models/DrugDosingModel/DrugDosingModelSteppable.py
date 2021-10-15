@@ -44,8 +44,85 @@ days_2_mcs = s_to_mcs / 60 / 60 / 24
 hour_2_mcs = s_to_mcs / 60 / 60
 
 
-# global active_met_ic50
-# active_met_ic50 = active_met_ic50
+def set_antibody_pk(inf_amount=14 * 70, dose_time=1 * 24):
+    """
+    Sets the antibody mPBPK string for antimony model. Time units in hours, concentration units in mg/L
+    :param inf_amount: Amount of antibodies infused, 14*70 = 40 mg/kg
+    :param dose_time: Time of dosing with the cocktail, hours
+    :return: Formated string
+    """
+
+    # the paper that has the hill decrease of virus. That hill is for the antibody-virus reaction. It is in x-log-scale
+
+    antibody_string = f"""
+    ///////////////////
+    // time in hours //
+    ///////////////////
+    //compartments
+
+    compartment plasma = Vp, tight = V_tight, leaky = V_leaky, lymph = V_lymph;
+    Cp in plasma;
+    Ctight in tight;
+    Cleaky in leaky;
+    Clymph in lymph;
+    
+    // flow
+    //-> Cp; switch * inf_amount ;
+    J1: Cp -> ; CLp * Cp;
+    
+    J2: Cp -> Ctight ; (1-sigma1)*L1*Cp;
+    J3: Cp -> Cleaky ; (1-sigma2)*L2*Cp;
+    
+    J4: Ctight -> Clymph ; (1-sigmaL)*L1*Ctight;
+    
+    J5: Cleaky -> Clymph ; (1-sigmaL)*L2*Cleaky;
+    
+    J6: Clymph -> Cp ; L*Clymph;
+    
+    //Cleaky = 0.1;
+    
+    // parameters
+
+    inf_amount = {inf_amount}; // 40.0 mg/kg IV dose
+
+    L = 2.9/24; // Total Lymph Flow 
+    L1 = 0.33 * L; //  Lymph Flow in tight tissue 
+    L2 = 0.67 * L; //  Lymph Flow in leaky tissue 
+
+    sigma1 = 0.95;
+    sigma2 = 0.779;
+    sigmaL = 0.2;
+
+    Vp = 2.6;
+    ISF = 15.6;
+    Kp = 0.8;
+    V_tight = 0.65*Kp*ISF;
+    V_leaky = 0.35*Kp*ISF;
+    V_lymph = 5.2;
+    CLp = 0.00867;
+
+    dose_time = {dose_time}
+
+    // init cond
+    //Cp = 377.0;//In / Vp;
+
+    // events
+
+    E1: at (time - dose_time > 0): Cp = 377.0;
+
+    """
+    return antibody_string
+
+
+def antibody_MOA_death_prob(c, EC50=0.78718372*5000, n=1.12762747):
+    """
+    
+    :param c: antibody concentration the cell is exposed to in mg/l
+    :param EC50: 
+    :param n: 
+    :return: 
+    """
+    return 1 - 1 / (1 + (c / EC50) ** n)
 
 
 def set_simple_pk_full(infusion_amount, time_of_1st_dose, dose_interval, dose_end, first_dose_doubler, observed_t1_2,
@@ -276,6 +353,14 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
                                                                                24 * dose_interval,
                                                                                dose_end, first_dose_doubler,
                                                                                t_half_mult * t_half)
+
+        self.antibody_model_string = set_antibody_pk(dose_time=24 * 99)
+        self.add_free_floating_antimony(model_string=self.antibody_model_string, step_size=hour_2_mcs,
+                                        model_name='antibody_pk')
+        self.antibody_rr = self.get_roadrunner_for_single_antimony('antibody_pk')
+
+        self.killed_by_antibody = 0
+
         self.active_component = '[GS443902]'
         self.add_free_floating_antimony(model_string=self.drug_model_string, step_size=hour_2_mcs,
                                         model_name='drug_dosing_control')
@@ -409,16 +494,20 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
             if self.ever_infected >= alignt_at_pop:
                 self.alignment_not_done = False
 
-                start_time = 24 * first_dose + hour_2_mcs * (mcs + 1)
-                print(f'@@@@\n{start_time}\n{24 * first_dose}\n{mcs}\n{start_time / hour_2_mcs}')
+                antiviral_start_time = 3*24 * first_dose + hour_2_mcs * (mcs + 1)
+
+                antibody_start_time = 24 * 3 + hour_2_mcs * (mcs + 10)
+                self.sbml.antibody_pk['dose_time'] = antibody_start_time
+                print(f'@@@@\n{antiviral_start_time}\n{24 * first_dose}\n{mcs}\n{antiviral_start_time / hour_2_mcs}')
+                print(f'@@@@\n{antibody_start_time}\n{24 * first_dose}\n{mcs}\n{antibody_start_time / hour_2_mcs}')
                 fileDir = os.path.dirname(os.path.abspath(__file__))
                 file_name = os.path.join(fileDir, 'treatment_start.dat')
                 with open(file_name, 'w+') as f:
                     f.write('Start time (hours), start time (MCS)')
-                    f.write(f'{start_time},{start_time / hour_2_mcs}')
+                    f.write(f'{antiviral_start_time},{antiviral_start_time / hour_2_mcs}')
                 for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING, self.UNINFECTED):
                     vr_model = getattr(cell.sbml, 'drug_metabolization')
-                    vr_model['first_dose'] = start_time
+                    vr_model['first_dose'] = antiviral_start_time
                 # print(vr_model['time_of_first_dose'])
         # else:
         #     pass
@@ -435,6 +524,9 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
         # CELLULARIZATION NOTE!!!
         # For the simple pk each cell has a copy of the model running in themselves
         self.ddm_rr.timestep()
+        self.antibody_rr.timestep()
+        p_antibody_death = antibody_MOA_death_prob(self.sbml.antibody_pk['[Cleaky]'])
+        # print('p of antibody death', p_antibody_death)
         for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING, self.UNINFECTED):
             self.timestep_cell_sbml('drug_metabolization', cell)
             if not sanity_run:
@@ -444,6 +536,10 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
                     # vr_model.replicating_rate = cell.dict['rmax']
                     vr_model['replicating_rate'] = cell.dict['rmax']
                     # cell.sbml.viral_name.replicating_rate = cell.dict['rmax']
+            if np.random.uniform() <= p_antibody_death and (cell.type == self.INFECTED or
+                                                            cell.type == self.VIRUSRELEASING):
+                self.kill_cell(cell=cell)
+                self.killed_by_antibody += 1
         # print(cell.sbml.drug_metabolization['time'], cell.sbml.drug_metabolization[self.active_component],
         #       cell.sbml.drug_metabolization['k_in'], cell.sbml.drug_metabolization['Remdes_dose_mol'])
         # print(vr_model['replicating_rate'])
@@ -534,10 +630,11 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
             self.data_files = {'ddm_data': 'ddm_data.dat', 'ddm_rmax_data': 'ddm_rmax_data.dat',
                                'ddm_tot_RNA_data': 'ddm_tot_RNA_data.dat', 'ddm_mean_RNA_data': 'ddm_mean_RNA_data.dat',
                                'ddm_total_viral_production_data': 'ddm_total_viral_production_data.dat',
-                               'intercell_var_in_rate': 'in_rates.dat', 'intercell_var_out_rate': 'out_rates.dat'}
+                               'intercell_var_in_rate': 'in_rates.dat', 'intercell_var_out_rate': 'out_rates.dat',
+                               'killed_by_antibody': 'killed_by_antibody.dat'}
             self.ddm_data = {'ddm_data': {}, 'ddm_rmax_data': {}, 'ddm_tot_RNA_data': {}, 'ddm_mean_RNA_data': {},
                              'ddm_total_viral_production_data': {}, 'intercell_var_in_rate': {},
-                             'intercell_var_out_rate': {}}
+                             'intercell_var_out_rate': {}, 'killed_by_antibody': {}}
 
     def init_plots(self):
         self.ddm_data_win = self.add_new_plot_window(title='Drug dosing model',
@@ -588,6 +685,36 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
                                                       grid=True,
                                                       config_options={'legend': True})
         self.mean_rna_plot.add_plot('RNA_mean', style='Dots', color='red', size=5)
+
+        self.antibody_PBPK_plot = self.add_new_plot_window(title='Antibody_mPBPK',
+                                                           x_axis_title='Time (hours)',
+                                                           y_axis_title='Variables',
+                                                           x_scale_type='linear',
+                                                           y_scale_type='log',
+                                                           grid=True,
+                                                           config_options={'legend': True})
+        self.antibody_concentrations = ['[Cp]', '[Ctight]', '[Cleaky]', '[Clymph]']
+
+        for color, sp in zip(colors, self.antibody_concentrations):
+            self.antibody_PBPK_plot.add_plot(sp, style='Dots', color=color, size=5)
+
+        self.antibody_leaky_plot = self.add_new_plot_window(title='Antibody_Concentration_inLeaky_tisues',
+                                                            x_axis_title='Time (hours)',
+                                                            y_axis_title='Variables',
+                                                            x_scale_type='linear',
+                                                            y_scale_type='log',
+                                                            grid=True,
+                                                            config_options={'legend': True})
+        self.antibody_leaky_plot.add_plot(self.antibody_concentrations[-2], style='Dots', color='red', size=5)
+
+        self.killed_by_antibody_plot = self.add_new_plot_window(title='Killed_by_antibody',
+                                                                x_axis_title='Time (hours)',
+                                                                y_axis_title='Variables',
+                                                                x_scale_type='linear',
+                                                                y_scale_type='linear',
+                                                                grid=True,
+                                                                config_options={'legend': True})
+        self.killed_by_antibody_plot.add_plot('N', style='Dots', color='red', size=5)
 
     def init_writes(self):
         # init save data
@@ -813,6 +940,8 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
 
             self.ddm_data['ddm_total_viral_production_data'][mcs] = [self.total_virus_released]
 
+            self.ddm_data['killed_by_antibody'][mcs] = [self.mvars.killed_by_antibody]
+
         if mcs >= int(self.simulator.getNumSteps() / 4 * self.__flush_counter):
             self.flush_stored_outputs()
 
@@ -834,6 +963,15 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
         self.__flush_counter += 1
 
     def step(self, mcs):
+
+        for sp in self.antibody_concentrations:
+            if self.sbml.antibody_pk[sp]:
+                self.antibody_PBPK_plot.add_data_point(sp, s_to_mcs * mcs / 60 / 60, self.sbml.antibody_pk[sp])
+            if sp == '[Cleaky]' and self.sbml.antibody_pk[sp]:
+
+                self.antibody_leaky_plot.add_data_point(sp, s_to_mcs * mcs / 60 / 60, self.sbml.antibody_pk[sp])
+        # print('Cp', self.sbml.antibody_pk['[Cp]'],'Cleaky', self.sbml.antibody_pk['[Cleaky]'], self.sbml.antibody_pk['time'])
+        self.killed_by_antibody_plot.add_data_point('N', s_to_mcs * mcs / 60 / 60, self.mvars.killed_by_antibody)
 
         if self.tracked_cell is None or self.tracked_cell.type == self.DYING:
             self.tracked_cell = self.choose_tracked_cell()
