@@ -48,8 +48,8 @@ export_data_desc = {'ir_data': ['ImmuneResp'],
                                    'Contact',
                                    'Bystander'],
                     'ddm_rmax_data': ['r_max'],
-                    'ddm_data': ['Drug',
-                                 'ActiveMetabolite'],
+                    # 'ddm_data': ['Drug',
+                    #              'ActiveMetabolite'],
                     'ddm_tot_RNA_data': ['Total_viral_RNA_in_cells'],
                     'ddm_mean_RNA_data': ['Mean_viral_RNA_in_cells'],
                     'ddm_total_viral_production_data': ['vir_auc']
@@ -58,13 +58,13 @@ export_data_desc = {'ir_data': ['ImmuneResp'],
 x_label_str_transient = "Simulation time (MCS)"
 
 y_label_str = {'ir_data': {'ImmuneResp': 'Immune response state variable'},
-               'med_diff_data': {'MedViral': 'Total diffusive virus',
-                                 'MedCyt': 'Total diffusive cytokine',
+               'med_diff_data': {'MedViral': 'Total diffusive virus ($log_10$)',
+                                 'MedCyt': 'Total diffusive cytokine ($log_10$)',
                                  'MedOxi': 'Total oxidative agent'},
                'pop_data': {'Uninfected': 'Number of uninfected cells',
                             'Infected': 'Number of infected cells',
                             'InfectedSecreting': 'Number of infected secreting cells',
-                            'Dying': 'Number of dying cells',
+                            'Dying': 'Number of dead cells',
                             'ImmuneCell': 'Number of immune cells',
                             'ImmuneCellActivated': 'Number of activated immune cells'},
                'spat_data': {'DeathComp': 'Cell death compactness (ul)',
@@ -74,9 +74,11 @@ y_label_str = {'ir_data': {'ImmuneResp': 'Immune response state variable'},
                               'Contact': 'Number of cytotoxic kill deaths',
                               'Bystander': 'Number of bystander effect deaths'},
                'ddm_rmax_data': {'r_max': r'$r_{max}$ value'},
-               'ddm_data': ['Drug',
-                            'Active Metabolite'],
-               'ddm_total_viral_production_data': {'vir_auc': 'Total production of diffusive virus'}
+               'ddm_data': {'Drug': 'Drug concentration ($log_{10}$)',
+                            'ActiveMetabolite': 'Metabolite concentration ($log_{10}$)'},
+               'ddm_tot_RNA_data': {'Total_viral_RNA_in_cells': 'Total viral RNA in cells ($log_{10}$)'},
+               'ddm_mean_RNA_data': {'Mean_viral_RNA_in_cells': 'Mean viral RNA in cells ($log_{10}$)'},
+               'ddm_total_viral_production_data': {'vir_auc': 'Total production of diffusive virus ($log_{10}$)'}
                }
 
 fig_save_names = {'ir_data': {'ImmuneResp': 'metric_immune_response_svar'},
@@ -175,10 +177,14 @@ def collect_trial_data(_export_name, _trial_dirs):
     for trial_idx in range(num_trials):
         trial_data[trial_idx] = dict()
         trial_file = os.path.join(_trial_dirs[trial_idx], _export_name + '.csv')
-        if not os.path.isfile(trial_file):
+        trial_file_dat = os.path.join(_trial_dirs[trial_idx], _export_name + '.dat')
+        if not os.path.isfile(trial_file) and not os.path.isfile(trial_file_dat):
             trial_data[trial_idx] = None
             continue
+        elif not os.path.isfile(trial_file):
+            trial_file = trial_file_dat
         with open(trial_file) as csvfile:
+            # print(trial_file)
             csv_reader = csv.reader(csvfile, delimiter=',')
             for row_data in csv_reader:
                 this_mcs = int(row_data.pop(0))
