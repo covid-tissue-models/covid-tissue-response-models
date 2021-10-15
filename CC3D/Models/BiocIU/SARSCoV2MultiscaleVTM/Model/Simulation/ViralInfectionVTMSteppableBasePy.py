@@ -15,7 +15,6 @@ from nCoVToolkit import nCoVUtils
 
 
 class ViralInfectionVTMSteppableBasePy(nCoVSteppableBase):
-
     vr_model_name = ViralInfectionVTMLib.vr_model_name
     _viral_replication_model_string_gen = ViralInfectionVTMLib.viral_replication_model_string
 
@@ -154,6 +153,13 @@ class ViralInfectionVTMSteppableBasePy(nCoVSteppableBase):
                 tot_field += field[ptd.pixel.x, ptd.pixel.y, ptd.pixel.z]
 
         return tot_field
+
+    def kill_cell_with_time_of_death(self, cell, mcs):
+
+        # save time of death
+        cell.dict['time_of_death'] = mcs
+
+        self.kill_cell(cell=cell)
 
     def kill_cell(self, cell):
         """
