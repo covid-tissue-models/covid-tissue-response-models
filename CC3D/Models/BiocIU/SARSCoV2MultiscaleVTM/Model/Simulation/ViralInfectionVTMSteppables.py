@@ -62,6 +62,8 @@ class CellsInitializerSteppable(ViralInfectionVTMSteppableBasePy):
 
                 cell.dict['virus_released'] = 0
 
+                cell.dict['time_of_death'] = None
+
                 self.load_viral_replication_model(cell=cell, vr_step_size=vr_step_size,
                                                   unpacking_rate=unpacking_rate,
                                                   replicating_rate=replicating_rate,
