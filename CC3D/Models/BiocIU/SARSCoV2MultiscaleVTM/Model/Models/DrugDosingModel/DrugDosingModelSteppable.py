@@ -15,7 +15,7 @@
 import sys
 import os
 from cc3d.core.PySteppables import *
-
+import json
 sys.path.append(os.path.join(os.environ["ViralInfectionVTM"], "Simulation"))
 sys.path.append(os.environ["ViralInfectionVTM"])
 try:
@@ -865,9 +865,33 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
             # self.flush_stored_outputs()
             # self.__flush_counter -= 1
 
+    def save_per_cell_met_rates_time_of_death_and_viral_auc(self):
+        if not intercell_var:
+            return
+        data_dict = {'cell_id': [],
+                     'relative_in_rate': [],
+                     'relative_out_rate': [],
+                     'time_of_death': [],
+                     'virus_auc': []
+                     }
+        for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING, self.DYING):
+            data_dict['cell_id'].append(cell.id)
+            data_dict['relative_in_rate'].append(cell.dict['rmd_in_rate'])
+            data_dict['relative_out_rate'].append(cell.dict['rmd_out_rate'])
+            data_dict['time_of_death'].append(cell.dict['time_of_death'])
+            data_dict['virus_auc'].append(cell.dict['virus_released'])
+            pass
+
+        path_json = Path(self.output_dir).joinpath('per_cell_viral_production.json')
+
+        with open(path_json, 'w+') as outf:
+            json.dump(data_dict, outf)
+
+
     def on_stop(self):
         self.finish()
 
     def finish(self):
         if self.write_ddm_data:
+            self.save_per_cell_met_rates_time_of_death_and_viral_auc()
             self.flush_stored_outputs()
