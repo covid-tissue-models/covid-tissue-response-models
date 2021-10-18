@@ -298,11 +298,11 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
                 cell1 = self.fetch_cell_by_id(id1)
                 cell2 = self.fetch_cell_by_id(id2)
 
-                cell1.dict['rmd_in_rate'] = None
-                cell2.dict['rmd_in_rate'] = None
+                cell1.dict['rmd_in_rate'] = 1
+                cell2.dict['rmd_in_rate'] = 1
 
-                cell1.dict['rmd_out_rate'] = None
-                cell2.dict['rmd_out_rate'] = None
+                cell1.dict['rmd_out_rate'] = 1
+                cell2.dict['rmd_out_rate'] = 1
 
                 print(cell1.xCOM, cell1.yCOM, cell2.xCOM, cell2.yCOM)
                 # if intercell_var and ('rmd_in_rate' in params_to_var or 'rmd_out_rate' in params_to_var):
