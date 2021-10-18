@@ -63,6 +63,8 @@ class CellsInitializerSteppable(ViralInfectionVTMSteppableBasePy):
                 cell.dict['virus_released'] = 0
 
                 cell.dict['time_of_death'] = None
+                cell.dict['time_of_infection'] = None
+                cell.dict['time_of_virus_release'] = None
 
                 self.load_viral_replication_model(cell=cell, vr_step_size=vr_step_size,
                                                   unpacking_rate=unpacking_rate,
@@ -90,6 +92,7 @@ class CellsInitializerSteppable(ViralInfectionVTMSteppableBasePy):
         for cell in cells_to_infect:
             cell.dict['Unpacking'] = 1.0
             cell.type = self.INFECTED
+            cell.dict['time_of_infection'] = 0
 
             self.load_viral_replication_model(cell=cell, vr_step_size=vr_step_size,
                                               unpacking_rate=unpacking_rate,
@@ -160,6 +163,7 @@ class ViralReplicationSteppable(ViralInfectionVTMSteppableBasePy):
 
             # Test for infection secretion
             if cell.dict['Assembled'] > cell_infection_threshold:
+                cell.dict['time_of_virus_release'] = mcs
                 cell.type = self.VIRUSRELEASING
                 ViralInfectionVTMLib.enable_viral_secretion(cell=cell, secretion_rate=secretion_rate)
 
@@ -257,6 +261,7 @@ class ViralSecretionSteppable(ViralInfectionVTMSteppableBasePy):
             viral_amount_com = self.field.Virus[cell.xCOM, cell.yCOM, cell.zCOM] * cell.volume
             cell_does_uptake, uptake_amount = self.vim_steppable.do_cell_internalization(cell, viral_amount_com)
             if cell_does_uptake:
+                cell.dict['time_of_infection'] = mcs
                 uptake = secretor.uptakeInsideCellTotalCount(cell, 1E12, uptake_amount / cell.volume)
                 cell.dict['Uptake'] = abs(uptake.tot_amount)
                 self.vim_steppable.update_cell_receptors(cell=cell, receptors_increment=-cell.dict['Uptake'] * s_to_mcs)
