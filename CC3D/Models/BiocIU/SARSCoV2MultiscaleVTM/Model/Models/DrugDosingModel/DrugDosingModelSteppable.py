@@ -866,18 +866,24 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
             # self.__flush_counter -= 1
 
     def save_per_cell_met_rates_time_of_death_and_viral_auc(self):
-        if not intercell_var:
-            return
+
         data_dict = {'cell_id': [],
                      'relative_in_rate': [],
+                     'time_of_infection': [],
+                     'time_of_virus_release': [],
                      'relative_out_rate': [],
                      'time_of_death': [],
                      'virus_auc': []
                      }
         for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING, self.DYING):
             data_dict['cell_id'].append(cell.id)
-            data_dict['relative_in_rate'].append(cell.dict['rmd_in_rate'])
-            data_dict['relative_out_rate'].append(cell.dict['rmd_out_rate'])
+            if intercell_var:
+            # if 'rmd_in_rate' in cell.dict.keys():
+                data_dict['relative_in_rate'].append(cell.dict['rmd_in_rate'])
+            # if 'relative_out_rate' in  cell.dict.keys():
+                data_dict['relative_out_rate'].append(cell.dict['rmd_out_rate'])
+            data_dict['time_of_infection'].append(cell.dict['time_of_infection'])
+            data_dict['time_of_virus_release'].append(cell.dict['time_of_virus_release'])
             data_dict['time_of_death'].append(cell.dict['time_of_death'])
             data_dict['virus_auc'].append(cell.dict['virus_released'])
             pass
