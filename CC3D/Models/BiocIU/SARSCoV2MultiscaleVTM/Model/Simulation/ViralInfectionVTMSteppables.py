@@ -307,7 +307,7 @@ class ImmuneCellKillingSteppable(ViralInfectionVTMSteppableBasePy):
                     if neighbor.type in [self.INFECTED, self.VIRUSRELEASING, self.UNINFECTED]:
                         p_bystander_effect = np.random.random()
                         if p_bystander_effect < bystander_effect:
-                            self.kill_cell_with_time_of_death(cell=cell, mcs=mcs)
+                            self.kill_cell_with_time_of_death(cell=neighbor, mcs=mcs)
                             # self.kill_cell(cell=neighbor)
                             self.simdata_steppable.track_death_bystander()
 
