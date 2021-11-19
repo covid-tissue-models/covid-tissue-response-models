@@ -733,13 +733,16 @@ class IFNReleaseSteppable(IFNSteppableBase):
 
         hours_to_mcs = self.step_period / 60.0 / 60.0
         for cell in self.cell_list_by_type(*self.registered_type_ids):
-            intracellularIFN = 1.0
-            ifn_cell_sbml = get_cell_ifn_model(cell)
-            if ifn_cell_sbml:
-                intracellularIFN = ifn_cell_sbml['IFN']
-            p = self.release_rate * hours_to_mcs * intracellularIFN
-            secretor.secreteInsideCell(cell, p * fact / cell.volume)
-    
+            self.release_IFN(cell, secretor)
+
+    def release_IFN(self, cell, secretor):
+        intracellularIFN = 1.0
+        ifn_cell_sbml = get_cell_ifn_model(cell)
+        if ifn_cell_sbml:
+            intracellularIFN = ifn_cell_sbml['IFN']
+        p = self.release_rate * hours_to_mcs * intracellularIFN
+        secretor.secreteInsideCell(cell, p * fact / cell.volume)
+
     @property
     def release_rate(self):
         """
