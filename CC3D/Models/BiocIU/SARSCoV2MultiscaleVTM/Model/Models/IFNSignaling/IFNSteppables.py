@@ -757,7 +757,7 @@ class IFNVirusFieldInitializerSteppable(MainSteppables.VirusFieldInitializerStep
 
     def start(self):
 
-        BatchRunLib.apply_external_multipliers(__name__, DrugDosingInputs)
+        BatchRunLib.apply_external_multipliers(__name__, IFNInputs)
         min_to_mcs = self.step_period / 60.0
         days_to_mcs = min_to_mcs / 60.0 / 24.0
         if self._diffusion_coefficient is None:
