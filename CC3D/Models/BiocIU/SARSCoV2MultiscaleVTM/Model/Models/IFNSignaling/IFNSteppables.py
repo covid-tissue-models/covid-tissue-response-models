@@ -754,9 +754,12 @@ class IFNVirusFieldInitializerSteppable(MainSteppables.VirusFieldInitializerStep
         min_to_mcs = self.step_period / 60.0
         days_to_mcs = min_to_mcs / 60.0 / 24.0
         if self._diffusion_coefficient is None:
-            self.get_xml_element(self._virus_diffusion_id).cdata = IFNInputs.virus_diffusion_coefficient * min_to_mcs / self.voxel_length ** 2
+            self.get_xml_element(self._virus_diffusion_id).cdata = \
+                IFNInputs.virus_diffusion_coefficient[IFNInputs.possible_media_for_diffusion[IFNInputs.media_selection]] \
+                * min_to_mcs / self.voxel_length ** 2
         else:
-            self.get_xml_element(self._virus_diffusion_id).cdata = self._diffusion_coefficient * min_to_mcs / self.voxel_length ** 2
+            self.get_xml_element(self._virus_diffusion_id).cdata = \
+                self._diffusion_coefficient * min_to_mcs / self.voxel_length ** 2
         if self._decay_coefficient is None:
             self.get_xml_element(self._virus_decay_id).cdata = IFNInputs.c * days_to_mcs
         else:
@@ -795,7 +798,9 @@ class IFNFieldInitializerSteppable(IFNSteppableBase):
         hours_to_mcs = min_to_mcs / 60.0
         scaling_factor = min_to_mcs / self.voxel_length ** 2
         if self._diffusion_coefficient is None:
-            self.get_xml_element(self._ifn_diffusion_id).cdata = IFNInputs.IFNe_diffusion_coefficient * scaling_factor
+            self.get_xml_element(self._ifn_diffusion_id).cdata = \
+                IFNInputs.IFNe_diffusion_coefficient[IFNInputs.possible_media_for_diffusion[IFNInputs.media_selection]]\
+                * scaling_factor
         else:
             self.get_xml_element(self._ifn_diffusion_id).cdata = self._diffusion_coefficient * scaling_factor
         if self._decay_coefficient is None:
