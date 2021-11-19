@@ -1,4 +1,8 @@
 # coding=utf-8
+# Improvements to IFN model
+# Continued work by Juliano Ferrari Gianlupi
+# Continued from:
+#
 # IFN intracellular signaling and coupled viral replication models
 # Written by Josua Aponte-Serrano
 # Adds IFN signaling model to cells in the main framework. Replaces viral replication model in the main framework
@@ -16,6 +20,7 @@ from nCoVToolkit.nCoVSteppableBase import nCoVSteppableBase
 import ViralInfectionVTMSteppables as MainSteppables
 from . import IFNInputs
 from . import module_prefix
+from BatchRun import BatchRunLib
 
 # Module specific references
 ifn_model_name = module_prefix+'model'
@@ -751,6 +756,8 @@ class IFNVirusFieldInitializerSteppable(MainSteppables.VirusFieldInitializerStep
     unique_key = ifn_virus_field_initializer_key
 
     def start(self):
+
+        BatchRunLib.apply_external_multipliers(__name__, DrugDosingInputs)
         min_to_mcs = self.step_period / 60.0
         days_to_mcs = min_to_mcs / 60.0 / 24.0
         if self._diffusion_coefficient is None:
