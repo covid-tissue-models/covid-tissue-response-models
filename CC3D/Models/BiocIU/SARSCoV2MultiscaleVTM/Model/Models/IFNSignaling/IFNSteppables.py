@@ -736,6 +736,11 @@ class IFNReleaseSteppable(IFNSteppableBase):
             self.release_IFN(cell, secretor)
 
     def release_IFN(self, cell, secretor):
+        min_dim = min(self.dim.x, self.dim.y, self.dim.z)
+        fact = 1.0
+        if min_dim < 3:
+            fact = float(min_dim)
+        hours_to_mcs = self.step_period / 60.0 / 60.0
         intracellularIFN = 1.0
         ifn_cell_sbml = get_cell_ifn_model(cell)
         if ifn_cell_sbml:
