@@ -195,6 +195,24 @@ class IFNSteppableBase(nCoVSteppableBase):
         """
         return getattr(self, self._dead_type_name.upper())
 
+    @staticmethod
+    def lytic_non_lytic_death_chooser(cell, lytic_rate) -> bool:
+        p = nCoVUtils.ul_rate_to_prob(lytic_rate)
+        lytic_death_occurs = random.uniform() < p
+        if lytic_death_occurs:
+            IFNSteppableBase.lytic_death(cell)
+            return lytic_death_occurs
+        else:
+            IFNSteppableBase.non_lytic_death(cell)
+            return lytic_death_occurs
+    @staticmethod
+    def lytic_death(cell):
+        return
+
+    @staticmethod
+    def non_lytic_death(cell):
+        IFNSteppableBase.set_cell_type(cell, IFNSteppableBase.dead_type_id)
+        return
 
 def IFN_model_string(**kwargs):
     """
@@ -721,7 +739,7 @@ class IFNReleaseSteppable(IFNSteppableBase):
                 intracellularIFN = ifn_cell_sbml['IFN']
             p = self.release_rate * hours_to_mcs * intracellularIFN
             secretor.secreteInsideCell(cell, p * fact / cell.volume)
-
+    
     @property
     def release_rate(self):
         """
