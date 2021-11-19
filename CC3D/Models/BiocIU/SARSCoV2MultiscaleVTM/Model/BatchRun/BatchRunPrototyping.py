@@ -198,7 +198,7 @@ class CallableCC3DCarbonateScheduler(CallableCoV2VTMScheduler):
                  screenshot_output_frequency=0, num_runs=1, sim_input=None):
         super().__init__(root_output_folder=root_output_folder, output_frequency=output_frequency,
                          screenshot_output_frequency=screenshot_output_frequency, num_workers=int(1E6),
-                         num_runs=num_runs, sim_input=sim_input, dump_dir=None)#, async_delay=0.001)
+                         num_runs=num_runs, sim_input=sim_input, dump_dir=None, async_delay=0.001)
 
         assert isinstance(carbonate_config, dict) or isinstance(carbonate_config, list)
         if isinstance(carbonate_config, dict):
