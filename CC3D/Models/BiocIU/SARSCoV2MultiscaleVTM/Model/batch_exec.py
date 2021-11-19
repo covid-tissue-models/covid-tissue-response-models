@@ -4,13 +4,9 @@ from investigation_dictionaries import *
 
 # this script takes care of generating jobs and scheduling them using slurm.
 
-# The dictionaries used are defined in investigation_dictionaries.py and are imported here.
-# If you want to, e.g., simulate treatment starting with the infection of 10 cells with the half life
-# of the antiviral halved you'd do
+mult_dict = diffusion_investigation_only_change
 
-mult_dict = treatment_starts_0_halved_half_life
-
-num_rep = 5
+num_rep = 80
 # Model output frequency
 model_out_freq = 1
 # Output frequency of simulation data per simulation replica
@@ -22,9 +18,10 @@ sweep_output_folder = r'/home/my_user/my_files'
 
 # Input modules
 from Simulation import ViralInfectionVTMModelInputs
-from Models.DrugDosingModel import DrugDosingInputs
+# from Models.DrugDosingModel import DrugDosingInputs
+from Models.IFNSignaling import IFNInputs
 
-input_modules = [ViralInfectionVTMModelInputs, DrugDosingInputs]
+input_modules = [ViralInfectionVTMModelInputs, IFNInputs]
 # Automatic inputs
 from BatchRun import BatchRunLib
 
@@ -34,14 +31,20 @@ BatchRunLib.register_auto_inputs(input_module_name='ViralInfectionVTMModelInputs
                                                  'plot_spat_data_freq', 'plot_death_data_freq'],
                                  write_var_names=['write_pop_data_freq', 'write_med_diff_data_freq',
                                                   'write_ir_data_freq', 'write_death_data_freq'])
-BatchRunLib.register_auto_inputs(input_module_name='Models.DrugDosingModel.DrugDosingInputs',
-                                 plot_var_names=['plot_ddm_data_freq'],
-                                 write_var_names=['write_ddm_data_freq'])
+# BatchRunLib.register_auto_inputs(input_module_name='Models.DrugDosingModel.DrugDosingInputs',
+#                                  plot_var_names=['plot_ddm_data_freq'],
+#                                  write_var_names=['write_ddm_data_freq'])
+
+BatchRunLib.register_auto_inputs(input_module_name='IFNInputs',
+                                 plot_var_names=['plot_pop_data_freq',  'plot_ifn_data_freq', 'plot_med_diff_data_freq',
+                                                 'plot_plaque_assay_data_freq'],
+                                 write_var_names=['write_pop_data_freq', 'write_ifn_data_freq',
+                                                  'write_med_diff_data_freq', 'write_plaque_assay_data_freq'])
 
 # Carbonate configuration
 from BatchRun.BatchRunPrototyping import carbonate_config_template
 carbonate_config_template = carbonate_config_template()
-carbonate_config_template['jn'] = 'ddm_new_pk_set_inv1'
+carbonate_config_template['jn'] = 'ifn_exploring_diff_csts'
 carbonate_config_template['wh'] = 24
 carbonate_config_template['wm'] = 0
 carbonate_config_template['ppn'] = 1
