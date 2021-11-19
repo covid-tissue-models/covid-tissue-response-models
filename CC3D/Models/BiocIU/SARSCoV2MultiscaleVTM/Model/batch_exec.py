@@ -56,7 +56,7 @@ import os
 from nCoVToolkit import nCoVUtils
 from BatchRun import BatchRunPrototyping
 
-BatchRunPrototyping.simulation_fname = os.path.join(os.path.dirname(__file__), 'ViralInfectionVTM.cc3d')
+BatchRunPrototyping.simulation_fname = os.path.join(os.path.dirname(__file__), 'IFNModel.cc3d')
 
 from BatchRun.BatchRunLib import cc3d_batch_key
 
