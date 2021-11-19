@@ -13,7 +13,7 @@ model_out_freq = 1
 out_freq = 250
 
 # Root output directory, change to some directory that makes sense to you
-sweep_output_folder = r'/home/my_user/my_files'
+sweep_output_folder = r'/N/slate/jferrari/IFN/diffusion_inv_only_change'
 
 
 # Input modules
