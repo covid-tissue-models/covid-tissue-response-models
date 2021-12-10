@@ -879,6 +879,7 @@ class IFNSimDataSteppable(IFNSteppableBase):
     The frequency of plotting cell population data in Player can be set with the attribute plot_pop_data_freq.
     Plotting is disabled when plot_pop_data_freq is set to zero.
 
+
     The frequency of writing cell population data to file can be set with the attribute write_pop_data_freq.
     Data is written to the cc3d output directory with the name 'ifn_data.dat'.
     Writing is disabled when write_ifn_data_freq is set to zero.
@@ -888,7 +889,7 @@ class IFNSimDataSteppable(IFNSteppableBase):
     The frequency of plotting interferon and viral replication sbml models data in Player can be set with the attribute
     plot_ifn_data_freq. Plotting is disabled when plot_ifn_data_freq is set to zero.
 
-    The frequency of writing interferonand viral replication sbml models data to file can be set with the attribute
+    The frequency of writing interferon and viral replication sbml models data to file can be set with the attribute
     write_ifn_data_freq. Data is written to the cc3d output directory with the name 'ifn_data.dat'.
     Writing is disabled when write_ifn_data_freq is set to zero.
 
@@ -912,22 +913,53 @@ class IFNSimDataSteppable(IFNSteppableBase):
         self.pop_data_path = None
         self.pop_data = dict()
 
-        self.plot_pop_data = IFNInputs.plot_pop_data_freq > 0
-        self.write_pop_data = IFNInputs.write_pop_data_freq > 0
+															 
+															   
 
         self.ifn_data_win = None
         self.ifn_data_path = None
         self.ifn_data = dict()
 
-        self.plot_ifn_data = IFNInputs.plot_ifn_data_freq > 0
-        self.write_ifn_data = IFNInputs.write_ifn_data_freq > 0
+															 
+															   
 
         self.med_diff_data_win = None
         self.med_diff_data_path = None
         self.med_diff_data = dict()
 
-        self.plot_med_diff_data = IFNInputs.plot_med_diff_data_freq > 0
-        self.write_med_diff_data = IFNInputs.write_med_diff_data_freq > 0
+        self._out_dir = None
+        self.out_dir = self._out_dir
+
+        self._replicate = 0
+        self.replicate = self._replicate
+
+        self._multiplier1 = 1.0
+        self.multiplier1 = self._multiplier1
+
+        self._parameter_name1 = ''
+        self.parameter_name1 = self._parameter_name1
+
+        self._multiplier2 = 1.0
+        self.multiplier2 = self._multiplier2
+
+        self._parameter_name2 = ''
+        self.parameter_name2 = self._parameter_name2
+
+        self._plot_pop_data_freq = 0
+        self._write_pop_data_freq = 0
+        self._plot_ifn_data_freq = 0
+        self._write_ifn_data_freq = 0
+        self._plot_med_diff_data_freq = 0
+        self._write_med_diff_data_freq = 0
+
+        self.med_diff_key = "MedDiff"
+
+        self.plot_pop_data = False
+        self.write_pop_data = False
+        self.plot_ifn_data = False
+        self.write_ifn_data = False
+        self.plot_med_diff_data = False
+        self.write_med_diff_data = False
 
         # For flushing outputs every quarter simulation length
         self.__flush_counter = 1
@@ -947,7 +979,21 @@ class IFNSimDataSteppable(IFNSteppableBase):
         self.register_type(MainSteppables.infected_type_name)
         self.register_type(MainSteppables.virus_releasing_type_name)
 
+        self.plot_pop_data_freq = IFNInputs.plot_pop_data_freq
+        self.write_pop_data_freq = IFNInputs.write_ifn_data_freq
+        self.plot_ifn_data_freq =IFNInputs.plot_ifn_data_freq
+        self.write_ifn_data_freq = IFNInputs.write_ifn_data_freq
+        self.plot_med_diff_data_freq = IFNInputs.plot_med_diff_data_freq
+        self.write_med_diff_data_freq = IFNInputs.write_med_diff_data_freq
+
     def start(self):
+        self.plot_pop_data = self._plot_pop_data_freq > 0
+        self.write_pop_data = self._write_pop_data_freq > 0
+        self.plot_ifn_data = self._plot_ifn_data_freq > 0
+        self.write_ifn_data = self._write_ifn_data_freq > 0
+        self.plot_med_diff_data = self._plot_med_diff_data_freq > 0
+        self.write_med_diff_data = self._write_med_diff_data_freq > 0
+
         # Initialize population data plot if requested
         if self.plot_pop_data:
             self.pop_data_win = self.add_new_plot_window(title='Population data',
@@ -964,10 +1010,15 @@ class IFNSimDataSteppable(IFNSteppableBase):
             self.pop_data_win.add_plot(self._dead_type_name, style='Dots', color='yellow', size=5)
 
         # Check that output directory is available
-        if self.output_dir is not None:
+        if self.out_dir is not None:
             from pathlib import Path
             if self.write_pop_data:
-                self.pop_data_path = Path(self.output_dir).joinpath(module_prefix+'pop_data.dat')
+                self.pop_data_path = Path(self.outdir).joinpath(module_prefix+'pop_data_%s_%.2e_%s_%.2e_%i.dat' %
+                                                                 (self.parameter_name1 ,
+                                                                  self.multiplier1,
+                                                                  self.parameter_name2,
+                                                                  self.multiplier2,
+                                                                  self.replicate))
                 with open(self.pop_data_path, 'w'):
                     pass
 
@@ -1011,10 +1062,15 @@ class IFNSimDataSteppable(IFNSteppableBase):
             setattr(self, attr_name, new_window)
 
         # Check that output directory is available
-        if self.output_dir is not None:
+        if self.out_dir is not None:
             from pathlib import Path
             if self.write_ifn_data:
-                self.ifn_data_path = Path(self.output_dir).joinpath(module_prefix + 'data.dat')
+                self.ifn_data_path = Path(self.out_dir).joinpath(module_prefix + 'data_%s_%.2e_%s_%.2e_%i.dat' %
+                                                                 (self.parameter_name1 ,
+                                                                  self.multiplier1,
+                                                                  self.parameter_name2,
+                                                                  self.multiplier2,
+                                                                  self.replicate))
                 with open(self.ifn_data_path, 'w'):
                     pass
 
@@ -1034,10 +1090,15 @@ class IFNSimDataSteppable(IFNSteppableBase):
             self.med_diff_data_win.add_plot(self._ifn_field_name, style='Dots', color='green', size=5)
 
         # Check that output directory is available
-        if self.output_dir is not None:
+        if self.out_dir is not None:
             from pathlib import Path
             if self.write_med_diff_data:
-                self.med_diff_data_path = Path(self.output_dir).joinpath(module_prefix + 'med_diff_data.dat')
+                self.med_diff_data_path = Path(self.out_dir).joinpath(module_prefix + 'med_diff_data_%s_%.2e_%s_%.2e_%i.dat' %
+                                                                 (self.parameter_name1 ,
+                                                                  self.multiplier1,
+                                                                  self.parameter_name2,
+                                                                  self.multiplier2,
+                                                                  self.replicate))
                 with open(self.med_diff_data_path, 'w'):
                     pass
 
@@ -1051,17 +1112,18 @@ class IFNSimDataSteppable(IFNSteppableBase):
         if self.simdata_steppable is None:
             self.simdata_steppable = self.shared_steppable_vars[ifn_sim_data_key]
 
-        plot_pop_data = self.plot_pop_data and mcs % IFNInputs.plot_pop_data_freq == 0
-        plot_ifn_data = self.plot_ifn_data and mcs % IFNInputs.plot_ifn_data_freq == 0
-        plot_med_diff_data = self.plot_med_diff_data and mcs % IFNInputs.plot_med_diff_data_freq == 0
-        if self.output_dir is not None:
-            write_pop_data = self.write_pop_data and mcs % IFNInputs.write_pop_data_freq == 0
-            write_ifn_data = self.write_ifn_data and mcs % IFNInputs.write_ifn_data_freq == 0
-            write_med_diff_data = self.write_med_diff_data and mcs % IFNInputs.write_med_diff_data_freq == 0
+        plot_pop_data = self.plot_pop_data and mcs % self._plot_pop_data_freq == 0
+        plot_med_diff_data = self.plot_med_diff_data and mcs % self._plot_med_diff_data_freq == 0
+        plot_ifn_data = self.plot_ifn_data and mcs % self._plot_ifn_data_freq == 0
+        if self.out_dir is not None:
+            write_pop_data = self.write_pop_data and mcs % self._write_pop_data_freq == 0
+            write_med_diff_data = self.write_med_diff_data and mcs % self._write_med_diff_data_freq == 0
+            write_ifn_data = self.write_ifn_data and mcs % self._write_ifn_data_freq == 0
         else:
             write_pop_data = False
-            write_ifn_data = False
+								  
             write_med_diff_data = False
+            write_ifn_data = False
 
         hours_to_mcs = self.step_period / 60.0 / 60.0
 
@@ -1193,7 +1255,144 @@ class IFNSimDataSteppable(IFNSteppableBase):
     def initial_number_cells(self, _val: int):
         self._initial_number_cells = _val
 
+    @property
+    def plot_pop_data_freq(self):
+        """
+        Frequency of plotting population data
+        """
+        return self._plot_pop_data_freq
 
+    @plot_pop_data_freq.setter
+    def plot_pop_data_freq(self, _val: int):
+        if _val < 0:
+            raise ValueError("Value must be non-negative")
+        self._plot_pop_data_freq = _val
+
+    @property
+    def write_pop_data_freq(self):
+        """
+        Frequency of writing population data
+        """
+        return self._write_pop_data_freq
+
+    @write_pop_data_freq.setter
+    def write_pop_data_freq(self, _val: int):
+        if _val < 0:
+            raise ValueError("Value must be non-negative")
+        self._write_pop_data_freq = _val
+
+    @property
+    def plot_med_diff_data_freq(self):
+        """
+        Frequency of plotting diffusion field data
+        """
+        return self._plot_med_diff_data_freq
+
+    @plot_med_diff_data_freq.setter
+    def plot_med_diff_data_freq(self, _val: int):
+        if _val < 0:
+            raise ValueError("Value must be non-negative")
+        self._plot_med_diff_data_freq = _val
+
+    @property
+    def write_med_diff_data_freq(self):
+        """
+        Frequency of writing diffusion field data
+        """
+        return self._write_med_diff_data_freq
+
+    @write_med_diff_data_freq.setter
+    def write_med_diff_data_freq(self, _val: int):
+        if _val < 0:
+            raise ValueError("Value must be non-negative")
+        self._write_med_diff_data_freq = _val
+
+    @property
+    def plot_ifn_data_freq(self):
+        """
+        Frequency of plotting immune response model data
+        """
+        return self._plot_ifn_data_freq
+
+    @plot_ifn_data_freq.setter
+    def plot_ifn_data_freq(self, _val: int):
+        if _val < 0:
+            raise ValueError("Value must be non-negative")
+        self._plot_ifn_data_freq = _val
+
+    @property
+    def write_ifn_data_freq(self):
+        """
+        Frequency of writing immune response model data
+        """
+        return self._write_ifn_data_freq
+
+    @write_ifn_data_freq.setter
+    def write_ifn_data_freq(self, _val: int):
+        if _val < 0:
+            raise ValueError("Value must be non-negative")
+        self._write_ir_data_freq = _val
+
+    @property
+    def out_dir(self):
+        """
+        Uninfected cell type name
+        """
+        return self._out_dir
+
+    @out_dir.setter
+    def out_dir(self, _name: str):
+        self._out_dir = _name
+
+    @property
+    def replicate(self):
+        """
+        """
+        return self._replicate
+
+    @replicate.setter
+    def replicate(self, _val: int):
+        self._replicate = _val
+
+    @property
+    def multiplier1(self):
+        """
+        """
+        return self._multiplier1
+
+    @multiplier1.setter
+    def multiplier1(self, _val: float):
+        self._multiplier1 = _val
+
+    @property
+    def multiplier2(self):
+        """
+        """
+        return self._multiplier2
+
+    @multiplier2.setter
+    def multiplier2(self, _val: float):
+        self._multiplier2 = _val
+
+    @property
+    def parameter_name1(self):
+        """
+        """
+        return self._parameter_name1
+
+    @parameter_name1.setter
+    def parameter_name1(self, _name: str):
+        self._parameter_name1 = _name
+
+    @property
+    def parameter_name2(self):
+        """
+        """
+        return self._parameter_name2
+
+    @parameter_name2.setter
+    def parameter_name2(self, _name: str):
+        self._parameter_name2 = _name
 class IFNPlaqueAssaySteppable(IFNSteppableBase):
     """
     Plots and writes data for plaque assay simulations. Plaque assay simulations require that infection is initalized
