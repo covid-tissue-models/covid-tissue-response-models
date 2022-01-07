@@ -16,20 +16,20 @@ ddm_simple_pk_batch1 = {'first_dose': [0],  #
                         'kon': [1]}
 
 ddm_new_var_batch2 = {'first_dose': [1],  #
-                        # 'prophylactic_time': [1, 3, 5, 7],
-                        'dose_interval': [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6],
-                        # missing continuous dosing. dose interval in days
-                        'ic50_multiplier': [0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1],
-                        't_half_mult': [1],
-                        'kon': [1]}
+                      # 'prophylactic_time': [1, 3, 5, 7],
+                      'dose_interval': [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6],
+                      # missing continuous dosing. dose interval in days
+                      'ic50_multiplier': [0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1],
+                      't_half_mult': [1],
+                      'kon': [1]}
 
 ddm_new_var_batch3 = {'first_dose': [3],  #
-                        # 'prophylactic_time': [1, 3, 5, 7],
-                        'dose_interval': [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6],
-                        # missing continuous dosing. dose interval in days
-                        'ic50_multiplier': [0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1],
-                        't_half_mult': [1],
-                        'kon': [1]}
+                      # 'prophylactic_time': [1, 3, 5, 7],
+                      'dose_interval': [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6],
+                      # missing continuous dosing. dose interval in days
+                      'ic50_multiplier': [0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1],
+                      't_half_mult': [1],
+                      'kon': [1]}
 
 ddm_simple_pk_batch2 = {'first_dose': [7],  #
                         # 'prophylactic_time': [1, 3, 5, 7],
@@ -95,8 +95,35 @@ nothing_batch = {'first_dose': [0],
                  'ic50_multiplier': [1],
                  'kon': [1]}
 
-mult_dict = ddm_simple_pk_batch1
-num_rep = 5
+# review batches
+
+# lower sd
+
+review_low_sd = {'first_dose': [1],  #
+                 # 'prophylactic_time': [1, 3, 5, 7],
+                 'intercell_sd': [0.1],
+                 'dose_interval': [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6],
+                 # missing continuous dosing. dose interval in days
+                 'ic50_multiplier': [0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1],
+                 't_half_mult': [1],
+                 'kon': [1]}
+
+# higher sd
+
+review_high_sd = {'first_dose': [1],  #
+                  # 'prophylactic_time': [1, 3, 5, 7],
+                  'intercell_sd': [0.5],
+                  'dose_interval': [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6],
+                  # missing continuous dosing. dose interval in days
+                  'ic50_multiplier': [0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1],
+                  't_half_mult': [1],
+                  'kon': [1]}
+
+# 12h start delay
+
+
+mult_dict = review_low_sd
+num_rep = 4
 # Model output frequency
 model_out_freq = 1
 # Output frequency of simulation data per simulation replica
@@ -105,7 +132,7 @@ out_freq = 250
 
 # sweep_output_folder = r'/N/slate/jferrari/new_pk/corrected_ic50_calc/ddm_batch_1'
 #
-sweep_output_folder = r'/N/slate/jferrari/ddm/simple_pk/vary_t12/batch_1'
+sweep_output_folder = r'/N/slate/jferrari/ddm/review/low_sd'
 # sweep_output_folder = r'/N/slate/jferrari/ddm/simple_pk/p_batch_1'
 # sweep_output_folder = r'/N/slate/jferrari/ddm/simple_pk/nothing_5'
 # sweep_output_folder = r'D:\batch_run_debug'
