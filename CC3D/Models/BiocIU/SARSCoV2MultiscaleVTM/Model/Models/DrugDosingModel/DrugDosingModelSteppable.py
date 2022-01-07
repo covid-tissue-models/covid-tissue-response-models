@@ -311,7 +311,7 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
                 if 'rmd_in_rate' in params_to_var:
                     var_in = 11
                     while abs(var_in) > 1:
-                        var_in = np.random.normal(0, .25)
+                        var_in = np.random.normal(0, intercell_sd)
                     # print(var_in)
                     cell1.dict['base_kin'] = rms_model1['base_kin'] * (1 + var_in)
                     cell1.dict['rmd_in_rate'] = cell1.dict['base_kin'] / rms_model1['base_kin']
@@ -345,7 +345,7 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
                 if 'rmd_out_rate' in params_to_var:
                     var_out = 11
                     while abs(var_out) > 1:
-                        var_out = np.random.normal(0, .25)
+                        var_out = np.random.normal(0, intercell_sd)
                     # print(var_out)
                     cell1.dict['k_out'] = rms_model1['k_out'] * (1 + var_out)
                     cell1.dict['rmd_out_rate'] = cell1.dict['k_out'] / rms_model1['k_out']
