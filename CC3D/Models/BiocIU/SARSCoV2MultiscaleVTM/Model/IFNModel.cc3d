@@ -1,0 +1,10 @@
+<Simulation version="4.1.1">
+   <XMLScript Type="XMLScript">Models/IFNSignaling/example/ViralInfectionVTM.xml</XMLScript>
+   <PythonScript Type="PythonScript">Models/IFNSignaling/example/ViralInfectionVTM.py</PythonScript>
+
+   <Resource Type="Python">Simulation/ViralInfectionVTMSteppables.py</Resource>
+   <Resource Type="Python">Simulation/ViralInfectionVTMModelInputs.py</Resource>
+   <Resource Type="Python">Simulation/ViralInfectionVTMLib.py</Resource>
+   <Resource Type="Python">Simulation/ViralInfectionVTMSteppableBasePy.py</Resource>
+   <Resource Type="Python">nCoVToolkit/nCoVUtils.py</Resource>
+</Simulation>
