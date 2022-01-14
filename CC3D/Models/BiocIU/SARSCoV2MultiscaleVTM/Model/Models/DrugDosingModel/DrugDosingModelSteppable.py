@@ -543,10 +543,11 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
                                'ddm_tot_RNA_data': 'ddm_tot_RNA_data.dat', 'ddm_mean_RNA_data': 'ddm_mean_RNA_data.dat',
                                'ddm_total_viral_production_data': 'ddm_total_viral_production_data.dat',
                                'intercell_var_in_rate': 'in_rates.dat', 'intercell_var_out_rate': 'out_rates.dat',
-                               'ddm_active_drug': 'ddm_active_drug.dat'}
+                               'ddm_active_drug': 'ddm_active_drug.dat',
+                               'ddm_mean_RNA_infrel_data': 'ddm_mean_RNA_infrel_data.dat'}
             self.ddm_data = {'ddm_data': {}, 'ddm_rmax_data': {}, 'ddm_tot_RNA_data': {}, 'ddm_mean_RNA_data': {},
                              'ddm_total_viral_production_data': {}, 'intercell_var_in_rate': {},
-                             'intercell_var_out_rate': {}, 'ddm_active_drug': {}}
+                             'intercell_var_out_rate': {}, 'ddm_active_drug': {}, 'ddm_mean_RNA_infrel_data': {}}
 
     def init_plots(self):
         self.ddm_data_win = self.add_new_plot_window(title='Drug dosing model',
@@ -824,11 +825,16 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
 
             self.ddm_data['ddm_tot_RNA_data'][mcs] = [np.sum(rna_list)]
             self.ddm_data['ddm_mean_RNA_data'][mcs] = [np.mean(rna_list)]
+            rna_list = self.get_rna_infrel_array()
+            self.ddm_data['ddm_mean_RNA_infrel_data'][mcs] = [np.mean(rna_list), np.std(rna_list)]
 
             self.ddm_data['ddm_total_viral_production_data'][mcs] = [self.total_virus_released]
 
         if mcs >= int(self.simulator.getNumSteps() / 4 * self.__flush_counter):
             self.flush_stored_outputs()
+
+    def get_rna_infrel_array(self):
+        return np.array([cell.dict['Replicating'] for cell in self.cell_list_by_type(self.VIRUSRELEASING)])
 
     def flush_stored_outputs(self):
         """
