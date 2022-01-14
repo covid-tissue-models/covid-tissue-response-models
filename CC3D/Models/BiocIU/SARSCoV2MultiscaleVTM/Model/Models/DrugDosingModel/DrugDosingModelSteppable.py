@@ -16,6 +16,7 @@ import sys
 import os
 from cc3d.core.PySteppables import *
 import json
+
 sys.path.append(os.path.join(os.environ["ViralInfectionVTM"], "Simulation"))
 sys.path.append(os.environ["ViralInfectionVTM"])
 try:
@@ -541,10 +542,11 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
             self.data_files = {'ddm_data': 'ddm_data.dat', 'ddm_rmax_data': 'ddm_rmax_data.dat',
                                'ddm_tot_RNA_data': 'ddm_tot_RNA_data.dat', 'ddm_mean_RNA_data': 'ddm_mean_RNA_data.dat',
                                'ddm_total_viral_production_data': 'ddm_total_viral_production_data.dat',
-                               'intercell_var_in_rate': 'in_rates.dat', 'intercell_var_out_rate': 'out_rates.dat'}
+                               'intercell_var_in_rate': 'in_rates.dat', 'intercell_var_out_rate': 'out_rates.dat',
+                               'ddm_active_drug': 'ddm_active_drug.dat'}
             self.ddm_data = {'ddm_data': {}, 'ddm_rmax_data': {}, 'ddm_tot_RNA_data': {}, 'ddm_mean_RNA_data': {},
                              'ddm_total_viral_production_data': {}, 'intercell_var_in_rate': {},
-                             'intercell_var_out_rate': {}}
+                             'intercell_var_out_rate': {}, 'ddm_active_drug': {}}
 
     def init_plots(self):
         self.ddm_data_win = self.add_new_plot_window(title='Drug dosing model',
@@ -782,10 +784,13 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
 
         if time < 0:
             # self.ddm_data['ddm_data'][time] = [self.sbml.drug_dosing_control[x] for x in self.mvars.ddm_vars]
-            self.avg_active, _ = self.get_mean_std_active()
+            self.avg_active, self.std_active = self.get_mean_std_active()
             self.avg_prodrug, _ = self.get_mean_std_prodrug()
             self.ddm_data['ddm_data'][time] = [self.avg_prodrug,
                                                self.avg_active]
+            self.ddm_data['ddm_active_drug'][time] = [self.avg_active,
+                                                      self.std_active]
+
             # if self.tracked_cell is not None:
             #     self.ddm_data['ddm_data'][time] = [self.avg_prodrug,
             #                                        self.avg_active]
@@ -803,6 +808,8 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
             # self.ddm_data['ddm_data'][time] = self.get_ddm_data_list()
             self.ddm_data['ddm_data'][time] = [self.avg_prodrug,
                                                self.avg_active]
+            self.ddm_data['ddm_active_drug'][time] = [self.avg_active,
+                                                      self.std_active]
             # if self.tracked_cell is not None:
             #     self.ddm_data['ddm_data'][time] = [self.avg_prodrug,
             #                                        self.avg_active]
@@ -885,9 +892,9 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
         for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING, self.DYING):
             data_dict['cell_id'].append(cell.id)
             if intercell_var:
-            # if 'rmd_in_rate' in cell.dict.keys():
+                # if 'rmd_in_rate' in cell.dict.keys():
                 data_dict['relative_in_rate'].append(cell.dict['rmd_in_rate'])
-            # if 'relative_out_rate' in  cell.dict.keys():
+                # if 'relative_out_rate' in  cell.dict.keys():
                 data_dict['relative_out_rate'].append(cell.dict['rmd_out_rate'])
             data_dict['time_of_infection'].append(cell.dict['time_of_infection'])
             data_dict['time_of_virus_release'].append(cell.dict['time_of_virus_release'])
@@ -899,7 +906,6 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
 
         with open(path_json, 'w+') as outf:
             json.dump(data_dict, outf)
-
 
     def on_stop(self):
         self.finish()
