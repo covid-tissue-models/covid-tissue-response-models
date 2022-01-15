@@ -168,7 +168,7 @@ class ViralInfectionVTMSteppableBasePy(nCoVSteppableBase):
         :return: None
         """
         cell.type = self.DYING
-
+        cell.dict['internal_active_drug'] = 0
         # Remove viral replication model: no model for dead cell type
         ViralInfectionVTMLib.reset_viral_replication_variables(cell=cell)
         self.remove_viral_replication_model(cell=cell)

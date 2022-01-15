@@ -446,6 +446,7 @@ class DrugDosingModelSteppable(ViralInfectionVTMSteppableBasePy):
         for cell in self.cell_list_by_type(self.INFECTED, self.VIRUSRELEASING, self.UNINFECTED):
             self.timestep_cell_sbml('drug_metabolization', cell)
             if not sanity_run:
+                cell.dict['internal_active_drug'] = cell.sbml.drug_metabolization[self.active_component]
                 cell.dict['rmax'] = self.get_rmax(cell.sbml.drug_metabolization[self.active_component])
                 if cell.type != self.UNINFECTED:
                     vr_model = getattr(cell.sbml, self.vr_model_name)
@@ -504,6 +505,8 @@ class DrugDosingDataFieldsPlots(ViralInfectionVTMSteppableBasePy):
         ViralInfectionVTMSteppableBasePy.__init__(self, frequency)
 
         self.track_cell_level_scalar_attribute(field_name='internal_viral_RNA', attribute_name='Replicating')
+        self.track_cell_level_scalar_attribute(field_name='Intracellular_Antiviral',
+                                               attribute_name='internal_active_drug')
         if intercell_var:
             for p in params_to_var:
                 self.track_cell_level_scalar_attribute(field_name=f'relative_{p}', attribute_name=f'{p}')
