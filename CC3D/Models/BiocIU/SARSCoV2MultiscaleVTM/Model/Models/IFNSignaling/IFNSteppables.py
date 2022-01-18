@@ -200,6 +200,24 @@ class IFNSteppableBase(nCoVSteppableBase):
         """
         return getattr(self, self._dead_type_name.upper())
 
+    @staticmethod
+    def lytic_non_lytic_death_chooser(cell, lytic_rate) -> bool:
+        p = nCoVUtils.ul_rate_to_prob(lytic_rate)
+        lytic_death_occurs = random.uniform() < p
+        if lytic_death_occurs:
+            IFNSteppableBase.lytic_death(cell)
+            return lytic_death_occurs
+        else:
+            IFNSteppableBase.non_lytic_death(cell)
+            return lytic_death_occurs
+    @staticmethod
+    def lytic_death(cell):
+        return
+
+    @staticmethod
+    def non_lytic_death(cell):
+        IFNSteppableBase.set_cell_type(cell, IFNSteppableBase.dead_type_id)
+        return
 
 def IFN_model_string(**kwargs):
     """
@@ -720,12 +738,20 @@ class IFNReleaseSteppable(IFNSteppableBase):
 
         hours_to_mcs = self.step_period / 60.0 / 60.0
         for cell in self.cell_list_by_type(*self.registered_type_ids):
-            intracellularIFN = 1.0
-            ifn_cell_sbml = get_cell_ifn_model(cell)
-            if ifn_cell_sbml:
-                intracellularIFN = ifn_cell_sbml['IFN']
-            p = self.release_rate * hours_to_mcs * intracellularIFN
-            secretor.secreteInsideCell(cell, p * fact / cell.volume)
+            self.release_IFN(cell, secretor)
+
+    def release_IFN(self, cell, secretor):
+        min_dim = min(self.dim.x, self.dim.y, self.dim.z)
+        fact = 1.0
+        if min_dim < 3:
+            fact = float(min_dim)
+        hours_to_mcs = self.step_period / 60.0 / 60.0
+        intracellularIFN = 1.0
+        ifn_cell_sbml = get_cell_ifn_model(cell)
+        if ifn_cell_sbml:
+            intracellularIFN = ifn_cell_sbml['IFN']
+        p = self.release_rate * hours_to_mcs * intracellularIFN
+        secretor.secreteInsideCell(cell, p * fact / cell.volume)
 
     @property
     def release_rate(self):
