@@ -909,8 +909,8 @@ class IFNSimDataSteppable(IFNSteppableBase):
         self.med_diff_data_path = None
         self.med_diff_data = dict()
 
-        self._out_dir = None
-        self.out_dir = self._out_dir
+        # self._out_dir = None
+        self.out_dir = self.output_dir
 
         self._replicate = 0
         self.replicate = self._replicate
@@ -927,21 +927,16 @@ class IFNSimDataSteppable(IFNSteppableBase):
         self._parameter_name2 = ''
         self.parameter_name2 = self._parameter_name2
 
-        self._plot_pop_data_freq = 0
-        self._write_pop_data_freq = 0
-        self._plot_ifn_data_freq = 0
-        self._write_ifn_data_freq = 0
-        self._plot_med_diff_data_freq = 0
-        self._write_med_diff_data_freq = 0
+
+        self._plot_pop_data_freq = IFNInputs.plot_pop_data_freq
+        self._write_pop_data_freq = IFNInputs.write_ifn_data_freq
+        self._plot_ifn_data_freq = IFNInputs.plot_ifn_data_freq
+        self._write_ifn_data_freq = IFNInputs.write_ifn_data_freq
+        self._plot_med_diff_data_freq = IFNInputs.plot_med_diff_data_freq
+        self._write_med_diff_data_freq = IFNInputs.write_med_diff_data_freq
 
         self.med_diff_key = "MedDiff"
 
-        self.plot_pop_data = False
-        self.write_pop_data = False
-        self.plot_ifn_data = False
-        self.write_ifn_data = False
-        self.plot_med_diff_data = False
-        self.write_med_diff_data = False
 
         # For flushing outputs every quarter simulation length
         self.__flush_counter = 1
@@ -963,18 +958,18 @@ class IFNSimDataSteppable(IFNSteppableBase):
 
         self.plot_pop_data_freq = IFNInputs.plot_pop_data_freq
         self.write_pop_data_freq = IFNInputs.write_ifn_data_freq
-        self.plot_ifn_data_freq =IFNInputs.plot_ifn_data_freq
+        self.plot_ifn_data_freq = IFNInputs.plot_ifn_data_freq
         self.write_ifn_data_freq = IFNInputs.write_ifn_data_freq
         self.plot_med_diff_data_freq = IFNInputs.plot_med_diff_data_freq
         self.write_med_diff_data_freq = IFNInputs.write_med_diff_data_freq
 
     def start(self):
-        self.plot_pop_data = self._plot_pop_data_freq > 0
-        self.write_pop_data = self._write_pop_data_freq > 0
-        self.plot_ifn_data = self._plot_ifn_data_freq > 0
-        self.write_ifn_data = self._write_ifn_data_freq > 0
-        self.plot_med_diff_data = self._plot_med_diff_data_freq > 0
-        self.write_med_diff_data = self._write_med_diff_data_freq > 0
+        self.plot_pop_data = self.plot_pop_data_freq > 0
+        self.write_pop_data = self.write_pop_data_freq > 0
+        self.plot_ifn_data = self.plot_ifn_data_freq > 0
+        self.write_ifn_data = self.write_ifn_data_freq > 0
+        self.plot_med_diff_data = self.plot_med_diff_data_freq > 0
+        self.write_med_diff_data = self.write_med_diff_data_freq > 0
 
         # Initialize population data plot if requested
         if self.plot_pop_data:
@@ -995,7 +990,7 @@ class IFNSimDataSteppable(IFNSteppableBase):
         if self.out_dir is not None:
             from pathlib import Path
             if self.write_pop_data:
-                self.pop_data_path = Path(self.outdir).joinpath(module_prefix+'pop_data_%s_%.2e_%s_%.2e_%i.dat' %
+                self.pop_data_path = Path(self.out_dir).joinpath(module_prefix+'pop_data_%s_%.2e_%s_%.2e_%i.dat' %
                                                                  (self.parameter_name1 ,
                                                                   self.multiplier1,
                                                                   self.parameter_name2,
@@ -1316,9 +1311,11 @@ class IFNSimDataSteppable(IFNSteppableBase):
     @property
     def out_dir(self):
         """
-        Uninfected cell type name
+        Output directory
         """
-        return self._out_dir
+        # return CompuCellSetup.persistent_globals.output_directory
+
+        return self.output_dir
 
     @out_dir.setter
     def out_dir(self, _name: str):
