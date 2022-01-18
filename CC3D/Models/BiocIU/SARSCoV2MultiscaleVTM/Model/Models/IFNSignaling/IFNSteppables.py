@@ -1,4 +1,8 @@
 # coding=utf-8
+# Improvements to IFN model
+# Continued work by Juliano Ferrari Gianlupi
+# Continued from:
+#
 # IFN intracellular signaling and coupled viral replication models
 # Written by Josua Aponte-Serrano
 # Adds IFN signaling model to cells in the main framework. Replaces viral replication model in the main framework
@@ -16,6 +20,7 @@ from nCoVToolkit.nCoVSteppableBase import nCoVSteppableBase
 import ViralInfectionVTMSteppables as MainSteppables
 from . import IFNInputs
 from . import module_prefix
+from BatchRun import BatchRunLib
 
 # Module specific references
 ifn_model_name = module_prefix+'model'
@@ -751,12 +756,17 @@ class IFNVirusFieldInitializerSteppable(MainSteppables.VirusFieldInitializerStep
     unique_key = ifn_virus_field_initializer_key
 
     def start(self):
+
+        BatchRunLib.apply_external_multipliers(__name__, IFNInputs)
         min_to_mcs = self.step_period / 60.0
         days_to_mcs = min_to_mcs / 60.0 / 24.0
         if self._diffusion_coefficient is None:
-            self.get_xml_element(self._virus_diffusion_id).cdata = IFNInputs.virus_diffusion_coefficient * min_to_mcs / self.voxel_length ** 2
+            self.get_xml_element(self._virus_diffusion_id).cdata = \
+                IFNInputs.virus_diffusion_coefficient[IFNInputs.possible_media_for_diffusion[IFNInputs.media_selection]] \
+                * min_to_mcs / self.voxel_length ** 2
         else:
-            self.get_xml_element(self._virus_diffusion_id).cdata = self._diffusion_coefficient * min_to_mcs / self.voxel_length ** 2
+            self.get_xml_element(self._virus_diffusion_id).cdata = \
+                self._diffusion_coefficient * min_to_mcs / self.voxel_length ** 2
         if self._decay_coefficient is None:
             self.get_xml_element(self._virus_decay_id).cdata = IFNInputs.c * days_to_mcs
         else:
@@ -795,7 +805,9 @@ class IFNFieldInitializerSteppable(IFNSteppableBase):
         hours_to_mcs = min_to_mcs / 60.0
         scaling_factor = min_to_mcs / self.voxel_length ** 2
         if self._diffusion_coefficient is None:
-            self.get_xml_element(self._ifn_diffusion_id).cdata = IFNInputs.IFNe_diffusion_coefficient * scaling_factor
+            self.get_xml_element(self._ifn_diffusion_id).cdata = \
+                IFNInputs.IFNe_diffusion_coefficient[IFNInputs.possible_media_for_diffusion[IFNInputs.media_selection]]\
+                * scaling_factor
         else:
             self.get_xml_element(self._ifn_diffusion_id).cdata = self._diffusion_coefficient * scaling_factor
         if self._decay_coefficient is None:
