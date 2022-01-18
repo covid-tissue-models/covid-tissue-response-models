@@ -1,8 +1,4 @@
 # coding=utf-8
-# Improvements to IFN model
-# Continued work by Juliano Ferrari Gianlupi
-# Continued from:
-#
 # IFN intracellular signaling and coupled viral replication models
 # Written by Josua Aponte-Serrano
 # Adds IFN signaling model to cells in the main framework. Replaces viral replication model in the main framework
@@ -18,9 +14,9 @@ import random
 from nCoVToolkit import nCoVUtils
 from nCoVToolkit.nCoVSteppableBase import nCoVSteppableBase
 import ViralInfectionVTMSteppables as MainSteppables
+from Models.SegoAponte2020.ViralInfectionVTMSteppables import ImmuneRecruitmentSteppable
 from . import IFNInputs
 from . import module_prefix
-from BatchRun import BatchRunLib
 
 # Module specific references
 ifn_model_name = module_prefix+'model'
@@ -45,7 +41,6 @@ ifn_viral_release_key = module_prefix + 'viral_release_steppable'
 ifn_viral_death_key = module_prefix + 'viral_death_steppable'
 ifn_virus_field_initializer_key = module_prefix + 'virus_field_initializer_steppable'
 ifn_plaque_assay_key = module_prefix + 'plaque_assay_steppable'
-
 
 class IFNSteppableBase(nCoVSteppableBase):
     """
@@ -200,24 +195,6 @@ class IFNSteppableBase(nCoVSteppableBase):
         """
         return getattr(self, self._dead_type_name.upper())
 
-    @staticmethod
-    def lytic_non_lytic_death_chooser(cell, lytic_rate) -> bool:
-        p = nCoVUtils.ul_rate_to_prob(lytic_rate)
-        lytic_death_occurs = random.uniform() < p
-        if lytic_death_occurs:
-            IFNSteppableBase.lytic_death(cell)
-            return lytic_death_occurs
-        else:
-            IFNSteppableBase.non_lytic_death(cell)
-            return lytic_death_occurs
-    @staticmethod
-    def lytic_death(cell):
-        return
-
-    @staticmethod
-    def non_lytic_death(cell):
-        IFNSteppableBase.set_cell_type(cell, IFNSteppableBase.dead_type_id)
-        return
 
 def IFN_model_string(**kwargs):
     """
@@ -396,11 +373,15 @@ class IFNSteppable(IFNSteppableBase):
         self.set_ifn_params(**{k: getattr(IFNInputs, k) for k in ifn_model_params_keys})
         self.set_viral_replication_params(**{k: getattr(IFNInputs, k) for k in viral_replication_model_params_keys})
 
-        self.sbml_options = {'relative': 1e-10, 'absolute': 1e-12}
-
     def start(self):
         hours_to_mcs = self.step_period / 60.0 / 60.0
+        # self.sbml_options = {'relative': 1e-10, 'absolute': 1e-12, 'minimum_time_step': hours_to_mcs/1000.0}
+        self.sbml_options = {'relative': 1e-10, 'absolute': 1e-12}
         self.set_sbml_global_options(self.sbml_options)
+
+        # Set Max Simulation Steps
+        hours_to_simulate = 150.0
+        self.get_xml_element('simulation_steps').cdata = hours_to_simulate / hours_to_mcs
 
         # Load IFN sbml model
         def _ifn_model_fcn(cell):
@@ -533,6 +514,7 @@ class IFNViralInternalizationSteppable(IFNSteppableBase, MainSteppables.ViralInt
 
         # Internal data
         self._initial_amount_virus = 0.0
+        self._beta_multiplier = 1.0
 
         # Initialize default data
         self.virus_releasing_type_name = MainSteppables.virus_releasing_type_name
@@ -552,7 +534,7 @@ class IFNViralInternalizationSteppable(IFNSteppableBase, MainSteppables.ViralInt
             days_to_mcs = self.step_period / 60.0 / 60.0 / 24.0
             initial_number_registered_cells = len(self.cell_list_by_type(*self.registered_type_ids))
             b = IFNInputs.b * initial_number_registered_cells * days_to_mcs
-            self.internalization_rate = b
+            self.internalization_rate = b * self._beta_multiplier
 
         secretor = self.get_field_secretor(field_name=self._target_field_name)
         for cell in self.cell_list_by_type(self.uninfected_type_id):
@@ -578,9 +560,18 @@ class IFNViralInternalizationSteppable(IFNSteppableBase, MainSteppables.ViralInt
         return self._initial_amount_virus
 
     @initial_amount_virus.setter
-    def initial_amount_virus(self, _val: str):
+    def initial_amount_virus(self, _val: float):
         self._initial_amount_virus = _val
 
+    @property
+    def beta_multiplier(self):
+        """
+        """
+        return self._beta_multiplier
+
+    @beta_multiplier.setter
+    def beta_multiplier(self, _val: float):
+        self._beta_multiplier = _val
 
 class IFNEclipsePhaseSteppable(MainSteppables.EclipsePhaseSteppable, IFNSteppableBase):
     """
@@ -738,20 +729,12 @@ class IFNReleaseSteppable(IFNSteppableBase):
 
         hours_to_mcs = self.step_period / 60.0 / 60.0
         for cell in self.cell_list_by_type(*self.registered_type_ids):
-            self.release_IFN(cell, secretor)
-
-    def release_IFN(self, cell, secretor):
-        min_dim = min(self.dim.x, self.dim.y, self.dim.z)
-        fact = 1.0
-        if min_dim < 3:
-            fact = float(min_dim)
-        hours_to_mcs = self.step_period / 60.0 / 60.0
-        intracellularIFN = 1.0
-        ifn_cell_sbml = get_cell_ifn_model(cell)
-        if ifn_cell_sbml:
-            intracellularIFN = ifn_cell_sbml['IFN']
-        p = self.release_rate * hours_to_mcs * intracellularIFN
-        secretor.secreteInsideCell(cell, p * fact / cell.volume)
+            intracellularIFN = 1.0
+            ifn_cell_sbml = get_cell_ifn_model(cell)
+            if ifn_cell_sbml:
+                intracellularIFN = ifn_cell_sbml['IFN']
+            p = self.release_rate * hours_to_mcs * intracellularIFN
+            secretor.secreteInsideCell(cell, p * fact / cell.volume)
 
     @property
     def release_rate(self):
@@ -782,17 +765,12 @@ class IFNVirusFieldInitializerSteppable(MainSteppables.VirusFieldInitializerStep
     unique_key = ifn_virus_field_initializer_key
 
     def start(self):
-
-        BatchRunLib.apply_external_multipliers(__name__, IFNInputs)
         min_to_mcs = self.step_period / 60.0
         days_to_mcs = min_to_mcs / 60.0 / 24.0
         if self._diffusion_coefficient is None:
-            self.get_xml_element(self._virus_diffusion_id).cdata = \
-                IFNInputs.virus_diffusion_coefficient[IFNInputs.possible_media_for_diffusion[IFNInputs.media_selection]] \
-                * min_to_mcs / self.voxel_length ** 2
+            self.get_xml_element(self._virus_diffusion_id).cdata = IFNInputs.virus_diffusion_coefficient * min_to_mcs / self.voxel_length ** 2
         else:
-            self.get_xml_element(self._virus_diffusion_id).cdata = \
-                self._diffusion_coefficient * min_to_mcs / self.voxel_length ** 2
+            self.get_xml_element(self._virus_diffusion_id).cdata = self._diffusion_coefficient * min_to_mcs / self.voxel_length ** 2
         if self._decay_coefficient is None:
             self.get_xml_element(self._virus_decay_id).cdata = IFNInputs.c * days_to_mcs
         else:
@@ -822,6 +800,8 @@ class IFNFieldInitializerSteppable(IFNSteppableBase):
 
         # Initialize Defaut Data
         self.ifn_field_name = ifn_field_name
+        self.diffusion_coefficient = IFNInputs.IFNe_diffusion_coefficient
+        self.decay_coefficient = IFNInputs.t2
 
     def start(self):
         """
@@ -831,9 +811,7 @@ class IFNFieldInitializerSteppable(IFNSteppableBase):
         hours_to_mcs = min_to_mcs / 60.0
         scaling_factor = min_to_mcs / self.voxel_length ** 2
         if self._diffusion_coefficient is None:
-            self.get_xml_element(self._ifn_diffusion_id).cdata = \
-                IFNInputs.IFNe_diffusion_coefficient[IFNInputs.possible_media_for_diffusion[IFNInputs.media_selection]]\
-                * scaling_factor
+            self.get_xml_element(self._ifn_diffusion_id).cdata = IFNInputs.IFNe_diffusion_coefficient * scaling_factor
         else:
             self.get_xml_element(self._ifn_diffusion_id).cdata = self._diffusion_coefficient * scaling_factor
         if self._decay_coefficient is None:
@@ -866,6 +844,10 @@ class IFNFieldInitializerSteppable(IFNSteppableBase):
         if _val < 0.0:
             raise ValueError("Decay coefficient must be non-negative")
         self._decay_coefficient = _val
+
+    @decay_coefficient.getter
+    def decay_coefficient(self) -> float:
+        return self._decay_coefficient
 
     def set_field_data(self, field_name: str = None, diffusion: str = None, decay: str = None):
         """
@@ -947,8 +929,8 @@ class IFNSimDataSteppable(IFNSteppableBase):
         self.med_diff_data_path = None
         self.med_diff_data = dict()
 
-        # self._out_dir = None
-        self.out_dir = self.output_dir
+        self._out_dir = None
+        self.out_dir = self._out_dir
 
         self._replicate = 0
         self.replicate = self._replicate
@@ -965,16 +947,21 @@ class IFNSimDataSteppable(IFNSteppableBase):
         self._parameter_name2 = ''
         self.parameter_name2 = self._parameter_name2
 
-
-        self._plot_pop_data_freq = IFNInputs.plot_pop_data_freq
-        self._write_pop_data_freq = IFNInputs.write_ifn_data_freq
-        self._plot_ifn_data_freq = IFNInputs.plot_ifn_data_freq
-        self._write_ifn_data_freq = IFNInputs.write_ifn_data_freq
-        self._plot_med_diff_data_freq = IFNInputs.plot_med_diff_data_freq
-        self._write_med_diff_data_freq = IFNInputs.write_med_diff_data_freq
+        self._plot_pop_data_freq = 0
+        self._write_pop_data_freq = 0
+        self._plot_ifn_data_freq = 0
+        self._write_ifn_data_freq = 0
+        self._plot_med_diff_data_freq = 0
+        self._write_med_diff_data_freq = 0
 
         self.med_diff_key = "MedDiff"
 
+        self.plot_pop_data = False
+        self.write_pop_data = False
+        self.plot_ifn_data = False
+        self.write_ifn_data = False
+        self.plot_med_diff_data = False
+        self.write_med_diff_data = False
 
         # For flushing outputs every quarter simulation length
         self.__flush_counter = 1
@@ -996,18 +983,18 @@ class IFNSimDataSteppable(IFNSteppableBase):
 
         self.plot_pop_data_freq = IFNInputs.plot_pop_data_freq
         self.write_pop_data_freq = IFNInputs.write_ifn_data_freq
-        self.plot_ifn_data_freq = IFNInputs.plot_ifn_data_freq
+        self.plot_ifn_data_freq =IFNInputs.plot_ifn_data_freq
         self.write_ifn_data_freq = IFNInputs.write_ifn_data_freq
         self.plot_med_diff_data_freq = IFNInputs.plot_med_diff_data_freq
         self.write_med_diff_data_freq = IFNInputs.write_med_diff_data_freq
 
     def start(self):
-        self.plot_pop_data = self.plot_pop_data_freq > 0
-        self.write_pop_data = self.write_pop_data_freq > 0
-        self.plot_ifn_data = self.plot_ifn_data_freq > 0
-        self.write_ifn_data = self.write_ifn_data_freq > 0
-        self.plot_med_diff_data = self.plot_med_diff_data_freq > 0
-        self.write_med_diff_data = self.write_med_diff_data_freq > 0
+        self.plot_pop_data = self._plot_pop_data_freq > 0
+        self.write_pop_data = self._write_pop_data_freq > 0
+        self.plot_ifn_data = self._plot_ifn_data_freq > 0
+        self.write_ifn_data = self._write_ifn_data_freq > 0
+        self.plot_med_diff_data = self._plot_med_diff_data_freq > 0
+        self.write_med_diff_data = self._write_med_diff_data_freq > 0
 
         # Initialize population data plot if requested
         if self.plot_pop_data:
@@ -1028,7 +1015,7 @@ class IFNSimDataSteppable(IFNSteppableBase):
         if self.out_dir is not None:
             from pathlib import Path
             if self.write_pop_data:
-                self.pop_data_path = Path(self.out_dir).joinpath(module_prefix+'pop_data_%s_%.2e_%s_%.2e_%i.dat' %
+                self.pop_data_path = Path(self.outdir).joinpath(module_prefix+'pop_data_%s_%.2e_%s_%.2e_%i.dat' %
                                                                  (self.parameter_name1 ,
                                                                   self.multiplier1,
                                                                   self.parameter_name2,
@@ -1349,11 +1336,9 @@ class IFNSimDataSteppable(IFNSteppableBase):
     @property
     def out_dir(self):
         """
-        Output directory
+        Uninfected cell type name
         """
-        # return CompuCellSetup.persistent_globals.output_directory
-
-        return self.output_dir
+        return self._out_dir
 
     @out_dir.setter
     def out_dir(self, _name: str):
@@ -1409,7 +1394,6 @@ class IFNSimDataSteppable(IFNSteppableBase):
     def parameter_name2(self, _name: str):
         self._parameter_name2 = _name
 
-
 class IFNPlaqueAssaySteppable(IFNSteppableBase):
     """
     Plots and writes data for plaque assay simulations. Plaque assay simulations require that infection is initalized
@@ -1436,8 +1420,29 @@ class IFNPlaqueAssaySteppable(IFNSteppableBase):
         self.plaque_assay_data_path = None
         self.plaque_assay_data = dict()
 
-        self.plot_plaque_assay_data = IFNInputs.plot_plaque_assay_data_freq > 0
-        self.write_plaque_assay_data = IFNInputs.write_plaque_assay_data_freq > 0
+        self._plot_plaque_assay_data_freq = 0
+        self._write_plaque_assay_data_freq = 0
+
+        self.plot_plaque_assay_data = False
+        self.write_plaque_assay_data = False
+
+        self._out_dir = None
+        self.out_dir = self._out_dir
+
+        self._replicate = 0
+        self.replicate = self._replicate
+
+        self._multiplier1 = 1.0
+        self.multiplier1 = self._multiplier1
+
+        self._parameter_name1 = ''
+        self.parameter_name1 = self._parameter_name1
+
+        self._multiplier2 = 1.0
+        self.multiplier2 = self._multiplier2
+
+        self._parameter_name2 = ''
+        self.parameter_name2 = self._parameter_name2
 
         # For flushing outputs every quarter simulation length
         self.__flush_counter = 1
@@ -1447,7 +1452,13 @@ class IFNPlaqueAssaySteppable(IFNSteppableBase):
         self.virus_releasing_type_name = MainSteppables.virus_releasing_type_name
         self.dead_type_name = MainSteppables.dead_type_name
 
+        self.plot_plaque_assay_data_freq = IFNInputs.plot_plaque_assay_data_freq
+        self.write_plaque_assay_data_freq = IFNInputs.write_plaque_assay_data_freq
+
     def start(self):
+        self.plot_plaque_assay_data = self._plot_plaque_assay_data_freq > 0
+        self.write_plaque_assay_data = self._write_plaque_assay_data_freq > 0
+
         # Initialize population data plot if requested
         if self.plot_plaque_assay_data:
             self.plaque_assay_data_win = self.add_new_plot_window(title='Plaque Data',
@@ -1463,10 +1474,15 @@ class IFNPlaqueAssaySteppable(IFNSteppableBase):
             self.plaque_assay_data_win.add_plot(self._dead_type_name, style='Dots', color='yellow', size=5)
 
         # Check that output directory is available
-        if self.output_dir is not None:
+        if self.out_dir is not None:
             from pathlib import Path
             if self.write_plaque_assay_data:
-                self.plaque_assay_data_path = Path(self.output_dir).joinpath(module_prefix + 'plaque_assay_data.dat')
+                self.plaque_assay_data_path = Path(self.out_dir).joinpath(module_prefix + 'plaque_assay_data_%s_%.2e_%s_%.2e_%i.dat' %
+                                                                 (self.parameter_name1 ,
+                                                                  self.multiplier1,
+                                                                  self.parameter_name2,
+                                                                  self.multiplier2,
+                                                                  self.replicate))
                 with open(self.plaque_assay_data_path, 'w'):
                     pass
 
@@ -1478,9 +1494,9 @@ class IFNPlaqueAssaySteppable(IFNSteppableBase):
             # todo: add handling of when ifn_plaque_assay_key is not present in shared_steppable_vars
             self.plaque_assay_data_steppable = self.shared_steppable_vars[ifn_plaque_assay_key]
 
-        plot_plaque_assay_data = self.plot_plaque_assay_data and mcs % IFNInputs.plot_plaque_assay_data_freq == 0
-        if self.output_dir is not None:
-            write_plaque_assay_data = self.write_plaque_assay_data and mcs % IFNInputs.write_plaque_assay_data_freq == 0
+        plot_plaque_assay_data = self.plot_plaque_assay_data and mcs % self._plot_plaque_assay_data_freq == 0
+        if self.out_dir is not None:
+            write_plaque_assay_data = self.write_plaque_assay_data and mcs % self._write_plaque_assay_data_freq == 0
         else:
             write_plaque_assay_data = False
 
@@ -1536,3 +1552,90 @@ class IFNPlaqueAssaySteppable(IFNSteppableBase):
             with open(self.plaque_assay_data_path, 'a') as fout:
                 fout.write(MainSteppables.SimDataSteppable.data_output_string(self, self.plaque_assay_data))
                 self.plaque_assay_data.clear()
+
+    @property
+    def plot_plaque_assay_data_freq(self):
+        """
+        Frequency of plotting population data
+        """
+        return self._plot_plaque_assay_data_freq
+
+    @plot_plaque_assay_data_freq.setter
+    def plot_plaque_assay_data_freq(self, _val: int):
+        if _val < 0:
+            raise ValueError("Value must be non-negative")
+        self._plot_plaque_assay_data_freq = _val
+
+    @property
+    def write_plaque_assay_data_freq(self):
+        """
+        Frequency of writing population data
+        """
+        return self._write_plaque_assay_data_freq
+
+    @write_plaque_assay_data_freq.setter
+    def write_plaque_assay_data_freq(self, _val: int):
+        if _val < 0:
+            raise ValueError("Value must be non-negative")
+        self._write_plaque_assay_data_freq = _val
+
+    @property
+    def out_dir(self):
+        """
+        Uninfected cell type name
+        """
+        return self._out_dir
+
+    @out_dir.setter
+    def out_dir(self, _name: str):
+        self._out_dir = _name
+
+    @property
+    def replicate(self):
+        """
+        """
+        return self._replicate
+
+    @replicate.setter
+    def replicate(self, _val: int):
+        self._replicate = _val
+
+    @property
+    def multiplier1(self):
+        """
+        """
+        return self._multiplier1
+
+    @multiplier1.setter
+    def multiplier1(self, _val: float):
+        self._multiplier1 = _val
+
+    @property
+    def multiplier2(self):
+        """
+        """
+        return self._multiplier2
+
+    @multiplier2.setter
+    def multiplier2(self, _val: float):
+        self._multiplier2 = _val
+
+    @property
+    def parameter_name1(self):
+        """
+        """
+        return self._parameter_name1
+
+    @parameter_name1.setter
+    def parameter_name1(self, _name: str):
+        self._parameter_name1 = _name
+
+    @property
+    def parameter_name2(self):
+        """
+        """
+        return self._parameter_name2
+
+    @parameter_name2.setter
+    def parameter_name2(self, _name: str):
+        self._parameter_name2 = _name
