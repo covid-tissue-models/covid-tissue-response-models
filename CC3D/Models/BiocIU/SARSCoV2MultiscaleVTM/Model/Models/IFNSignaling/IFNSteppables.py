@@ -485,6 +485,7 @@ class IFNCellInitializerSteppable(MainSteppables.CellInitializerSteppable, IFNSt
         self.random_infected_fraction(1.0)
 
     def start(self):
+        super().single_infected_cell()
         super().start()
 
         for cell in self.cell_list_by_type(self.infected_type_id):
