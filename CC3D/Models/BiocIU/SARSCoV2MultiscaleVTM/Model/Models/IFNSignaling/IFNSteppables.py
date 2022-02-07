@@ -766,9 +766,9 @@ class IFNVirusFieldInitializerSteppable(MainSteppables.VirusFieldInitializerStep
         self._decay_coefficient = None
 
         if self._diffusion_coefficient is None:
-            self.get_xml_element(self._virus_diffusion_id).cdata = 9/10 * min_to_mcs / self.voxel_length ** 2 #\
-                # IFNInputs.virus_diffusion_coefficient[IFNInputs.possible_media_for_diffusion[IFNInputs.media_selection]] \
-                # * min_to_mcs / self.voxel_length ** 2
+            self.get_xml_element(self._virus_diffusion_id).cdata = \
+                IFNInputs.virus_diffusion_coefficient[IFNInputs.possible_media_for_diffusion[IFNInputs.media_selection]] \
+                * min_to_mcs / self.voxel_length ** 2
         else:
             self.get_xml_element(self._virus_diffusion_id).cdata = \
                 self._diffusion_coefficient * min_to_mcs / self.voxel_length ** 2
@@ -810,9 +810,9 @@ class IFNFieldInitializerSteppable(IFNSteppableBase):
         hours_to_mcs = min_to_mcs / 60.0
         scaling_factor = min_to_mcs / self.voxel_length ** 2
         if self._diffusion_coefficient is None:
-            self.get_xml_element(self._ifn_diffusion_id).cdata = 9/10 * scaling_factor #\
-                # IFNInputs.IFNe_diffusion_coefficient[IFNInputs.possible_media_for_diffusion[IFNInputs.media_selection]]\
-                # * scaling_factor
+            self.get_xml_element(self._ifn_diffusion_id).cdata = \
+                IFNInputs.IFNe_diffusion_coefficient[IFNInputs.possible_media_for_diffusion[IFNInputs.media_selection]]\
+                * scaling_factor
         else:
             self.get_xml_element(self._ifn_diffusion_id).cdata = self._diffusion_coefficient * scaling_factor
         if self._decay_coefficient is None:
