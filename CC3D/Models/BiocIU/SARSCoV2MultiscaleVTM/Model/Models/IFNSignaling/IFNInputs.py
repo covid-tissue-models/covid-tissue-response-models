@@ -69,18 +69,19 @@ k73 = 0.197
 # Diffusible Particles Parameters
 
 __param_desc__['possible_media_for_diffusion'] = "We estimated the diffusion coeficients for these meadia"
-possible_media_for_diffusion = ["microcospic mucus", "bulk mucus", "extracellular fluid", "water", "original"]
+possible_media_for_diffusion = ["microcospic mucus", "bulk mucus", "extracellular fluid", "water", "original",
+                                "original according to repo"]
 
 __param_desc__['media_selection'] = "Index of media to use"
-media_selection = 1
+media_selection = 1 # max 5
 
 __param_desc__["IFNe_diffusion_coefficient"] = "IFNe diffusion coefficient (um^2/min)"
 IFNe_diffusion_coefficient = {"microcospic mucus": 0.81 * 60,
                               "bulk mucus": 2.16 * 1e-3 * 60,
                               "extracellular fluid": 4.07 * 60,
                               "water": 46.83 * 60,
-                              "original": 9/10,
-                               "original according to jordan": 3240}
+                              "original": 3240,
+                               "original according to repo": 9/10}
 
 __param_desc__["t2"] = "IFNe decay rate (1/hr)"
 t2 = 3.481
