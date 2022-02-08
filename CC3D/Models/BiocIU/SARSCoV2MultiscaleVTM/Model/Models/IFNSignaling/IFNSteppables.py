@@ -756,9 +756,15 @@ class IFNVirusFieldInitializerSteppable(MainSteppables.VirusFieldInitializerStep
 
     unique_key = ifn_virus_field_initializer_key
 
-    def start(self):
+    def __init__(self, frequency):
+        IFNSteppableBase.__init__(self, frequency)
         from . import IFNInputs
         BatchRunLib.apply_external_multipliers(__name__, IFNInputs)
+        self._virus_diffusion_id = "virus_dc"
+        self._virus_decay_id = "virus_decay"
+
+    def start(self):
+
         min_to_mcs = self.step_period / 60.0
         days_to_mcs = min_to_mcs / 60.0 / 24.0
 
@@ -776,6 +782,14 @@ class IFNVirusFieldInitializerSteppable(MainSteppables.VirusFieldInitializerStep
             self.get_xml_element(self._virus_decay_id).cdata = IFNInputs.c * days_to_mcs
         else:
             self.get_xml_element(self._virus_decay_id).cdata = self._decay_coefficient * days_to_mcs
+        # if self.output_dir is not None:
+        #     from pathlib import Path
+        #     self.diffusion_params_path = Path(self.out_dir).joinpath(module_prefix + 'virus_diffusion_parameters.dat')
+        #
+        #     with open(self.diffusion_params_path, 'w') as f:
+        #         f.write(f'Virus D:, {self.get_xml_element("virus_dc").cdata}')# +
+        #                 # '\n' +
+        #                 # f'IFN D:, {self.get_xml_element("ifn_dc").cdata}')
 
     # def step(self, mcs):
     #     print(self.get_xml_element(self._virus_diffusion_id).cdata)
@@ -822,6 +836,7 @@ class IFNFieldInitializerSteppable(IFNSteppableBase):
             self.get_xml_element(self._ifn_decay_id).cdata = IFNInputs.t2 * hours_to_mcs
         else:
             self.get_xml_element(self._ifn_decay_id).cdata = self._decay_coefficient * hours_to_mcs
+
     # def step(self, mcs):
     #     print(self.get_xml_element(self._ifn_diffusion_id).cdata)
     @property
@@ -1101,6 +1116,13 @@ class IFNSimDataSteppable(IFNSteppableBase):
                 with open(self.med_diff_data_path, 'w'):
                     pass
                 self.med_diff_data[-1] = ['Time', self._virus_field_name, self._ifn_field_name]
+
+                self.diffusion_params_path = Path(self.out_dir).joinpath(module_prefix + 'diffusion_parameters.dat')
+
+                with open(self.diffusion_params_path, 'w') as f:
+                    f.write(f'Virus D:, {self.get_xml_element("virus_dc").cdata}' +
+                            '\n' +
+                            f'IFN D:, {self.get_xml_element("ifn_dc").cdata}')
 
     def step(self, mcs):
         if mcs == 0:
