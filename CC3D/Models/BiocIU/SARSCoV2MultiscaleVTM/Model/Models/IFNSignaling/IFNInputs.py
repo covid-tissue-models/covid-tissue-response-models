@@ -73,7 +73,7 @@ possible_media_for_diffusion = ["microcospic mucus", "bulk mucus", "extracellula
                                 "original according to repo"]
 
 __param_desc__['media_selection'] = "Index of media to use"
-media_selection = 1 # max 5
+media_selection = 1  # max 5
 
 __param_desc__["IFNe_diffusion_coefficient"] = "IFNe diffusion coefficient (um^2/min)"
 IFNe_diffusion_coefficient = {"microcospic mucus": 0.81 * 60,
@@ -81,7 +81,7 @@ IFNe_diffusion_coefficient = {"microcospic mucus": 0.81 * 60,
                               "extracellular fluid": 4.07 * 60,
                               "water": 46.83 * 60,
                               "original": 3240,
-                               "original according to repo": 9/10}
+                              "original according to repo": 9 / 10}
 
 __param_desc__["t2"] = "IFNe decay rate (1/hr)"
 t2 = 3.481
@@ -90,8 +90,8 @@ virus_diffusion_coefficient = {"microcospic mucus": 0.06 * 60,
                                "bulk mucus": 1.51 * 1e-4 * 60,
                                "extracellular fluid": 0.284 * 60,
                                "water": 3.278 * 60,
-                               "original": 9/10,
-                               "original according to jordan": 3240}
+                               "original": 3240,
+                               "original according to repo": 9/10}
 __param_desc__["c"] = "virus decay rate (1/days)"
 c = 13.0
 
