@@ -3,7 +3,7 @@ __param_desc__ = {}
 
 # Data Control
 __param_desc__['plot_pop_data_freq'] = 'Plot population data frequency'
-plot_pop_data_freq = 1  # Plot population data frequency (disable with 0)
+plot_pop_data_freq = 0  # Plot population data frequency (disable with 0)
 __param_desc__['write_pop_data_freq'] = 'Write population data to simulation directory frequency'
 write_pop_data_freq = 1  # Write population data to simulation directory frequency (disable with 0)
 
@@ -18,7 +18,7 @@ __param_desc__['write_med_diff_data_freq'] = 'Write ifn model medium data to sim
 write_med_diff_data_freq = 1
 
 __param_desc__['plot_plaque_assay_data_freq'] = 'Plot ifn plaque assay data frequency'
-plot_plaque_assay_data_freq = 1
+plot_plaque_assay_data_freq = 0
 __param_desc__['write_plaque_assay_data_freq'] = 'Write ifn plaque assay data to simulation directory frequency'
 write_plaque_assay_data_freq = 1
 
@@ -80,8 +80,10 @@ IFNe_diffusion_coefficient = {"microcospic mucus": 0.81 * 60,
                               "bulk mucus": 2.16 * 1e-3 * 60,
                               "extracellular fluid": 4.07 * 60,
                               "water": 46.83 * 60,
-                              "original": 3240,
+                              "original": 3240,  # 54 * 60
                               "original according to repo": 9 / 10}
+# as a proportion of the original
+# [0.001111111111111111, 2.7962962962962963e-06, 0.005259259259259259, 0.060703703703703704, 1.0, 0.0002777777777777778]
 
 __param_desc__["t2"] = "IFNe decay rate (1/hr)"
 t2 = 3.481
@@ -92,6 +94,9 @@ virus_diffusion_coefficient = {"microcospic mucus": 0.06 * 60,
                                "water": 3.278 * 60,
                                "original": 3240,
                                "original according to repo": 9/10}
+
+#
+
 __param_desc__["c"] = "virus decay rate (1/days)"
 c = 13.0
 
