@@ -210,6 +210,7 @@ class IFNSteppableBase(nCoVSteppableBase):
         else:
             IFNSteppableBase.non_lytic_death(cell)
             return lytic_death_occurs
+
     @staticmethod
     def lytic_death(cell):
         return
@@ -218,6 +219,7 @@ class IFNSteppableBase(nCoVSteppableBase):
     def non_lytic_death(cell):
         IFNSteppableBase.set_cell_type(cell, IFNSteppableBase.dead_type_id)
         return
+
 
 def IFN_model_string(**kwargs):
     """
@@ -680,6 +682,32 @@ class IFNViralDeathSteppable(MainSteppables.ViralDeathSteppable, IFNSteppableBas
 
         # Initialize default data
         self.viral_death_rate = IFNInputs.k61
+        self.lytic_probability = IFNInputs.lytic_death_probability
+        self.IFN_release_proportion = IFNInputs.lytic_death_IFN_release_proportion
+        self.ifn_field_name = ifn_field_name
+
+    def non_lytic_death(self, cell):
+        # apoptosis
+        # print('@@@\nnon-lytic!')
+        self.set_cell_type(cell, self.dead_type_id)
+
+    def lytic_death(self, cell):
+        # necroptosis, pyroptosis, etc
+        # releases "a lot" of cytokines
+        # may release virus, not implemented
+        # print('@@@\nlytic!')
+        self.death_IFN_release(cell)
+        self.set_cell_type(cell, self.dead_type_id)
+
+    def death_IFN_release(self, cell):
+
+        ifn_cell_sbml = get_cell_ifn_model(cell)
+        if ifn_cell_sbml:
+            intracellularIFN = ifn_cell_sbml['IFN']
+            secretor = self.get_field_secretor(field_name=self.ifn_field_name)
+            secretor.secreteInsideCell(cell, self.IFN_release_proportion * intracellularIFN / cell.volume)
+            ifn_cell_sbml['IFN'] = (1 - self.IFN_release_proportion) * intracellularIFN # shouldn't matter as the next
+            # line of code kills the cell, but better safe than sorry
 
     def step(self, mcs):
         hours_to_mcs = self.step_period / 60.0 / 60.0
@@ -693,7 +721,11 @@ class IFNViralDeathSteppable(MainSteppables.ViralDeathSteppable, IFNSteppableBas
             viral_death_rate = self.viral_death_rate * hours_to_mcs * V * (1 - H)
             pr = nCoVUtils.ul_rate_to_prob(viral_death_rate)
             if random.random() <= pr:
-                self.set_cell_type(cell, self.dead_type_id)
+                if random.random() <= self.lytic_probability:
+                    self.lytic_death(cell)
+                else:
+                    self.non_lytic_death(cell)
+                # self.set_cell_type(cell, self.dead_type_id)
 
 
 class IFNReleaseSteppable(IFNSteppableBase):
