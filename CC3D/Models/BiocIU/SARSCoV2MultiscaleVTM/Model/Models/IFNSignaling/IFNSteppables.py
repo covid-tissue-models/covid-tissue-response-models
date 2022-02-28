@@ -706,7 +706,7 @@ class IFNViralDeathSteppable(MainSteppables.ViralDeathSteppable, IFNSteppableBas
             intracellularIFN = ifn_cell_sbml['IFN']
             secretor = self.get_field_secretor(field_name=self.ifn_field_name)
             secretor.secreteInsideCell(cell, self.IFN_release_proportion * intracellularIFN / cell.volume)
-            ifn_cell_sbml['IFN'] = (1 - self.IFN_release_proportion) * intracellularIFN # shouldn't matter as the next
+            ifn_cell_sbml['IFN'] = (1 - self.IFN_release_proportion) * intracellularIFN  # shouldn't matter as the next
             # line of code kills the cell, but better safe than sorry
 
     def step(self, mcs):
@@ -721,7 +721,8 @@ class IFNViralDeathSteppable(MainSteppables.ViralDeathSteppable, IFNSteppableBas
             viral_death_rate = self.viral_death_rate * hours_to_mcs * V * (1 - H)
             pr = nCoVUtils.ul_rate_to_prob(viral_death_rate)
             if random.random() <= pr:
-                if random.random() <= self.lytic_probability:
+                if random.random() <= self.lytic_probability:  # I'm pretty sure this probability shouldn't be rescaled
+                    # by the time
                     self.lytic_death(cell)
                 else:
                     self.non_lytic_death(cell)
