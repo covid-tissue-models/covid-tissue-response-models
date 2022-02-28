@@ -23,8 +23,8 @@ from . import module_prefix
 from BatchRun import BatchRunLib
 
 # Module specific references
-ifn_model_name = module_prefix+'model'
-viral_replication_model_name = module_prefix+'viral_replication_model'
+ifn_model_name = module_prefix + 'model'
+viral_replication_model_name = module_prefix + 'viral_replication_model'
 ifn_field_name = 'IFNe'
 virus_field_name = 'Virus'
 ifn_model_vars = ["IFN", "STATP", "IRF7", "IRF7P"]
@@ -409,7 +409,7 @@ class IFNSteppable(IFNSteppableBase):
             """
             return IFN_model_string(**self._ifn_params)
 
-        self.register_ode_model(model_name = ifn_model_name,
+        self.register_ode_model(model_name=ifn_model_name,
                                 model_fcn=_ifn_model_fcn,
                                 cell_types=self._registered_types,
                                 step_size=hours_to_mcs)
@@ -503,6 +503,7 @@ class IFNCellInitializerSteppable(MainSteppables.CellInitializerSteppable, IFNSt
         self.random_infected_fraction(1.0)
 
     def start(self):
+        super().single_infected_cell()
         super().start()
 
         for cell in self.cell_list_by_type(self.infected_type_id):
@@ -658,7 +659,7 @@ class IFNViralReleaseSteppable(MainSteppables.ViralReleaseSteppable, IFNSteppabl
     def virus_level_scaling_factor(self, _val: float):
         if _val < 0:
             raise ValueError("Virus scaling factor must be non-negative")
-        self._virus_level_scaling_factor= _val
+        self._virus_level_scaling_factor = _val
 
 
 class IFNViralDeathSteppable(MainSteppables.ViralDeathSteppable, IFNSteppableBase):
@@ -781,11 +782,21 @@ class IFNVirusFieldInitializerSteppable(MainSteppables.VirusFieldInitializerStep
 
     unique_key = ifn_virus_field_initializer_key
 
+    def __init__(self, frequency):
+        IFNSteppableBase.__init__(self, frequency)
+        from . import IFNInputs
+        BatchRunLib.apply_external_multipliers(__name__, IFNInputs)
+        self._virus_diffusion_id = "virus_dc"
+        self._virus_decay_id = "virus_decay"
+
     def start(self):
 
-        BatchRunLib.apply_external_multipliers(__name__, IFNInputs)
         min_to_mcs = self.step_period / 60.0
         days_to_mcs = min_to_mcs / 60.0 / 24.0
+
+        self._diffusion_coefficient = None
+        self._decay_coefficient = None
+
         if self._diffusion_coefficient is None:
             self.get_xml_element(self._virus_diffusion_id).cdata = \
                 IFNInputs.virus_diffusion_coefficient[IFNInputs.possible_media_for_diffusion[IFNInputs.media_selection]] \
@@ -797,6 +808,17 @@ class IFNVirusFieldInitializerSteppable(MainSteppables.VirusFieldInitializerStep
             self.get_xml_element(self._virus_decay_id).cdata = IFNInputs.c * days_to_mcs
         else:
             self.get_xml_element(self._virus_decay_id).cdata = self._decay_coefficient * days_to_mcs
+        # if self.output_dir is not None:
+        #     from pathlib import Path
+        #     self.diffusion_params_path = Path(self.out_dir).joinpath(module_prefix + 'virus_diffusion_parameters.dat')
+        #
+        #     with open(self.diffusion_params_path, 'w') as f:
+        #         f.write(f'Virus D:, {self.get_xml_element("virus_dc").cdata}')# +
+        #                 # '\n' +
+        #                 # f'IFN D:, {self.get_xml_element("ifn_dc").cdata}')
+
+    # def step(self, mcs):
+    #     print(self.get_xml_element(self._virus_diffusion_id).cdata)
 
 
 class IFNFieldInitializerSteppable(IFNSteppableBase):
@@ -832,7 +854,7 @@ class IFNFieldInitializerSteppable(IFNSteppableBase):
         scaling_factor = min_to_mcs / self.voxel_length ** 2
         if self._diffusion_coefficient is None:
             self.get_xml_element(self._ifn_diffusion_id).cdata = \
-                IFNInputs.IFNe_diffusion_coefficient[IFNInputs.possible_media_for_diffusion[IFNInputs.media_selection]]\
+                IFNInputs.IFNe_diffusion_coefficient[IFNInputs.possible_media_for_diffusion[IFNInputs.media_selection]] \
                 * scaling_factor
         else:
             self.get_xml_element(self._ifn_diffusion_id).cdata = self._diffusion_coefficient * scaling_factor
@@ -841,6 +863,8 @@ class IFNFieldInitializerSteppable(IFNSteppableBase):
         else:
             self.get_xml_element(self._ifn_decay_id).cdata = self._decay_coefficient * hours_to_mcs
 
+    # def step(self, mcs):
+    #     print(self.get_xml_element(self._ifn_diffusion_id).cdata)
     @property
     def diffusion_coefficient(self) -> float:
         """
@@ -947,7 +971,6 @@ class IFNSimDataSteppable(IFNSteppableBase):
         self.med_diff_data_path = None
         self.med_diff_data = dict()
 
-        # self._out_dir = None
         self.out_dir = self.output_dir
 
         self._replicate = 0
@@ -965,7 +988,6 @@ class IFNSimDataSteppable(IFNSteppableBase):
         self._parameter_name2 = ''
         self.parameter_name2 = self._parameter_name2
 
-
         self._plot_pop_data_freq = IFNInputs.plot_pop_data_freq
         self._write_pop_data_freq = IFNInputs.write_ifn_data_freq
         self._plot_ifn_data_freq = IFNInputs.plot_ifn_data_freq
@@ -974,7 +996,6 @@ class IFNSimDataSteppable(IFNSteppableBase):
         self._write_med_diff_data_freq = IFNInputs.write_med_diff_data_freq
 
         self.med_diff_key = "MedDiff"
-
 
         # For flushing outputs every quarter simulation length
         self.__flush_counter = 1
@@ -996,12 +1017,15 @@ class IFNSimDataSteppable(IFNSteppableBase):
 
         self.plot_pop_data_freq = IFNInputs.plot_pop_data_freq
         self.write_pop_data_freq = IFNInputs.write_ifn_data_freq
+
         self.plot_ifn_data_freq = IFNInputs.plot_ifn_data_freq
+
         self.write_ifn_data_freq = IFNInputs.write_ifn_data_freq
         self.plot_med_diff_data_freq = IFNInputs.plot_med_diff_data_freq
         self.write_med_diff_data_freq = IFNInputs.write_med_diff_data_freq
 
     def start(self):
+
         self.plot_pop_data = self.plot_pop_data_freq > 0
         self.write_pop_data = self.write_pop_data_freq > 0
         self.plot_ifn_data = self.plot_ifn_data_freq > 0
@@ -1028,8 +1052,8 @@ class IFNSimDataSteppable(IFNSteppableBase):
         if self.out_dir is not None:
             from pathlib import Path
             if self.write_pop_data:
-                self.pop_data_path = Path(self.out_dir).joinpath(module_prefix+'pop_data_%s_%.2e_%s_%.2e_%i.dat' %
-                                                                 (self.parameter_name1 ,
+                self.pop_data_path = Path(self.out_dir).joinpath(module_prefix + 'pop_data_%s_%.2e_%s_%.2e_%i.dat' %
+                                                                 (self.parameter_name1,
                                                                   self.multiplier1,
                                                                   self.parameter_name2,
                                                                   self.multiplier2,
@@ -1081,7 +1105,7 @@ class IFNSimDataSteppable(IFNSteppableBase):
             from pathlib import Path
             if self.write_ifn_data:
                 self.ifn_data_path = Path(self.out_dir).joinpath(module_prefix + 'data_%s_%.2e_%s_%.2e_%i.dat' %
-                                                                 (self.parameter_name1 ,
+                                                                 (self.parameter_name1,
                                                                   self.multiplier1,
                                                                   self.parameter_name2,
                                                                   self.multiplier2,
@@ -1108,15 +1132,23 @@ class IFNSimDataSteppable(IFNSteppableBase):
         if self.out_dir is not None:
             from pathlib import Path
             if self.write_med_diff_data:
-                self.med_diff_data_path = Path(self.out_dir).joinpath(module_prefix + 'med_diff_data_%s_%.2e_%s_%.2e_%i.dat' %
-                                                                 (self.parameter_name1 ,
-                                                                  self.multiplier1,
-                                                                  self.parameter_name2,
-                                                                  self.multiplier2,
-                                                                  self.replicate))
+                self.med_diff_data_path = Path(self.out_dir).joinpath(
+                    module_prefix + 'med_diff_data_%s_%.2e_%s_%.2e_%i.dat' %
+                    (self.parameter_name1,
+                     self.multiplier1,
+                     self.parameter_name2,
+                     self.multiplier2,
+                     self.replicate))
                 with open(self.med_diff_data_path, 'w'):
                     pass
                 self.med_diff_data[-1] = ['Time', self._virus_field_name, self._ifn_field_name]
+
+                self.diffusion_params_path = Path(self.out_dir).joinpath(module_prefix + 'diffusion_parameters.dat')
+
+                with open(self.diffusion_params_path, 'w') as f:
+                    f.write(f'Virus D:, {self.get_xml_element("virus_dc").cdata}' +
+                            '\n' +
+                            f'IFN D:, {self.get_xml_element("ifn_dc").cdata}')
 
     def step(self, mcs):
         if mcs == 0:
@@ -1135,6 +1167,7 @@ class IFNSimDataSteppable(IFNSteppableBase):
             write_ifn_data = self.write_ifn_data and mcs % self._write_ifn_data_freq == 0
         else:
             write_pop_data = False
+
             write_med_diff_data = False
             write_ifn_data = False
 
@@ -1150,12 +1183,12 @@ class IFNSimDataSteppable(IFNSteppableBase):
 
             # Plot population data plot if requested
             if plot_pop_data:
-                self.pop_data_win.add_data_point(self._uninfected_type_name,  mcs * hours_to_mcs, num_cells_uninfected)
-                self.pop_data_win.add_data_point(self._infected_type_name,  mcs * hours_to_mcs, num_cells_infected)
+                self.pop_data_win.add_data_point(self._uninfected_type_name, mcs * hours_to_mcs, num_cells_uninfected)
+                self.pop_data_win.add_data_point(self._infected_type_name, mcs * hours_to_mcs, num_cells_infected)
                 self.pop_data_win.add_data_point(self._virus_releasing_type_name,
                                                  mcs * hours_to_mcs,
                                                  num_cells_virus_releasing)
-                self.pop_data_win.add_data_point(self._dead_type_name,  mcs * hours_to_mcs, num_cells_dying)
+                self.pop_data_win.add_data_point(self._dead_type_name, mcs * hours_to_mcs, num_cells_dying)
 
             # Write population data to file if requested
             if write_pop_data:
@@ -1349,6 +1382,7 @@ class IFNSimDataSteppable(IFNSteppableBase):
     @property
     def out_dir(self):
         """
+
         Output directory
         """
         # return CompuCellSetup.persistent_globals.output_directory
@@ -1409,6 +1443,10 @@ class IFNSimDataSteppable(IFNSteppableBase):
     def parameter_name2(self, _name: str):
         self._parameter_name2 = _name
 
+    @parameter_name2.setter
+    def parameter_name2(self, _name: str):
+        self._parameter_name2 = _name
+
 
 class IFNPlaqueAssaySteppable(IFNSteppableBase):
     """
@@ -1451,12 +1489,12 @@ class IFNPlaqueAssaySteppable(IFNSteppableBase):
         # Initialize population data plot if requested
         if self.plot_plaque_assay_data:
             self.plaque_assay_data_win = self.add_new_plot_window(title='Plaque Data',
-                                                         x_axis_title='Time (hrs)',
-                                                         y_axis_title='Radial Distance',
-                                                         x_scale_type='linear',
-                                                         y_scale_type='linear',
-                                                         grid=True,
-                                                         config_options={'legend': True})
+                                                                  x_axis_title='Time (hrs)',
+                                                                  y_axis_title='Radial Distance',
+                                                                  x_scale_type='linear',
+                                                                  y_scale_type='linear',
+                                                                  grid=True,
+                                                                  config_options={'legend': True})
 
             self.plaque_assay_data_win.add_plot(self._infected_type_name, style='Dots', color='red', size=5)
             self.plaque_assay_data_win.add_plot(self._virus_releasing_type_name, style='Dots', color='green', size=5)
@@ -1470,7 +1508,7 @@ class IFNPlaqueAssaySteppable(IFNSteppableBase):
                 with open(self.plaque_assay_data_path, 'w'):
                     pass
 
-                self.plaque_assay_data[-1] = ['Time',self._infected_type_name,self._virus_releasing_type_name,
+                self.plaque_assay_data[-1] = ['Time', self._infected_type_name, self._virus_releasing_type_name,
                                               self._dead_type_name]
 
     def step(self, mcs):
@@ -1492,17 +1530,17 @@ class IFNPlaqueAssaySteppable(IFNSteppableBase):
             volume_infected = 0.0
             for cell in self.cell_list_by_type(self.infected_type_id, self.virus_releasing_type_id, self.dead_type_id):
                 volume_infected += cell.volume
-            avg_infected_radius = np.sqrt(volume_infected/np.pi)
+            avg_infected_radius = np.sqrt(volume_infected / np.pi)
 
             volume_virus_releasing = 0.0
             for cell in self.cell_list_by_type(self.virus_releasing_type_id, self.dead_type_id):
                 volume_virus_releasing += cell.volume
-            avg_virus_releasing_radius = np.sqrt(volume_virus_releasing/np.pi)
+            avg_virus_releasing_radius = np.sqrt(volume_virus_releasing / np.pi)
 
             volume_dead = 0.0
             for cell in self.cell_list_by_type(self.dead_type_id):
                 volume_dead += cell.volume
-            avg_dead_radius = np.sqrt(volume_dead/np.pi)
+            avg_dead_radius = np.sqrt(volume_dead / np.pi)
 
             # Plot plaque assay data if requested
             if plot_plaque_assay_data:

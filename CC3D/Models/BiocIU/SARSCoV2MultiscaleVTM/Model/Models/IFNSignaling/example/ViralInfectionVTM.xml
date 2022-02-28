@@ -16,10 +16,10 @@
 
     <Potts>
         <!-- Basic properties of CPM (GGH) algorithm -->
-<!--        <Dimensions x="300" y="300" z="1"/>-->
-        <Dimensions x="28" y="28" z="1"/>
-        <Steps>11</Steps>
-<!--        <Steps>240</Steps>-->
+        <Dimensions x="300" y="300" z="1"/>
+<!--        <Dimensions x="28" y="28" z="1"/>-->
+<!--        <Steps>11</Steps>-->
+        <Steps>240</Steps>
         <Temperature>10.0</Temperature>
         <NeighborOrder>3</NeighborOrder>
         <Boundary_x>Periodic</Boundary_x>

@@ -63,6 +63,12 @@ from ..Models.IFNSignaling.IFNSteppables import IFNCellInitializerSteppable
 
 CompuCellSetup.register_steppable(steppable=IFNCellInitializerSteppable(frequency=1))
 
+from ..Models.SegoAponte2020.ViralInfectionVTMSteppables import SimDataSteppable
+CompuCellSetup.register_steppable(steppable=SimDataSteppable(frequency=1))
+
+from ..Models.IFNSignaling.IFNSteppables import IFNSimDataSteppable
+CompuCellSetup.register_steppable(steppable=IFNSimDataSteppable(frequency=1))
+
 # from ViralInfectionVTMSteppables import CellInitializerSteppable
 # steppable = CellInitializerSteppable(frequency=1)
 # steppable.single_infected_cell()
