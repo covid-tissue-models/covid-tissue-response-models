@@ -73,7 +73,7 @@ possible_media_for_diffusion = ["microcospic mucus", "bulk mucus", "extracellula
                                 "original according to repo"]
 
 __param_desc__['media_selection'] = "Index of media to use"
-media_selection = 1  # max 5
+media_selection = 4  # max 5
 
 __param_desc__["IFNe_diffusion_coefficient"] = "IFNe diffusion coefficient (um^2/min)"
 IFNe_diffusion_coefficient = {"microcospic mucus": 0.81 * 60,
@@ -105,3 +105,14 @@ __param_desc__['b'] = 'Viral Infectivity (PFU/(mL*days))'
 b = 2.4E-4
 __param_desc__['k'] = '1/days'
 k = 4.0
+
+# death mechanism improvements
+__param_desc__["lytic_death_probability"] = "probability of lytic death occuring (i.e., pyroptosis, necroptosis, " \
+                                            "simmilar)"
+
+lytic_death_probability = 1
+
+__param_desc__["lytic_death_IFN_release_proportion"] = "proportion of intracellular IFN to be released on lytic death"
+lytic_death_IFN_release_proportion = 1
+
+
