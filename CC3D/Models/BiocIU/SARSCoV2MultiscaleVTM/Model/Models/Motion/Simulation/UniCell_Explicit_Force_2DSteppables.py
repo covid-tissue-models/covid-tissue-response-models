@@ -38,8 +38,8 @@ class UniCell_Explicit_Force_2DSteppable(ViralInfectionVTMSteppableBasePy):
         # import Models.DrugDosingModel.DrugDosingInputs as DrugDosingInputs
         import Models.Motion.UniCellModelInputs as UniCellModelInputs
         BatchRunLib.apply_external_multipliers(__name__, UniCellModelInputs)
-        # self.alpha = a
-        # self.beta = b
+        self.alpha = alpha
+        self.beta = beta
         # self.memory = 0.4 #must be less than 0.5
 
     def start(self):
@@ -47,9 +47,9 @@ class UniCell_Explicit_Force_2DSteppable(ViralInfectionVTMSteppableBasePy):
         Called before MCS=0 while building the initial simulation
         """
 
-        to_seed = density * self.dim.x * self.dim.y * self.dim.z
+        # to_seed = density * self.dim.x * self.dim.y * self.
 
-        self.seed_cells(to_seed)
+        self.seed_cells(numero)
 
         self.plot_win = self.add_new_plot_window(title='Theta',
                                                  x_axis_title='MonteCarlo Step (MCS)',

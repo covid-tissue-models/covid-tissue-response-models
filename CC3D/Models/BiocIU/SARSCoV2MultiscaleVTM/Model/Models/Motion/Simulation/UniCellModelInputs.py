@@ -22,4 +22,4 @@ __param_desc__["beta"] = "ruido"
 beta = 1
 
 __param_desc__["numero"] = "numero"
-rho = 1
+numero = 1

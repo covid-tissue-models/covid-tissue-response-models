@@ -28,7 +28,8 @@ sweep_output_folder = r'/N/slate/jferrari/helping_br/principal'
 from Simulation import ViralInfectionVTMModelInputs
 from Models.DrugDosingModel import DrugDosingInputs
 
-input_modules = [ViralInfectionVTMModelInputs, DrugDosingInputs]
+# input_modules = [ViralInfectionVTMModelInputs, DrugDosingInputs]
+input_modules = [UniCellModelInputs]
 # Automatic inputs
 from BatchRun import BatchRunLib
 
