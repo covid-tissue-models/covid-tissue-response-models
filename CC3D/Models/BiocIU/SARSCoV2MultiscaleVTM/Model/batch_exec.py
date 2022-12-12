@@ -1,122 +1,19 @@
 # Model inputs
-# full_mult_dit = {'first_dose': [0, 6 / 24, 12 / 24, 48 / 24, 72 / 24],  # missing profilaxis. time of 1st dose in days
-#                  'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
-#                  # missing continuous dosing. dose interval in days
-#                  'rel_avail4_EC50': [0.01, 0.1, .5, .75, 1, 1.25],
-#                  'kon': [1 / 4, 1 / 2, 1]}
-#
-# # NOTE! each batch should be ran twice, as I'm setting numb of rep to 5
-# ddm_batch_1 = {'first_dose': [0, 6 / 24],
-#                'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
-#                'rel_avail4_EC50': [0.01, 0.1, .5, .75, 1, 1.25],
-#                'kon': [1]}
-# ddm_batch_2 = {'first_dose': [12 / 24, 48 / 24],
-#                'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
-#                'rel_avail4_EC50': [0.01, 0.1, .5, .75, 1, 1.25],
-#                'kon': [1]}
-# ddm_batch_3 = {'first_dose': [72 / 24],
-#                'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
-#                'rel_avail4_EC50': [0.01, 0.1, .5, .75, 1, 1.25],
-#                'kon': [1]}
-#
-# # ______________________________________________
-#
-# ddm_batch_4 = {'first_dose': [0, 6 / 24],
-#                'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
-#                'rel_avail4_EC50': [0.01, 0.1, .5, .75, 1, 1.25],
-#                'kon': [1 / 2]}
-# ddm_batch_5 = {'first_dose': [12 / 24, 48 / 24],
-#                'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
-#                'rel_avail4_EC50': [0.01, 0.1, .5, .75, 1, 1.25],
-#                'kon': [1 / 2]}
-# ddm_batch_6 = {'first_dose': [72 / 24],
-#                'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
-#                'rel_avail4_EC50': [0.01, 0.1, .5, .75, 1, 1.25],
-#                'kon': [1 / 2]}
-#
-# # ______________________________________________
-#
-# ddm_batch_7 = {'first_dose': [0, 6 / 24],
-#                'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
-#                'rel_avail4_EC50': [0.01, 0.1, .5, .75, 1, 1.25],
-#                'kon': [1 / 4]}
-# ddm_batch_8 = {'first_dose': [12 / 24, 48 / 24],
-#                'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
-#                'rel_avail4_EC50': [0.01, 0.1, .5, .75, 1, 1.25],
-#                'kon': [1 / 4]}
-# ddm_batch_9 = {'first_dose': [72 / 24],
-#                'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
-#                'rel_avail4_EC50': [0.01, 0.1, .5, .75, 1, 1.25],
-#                'kon': [1 / 4]}
-# # ______________________________________________
-# ddm_batch_10 = {'first_dose': [1],
-#                 'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
-#                 'rel_avail4_EC50': [0.01, 0.1, .5, .75, 1, 1.25],
-#                 'kon': [1 / 4]}
-# ddm_batch_11 = {'first_dose': [1],
-#                 'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
-#                 'rel_avail4_EC50': [0.01, 0.1, .5, .75, 1, 1.25],
-#                 'kon': [1 / 2, 1]}
-#
-# full_laxis_mult_dit = {'prophylactic_treatment': [1],
-#                        'prophylactic_time': [4, 10],
-#                        'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
-#                        'rel_avail4_EC50': [0.01, 0.1, .5, .75, 1, 1.25],
-#                        'kon': [1 / 4, 1 / 2, 1]}
-#
-# laxis_mult_dit_1 = {'prophylactic_treatment': [1],
-#                     'prophylactic_time': [4, 10],
-#                     'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
-#                     'rel_avail4_EC50': [0.01, 0.1, .5, .75, 1, 1.25],
-#                     'kon': [1 / 4]}
-# laxis_mult_dit_2 = {'prophylactic_treatment': [1],
-#                     'prophylactic_time': [4, 10],
-#                     'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
-#                     'rel_avail4_EC50': [0.01, 0.1, .5, .75, 1, 1.25],
-#                     'kon': [1 / 2]}
-# laxis_mult_dit_3 = {'prophylactic_treatment': [1],
-#                     'prophylactic_time': [4, 10],
-#                     'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
-#                     'rel_avail4_EC50': [0.01, 0.1, .5, .75, 1, 1.25],
-#                     'kon': [1]}
-#
-# ddm_new_method_full_batch = {'first_dose': [0, 12 / 24, 24 / 24, 48 / 24, 72 / 24, 5],
-#                              # missing profilaxis. time of 1st dose in days
-#                              'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
-#                              # missing continuous dosing. dose interval in days
-#                              'daily_dose': [10, 2, 1, .5, .1],
-#                              'kon': [1 / 4, 1 / 2, 1]}
-# ddm_new_batch1 = {'first_dose': [0, 12 / 24],  # missing profilaxis. time of 1st dose in days
-#                   'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
-#                   # missing continuous dosing. dose interval in days
-#                   'daily_dose': [10, 2, 1, .5, .1],
-#                   'kon': [1]}
-# ddm_new_batch2 = {'first_dose': [24 / 24, 48 / 24],  # missing profilaxis. time of 1st dose in days
-#                   'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
-#                   # missing continuous dosing. dose interval in days
-#                   'daily_dose': [10, 2, 1, .5, .1],
-#                   'kon': [1]}
-# ddm_new_batch3 = {'first_dose': [72 / 24, 5],  # missing profilaxis. time of 1st dose in days
-#                   'dose_interval': [4 / 24, 6 / 24, 8 / 24, 12 / 24, 1],
-#                   # missing continuous dosing. dose interval in days
-#                   'daily_dose': [10, 2, 1, .5, .1],
-#                   'kon': [1]}
 
-new_full_dicst = {}
 
-set_investigation_dict_1 = {'set_numb': [1, 2, 3, 4, 5, 6, 7, 8],
-                            'drug_ic50': [10, 2, 1, 0.5, 0.1],
-                            'daily_dose': [1],
-                            'first_dose': [2],
-                            'dose_interval': [1]}
-set_investigation_dict_2 = {'set_numb': [9, 10],
-                            'drug_ic50': [10, 2, 1, 0.5, 0.1],
-                            'daily_dose': [1],
-                            'first_dose': [2],
-                            'dose_interval': [1]}
+full_dict = {"alpha": [.1, .25, .5, .75, .9, .99],  # 6
+             "beta": [0],
+             "numero": [2, 10, 50, 100, 500, 1000, 4000]}  # 7
 
-mult_dict = set_investigation_dict_1
-num_rep = 10
+ruido_var = {"alpha": [.1, .9],  # 2
+             "beta": [.1, .25, .5],  # 3
+             "numero": [2, 500, 1000]}  # 3
+
+# ___
+# 60
+
+mult_dict = full_dict
+num_rep = 4
 # Model output frequency
 model_out_freq = 1
 # Output frequency of simulation data per simulation replica
@@ -125,7 +22,8 @@ out_freq = 250
 
 # sweep_output_folder = r'/N/slate/jferrari/new_pk/corrected_ic50_calc/ddm_batch_1'
 #
-sweep_output_folder = r'/N/slate/jferrari/ddm/new_k_2021/set_investigation'
+sweep_output_folder = r'/N/slate/jferrari/helping_br/principal'
+# sweep_output_folder = r'/N/slate/jferrari/helping_br/ruido'
 # Input modules
 from Simulation import ViralInfectionVTMModelInputs
 from Models.DrugDosingModel import DrugDosingInputs
@@ -134,21 +32,20 @@ input_modules = [ViralInfectionVTMModelInputs, DrugDosingInputs]
 # Automatic inputs
 from BatchRun import BatchRunLib
 
-BatchRunLib.register_auto_inputs(input_module_name='ViralInfectionVTMModelInputs',
-                                 plot_var_names=['plot_vrm_data_freq', 'plot_vrm_data_freq', 'plot_vim_data_freq',
-                                                 'plot_pop_data_freq', 'plot_ir_data_freq', 'plot_med_diff_data_freq',
-                                                 'plot_spat_data_freq', 'plot_death_data_freq'],
-                                 write_var_names=['write_pop_data_freq', 'write_med_diff_data_freq',
-                                                  'write_ir_data_freq', 'write_death_data_freq'])
-BatchRunLib.register_auto_inputs(input_module_name='Models.DrugDosingModel.DrugDosingInputs',
-                                 plot_var_names=['plot_ddm_data_freq'],
-                                 write_var_names=['write_ddm_data_freq'])
+# BatchRunLib.register_auto_inputs(input_module_name='ViralInfectionVTMModelInputs',
+#                                  plot_var_names=['plot_vrm_data_freq', 'plot_vrm_data_freq', 'plot_vim_data_freq',
+#                                                  'plot_pop_data_freq', 'plot_ir_data_freq', 'plot_med_diff_data_freq',
+#                                                  'plot_spat_data_freq', 'plot_death_data_freq'],
+#                                  write_var_names=['write_pop_data_freq', 'write_med_diff_data_freq',
+#                                                   'write_ir_data_freq', 'write_death_data_freq'])
+# C:\github\covid-tissue-response-models\CC3D\Models\BiocIU\SARSCoV2MultiscaleVTM\Model\Models\Motion
+BatchRunLib.register_auto_inputs(input_module_name='Models.Motion.UniCellModelInputs')
 
 # Carbonate configuration
 from BatchRun.BatchRunPrototyping import carbonate_config_template
 
 carbonate_config_template = carbonate_config_template()
-carbonate_config_template['jn'] = 'ddm_new_pk_set_inv1'
+carbonate_config_template['jn'] = 'br_principal'
 carbonate_config_template['wh'] = 18
 carbonate_config_template['wm'] = 0
 carbonate_config_template['ppn'] = 8
@@ -159,7 +56,8 @@ import os
 from nCoVToolkit import nCoVUtils
 from BatchRun import BatchRunPrototyping
 
-BatchRunPrototyping.simulation_fname = os.path.join(os.path.dirname(__file__), 'ViralInfectionVTM.cc3d')
+BatchRunPrototyping.simulation_fname = os.path.join(os.path.dirname(__file__),
+                                                    'UniCell_Explicit_Force_2D_with_beta.cc3d')
 
 from BatchRun.BatchRunLib import cc3d_batch_key
 

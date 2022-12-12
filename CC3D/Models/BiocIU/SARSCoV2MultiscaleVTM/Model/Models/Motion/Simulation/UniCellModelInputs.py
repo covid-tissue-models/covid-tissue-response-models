@@ -16,10 +16,10 @@ __param_desc__['write_vrm_data_freq'] = 'Write viral replication model data to s
 write_vrm_data_freq = 0  # Write viral replication model data to simulation directory frequency (disable with 0)
 
 __param_desc__["alpha"] = "persistencia"
-alpha = 0.1
+alpha = 1
 
 __param_desc__["beta"] = "ruido"
-beta = .1
+beta = 1
 
-__param_desc__["rho"] = densidade
-rho = .1
+__param_desc__["numero"] = "numero"
+rho = 1
