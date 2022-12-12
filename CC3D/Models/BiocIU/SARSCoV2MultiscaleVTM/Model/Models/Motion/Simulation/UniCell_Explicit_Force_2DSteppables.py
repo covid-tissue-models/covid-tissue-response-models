@@ -65,7 +65,7 @@ class UniCell_Explicit_Force_2DSteppable(ViralInfectionVTMSteppableBasePy):
             Fz = 0
             cell.dict["Old_pos"] = [cell.xCOM, cell.yCOM, cell.zCOM]
             cell.dict["ExForce"] = [Fx, Fy, Fz]
-            cell.dict["Scale"] = 10.0
+            cell.dict["Scale"] = 100.0
             cell.dict["Theta"] = theta0
 
             # Make sure ExternalPotential plugin is loaded
