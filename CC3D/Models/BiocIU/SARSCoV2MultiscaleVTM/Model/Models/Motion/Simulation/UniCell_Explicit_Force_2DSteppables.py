@@ -184,7 +184,10 @@ class CalculationsSteppable(ViralInfectionVTMSteppableBasePy):
         self.Ncell = 0
         for compartments in self.clusters:
             self.Ncell += 1
-        self.file1 = open(r"D:\CompuCell3D-py3-64bit\Simulations\UniCell_Explicit_Force_2D\Output.txt", "a")
+        # self.file1 = open(r"D:\CompuCell3D-py3-64bit\Simulations\UniCell_Explicit_Force_2D\Output.txt", "a")
+        self.output_path = Path(self.output_dir).joinpath(Output.txt)
+        self.file1 = open(self.output_path, "a")
+
         self.file1.write("Distance \t p.p \n")
 
     def step(self, mcs):
@@ -258,7 +261,8 @@ class PersistentNeighborsSteppable(ViralInfectionVTMSteppableBasePy):
         print(out_dir_name)
         if not os.path.exists(out_dir_name): os.makedirs(out_dir_name)
         file_name = "PN_a" + str(a) + "_b" + str(b)  # +"_rs"+str(rs)
-        self.output_path = str(Path(out_dir_name + "\\" + file_name))
+        # self.output_path = str(Path(out_dir_name + "\\" + file_name))
+        self.output_path = Path(self.output_dir).joinpath(file_name)
         self.file4 = open(self.output_path, 'a')
         # self.file4.write("DeltaT \t PN \n")
 
@@ -354,7 +358,8 @@ class CollectivityCalcSteppable(ViralInfectionVTMSteppableBasePy):
         print(out_dir_name)
         if not os.path.exists(out_dir_name): os.makedirs(out_dir_name)
         file_name = "a_phi_gama_col_a" + str(a) + "_b" + str(b)  # +"_rs"+str(rs)
-        self.output_path = str(Path(out_dir_name + "\\" + file_name))
+        # self.output_path = str(Path(out_dir_name + "\\" + file_name))
+        self.output_path = Path(self.output_dir).joinpath(file_name)
         self.file3 = open(self.output_path, 'a')
         self.file3.write(str(a) + "\t" + str(mean(self.phi)) + "\t" + str(mean(self.gama)) + "\t" + str(
             mean(self.Collectivity)) + "\n")
@@ -379,7 +384,8 @@ class Position_OutputSteppable(ViralInfectionVTMSteppableBasePy):
         print(out_dir_name)
         if not os.path.exists(out_dir_name): os.makedirs(out_dir_name)
         file_name = "_a" + str(a) + "_b" + str(b)  # +"_rs"+str(rs)
-        self.output_path = str(Path(out_dir_name + "\\" + file_name))
+        # self.output_path = str(Path(out_dir_name + "\\" + file_name))
+        self.output_path = Path(self.output_dir).joinpath(file_name)
 
         self.file4 = open(self.output_path, 'w')
         self.file4.write("MCS \t")
