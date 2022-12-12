@@ -15,4 +15,11 @@ plot_vrm_data_freq = 0  # Plot viral replication model data frequency (disable w
 __param_desc__['write_vrm_data_freq'] = 'Write viral replication model data to simulation directory frequency'
 write_vrm_data_freq = 0  # Write viral replication model data to simulation directory frequency (disable with 0)
 
-__param_desc__
+__param_desc__["alpha"] = "persistencia"
+alpha = 0.1
+
+__param_desc__["beta"] = "ruido"
+beta = .1
+
+__param_desc__["rho"] = densidade
+rho = .1
