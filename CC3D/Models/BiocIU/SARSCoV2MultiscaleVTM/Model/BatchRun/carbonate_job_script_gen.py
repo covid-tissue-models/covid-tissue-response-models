@@ -167,7 +167,7 @@ def keep_job_output(_ko):
 
 def job_name(_jn):
     assert len(_jn) > 0, "Job needs a name"
-    return f"#PBS -N {_jn}\n"
+    return f"#SBATCH -J {_jn}\n"
 
 
 def email_contact(_ec):
@@ -177,16 +177,19 @@ def email_contact(_ec):
 def job_requirements(_nn, _ppn, vmem=None, hours=None, minutes=None):
     assert _nn > 0
     assert _ppn > 0
-    o = f"#PBS -l nodes={_nn}:ppn={_ppn}"
+    # o = f"#PBS -l nodes={_nn}:ppn={_ppn}"
+    o = f"#SBATCH  --nodes={_nn}\n"
+    o += f"#SBATCH --ntasks-per-node={_ppn}\n"
     if walltime(hours, minutes) is not None:
-        o += f",{walltime(hours, minutes)}"
+        o += f"#SBATCH {walltime(hours, minutes)}\n"
     if virtual_mem(vmem) is not None:
-        o += f",{virtual_mem(vmem)}"
+        o += f"#SBATCH {virtual_mem(vmem)}"
     o += "\n"
     return o
 
 
 def queue(_q: str):
+    return "\n"
     if _q == DEBUG:
         return "#PBS -q " + DEBUG + "\n"
     else:
@@ -208,13 +211,13 @@ def walltime(hours: int = None, minutes: int = None):
             hours = f"0{hours}"
         else:
             hours = str(hours)
-        return f"walltime={hours}:{minutes}:00"
+        return f"--time={hours}:{minutes}:00"
     return None
 
 
 def virtual_mem(_vmem):
     if _vmem is not None:
-        return f"vmem={_vmem}gb"
+        return f"--mem={_vmem}G"
     return None
 
 
@@ -274,6 +277,11 @@ def interactive_run_script() -> str:
     o += targets(_config['shell_scripts'])
     return o
 
+def out_file(filename):
+    s = f"# SBATCH -o {filename}_%j.txt\n"
+    s += f"# SBATCH -e {filename}_%j.err\n"
+    return s
+
 
 def run_script(_jo: bool = True, job_queue: str = "", opt_queue: bool = False) -> str:
     if opt_queue:
@@ -284,13 +292,14 @@ def run_script(_jo: bool = True, job_queue: str = "", opt_queue: bool = False) -
         return interactive_run_script()
 
     o = "#!/bin/bash\n"
-    o += keep_job_output(_config['ko'])
+    # o += keep_job_output(_config['ko'])
     o += job_requirements(_config['nn'], _config['ppn'], _config['vmem'], _config['wh'], _config['wm'])
-    o += queue(_config['q'])
-    o += email_events(_config['ee'], _config['ec'])
+    # o += queue(_config['q'])
+    # o += email_events(_config['ee'], _config['ec'])
     o += job_name(_config['jn'])
-    if _jo:
-        o += join_outputs()
+    o += out_file(_config['jn'])
+    # if _jo:
+    #     o += join_outputs()
     o += targets(_config['shell_scripts'])
     return o
 
