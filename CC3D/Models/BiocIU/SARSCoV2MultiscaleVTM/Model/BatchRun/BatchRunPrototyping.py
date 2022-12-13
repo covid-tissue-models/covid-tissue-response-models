@@ -146,7 +146,7 @@ class CallableCC3DCarbonateDispatcher:
 
         import subprocess
         import multiprocessing
-        p = multiprocessing.Process(target=subprocess.run, args=(["qsub", self.job_script_filename],))
+        p = multiprocessing.Process(target=subprocess.run, args=(["sbatch", self.job_script_filename],))
         p.start()
 
 
