@@ -7,6 +7,7 @@ from cc3d.core.PySteppables import *
 import random as rd
 from statistics import mean
 import os
+from array import array
 
 # Import project libraries and classes
 sys.path.append(os.path.dirname(__file__))
@@ -387,15 +388,15 @@ class Position_OutputSteppable(ViralInfectionVTMSteppableBasePy):
         # self.output_path = str(Path(out_dir_name + "\\" + file_name))
         self.output_path = Path(self.output_dir).joinpath(file_name)
 
-        self.file4 = open(self.output_path, 'w')
-        self.file4.write("MCS \t")
+        self.file4 = open(self.output_path, 'wb')
+        #self.file4.write("MCS \t")
         for cell in self.cell_list:
-            self.file4.write(
+            #self.file4.write(
                 "X " + str(cell.id) + "\t Y " + str(cell.id) + "\t Px " + str(cell.id) + "\t Py " + str(cell.id) + "\t")
             cell.dict["cx"] = 0
             cell.dict["cy"] = 0
             cell.dict["Old_pos2"] = [cell.xCOM, cell.yCOM, cell.zCOM]
-        self.file4.write("\n")
+        #self.file4.write("\n")
 
     def step(self, mcs):
 
@@ -407,11 +408,17 @@ class Position_OutputSteppable(ViralInfectionVTMSteppableBasePy):
                 if cell.xCOM - cell.dict["Old_pos2"][0] < -self.dim.x * 0.5: cell.dict["cx"] += 1
                 if cell.yCOM - cell.dict["Old_pos2"][1] > self.dim.y * 0.5: cell.dict["cy"] -= 1
                 if cell.yCOM - cell.dict["Old_pos2"][1] < -self.dim.y * 0.5: cell.dict["cy"] += 1
-                self.file4.write(str(cell.xCOM + self.dim.x * cell.dict["cx"]) + "\t" + str(
+                #self.file4.write(str(cell.xCOM + self.dim.x * cell.dict["cx"]) + "\t" + str(
                     cell.yCOM + self.dim.y * cell.dict["cy"]) + "\t")
-                self.file4.write(str(cell.lambdaVecX) + "\t" + str(cell.lambdaVecY) + "\t")
+                #self.file4.write(str(cell.lambdaVecX) + "\t" + str(cell.lambdaVecY) + "\t")
                 cell.dict["Old_pos2"][:] = current_pos[:]
-            self.file4.write("\n")
+                list.append(cell.xCOM+self.dim.x*cell.dict["cx"])
+                list.append(cell.yCOM+self.dim.y*cell.dict["cy"])
+                list.append(cell.lambdaVecX)
+                list.append(cell.lambdaVecY)
+            arr = array("d",list)
+            arr.tofile(self.file4)
+            #self.file4.write("\n")
 
     def finish(self):
         # this function may be called at the end of simulation - used very infrequently though
