@@ -28,7 +28,7 @@ sweep_output_folder = r'/N/slate/jferrari/helping_br/principal'
 # from Simulation import ViralInfectionVTMModelInputs
 # from Models.DrugDosingModel import DrugDosingInputs
 
-from Models.Motion import UniCellModelInputs
+from Models.Motion.Simulation import UniCellModelInputs
 
 # input_modules = [ViralInfectionVTMModelInputs, DrugDosingInputs]
 input_modules = [UniCellModelInputs]
