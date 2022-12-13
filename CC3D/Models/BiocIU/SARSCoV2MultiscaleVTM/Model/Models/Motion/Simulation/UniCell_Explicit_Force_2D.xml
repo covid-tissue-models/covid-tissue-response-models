@@ -40,7 +40,7 @@
       
       <!-- External force applied to cell. Each cell has different force and force components have to be managed in Python. -->
       <!-- e.g. cell.lambdaVecX=0.5; cell.lambdaVecY=0.1 ; cell.lambdaVecZ=0.3; -->
-      <Algorithm>PixelBased</Algorithm>
+      <Algorithm>CenterOfMassBased</Algorithm>
    </Plugin>
    
    <Plugin Name="CenterOfMass">
