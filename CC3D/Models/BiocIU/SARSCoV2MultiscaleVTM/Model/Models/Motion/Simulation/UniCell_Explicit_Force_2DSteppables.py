@@ -185,7 +185,7 @@ class CalculationsSteppable(ViralInfectionVTMSteppableBasePy):
         for compartments in self.clusters:
             self.Ncell += 1
         # self.file1 = open(r"D:\CompuCell3D-py3-64bit\Simulations\UniCell_Explicit_Force_2D\Output.txt", "a")
-        self.output_path = Path(self.output_dir).joinpath(Output.txt)
+        self.output_path = Path(self.output_dir).joinpath("Output.txt")
         self.file1 = open(self.output_path, "a")
 
         self.file1.write("Distance \t p.p \n")
