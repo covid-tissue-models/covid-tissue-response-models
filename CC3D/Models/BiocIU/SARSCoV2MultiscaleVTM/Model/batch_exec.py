@@ -25,8 +25,10 @@ out_freq = 250
 sweep_output_folder = r'/N/slate/jferrari/helping_br/principal'
 # sweep_output_folder = r'/N/slate/jferrari/helping_br/ruido'
 # Input modules
-from Simulation import ViralInfectionVTMModelInputs
-from Models.DrugDosingModel import DrugDosingInputs
+# from Simulation import ViralInfectionVTMModelInputs
+# from Models.DrugDosingModel import DrugDosingInputs
+
+from Models.Motion import UniCellModelInputs
 
 # input_modules = [ViralInfectionVTMModelInputs, DrugDosingInputs]
 input_modules = [UniCellModelInputs]
