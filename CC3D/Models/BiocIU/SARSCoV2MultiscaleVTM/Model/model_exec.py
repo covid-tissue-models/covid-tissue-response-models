@@ -48,8 +48,9 @@ def main(input_dict: dict, status_filename: str = None, generate_status: bool = 
         status_filename = os.path.join(input_dict['output_dir'], STATUS_FILE)
         with open(status_filename, "w"):
             pass
+    simulation_fname = r"/N/u/jferrari/Carbonate/covid_models/CC3D/Models/BiocIU/SARSCoV2MultiscaleVTM/Model/Models/Motion/UniCell_Explicit_Force_2D_with_beta.cc3d"
 
-    cc3d_caller = CC3DCaller(cc3d_sim_fname=input_dict['simulation_fname'],
+    cc3d_caller = CC3DCaller(cc3d_sim_fname=simulation_fname,
                              output_frequency=input_dict['output_frequency'],
                              screenshot_output_frequency=input_dict['screenshot_output_frequency'],
                              output_dir=input_dict['output_dir'],
