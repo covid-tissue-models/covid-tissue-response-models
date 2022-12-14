@@ -15,6 +15,7 @@ from nCoVToolkit import nCoVUtils
 from BatchRunLib import cc3d_input_key
 
 simulation_fname = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'ViralInfectionVTM.cc3d')
+simulation_fname = r"/N/u/jferrari/Carbonate/covid_models/CC3D/Models/BiocIU/SARSCoV2MultiscaleVTM/Model/Models/Motion/UniCell_Explicit_Force_2D_with_beta.cc3d"
 generic_root_output_folder = os.path.abspath(os.path.join(os.path.splitdrive(os.getcwd())[0], '/CallableCoV2VTM'))
 
 
