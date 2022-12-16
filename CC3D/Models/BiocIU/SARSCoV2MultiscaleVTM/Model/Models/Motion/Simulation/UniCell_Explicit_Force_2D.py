@@ -25,6 +25,6 @@ CompuCellSetup.register_steppable(steppable=CollectivityCalcSteppable(frequency=
 
         
 from UniCell_Explicit_Force_2DSteppables import Position_OutputSteppable
-#CompuCellSetup.register_steppable(steppable=Position_OutputSteppable(frequency=1))
+CompuCellSetup.register_steppable(steppable=Position_OutputSteppable(frequency=1))
 
 CompuCellSetup.run()
