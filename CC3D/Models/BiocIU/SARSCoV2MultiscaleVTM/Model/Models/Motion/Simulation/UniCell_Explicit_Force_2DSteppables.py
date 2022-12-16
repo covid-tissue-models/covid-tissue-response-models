@@ -297,14 +297,19 @@ class PersistentNeighborsSteppable(ViralInfectionVTMSteppableBasePy):
 
                 for cell in self.cell_list:
                     List0 = cell.dict["ListN"][0][:]
+                    List0 = [i for i in List0 if i != 0]
                     for count3 in range(self.samples):
                         List_dt = cell.dict["ListN"][count3][:]
-                        dt = self.DTmin * count3
-                        CN_list = [x for x in np.concatenate((List0, List_dt)) if x not in List0 or x not in List_dt]
-                        CN = len(CN_list) * 0.5
+                        dt = self.DTmin*count3
+                        # CN_list = [x for x in np.concatenate((List0, List_dt)) if x not in List0 or x not in List_dt]
+                        CN_list = [x for x in List0 if x not in List_dt]
+                        # CN = len(CN_list) * 0.5
+                        CN = len(CN_list)/len(List0)
                         # print(List0, List_dt)
                         # print(CN_list)
-                        self.file4.write(str(dt) + " " + str(CN) + "\n")
+                        if not 1 in np.concatenate((List0,List_dt)):
+                            self.file4.write(str(dt)+"\t"+str(CN)+"\n")
+                        # self.file4.write(str(dt) + " " + str(CN) + "\n")
 
                 self.count1 = 0
                 for cell in self.cell_list:
