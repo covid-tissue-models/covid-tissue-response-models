@@ -26,8 +26,8 @@ from nCoVToolkit import nCoVUtils
 from UniCellModelInputs import *
 
 
-# a = {{a}}
-# b = 0.05
+a = alpha
+b = beta
 # density = .1
 
 
