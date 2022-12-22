@@ -237,12 +237,17 @@ class CalculationsSteppable(ViralInfectionVTMSteppableBasePy):
 
             if (100 > distance > 0):
                 self.file1.write(str(distance) + "\t" + str(P_product) + "\n")
+        if not mcs % 1000:
+            self.file1.flush()
+            os.fsync(self.file1)
 
     def finish(self):
         '''
         this function may be called at the end of simulation - used very infrequently though
         '''
         # PLACE YOUR CODE BELOW THIS LINE
+        self.file1.flush()
+        os.fsync(self.file1)
         self.file1.close()
         return
 
@@ -314,9 +319,12 @@ class PersistentNeighborsSteppable(ViralInfectionVTMSteppableBasePy):
                 self.count1 = 0
                 for cell in self.cell_list:
                     cell.dict["ListN"] = np.zeros((self.samples, 10))
-
+            if not mcs % 1000:
+                self.file4.flush()
+                os.fsync(self.file4)
     def finish(self):
-
+        self.file4.flush()
+        os.fsync(self.file4)
         self.file4.close()
         return
 
@@ -374,6 +382,8 @@ class CollectivityCalcSteppable(ViralInfectionVTMSteppableBasePy):
             mean(self.Collectivity)) + "\n")
         # self.file3.write("\t"+str(mean(self.gama))+"\n")
         # self.file3.write("\t"+str(mean(self.Collectivity))+"\n")
+        self.file3.flush()
+        os.fsync(self.file3)
         self.file3.close()
 
         return
@@ -397,42 +407,65 @@ class Position_OutputSteppable(ViralInfectionVTMSteppableBasePy):
         self.output_path = Path(self.output_dir).joinpath(file_name)
 
         self.file4 = open(self.output_path, 'wb')
-        #self.file4.write("MCS \t")
-        # for cell in self.cell_list:
-            #self.file4.write(
+        # self.file4.write("MCS \t".encode())
+        for cell in self.cell_list:
+            # self.file4.write(f"X {cell.id}\t Y {cell.id}\t Px {cell.id} \t Py {cell.id}\t".encode())
                 # "X " + str(cell.id) + "\t Y " + str(cell.id) + "\t Px " + str(cell.id) + "\t Py " + str(cell.id) + "\t")
-            # cell.dict["cx"] = 0
-            # cell.dict["cy"] = 0
-            # cell.dict["Old_pos2"] = [cell.xCOM, cell.yCOM, cell.zCOM]
-        #self.file4.write("\n")
+            cell.dict["cx"] = 0
+            cell.dict["cy"] = 0
+            cell.dict["Old_pos2"] = [cell.xCOM, cell.yCOM, cell.zCOM]
+        # self.file4.write("\n".encode())
+        fname = f"medium_contact_a{a}_b{b}.dat"
+        self.contact_file = open(Path(self.output_dir).joinpath(fname), "w+")
+        self.contact_file.write("mcs, area\n")
 
     def step(self, mcs):
 
         if mcs > 100:
-            self.file4.write(str(mcs) + "\t")
+            self.file4.write(f"{mcs}\t".encode())
+            medium_contact = 0
+            llist = []
             for cell in self.cell_list:
+                neighbor_list = self.get_cell_neighbor_data_list(cell)
+                medium_contact += neighbor_list.common_surface_area_with_cell_types(cell_type_list=[0])
+                
                 current_pos = [cell.xCOM, cell.yCOM, cell.zCOM]
                 if cell.xCOM - cell.dict["Old_pos2"][0] > self.dim.x * 0.5: cell.dict["cx"] -= 1
                 if cell.xCOM - cell.dict["Old_pos2"][0] < -self.dim.x * 0.5: cell.dict["cx"] += 1
                 if cell.yCOM - cell.dict["Old_pos2"][1] > self.dim.y * 0.5: cell.dict["cy"] -= 1
                 if cell.yCOM - cell.dict["Old_pos2"][1] < -self.dim.y * 0.5: cell.dict["cy"] += 1
-                #self.file4.write(str(cell.xCOM + self.dim.x * cell.dict["cx"]) + "\t" + str(
+                # self.file4.write(f'{cell.xCOM + self.dim.x * cell.dict["cx"]}\t{cell.yCOM + self.dim.y * cell.dict["cy"]}\t'.encode())
+                # str(cell.xCOM + self.dim.x * cell.dict["cx"]) + "\t" + str(
                     # cell.yCOM + self.dim.y * cell.dict["cy"]) + "\t")
-                #self.file4.write(str(cell.lambdaVecX) + "\t" + str(cell.lambdaVecY) + "\t")
+                # self.file4.write(f"{cell.lambdaVecX}\t{cell.lambdaVecY}\t".encode())
+                # str(cell.lambdaVecX) + "\t" + str(cell.lambdaVecY) + "\t")
                 cell.dict["Old_pos2"][:] = current_pos[:]
-                list.append(cell.xCOM+self.dim.x*cell.dict["cx"])
-                list.append(cell.yCOM+self.dim.y*cell.dict["cy"])
-                list.append(cell.lambdaVecX)
-                list.append(cell.lambdaVecY)
-            arr = array("d",list)
+                llist.append(cell.xCOM+self.dim.x*cell.dict["cx"])
+                llist.append(cell.yCOM+self.dim.y*cell.dict["cy"])
+                llist.append(cell.lambdaVecX)
+                llist.append(cell.lambdaVecY)
+                
+            self.contact_file.write(f"{mcs}, {medium_contact}\n")
+            arr = array("d",llist)
             arr.tofile(self.file4)
             #self.file4.write("\n")
-
+            if not mcs % 1000:
+                self.file4.flush()
+                os.fsync(self.file4)
+                self.contact_file.flush()
+                os.fsync(self.contact_file)
+            
     def finish(self):
         # this function may be called at the end of simulation - used very infrequently though
+        self.file4.flush()
+        os.fsync(self.file4)
+        self.file4.close()
+        self.contact_file.flush()
+        os.fsync(self.contact_file)
+        self.contact_file.close()
         return
 
     def on_stop(self):
         # this gets called each time user stops simulation
-        self.file4.close()
+        
         return
