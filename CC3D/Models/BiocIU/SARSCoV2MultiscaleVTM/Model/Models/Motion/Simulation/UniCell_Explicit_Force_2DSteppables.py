@@ -279,7 +279,7 @@ class PersistentNeighborsSteppable(ViralInfectionVTMSteppableBasePy):
         self.DTmin = 100
 
         for cell in self.cell_list:
-            cell.dict["ListN"] = np.zeros((self.samples, 10))
+            cell.dict["ListN"] = np.zeros((self.samples, 20))
 
         self.count1 = 0
 
