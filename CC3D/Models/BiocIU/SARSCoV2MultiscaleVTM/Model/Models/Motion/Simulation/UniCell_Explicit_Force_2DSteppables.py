@@ -406,7 +406,7 @@ class Position_OutputSteppable(ViralInfectionVTMSteppableBasePy):
         # self.output_path = str(Path(out_dir_name + "\\" + file_name))
         self.output_path = Path(self.output_dir).joinpath(file_name)
 
-        self.file4 = open(self.output_path, 'wb')
+        # self.file4 = open(self.output_path, 'wb')
         # self.file4.write("MCS \t".encode())
         for cell in self.cell_list:
             # self.file4.write(f"X {cell.id}\t Y {cell.id}\t Px {cell.id} \t Py {cell.id}\t".encode())
@@ -422,7 +422,7 @@ class Position_OutputSteppable(ViralInfectionVTMSteppableBasePy):
     def step(self, mcs):
 
         if mcs > 100:
-            self.file4.write(f"{mcs}\t".encode())
+            # self.file4.write(f"{mcs}\t".encode())
             medium_contact = 0
             llist = []
             for cell in self.cell_list:
@@ -440,26 +440,26 @@ class Position_OutputSteppable(ViralInfectionVTMSteppableBasePy):
                 # self.file4.write(f"{cell.lambdaVecX}\t{cell.lambdaVecY}\t".encode())
                 # str(cell.lambdaVecX) + "\t" + str(cell.lambdaVecY) + "\t")
                 cell.dict["Old_pos2"][:] = current_pos[:]
-                llist.append(cell.xCOM+self.dim.x*cell.dict["cx"])
-                llist.append(cell.yCOM+self.dim.y*cell.dict["cy"])
-                llist.append(cell.lambdaVecX)
-                llist.append(cell.lambdaVecY)
+                # llist.append(cell.xCOM+self.dim.x*cell.dict["cx"])
+                # llist.append(cell.yCOM+self.dim.y*cell.dict["cy"])
+                # llist.append(cell.lambdaVecX)
+                # llist.append(cell.lambdaVecY)
                 
             self.contact_file.write(f"{mcs}, {medium_contact}\n")
-            arr = array("d",llist)
-            arr.tofile(self.file4)
+            # arr = array("d",llist)
+            # arr.tofile(self.file4)
             #self.file4.write("\n")
             if not mcs % 1000:
-                self.file4.flush()
-                os.fsync(self.file4)
+                # self.file4.flush()
+                # os.fsync(self.file4)
                 self.contact_file.flush()
                 os.fsync(self.contact_file)
             
     def finish(self):
         # this function may be called at the end of simulation - used very infrequently though
-        self.file4.flush()
-        os.fsync(self.file4)
-        self.file4.close()
+        # self.file4.flush()
+        # os.fsync(self.file4)
+        # self.file4.close()
         self.contact_file.flush()
         os.fsync(self.contact_file)
         self.contact_file.close()
